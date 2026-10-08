@@ -40,7 +40,7 @@ $(function () {
 
 });
 
-$('#btn-create-user, #btn-list-users, #btn-prefa, #btn-list-prefa, #btn-urgent-prefa, #btn-plans-iso, #btn-planning, #btn-pointage, #btn-materiel, #btn-signalements, #btn-pv, #btn-settings').on('click', function () {
+$('#btn-create-user, #btn-list-users, #btn-prefa, #btn-list-prefa, #btn-urgent-prefa, #btn-plans-iso, #btn-planning, #btn-pointage, #btn-pv, #btn-settings').on('click', function () {
     const button = $(this);
     const pages = {
         'btn-create-user': 'pages/create_users.php',
@@ -51,8 +51,6 @@ $('#btn-create-user, #btn-list-users, #btn-prefa, #btn-list-prefa, #btn-urgent-p
         'btn-plans-iso': 'pages/plans_iso.php',
         'btn-planning': 'pages/planning.php',
         'btn-pointage': 'pages/pointage.php',
-        'btn-materiel': 'pages/materiel.php',
-        'btn-signalements': 'pages/signalements.php',
         'btn-pv': 'pages/pv.php',
         'btn-settings': 'pages/settings.php'
     };
