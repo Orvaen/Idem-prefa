@@ -41,6 +41,28 @@ function prefaReferenceComplete(int $id): string
     return $chantier === '' ? $ligne['reference'] : $ligne['reference'] . ' - ' . $chantier;
 }
 
+/**
+ * Chemin inverse : « 26-DP-0008 » redonne l'identifiant technique de la demande.
+ *
+ * C'est la référence qui circule dans les adresses, parce que c'est elle que l'atelier
+ * lit et recopie. L'identifiant interne ne sert qu'aux liens entre tables et ne doit
+ * apparaître nulle part. Une référence inconnue rend null : à l'appelant de répondre
+ * « introuvable » sans révéler si la demande existe.
+ *
+ * Requête directe plutôt que le cache de prefaReferences() : les téléchargements n'ont
+ * qu'une seule référence à traduire, inutile de charger toute la table.
+ */
+function prefaIdDepuisReference(string $reference): ?int
+{
+    global $db;
+    $reference = trim($reference);
+    if ($reference === '') return null;
+    $stmt = $db->prepare('SELECT id_demande FROM prefa_reference WHERE reference = ?');
+    $stmt->execute([$reference]);
+    $id = $stmt->fetchColumn();
+    return $id === false ? null : (int) $id;
+}
+
 /** @return array<int, array{reference: string, nom_affaire: ?string}> */
 function prefaReferences(): array
 {

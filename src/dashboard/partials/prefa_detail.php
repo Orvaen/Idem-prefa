@@ -223,11 +223,14 @@ $decisionComment = trim((string) ($row['commentaire_validation'] ?? ''));
                                 )
                             ) === 'pdf';
 
+                        // C'est la référence qui voyage dans l'adresse, pas l'identifiant
+                        // technique : elle s'affiche au survol du lien, dans l'historique
+                        // de téléchargement et dans l'onglet d'aperçu d'un PDF.
                         $documentUrl =
                             'actions/'
                             . $group['action']
-                            . '?id='
-                            . $requestId
+                            . '?ref='
+                            . rawurlencode(prefaReference($requestId))
                             . '&file='
                             . rawurlencode((string) $documentKey);
                         ?>

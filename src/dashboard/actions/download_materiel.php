@@ -1,7 +1,8 @@
 <?php
 require_once __DIR__ . '/../includes/prefa_context.php';
 
-$id = filter_var($_GET['id'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+// L'adresse porte la référence de la demande, pas son identifiant technique.
+$id = prefaIdDepuisReference((string) ($_GET['ref'] ?? ''));
 $fileId = filter_var($_GET['file'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 if (!$id) prefaError(400, 'Demande invalide.');
 if (isset($_GET['file']) && !$fileId) prefaError(400, 'Document invalide.');

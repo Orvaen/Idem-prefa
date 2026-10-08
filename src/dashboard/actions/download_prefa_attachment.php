@@ -3,7 +3,8 @@ require_once __DIR__ . '/../includes/prefa_context.php';
 require_once __DIR__ . '/../includes/prefa_attachments.php';
 require_once __DIR__ . '/../includes/atelier.php';
 
-$id = filter_var($_GET['id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+// L'adresse porte la référence de la demande, pas son identifiant technique.
+$id = prefaIdDepuisReference((string) ($_GET['ref'] ?? ''));
 $key = (string) ($_GET['file'] ?? '');
 if (!$id || !preg_match('/^[a-f0-9]{32}-[A-Za-z0-9._-]+$/', $key)) prefaError(400, 'Document invalide.');
 

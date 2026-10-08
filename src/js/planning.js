@@ -102,7 +102,7 @@
             const firstPlan = req.plans[0];
             const isPdf = /\.pdf$/i.test(firstPlan.name);
             const planLink = $('<a>')
-                .attr('href', `actions/download_prefa_attachment.php?id=${req.id}&file=${encodeURIComponent(firstPlan.key)}`)
+                .attr('href', `actions/download_prefa_attachment.php?ref=${encodeURIComponent(req.reference_demande)}&file=${encodeURIComponent(firstPlan.key)}`)
                 .attr('data-name', firstPlan.name)
                 .text(firstPlan.name)
                 .appendTo(planContainer);

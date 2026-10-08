@@ -75,7 +75,8 @@ foreach ($elements as $element) foreach ($element['affectations'] as $assignment
                             $name = atelierDocumentName($db, $requestId, $doc['type_document'], $doc['cle_document']);
                             if ($name !== null) {
                                 $endpoint = $doc['type_document'] === 'plan' ? 'download_prefa_attachment.php' : 'download_' . $doc['type_document'] . '.php';
-                                $availableDocuments[] = ['name' => $name, 'url' => 'actions/' . $endpoint . '?id=' . $requestId . '&file=' . rawurlencode($doc['cle_document'])];
+                                // La référence voyage dans l'adresse, pas l'identifiant technique.
+                                $availableDocuments[] = ['name' => $name, 'url' => 'actions/' . $endpoint . '?ref=' . rawurlencode(prefaReference($requestId)) . '&file=' . rawurlencode($doc['cle_document'])];
                             }
                         }
                     ?>
