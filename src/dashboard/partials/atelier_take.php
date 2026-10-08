@@ -22,7 +22,7 @@
                 <button type="button" class="atelier-close-plan-edit modal-close" aria-label="Fermer"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg></button>
             </div>
             <input type="hidden" name="csrf" value="<?= prefaEscape($_SESSION['prefa_csrf']) ?>"><input type="hidden" name="id" value="<?= $requestId ?>"><input type="hidden" name="operation" value="take">
-            <p class="atelier-muted"><?= prefaEscape(prefaReference($requestId)) ?> · <?= prefaEscape($row['nom_affaire'] ?: 'Demande sans nom') ?></p>
+            <p class="atelier-muted"><?= prefaEscape(prefaReferenceComplete($requestId)) ?></p>
             <div><label for="atelier-chief-<?= $requestId ?>">Chef d’atelier responsable</label><select id="atelier-chief-<?= $requestId ?>" name="chef" required>
                     <option value="">Sélectionner un chef d’atelier</option>
                     <?php foreach ($chiefs as $chief): ?><option value="<?= (int) $chief['id'] ?>"><?= prefaEscape($chief['nom']) ?></option><?php endforeach; ?>

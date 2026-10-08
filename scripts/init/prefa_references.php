@@ -20,8 +20,12 @@ if ((int) $db->query("SELECT GET_LOCK('prefa_reference_migration', 30)")->fetchC
 }
 try {
     $db->beginTransaction();
-    $db->exec("UPDATE prefa_reference SET reference = CONCAT(LPAD(MOD(annee, 100), 2, '0'), '-DP-', CASE WHEN numero < 1000 THEN LPAD(numero, 3, '0') ELSE CAST(numero AS CHAR) END)
-        WHERE reference NOT LIKE '%-DP-%'");
+    // Le numéro tient sur quatre chiffres. Cette requête répare aussi bien les
+    // références absentes que celles encore sur trois chiffres : elle recalcule la
+    // forme attendue et ne touche que les lignes qui s'en écartent.
+    $db->exec("UPDATE prefa_reference
+        SET reference = CONCAT(LPAD(MOD(annee, 100), 2, '0'), '-DP-', CASE WHEN numero < 10000 THEN LPAD(numero, 4, '0') ELSE CAST(numero AS CHAR) END)
+        WHERE CAST(reference AS BINARY) <> CAST(CONCAT(LPAD(MOD(annee, 100), 2, '0'), '-DP-', CASE WHEN numero < 10000 THEN LPAD(numero, 4, '0') ELSE CAST(numero AS CHAR) END) AS BINARY)");
     $requests = $db->query('SELECT d.id, d.date_creation FROM demande_prefabrication d
         LEFT JOIN prefa_reference r ON r.id_demande = d.id WHERE r.id_demande IS NULL
         ORDER BY d.date_creation, d.id FOR UPDATE')->fetchAll();

@@ -40,7 +40,7 @@ ksort($demandeurs);
     <div class="prefa-shell">
         <header class="prefa-heading prefa-list-heading">
             <div>
-                <h1 id="pv-page-title">PV</h1>
+                <h1 id="pv-page-title">Avancement préfabrication</h1>
                 <p><?= $pvLimiteAuDemandeur ? 'Réception matériel, fin de fabrication, conformité et passivation, pour vos affaires.' : 'Réception matériel, fin de fabrication, conformité et passivation, demande par demande.' ?></p>
             </div>
             <button type="button" class="pv-refresh prefa-toggle">Actualiser</button>
@@ -97,7 +97,7 @@ ksort($demandeurs);
                         data-demandeur="<?= prefaEscape($demandeurNom) ?>"
                         data-restants="<?= $avancement['restants'] ?>">
                         <tr>
-                            <td><?= prefaEscape(prefaReference($id)) ?></td>
+                            <td><?= prefaEscape(prefaReferenceComplete($id)) ?></td>
                             <td>
                                 <strong><?= prefaEscape($demande['nom_affaire']) ?></strong>
                                 <span class="atelier-row-description"><?= prefaEscape(trim(($demande['demandeur_prenom'] ?? '') . ' ' . ($demande['demandeur_nom'] ?? ''))) ?></span>
@@ -120,7 +120,7 @@ ksort($demandeurs);
                                 <div class="pv-volet">
                                     <div class="prefa-detail-heading">
                                         <div>
-                                            <h2>PV <span><?= prefaEscape(prefaReference($id)) ?></span></h2>
+                                            <h2>PV <span><?= prefaEscape(prefaReferenceComplete($id)) ?></span></h2>
                                             <p><?= prefaEscape($demande['nom_affaire']) ?> · <?= $avancement['faits'] ?>/<?= $avancement['total'] ?> renseignés</p>
                                         </div>
                                         <button type="button" class="prefa-detail-close" data-close-target="pv-detail-<?= $id ?>" aria-label="Fermer le volet">✕</button>

@@ -8,7 +8,7 @@ function atelierLocalDateTime(string $value, string $format = 'd/m/Y à H:i'): s
 
 function atelierSteps(): array
 {
-    return ['decoupage' => 'Découpage', 'pliage' => 'Pliage', 'pointage' => 'Pointage', 'soudage' => 'Soudage', 'passivation' => 'Passivation', 'autre' => 'Autre'];
+    return ['debit' => 'Débit', 'decoupage' => 'Découpage', 'pliage' => 'Pliage', 'pointage' => 'Pointage', 'soudage' => 'Soudage', 'passivation' => 'Passivation', 'autre' => 'Autre'];
 }
 
 function atelierElementSteps(PDO $db, int $elementId): array

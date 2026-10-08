@@ -3,6 +3,7 @@ require_once __DIR__ . '/../includes/prefa_context.php';
 require_once __DIR__ . '/../includes/prefa_attachments.php';
 require_once __DIR__ . '/../includes/prefa_workshop.php';
 require_once __DIR__ . '/../includes/atelier.php';
+require_once __DIR__ . '/../includes/ccpu_demande.php';
 
 if (!$canManageWorkshop) {
     prefaError(403, 'Cette page est réservée au chef d’atelier et à l’administrateur.');
@@ -34,6 +35,8 @@ $validatedRequests = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $attachmentsByRequest = [];
 $qmosByRequest = [];
 $dmosByRequest = [];
+$materielByRequest = [];
+$ccpuByRequest = [];
 
 if ($validatedRequests) {
     $requestIds = array_column($validatedRequests, 'id');
@@ -54,6 +57,14 @@ if ($validatedRequests) {
     foreach ($dmosQuery->fetchAll(PDO::FETCH_ASSOC) as $doc) {
         $dmosByRequest[$doc['id_demande']][] = $doc;
     }
+
+    $materielQuery = $db->prepare("SELECT id, id_demande, nom FROM demande_materiel_documents WHERE id_demande IN ($placeholders) ORDER BY id");
+    $materielQuery->execute($requestIds);
+    foreach ($materielQuery->fetchAll(PDO::FETCH_ASSOC) as $doc) {
+        $materielByRequest[$doc['id_demande']][] = $doc;
+    }
+
+    $ccpuByRequest = ccpuParDemandes($db, $requestIds);
 }
 // Nombre de plans par demande
 $planCounts = [];
@@ -128,7 +139,7 @@ $totalPlans = array_sum($planCounts);
                         >
 
                         <tr>
-                            <td><?= prefaEscape(prefaReference($requestId)) ?></td>
+                            <td><?= prefaEscape(prefaReferenceComplete($requestId)) ?></td>
                             <td class="prefa-affaire"><?= prefaEscape($row['nom_affaire'] ?: '—') ?></td>
                             <td><?= prefaEscape($ownerName) ?></td>
                             <td><?= !empty($row['date_livraison_prevue']) ? prefaEscape(prefaFormatDate($row['date_livraison_prevue'])) : '—' ?></td>
@@ -149,7 +160,7 @@ $totalPlans = array_sum($planCounts);
                             <div class="plans-iso-body">
                                 <div class="prefa-detail-heading">
                                     <div>
-                                        <h2>Plans &amp; affectations <span><?= prefaEscape(prefaReference($requestId)) ?></span></h2>
+                                        <h2>Plans &amp; affectations <span><?= prefaEscape(prefaReferenceComplete($requestId)) ?></span></h2>
                                         <p><?= prefaEscape($row['nom_affaire'] ?: 'Demande sans nom') ?></p>
                                     </div>
                                     <button type="button" class="prefa-detail-close" data-close-target="plans-iso-detail-<?= $requestId ?>" aria-label="Fermer le volet">✕</button>

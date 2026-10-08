@@ -400,7 +400,7 @@ $(document).on('change', '#plan-documents', function () {
         list.append(row);
     });
 });
-$(document).on('change', '#qmos, #dmos', function () {
+$(document).on('change', '#qmos, #dmos, #materiel, #ccpu', function () {
     const kind = this.id;
     const files = Array.from(this.files);
     if (kind === 'qmos') {
@@ -408,8 +408,12 @@ $(document).on('change', '#qmos, #dmos', function () {
         const total = saved + files.length;
         const summary = total ? total + ' PDF QMOS à envoyer.' : 'Aucun QMOS sélectionné.';
         $('#qmos-help').text(summary);
-    } else {
+    } else if (kind === 'dmos') {
         $('#dmos-help').text(files.length ? files.length + ' PDF DMOS à envoyer.' : 'Aucun nouveau fichier sélectionné.');
+    } else if (kind === 'materiel') {
+        $('#materiel-help').text(files.length ? files.length + ' fiche(s) matériel à envoyer.' : 'Aucun nouveau fichier sélectionné.');
+    } else {
+        $('#ccpu-help').text(files.length ? files.length + ' certificat(s) à envoyer.' : 'Aucun nouveau fichier sélectionné.');
     }
     const list = $('#' + kind + '-selected-files').empty();
     files.forEach((file, index) => {
@@ -450,10 +454,13 @@ $(document).on('click', '.prefa-remove-saved', function () {
         $(this).text('Annuler');
     }
 });
-$(document).on('click', '.prefa-remove-qmos-saved, .prefa-remove-dmos-saved', function () {
+$(document).on('click', '.prefa-remove-qmos-saved, .prefa-remove-dmos-saved, .prefa-remove-materiel-saved, .prefa-remove-ccpu-saved', function () {
     const row = $(this).closest('.prefa-file-row');
     const form = $(this).closest('form');
-    const name = $(this).hasClass('prefa-remove-qmos-saved') ? 'remove_qmos[]' : 'remove_dmos[]';
+    const name = $(this).hasClass('prefa-remove-qmos-saved') ? 'remove_qmos[]'
+        : $(this).hasClass('prefa-remove-dmos-saved') ? 'remove_dmos[]'
+        : $(this).hasClass('prefa-remove-materiel-saved') ? 'remove_materiel[]'
+        : 'remove_ccpu[]';
     if (row.hasClass('is-removed')) {
         row.removeClass('is-removed');
         form.find('input[name="' + name + '"]').filter((_, input) => input.value === this.dataset.id).remove();
@@ -573,6 +580,40 @@ $(document).on('click', '.prefa-detail-close', function () {
         const toggleBtn = document.querySelector(`.prefa-toggle[aria-controls="${details.id}"]`);
         if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
     }
+});
+
+// ===== Certificats matière (CCPU) =====
+// Un certificat est lu à la première ouverture de la fiche qui le montre, pas à
+// l'enregistrement de la demande : un scan demande plusieurs secondes par page.
+function lireCcpu(bloc, csrf) {
+    if (bloc.dataset.ccpuEnCours) return;
+    bloc.dataset.ccpuEnCours = '1';
+    const donnees = new URLSearchParams({ csrf: csrf, document: bloc.dataset.ccpuLire });
+    $.ajax({ url: 'actions/lire_ccpu.php', method: 'POST', data: donnees.toString(), dataType: 'json' })
+        .done(reponse => $(bloc).replaceWith(reponse.html))
+        .fail(xhr => {
+            // Le bloc reste en place avec le motif et de quoi relancer : une lecture
+            // ratée ne doit pas tourner en boucle à chaque rafraîchissement de la liste.
+            const relance = $('<button type="button" class="ccpu-relire">').text('Réessayer')
+                .attr({ 'data-ccpu-document': bloc.dataset.ccpuLire, 'data-csrf': csrf });
+            $(bloc).removeClass('is-en-attente').addClass('is-echec').removeAttr('data-ccpu-lire')
+                .empty().append($('<p>').text(xhr.responseJSON?.message || 'Lecture impossible. Réessayez.'), relance);
+        });
+}
+
+// Les fiches s'ouvrent par clic, mais sont aussi rouvertes après un rechargement de la
+// liste : on regarde donc dans les deux cas quels certificats visibles restent à lire.
+function lireCcpuVisibles() {
+    document.querySelectorAll('.prefa-detail-row:not([hidden]) [data-ccpu-lire]').forEach(bloc => lireCcpu(bloc, bloc.dataset.csrf));
+}
+$(document).on('click', '.prefa-toggle[aria-controls]', () => setTimeout(lireCcpuVisibles, 0));
+$(document).on('ajaxComplete', lireCcpuVisibles);
+
+$(document).on('click', '.ccpu-relire', function () {
+    const bloc = $('<div class="ccpu-lecture is-en-attente" role="status">').text('Lecture des coulées…')
+        .attr('data-ccpu-lire', this.dataset.ccpuDocument)[0];
+    $(this).closest('.ccpu-lecture').replaceWith(bloc);
+    lireCcpu(bloc, this.dataset.csrf);
 });
 
 // Referme le volet ouvert et rend son bouton à l'état replié. Renvoie false s'il n'y
@@ -698,6 +739,8 @@ $(document).on('submit', '#prefa-form, .prefa-review', function (event) {
                 form.find('#plan-documents').trigger('change');
                 form.find('#qmos').trigger('change');
                 form.find('#dmos').trigger('change');
+                form.find('#materiel').trigger('change');
+                form.find('#ccpu').trigger('change');
                 if (typeof selectPassivation === 'function') {
                     selectPassivation('', '');
                 }

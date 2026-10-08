@@ -494,7 +494,7 @@
 
         form.elements.start.value = startDateStr;
         form.elements.end.value = endDateStr;
-        $('#planning-dialog-title').text('Demande ' + request.reference_demande);
+        $('#planning-dialog-title').text('Demande ' + (request.reference_complete || request.reference_demande));
         const durationDays = Math.ceil(hours / 24);
         const inches = parseInt(request.pouces_total_iso || 0, 10);
         

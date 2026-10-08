@@ -51,7 +51,7 @@ $historique = $db->prepare('SELECT * FROM pointage_atelier WHERE id_affectation 
                 ?>
                     <tbody class="prefa-request">
                         <tr>
-                            <td><?= prefaEscape(prefaReference((int) $assignment['id_demande'])) ?></td>
+                            <td><?= prefaEscape(prefaReferenceComplete((int) $assignment['id_demande'])) ?></td>
                             <td><strong><?= prefaEscape($assignment['reference']) ?></strong><span class="atelier-row-description"><?= prefaEscape($assignment['libelle']) ?></span></td>
                             <td><?= prefaEscape($types[$assignment['type_affectation']]) ?></td>
                             <td><input class="pointage-input" form="pointage-<?= $id ?>" name="date" type="date" value="<?= date('Y-m-d') ?>" max="<?= date('Y-m-d') ?>" required aria-label="Date du travail — <?= prefaEscape($cible) ?>"></td>
@@ -75,7 +75,7 @@ $historique = $db->prepare('SELECT * FROM pointage_atelier WHERE id_affectation 
                                 <div class="atelier-detail-content">
                                     <div class="prefa-detail-heading">
                                         <div>
-                                            <h2>Historique des pointages <span><?= prefaEscape(prefaReference((int) $assignment['id_demande'])) ?></span></h2>
+                                            <h2>Historique des pointages <span><?= prefaEscape(prefaReferenceComplete((int) $assignment['id_demande'])) ?></span></h2>
                                             <p><?= prefaEscape($cible) ?><?php if ($minutes): ?> · total <?= intdiv($minutes, 60) ?> h <?= sprintf('%02d', $minutes % 60) ?><?php endif; ?></p>
                                         </div>
                                         <button type="button" class="prefa-detail-close" data-close-target="pointage-detail-<?= $id ?>" aria-label="Fermer le volet">✕</button>

@@ -22,7 +22,7 @@ try {
         $revision = filter_var($_POST['etapes_revision'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
         $values = $_POST['etapes'] ?? null;
         if ($revision === false || !is_array($values) || count($values) !== count(atelierSteps())) {
-            $db->rollBack(); prefaError(400, 'Renseignez les six étapes.');
+            $db->rollBack(); prefaError(400, 'Renseignez les ' . count(atelierSteps()) . ' étapes.');
         }
         $statuses = [];
         foreach (atelierSteps() as $key => $label) {

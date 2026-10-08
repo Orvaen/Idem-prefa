@@ -9,6 +9,13 @@ RUN printf 'upload_max_filesize=50M\npost_max_size=512M\nmax_file_uploads=1000\n
 # être connecté. AllowOverride vaut None ici, donc un .htaccess dans le dossier ne ferait rien.
 RUN printf '<Directory /var/www/html/uploads>\nRequire all denied\n</Directory>\n<Directory /var/www/html/dashboard/uploads>\nRequire all denied\n</Directory>\n' > /etc/apache2/conf-available/prefa-uploads.conf && a2enconf prefa-uploads
 
+# Lecture des certificats matière (CCPU) : Poppler ouvre le PDF, Tesseract lit les scans.
+# Tout reste sur le serveur, aucun service externe. Placé avant la copie de l'application
+# pour que cette couche ne soit pas reconstruite à chaque modification du code.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends poppler-utils tesseract-ocr tesseract-ocr-eng tesseract-ocr-fra \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copier l'application web
 COPY ./src /var/www/html/
 

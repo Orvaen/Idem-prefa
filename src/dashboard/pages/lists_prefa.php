@@ -304,19 +304,7 @@ if ($isWorkshopPersonnel) {
                             </th>
 
                             <th scope="col">
-                                Demandeur
-                            </th>
-
-                            <th scope="col">
-                                Documents
-                            </th>
-
-                            <th scope="col">
-                                Pouces
-                            </th>
-
-                            <th scope="col">
-                                Jours
+                                Nom du chantier
                             </th>
 
                             <th scope="col">
@@ -328,19 +316,23 @@ if ($isWorkshopPersonnel) {
                             </th>
 
                             <th scope="col">
-                                Date limite de livraison de la préfabrication
-                            </th>
-
-                            <th scope="col">
                                 Priorité
                             </th>
 
                             <th scope="col">
-                                Statut
+                                Pouces
                             </th>
 
                             <th scope="col">
-                                Prise en charge
+                                Temps atelier
+                            </th>
+
+                            <th scope="col">
+                                Demandeur
+                            </th>
+
+                            <th scope="col">
+                                Statut
                             </th>
 
                             <th scope="col">
@@ -370,7 +362,7 @@ if ($isWorkshopPersonnel) {
 
                                 <td
                                     class="prefa-table-empty"
-                                    colspan="12">
+                                    colspan="10">
                                     Aucune demande trouvée.
                                 </td>
 

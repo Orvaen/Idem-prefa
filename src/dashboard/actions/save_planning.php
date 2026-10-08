@@ -29,7 +29,7 @@ try {
     if ($operation === 'remove') {
         $save = $db->prepare('UPDATE demande_prefabrication SET date_debut_planifiee = NULL, date_fin_planifiee = NULL, planning_revision = planning_revision + 1, DateUpdate = NOW() WHERE id = ?');
         $save->execute([$id]);
-        $message = 'Demande ' . prefaReference($id) . ' supprimée du planning.';
+        $message = 'Demande ' . prefaReferenceComplete($id) . ' supprimée du planning.';
     } else {
         $period = ['start' => $start->format('Y-m-d'), 'end' => $end->format('Y-m-d')];
         $save = $db->prepare('UPDATE demande_prefabrication SET date_debut_planifiee = ?, date_fin_planifiee = ?, planning_jours_ouvres = 1, planning_revision = planning_revision + 1, DateUpdate = NOW() WHERE id = ?');

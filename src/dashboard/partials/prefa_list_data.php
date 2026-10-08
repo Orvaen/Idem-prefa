@@ -1,5 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/prefa_attachments.php';
+require_once __DIR__ . '/../includes/prefa_hours.php';
+require_once __DIR__ . '/../includes/ccpu_demande.php';
 require_once __DIR__ . '/../includes/prefa_workshop.php';
 $workshopUsers = $canManageWorkshop ? prefaWorkshopPersonnel($db) : [];
 
@@ -87,6 +89,8 @@ foreach ($requests as $request) {
 
 $qmosByRequest = [];
 $dmosByRequest = [];
+$materielByRequest = [];
+$ccpuByRequest = [];
 if ($requests) {
     $requestIds = array_column($requests, 'id');
     $placeholders = implode(',', array_fill(0, count($requestIds), '?'));
@@ -106,6 +110,16 @@ if ($requests) {
     foreach ($dmosQuery->fetchAll() as $document) {
         $dmosByRequest[$document['id_demande']][] = $document;
     }
+
+    $materielQuery = $db->prepare(
+        'SELECT id, id_demande, nom FROM demande_materiel_documents WHERE id_demande IN (' . $placeholders . ') ORDER BY id'
+    );
+    $materielQuery->execute($requestIds);
+    foreach ($materielQuery->fetchAll() as $document) {
+        $materielByRequest[$document['id_demande']][] = $document;
+    }
+
+    $ccpuByRequest = ccpuParDemandes($db, $requestIds);
 }
 
 $urgentPending = $canViewAllPrefa

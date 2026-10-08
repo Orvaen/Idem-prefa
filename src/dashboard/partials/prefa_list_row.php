@@ -9,25 +9,15 @@ $ownerName = trim($row['prenom'] . ' ' . $row['name']);
 ?>
 <tbody class="prefa-request<?= $isUrgentPending ? ' is-urgent-pending' : '' ?>">
     <tr>
-        <td><?= prefaEscape(prefaReference($requestId)) ?></td>
-        <td><?= prefaEscape($ownerName) ?></td>
-        <td><?= count($attachmentsByRequest[$row['id']]) ?> fichier(s)</td>
-        <td><?= prefaEscape($row['pouces_total_iso']) ?></td>
-        <td><?= prefaEscape(number_format((float) $row['heures_chiffrees'] / 24, 2, ',', ' ')) ?></td>
+        <td><?= prefaEscape(prefaReferenceComplete($requestId)) ?></td>
+        <td><?= prefaEscape($row['nom_affaire'] ?: '—') ?></td>
         <td><?= $row['date_creation'] ? prefaEscape(prefaFormatDate($row['date_creation'])) : '—' ?></td>
         <td><?= $row['date_fin_prevue'] ? prefaEscape(prefaFormatDate($row['date_fin_prevue'])) : '—' ?></td>
-        <td><?= $row['date_livraison_prevue'] ? prefaEscape(prefaFormatDate($row['date_livraison_prevue'])) : '—' ?></td>
         <td><?= $row['urgent'] ? '<span class="prefa-urgent">Urgente</span>' : 'Normale' ?></td>
+        <td><?= prefaEscape($row['pouces_total_iso']) ?></td>
+        <td><?= prefaEscape(prefaFormatDays((float) $row['heures_chiffrees'] / 24)) ?></td>
+        <td><?= prefaEscape($ownerName) ?></td>
         <td><span class="prefa-status status-<?= (int) $row['id_statut'] ?>"><?= prefaEscape($row['libelle']) ?></span></td>
-        <td>
-            <?php if ((int) $row['id_statut'] !== 2): ?>
-                —
-            <?php elseif (!empty($row['prise_en_charge_nom'])): ?>
-                <?= prefaEscape($row['prise_en_charge_nom']) ?>
-            <?php else: ?>
-                <span class="prefa-a-prendre">À prendre en charge</span>
-            <?php endif; ?>
-        </td>
         <td>
             <button type="button" class="prefa-toggle" aria-expanded="false" aria-controls="prefa-detail-<?= $requestId ?>">
                 <?= $isAdmin && $isPending ? 'Examiner' : 'Détails' ?>
@@ -43,7 +33,7 @@ $ownerName = trim($row['prenom'] . ' ' . $row['name']);
         </td>
     </tr>
     <tr id="prefa-detail-<?= $requestId ?>" class="prefa-detail-row" hidden>
-        <td colspan="12">
+        <td colspan="10">
             <div class="prefa-table-detail">
                 <?php require __DIR__ . '/prefa_detail.php'; ?>
                 <?php if ($isAdmin && $isPending): ?>

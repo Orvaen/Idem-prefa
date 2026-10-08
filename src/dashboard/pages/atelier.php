@@ -63,7 +63,7 @@ $recentProgress = $stmt->fetchAll();
                 ?>
                     <tbody class="atelier-assignment-group">
                         <tr>
-                            <td><?= prefaEscape(prefaReference((int) $assignment['id_demande'])) ?></td>
+                            <td><?= prefaEscape(prefaReferenceComplete((int) $assignment['id_demande'])) ?></td>
                             <td><strong><?= prefaEscape($assignment['reference']) ?></strong><span class="atelier-row-description"><?= prefaEscape($assignment['libelle']) ?></span></td>
                             <td><?= $types[$assignment['type_affectation']] ?></td>
                             <td><?php if ($docs): ?><?= count($docs) ?> <?= count($docs) === 1 ? 'fichier' : 'fichiers' ?><?php else: ?><span class="atelier-missing-file">Fichier à associer</span><?php endif; ?></td>
@@ -127,7 +127,7 @@ $recentProgress = $stmt->fetchAll();
                                             </form>
                                             <details class="atelier-saved-history">
                                                 <summary>Historique de l’avancement (<?= count($progressHistory) ?>)</summary>
-                                                <p class="atelier-history-context">Demande <?= prefaEscape(prefaReference((int) $assignment['id_demande'])) ?> · <?= prefaEscape($assignment['reference']) ?> · <?= prefaEscape($types[$assignment['type_affectation']]) ?></p>
+                                                <p class="atelier-history-context">Demande <?= prefaEscape(prefaReferenceComplete((int) $assignment['id_demande'])) ?> · <?= prefaEscape($assignment['reference']) ?> · <?= prefaEscape($types[$assignment['type_affectation']]) ?></p>
                                                 <?php if (!$progressHistory): ?><p class="atelier-muted">Aucun avancement enregistré.</p><?php endif; ?>
                                                 <ol class="atelier-saved-history-list">
                                                     <?php foreach ($progressHistory as $entry): ?>
@@ -157,7 +157,7 @@ $recentProgress = $stmt->fetchAll();
                             <ol class="atelier-saved-history-list">
                                 <?php foreach ($recentProgress as $entry): ?>
                                     <li><strong><?= (int) $entry['avancement'] ?> %</strong> <span class="atelier-muted">· <?= prefaEscape(atelierLocalDateTime($entry['date_saisie'])) ?></span>
-                                        <p class="atelier-history-context">Demande <?= prefaEscape(prefaReference((int) $entry['id_demande'])) ?> · <?= prefaEscape($entry['reference']) ?> · <?= prefaEscape($types[$entry['type_affectation']]) ?></p>
+                                        <p class="atelier-history-context">Demande <?= prefaEscape(prefaReferenceComplete((int) $entry['id_demande'])) ?> · <?= prefaEscape($entry['reference']) ?> · <?= prefaEscape($types[$entry['type_affectation']]) ?></p>
                                         <?php if ($entry['commentaire']): ?><p class="atelier-note"><?= prefaEscape($entry['commentaire']) ?></p><?php endif; ?>
                                     </li>
                                 <?php endforeach; ?>
@@ -170,7 +170,7 @@ $recentProgress = $stmt->fetchAll();
                             <ol class="atelier-saved-history-list">
                                 <?php foreach ($times as $entry): ?>
                                     <li><strong><?= (int) $entry['duree_minutes'] ?> min</strong> <span class="atelier-muted">· Travail du <?= prefaEscape(date('d/m/Y', strtotime($entry['date_travail']))) ?></span>
-                                        <p class="atelier-history-context">Demande <?= prefaEscape(prefaReference((int) $entry['id_demande'])) ?> · <?= prefaEscape($entry['reference']) ?> · <?= prefaEscape($types[$entry['type_affectation']]) ?></p>
+                                        <p class="atelier-history-context">Demande <?= prefaEscape(prefaReferenceComplete((int) $entry['id_demande'])) ?> · <?= prefaEscape($entry['reference']) ?> · <?= prefaEscape($types[$entry['type_affectation']]) ?></p>
                                         <?php if ($entry['commentaire']): ?><p class="atelier-note"><?= prefaEscape($entry['commentaire']) ?></p><?php endif; ?>
                                     </li>
                                 <?php endforeach; ?>

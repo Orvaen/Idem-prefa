@@ -177,6 +177,8 @@ if ($editing) {
 
 $qmosPdfs = prefaPdfUploads($_FILES['qmos_pdf'] ?? null, 'QMOS');
 $dmosPdfs = prefaPdfUploads($_FILES['dmos_pdf'] ?? null, 'DMOS');
+$materielPdfs = prefaPdfUploads($_FILES['materiel_pdf'] ?? null, 'fiche matériel');
+$ccpuPdfs = prefaPdfUploads($_FILES['ccpu_pdf'] ?? null, 'CCPU');
 
 $removeQmosIds = $_POST['remove_qmos'] ?? [];
 if (!is_array($removeQmosIds) || (!$editing && $removeQmosIds)) prefaError(400, 'Liste des QMOS invalide.');
@@ -204,6 +206,32 @@ foreach ($removeDmosIds as $id) {
     if (!is_string($id) || !ctype_digit($id) || !array_key_exists((int) $id, $existingDmosById)) prefaError(400, 'DMOS à retirer introuvable.');
 }
 $removeDmosIds = array_unique(array_map('intval', $removeDmosIds));
+$removeMaterielIds = $_POST['remove_materiel'] ?? [];
+if (!is_array($removeMaterielIds) || (!$editing && $removeMaterielIds)) prefaError(400, 'Liste des fiches matériel invalide.');
+$existingMateriel = [];
+if ($editing) {
+    $materielQuery = $db->prepare('SELECT id FROM demande_materiel_documents WHERE id_demande = ?');
+    $materielQuery->execute([$requestId]);
+    $existingMateriel = $materielQuery->fetchAll();
+}
+$existingMaterielById = array_column($existingMateriel, 'id', 'id');
+foreach ($removeMaterielIds as $id) {
+    if (!is_string($id) || !ctype_digit($id) || !array_key_exists((int) $id, $existingMaterielById)) prefaError(400, 'Fiche matériel à retirer introuvable.');
+}
+$removeMaterielIds = array_unique(array_map('intval', $removeMaterielIds));
+$removeCcpuIds = $_POST['remove_ccpu'] ?? [];
+if (!is_array($removeCcpuIds) || (!$editing && $removeCcpuIds)) prefaError(400, 'Liste des CCPU invalide.');
+$existingCcpu = [];
+if ($editing) {
+    $ccpuQuery = $db->prepare('SELECT id FROM demande_ccpu_documents WHERE id_demande = ?');
+    $ccpuQuery->execute([$requestId]);
+    $existingCcpu = $ccpuQuery->fetchAll();
+}
+$existingCcpuById = array_column($existingCcpu, 'id', 'id');
+foreach ($removeCcpuIds as $id) {
+    if (!is_string($id) || !ctype_digit($id) || !array_key_exists((int) $id, $existingCcpuById)) prefaError(400, 'CCPU à retirer introuvable.');
+}
+$removeCcpuIds = array_unique(array_map('intval', $removeCcpuIds));
 $savedFiles = [];
 $pendingRemoval = [];
 try {
@@ -329,6 +357,25 @@ try {
     if ($dmosPdfs) {
         $file = $db->prepare('INSERT INTO demande_dmos_documents (id_demande, nom, contenu, sha256) VALUES (?, ?, ?, UNHEX(?))');
         foreach ($dmosPdfs as $document) $file->execute([$savedId, $document['name'], $document['content'], $document['digest']]);
+    }
+    if ($removeMaterielIds) {
+        $file = $db->prepare('DELETE FROM demande_materiel_documents WHERE id_demande = ? AND id = ?');
+        foreach ($removeMaterielIds as $id) $file->execute([$savedId, $id]);
+    }
+    if ($materielPdfs) {
+        $file = $db->prepare('INSERT INTO demande_materiel_documents (id_demande, nom, contenu, sha256) VALUES (?, ?, ?, UNHEX(?))');
+        foreach ($materielPdfs as $document) $file->execute([$savedId, $document['name'], $document['content'], $document['digest']]);
+    }
+    // Les coulées lues sur un certificat retiré partent avec lui, par cascade.
+    if ($removeCcpuIds) {
+        $file = $db->prepare('DELETE FROM demande_ccpu_documents WHERE id_demande = ? AND id = ?');
+        foreach ($removeCcpuIds as $id) $file->execute([$savedId, $id]);
+    }
+    // Le certificat est seulement rangé ici : sa lecture dure plusieurs secondes par
+    // page scannée et se fait à l'ouverture de la fiche, pas pendant l'enregistrement.
+    if ($ccpuPdfs) {
+        $file = $db->prepare('INSERT INTO demande_ccpu_documents (id_demande, nom, contenu, sha256) VALUES (?, ?, ?, UNHEX(?))');
+        foreach ($ccpuPdfs as $document) $file->execute([$savedId, $document['name'], $document['content'], $document['digest']]);
     }
 
     $db->commit();

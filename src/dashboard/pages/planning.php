@@ -52,6 +52,7 @@ $requests = $db->query("SELECT d.id, d.nom_affaire, d.urgent, d.idUsers AS creat
 foreach ($requests as &$req) {
     $rId = (int) $req['id'];
     $req['reference_demande'] = prefaReference($rId);
+    $req['reference_complete'] = prefaReferenceComplete($rId);
     $req['plans'] = prefaAttachments($rId);
 
     $elemStmt = $db->prepare('SELECT e.id, e.reference, e.libelle, s.statuts FROM element_atelier e

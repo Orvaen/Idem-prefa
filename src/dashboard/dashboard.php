@@ -152,7 +152,7 @@ if ($isAdmin || $isWorkshopChief) {
                         <rect x="5" y="4" width="14" height="17" rx="2" />
                         <path d="M9 4V2h6v2M9 10l2 2 4-4M9 16h6" />
                     </svg>
-                    <span><?= $isAdmin ? 'Vérifier les demandes' : ($isWorkshopChief ? 'Suivi des demandes' : ($isWorkshopPersonnel ? 'Mes affectations' : 'Mes demandes')) ?></span>
+                    <span><?= $isAdmin ? 'Valider les demandes' : ($isWorkshopChief ? 'Suivi des demandes' : ($isWorkshopPersonnel ? 'Mes affectations' : 'Mes demandes')) ?></span>
                     <?php if ($isAdmin): ?>
                         <span id="urgent-pending-count" class="nav-urgent-badge" aria-live="polite" aria-label="<?= $urgentPending ?> demandes urgentes en attente" title="Demandes urgentes en attente" <?= $urgentPending === 0 ? 'hidden' : '' ?>><?= $urgentPending ?></span>
                     <?php endif; ?>
@@ -216,7 +216,7 @@ if ($isAdmin || $isWorkshopChief) {
                             <path d="M14 3v5h5" />
                             <path d="m9 14 2 2 4-4" />
                         </svg>
-                        <span>PV</span>
+                        <span>Avancement préfabrication</span>
                         <?php if ($pvAFaire): ?><span class="nav-urgent-badge" aria-label="<?= $pvAFaire ?> PV à renseigner" title="PV encore à renseigner"><?= $pvAFaire ?></span><?php endif; ?>
                     </button>
                 <?php endif; ?>

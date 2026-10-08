@@ -48,7 +48,7 @@ $statuts = appoStatuts();
                         <label for="materiel-demande">Demande concernée</label>
                         <select id="materiel-demande" name="demande" required>
                             <?php foreach ($demandes as $demande): ?>
-                                <option value="<?= (int) $demande['id'] ?>"><?= prefaEscape(prefaReference((int) $demande['id']) . ' — ' . $demande['nom_affaire']) ?></option>
+                                <option value="<?= (int) $demande['id'] ?>"><?= prefaEscape(prefaReferenceComplete((int) $demande['id'])) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -115,7 +115,7 @@ $statuts = appoStatuts();
                 <?php foreach ($signalements as $signalement): ?>
                     <tbody class="prefa-request">
                         <tr>
-                            <td><?= prefaEscape(prefaReference((int) $signalement['id_demande'])) ?></td>
+                            <td><?= prefaEscape(prefaReferenceComplete((int) $signalement['id_demande'])) ?></td>
                             <td>
                                 <strong><?= prefaEscape($signalement['designation']) ?></strong>
                                 <?php if ($signalement['commentaire']): ?><span class="atelier-row-description"><?= prefaEscape($signalement['commentaire']) ?></span><?php endif; ?>

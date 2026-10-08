@@ -6,6 +6,8 @@
 /** @var array<int, array<int, array<string, mixed>>> $attachmentsByRequest */
 /** @var array<int, array<int, array<string, mixed>>> $qmosByRequest */
 /** @var array<int, array<int, array<string, mixed>>> $dmosByRequest */
+/** @var array<int, array<int, array<string, mixed>>> $materielByRequest */
+/** @var array<int, array<int, array<string, mixed>>> $ccpuByRequest */
 
 $requestId = (int) $row['id'];
 
@@ -30,13 +32,21 @@ $documentGroups = [
         'action' => 'download_dmos.php',
         'legacy' => '',
     ],
+    [
+        'title' => 'Commande matériel',
+        'files' => $materielByRequest[$requestId] ?? [],
+        'action' => 'download_materiel.php',
+        'legacy' => '',
+    ],
+    [
+        'title' => 'CCPU',
+        'files' => $ccpuByRequest[$requestId] ?? [],
+        'action' => 'download_ccpu.php',
+        'legacy' => '',
+        // Sous chaque certificat, les coulées que la lecture automatique y a trouvées.
+        'ccpu' => true,
+    ],
 ];
-
-$materialAvailability = match ($row['matiere_disponibilite'] ?? '') {
-    'stock' => 'En stock',
-    'commande' => 'À commander',
-    default => 'Non précisée',
-};
 
 $facts = [
     'Nom de la demande' => $row['nom_affaire'] ?: 'Non renseigné',
@@ -51,9 +61,6 @@ $facts = [
 
     'Matière' =>
         $row['matiere_libelle'] ?? 'Non précisée',
-
-    'Disponibilité matière' =>
-        $materialAvailability,
 
     'Passivation' =>
         $row['passivation_libelle'] ?? 'Aucune',
@@ -84,6 +91,14 @@ $facts = [
     'Mise à jour' =>
         prefaFormatDate($row['DateUpdate'], true),
 ];
+
+// Qui s'occupe de la demande : visible dans la fiche depuis que la colonne du tableau
+// a ete retiree. Seules les demandes validees passent par l'atelier.
+if ((int) $row['id_statut'] === 2) {
+    $facts['Prise en charge'] = !empty($row['prise_en_charge_nom'])
+        ? $row['prise_en_charge_nom']
+        : 'À prendre en charge';
+}
 
 if ($canViewAllPrefa) {
     $facts['Demandeur'] = trim(
@@ -137,7 +152,7 @@ $decisionComment = trim((string) ($row['commentaire_validation'] ?? ''));
     <div>
         <h2>
             Détails de la demande
-            <span><?= prefaEscape(prefaReference($requestId)) ?></span>
+            <span><?= prefaEscape(prefaReferenceComplete($requestId)) ?></span>
         </h2>
 
         <p>
@@ -176,7 +191,7 @@ $decisionComment = trim((string) ($row['commentaire_validation'] ?? ''));
 
     <?php foreach ($documentGroups as $group): ?>
 
-        <section class="prefa-document-group">
+        <section class="prefa-document-group<?= !empty($group['ccpu']) ? ' prefa-document-group-ccpu' : '' ?>">
 
             <h3>
                 <?= prefaEscape($group['title']) ?>
@@ -256,6 +271,8 @@ $decisionComment = trim((string) ($row['commentaire_validation'] ?? ''));
                                 </span>
 
                             </a>
+
+                            <?php if (!empty($group['ccpu'])) echo ccpuRendu($document, $_SESSION['prefa_csrf']); ?>
 
                         </li>
 

@@ -51,7 +51,7 @@ $vues = count(array_filter($signalements, static fn ($s) => $s['statut'] === 'vu
                 ?>
                     <tbody class="prefa-request">
                         <tr>
-                            <td><?= prefaEscape(prefaReference((int) $signalement['id_demande'])) ?></td>
+                            <td><?= prefaEscape(prefaReferenceComplete((int) $signalement['id_demande'])) ?></td>
                             <td>
                                 <strong><?= prefaEscape($signalement['designation']) ?></strong>
                                 <?php if ($signalement['commentaire']): ?><span class="atelier-row-description"><?= prefaEscape($signalement['commentaire']) ?></span><?php endif; ?>

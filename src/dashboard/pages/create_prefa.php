@@ -21,6 +21,8 @@ $hoursSettings = prefaHoursSettings($db);
 $hoursPerInch = $hoursSettings['rate'];
 $qmosFiles = [];
 $dmosFiles = [];
+$materielFiles = [];
+$ccpuFiles = [];
 $attachments = $editing ? prefaAttachments((int) $request['id']) : [];
 if ($editing) {
     $pdf = $db->prepare('SELECT id, nom FROM demande_qmos_documents WHERE id_demande = ? ORDER BY id');
@@ -29,6 +31,12 @@ if ($editing) {
     $pdf = $db->prepare('SELECT id, nom FROM demande_dmos_documents WHERE id_demande = ? ORDER BY id');
     $pdf->execute([$request['id']]);
     $dmosFiles = $pdf->fetchAll();
+    $pdf = $db->prepare('SELECT id, nom FROM demande_materiel_documents WHERE id_demande = ? ORDER BY id');
+    $pdf->execute([$request['id']]);
+    $materielFiles = $pdf->fetchAll();
+    $pdf = $db->prepare('SELECT id, nom FROM demande_ccpu_documents WHERE id_demande = ? ORDER BY id');
+    $pdf->execute([$request['id']]);
+    $ccpuFiles = $pdf->fetchAll();
 }
 $passivations = $db->query('SELECT id, libelle FROM type_passivation ORDER BY libelle')->fetchAll();
 $passivationLabel = '';
@@ -69,7 +77,7 @@ if ($editing && !empty($request['revetement'])) {
 <section class="page prefa-page prefa-simple">
     <div class="prefa-shell">
         <div class="prefa-heading">
-            <h1><?= $editing ? 'Modifier la demande ' . prefaEscape(prefaReference((int) $request['id'])) : 'Nouvelle demande' ?></h1>
+            <h1><?= $editing ? 'Modifier la demande ' . prefaEscape(prefaReferenceComplete((int) $request['id'])) : 'Nouvelle demande' ?></h1>
             <p><?= $editing ? 'Après modification, la demande repassera en attente de validation.' : 'Renseignez votre affaire, puis transmettez-la pour validation.' ?></p>
         </div>
         <form id="prefa-form" class="prefa-form" novalidate enctype="multipart/form-data" data-hours-per-inch="<?= prefaEscape($hoursPerInch) ?>">
@@ -101,6 +109,20 @@ if ($editing && !empty($request['revetement'])) {
                         <input id="dmos" name="dmos_pdf[]" type="file" accept=".pdf,application/pdf" aria-describedby="dmos-help" multiple hidden>
                         <div id="dmos-selected-files" class="prefa-file-list"></div>
                         <?php if ($dmosFiles): ?><div class="prefa-file-list"><?php foreach ($dmosFiles as $dmosFile): ?><div class="prefa-file-row"><a href="actions/download_dmos.php?id=<?= (int) $request['id'] ?>&amp;file=<?= (int) $dmosFile['id'] ?>"><?= prefaEscape($dmosFile['nom']) ?></a><button type="button" class="prefa-remove-dmos-saved" data-id="<?= (int) $dmosFile['id'] ?>">Retirer</button></div><?php endforeach; ?></div><?php endif; ?>
+                    </div>
+                    <div class="form-group prefa-full">
+                        <label for="materiel">Matériel <small>(facultatif)</small></label>
+                        <label class="prefa-dropzone" for="materiel" tabindex="0"><strong>Déposer votre fiche matériel</strong><span>PDF · Nombre de fichiers illimité · 50 Mo maximum par fichier</span></label>
+                        <input id="materiel" name="materiel_pdf[]" type="file" accept=".pdf,application/pdf" aria-describedby="materiel-help" multiple hidden>
+                        <div id="materiel-selected-files" class="prefa-file-list"></div>
+                        <?php if ($materielFiles): ?><div class="prefa-file-list"><?php foreach ($materielFiles as $materielFile): ?><div class="prefa-file-row"><a href="actions/download_materiel.php?id=<?= (int) $request['id'] ?>&amp;file=<?= (int) $materielFile['id'] ?>"><?= prefaEscape($materielFile['nom']) ?></a><button type="button" class="prefa-remove-materiel-saved" data-id="<?= (int) $materielFile['id'] ?>">Retirer</button></div><?php endforeach; ?></div><?php endif; ?>
+                    </div>
+                    <div class="form-group prefa-full">
+                        <label for="ccpu">CCPU <small>(certificats matière, facultatif)</small></label>
+                        <label class="prefa-dropzone" for="ccpu" tabindex="0"><strong>Déposer vos certificats matière</strong><span>PDF · Nombre de fichiers illimité · 50 Mo maximum par fichier</span></label>
+                        <input id="ccpu" name="ccpu_pdf[]" type="file" accept=".pdf,application/pdf" aria-describedby="ccpu-help" multiple hidden>
+                        <div id="ccpu-selected-files" class="prefa-file-list"></div>
+                        <?php if ($ccpuFiles): ?><div class="prefa-file-list"><?php foreach ($ccpuFiles as $ccpuFile): ?><div class="prefa-file-row"><a href="actions/download_ccpu.php?id=<?= (int) $request['id'] ?>&amp;file=<?= (int) $ccpuFile['id'] ?>"><?= prefaEscape($ccpuFile['nom']) ?></a><button type="button" class="prefa-remove-ccpu-saved" data-id="<?= (int) $ccpuFile['id'] ?>">Retirer</button></div><?php endforeach; ?></div><?php endif; ?>
                     </div>
                 </div>
             </div>
