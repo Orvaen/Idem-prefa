@@ -340,7 +340,6 @@ body[data-theme="light"],
 [data-theme="light"] .atelier-plans-table,
 [data-theme="light"] #users-results table {
     background: #ffffff !important;
-    border-color: var(--border) !important;
 }
 
 [data-theme="light"] td,
