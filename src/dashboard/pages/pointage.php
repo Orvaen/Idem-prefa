@@ -1,9 +1,12 @@
 <?php
 require_once __DIR__ . '/../includes/prefa_context.php';
 require_once __DIR__ . '/../includes/atelier.php';
+require_once __DIR__ . '/../includes/plan_document.php';
+require_once __DIR__ . '/../includes/nomenclature.php';
+require_once __DIR__ . '/../includes/plan_viewer.php';
 if (!$isWorkshopPersonnel) prefaError(403, 'Cette page est réservée au personnel atelier.');
 
-$stmt = $db->prepare('SELECT a.id, a.type_affectation, e.reference, e.libelle, e.id_demande
+$stmt = $db->prepare('SELECT a.id, a.id_element, a.type_affectation, e.reference, e.libelle, e.id_demande
     FROM affectation_atelier a
     JOIN element_atelier e ON e.id = a.id_element
     JOIN demande_prefabrication d ON d.id = e.id_demande
@@ -12,8 +15,29 @@ $stmt = $db->prepare('SELECT a.id, a.type_affectation, e.reference, e.libelle, e
 $stmt->execute([$actor['id']]);
 $assignments = $stmt->fetchAll();
 $types = ['plan' => 'Plan / ISO', 'montage' => 'Montage', 'soudage' => 'Suivi soudage'];
-$historique = $db->prepare('SELECT * FROM pointage_atelier WHERE id_affectation = ? AND id_utilisateur = ? ORDER BY date_travail DESC, id DESC');
+// La feuille ISO voyage avec le pointage : sans elle, l'historique ne dit pas sur quel
+// plan le temps a été passé — et c'est la première question qu'on se pose en le relisant.
+$historique = $db->prepare("SELECT p.*, doc.cle_document
+    FROM pointage_atelier p
+    LEFT JOIN element_atelier_document doc ON doc.id = p.id_document
+    WHERE p.id_affectation = ? AND p.id_utilisateur = ?
+    ORDER BY p.date_travail DESC, p.id DESC");
+
+// Les feuilles ISO de chaque élément. Un élément en porte plusieurs : le pointage dit sur
+// laquelle le travail a été fait, et on peut l'ouvrir pour la lire avant de pointer.
+$isoParElement = [];
+foreach ($assignments as $assignment) {
+    $elementId = (int) $assignment['id_element'];
+    if (isset($isoParElement[$elementId])) continue;
+    $isoParElement[$elementId] = planDocuments($db, $elementId);
+}
 ?>
+<!-- Suggestions de Type de soudures : une aide à la saisie, pas une contrainte.
+     Les ateliers n'emploient pas tous le même vocabulaire. -->
+<datalist id="pointage-procedes">
+    <option value="TIG"></option><option value="MIG"></option><option value="MAG"></option>
+    <option value="111"></option><option value="135"></option><option value="141"></option>
+</datalist>
 <section class="page prefa-page prefa-list atelier-page" id="pointage-page" aria-labelledby="pointage-page-title">
     <div class="prefa-shell">
         <header class="prefa-heading prefa-list-heading">
@@ -34,12 +58,13 @@ $historique = $db->prepare('SELECT * FROM pointage_atelier WHERE id_affectation 
                     <th scope="col">Travail</th>
                     <th scope="col">Date du travail</th>
                     <th scope="col">Durée (min)</th>
+                    <th scope="col">Type de soudure</th>
                     <th scope="col">Commentaire</th>
                     <th scope="col">Actions</th>
                 </tr></thead>
 
                 <?php if (!$assignments): ?>
-                    <tbody><tr><td colspan="7" class="prefa-table-empty">Aucune affectation en cours : il n’y a rien à pointer.</td></tr></tbody>
+                    <tbody><tr><td colspan="8" class="prefa-table-empty">Aucune affectation en cours : il n’y a rien à pointer.</td></tr></tbody>
                 <?php endif; ?>
 
                 <?php foreach ($assignments as $assignment):
@@ -52,10 +77,41 @@ $historique = $db->prepare('SELECT * FROM pointage_atelier WHERE id_affectation 
                     <tbody class="prefa-request">
                         <tr>
                             <td><?= prefaEscape(prefaReferenceComplete((int) $assignment['id_demande'])) ?></td>
-                            <td><strong><?= prefaEscape($assignment['reference']) ?></strong><span class="atelier-row-description"><?= prefaEscape($assignment['libelle']) ?></span></td>
+                            <?php $iso = $isoParElement[(int) $assignment['id_element']] ?? []; ?>
+                            <td>
+                                <strong><?= prefaEscape($assignment['reference']) ?></strong>
+                                <span class="atelier-row-description"><?= prefaEscape($assignment['libelle']) ?></span>
+                                <?php if ($iso): ?>
+                                    <!-- La feuille ISO travaillée, sous le nom de l'élément : elle
+                                         lui appartient, et une colonne de plus faisait déborder
+                                         le tableau. -->
+                                    <span class="pointage-iso-cell">
+                                        <select class="pointage-input pointage-iso" form="pointage-<?= $id ?>" name="document"
+                                                aria-label="Plan ISO travaillé — <?= prefaEscape($cible) ?>">
+                                            <?php foreach ($iso as $index => $feuille): ?>
+                                                <option value="<?= (int) $feuille['id'] ?>" data-pages="<?= (int) $feuille['pages'] ?>" <?= $index === 0 ? 'selected' : '' ?>><?= prefaEscape($feuille['nom']) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <?php $pagesMax = max(array_map(static fn (array $f): int => (int) $f['pages'], $iso)); ?>
+                                        <?php if ($pagesMax > 1): ?>
+                                            <!-- Un cahier porte une liste de soudures par page : dire
+                                                 laquelle on a travaillée évite que le pointage se
+                                                 propose sur les quinze. -->
+                                            <label class="pointage-iso-page">page
+                                                <input class="pointage-input" form="pointage-<?= $id ?>" name="page" type="number"
+                                                       min="1" max="<?= (int) $iso[0]['pages'] ?>" value="1" step="1"
+                                                       <?= (int) $iso[0]['pages'] > 1 ? '' : 'disabled' ?>
+                                                       aria-label="Page du plan travaillée — <?= prefaEscape($cible) ?>">
+                                            </label>
+                                        <?php endif; ?>
+                                        <button type="button" class="pointage-iso-ouvrir">Ouvrir</button>
+                                    </span>
+                                <?php endif; ?>
+                            </td>
                             <td><?= prefaEscape($types[$assignment['type_affectation']]) ?></td>
                             <td><input class="pointage-input" form="pointage-<?= $id ?>" name="date" type="date" value="<?= date('Y-m-d') ?>" max="<?= date('Y-m-d') ?>" required aria-label="Date du travail — <?= prefaEscape($cible) ?>"></td>
                             <td><input class="pointage-input" form="pointage-<?= $id ?>" name="minutes" type="number" min="1" max="1440" step="1" required aria-label="Durée en minutes — <?= prefaEscape($cible) ?>"></td>
+                            <td><input class="pointage-input" form="pointage-<?= $id ?>" name="type_soudure" maxlength="30" list="pointage-procedes" placeholder="TIG…" aria-label="Type de soudure — <?= prefaEscape($cible) ?>"></td>
                             <td><input class="pointage-input" form="pointage-<?= $id ?>" name="commentaire" maxlength="500" aria-label="Commentaire du pointage — <?= prefaEscape($cible) ?>"></td>
                             <td class="pointage-actions-cell">
                                 <form id="pointage-<?= $id ?>" class="atelier-action prefa-form pointage-row-form" data-endpoint="update_atelier.php">
@@ -67,11 +123,34 @@ $historique = $db->prepare('SELECT * FROM pointage_atelier WHERE id_affectation 
                                     <span class="atelier-message" role="status" aria-live="polite"></span>
                                 </form>
                                 <button type="button" class="prefa-toggle" aria-controls="pointage-detail-<?= $id ?>" aria-expanded="false">Historique (<?= count($pointages) ?>)</button>
+
+                                <?php if ($iso): ?>
+                                    <!-- Les fenêtres de lecture des feuilles, une par ISO. Leur
+                                         liste n'est pas affichée ici : la colonne « Plan ISO »
+                                         sert déjà à choisir, et le bouton ouvre la bonne. -->
+                                    <div class="pointage-iso-lecteurs">
+                                        <?= planViewerRendu(
+                                            (int) $assignment['id_element'],
+                                            array_map(static function (array $doc) use ($db, $assignment): array {
+                                                // Une nomenclature par page du cahier : le soudeur
+                                                // tourne les pages, les coulées suivent.
+                                                $reperes = [];
+                                                for ($page = 1; $page <= $doc['pages']; $page++) {
+                                                    $reperes[$page] = nomenclatureLignes($db, (int) $assignment['id_element'], $doc['id'], $page);
+                                                }
+                                                return $doc + ['reperes' => $reperes, 'empreintes' => []];
+                                            }, $iso),
+                                            [],
+                                            false,
+                                            false
+                                        ) ?>
+                                    </div>
+                                <?php endif; ?>
                             </td>
                         </tr>
 
                         <tr id="pointage-detail-<?= $id ?>" class="prefa-detail-row" hidden>
-                            <td colspan="7">
+                            <td colspan="8">
                                 <div class="atelier-detail-content">
                                     <div class="prefa-detail-heading">
                                         <div>
@@ -81,14 +160,57 @@ $historique = $db->prepare('SELECT * FROM pointage_atelier WHERE id_affectation 
                                         <button type="button" class="prefa-detail-close" data-close-target="pointage-detail-<?= $id ?>" aria-label="Fermer le volet">✕</button>
                                     </div>
 
-                                    <?php if (!$pointages): ?><p class="atelier-muted">Aucun pointage enregistré pour ce travail.</p><?php endif; ?>
-                                    <ol class="atelier-saved-history-list">
-                                        <?php foreach ($pointages as $entry): ?>
-                                            <li><strong><?= (int) $entry['duree_minutes'] ?> min</strong> <span class="atelier-muted">· Travail du <?= prefaEscape(date('d/m/Y', strtotime($entry['date_travail']))) ?></span>
-                                                <?php if ($entry['commentaire']): ?><p class="atelier-note"><?= prefaEscape($entry['commentaire']) ?></p><?php endif; ?>
-                                            </li>
-                                        <?php endforeach; ?>
-                                    </ol>
+                                    <?php if (!$pointages): ?>
+                                        <p class="atelier-muted">Aucun pointage enregistré pour ce travail.</p>
+                                    <?php else: ?>
+                                        <?php
+                                        // Les journées, du plus récent au plus ancien. Un pointage se
+                                        // relit par jour — « combien ai-je fait lundi » — bien plus
+                                        // souvent que ligne à ligne.
+                                        $journees = [];
+                                        foreach ($pointages as $entry) {
+                                            $journees[(string) $entry['date_travail']][] = $entry;
+                                        }
+                                        ?>
+                                        <table class="pointage-histo">
+                                            <thead>
+                                                <tr>
+                                                    <th scope="col">Durée</th>
+                                                    <th scope="col">Plan ISO</th>
+                                                    <th scope="col">Type de soudure</th>
+                                                    <th scope="col">Commentaire</th>
+                                                </tr>
+                                            </thead>
+                                            <?php foreach ($journees as $jour => $lignes): ?>
+                                                <?php $totalJour = array_sum(array_column($lignes, 'duree_minutes')); ?>
+                                                <tbody>
+                                                    <tr class="pointage-histo-jour">
+                                                        <th colspan="3" scope="colgroup">
+                                                            <?= prefaEscape(date('d/m/Y', strtotime($jour))) ?>
+                                                            <span><?= count($lignes) ?> pointage<?= count($lignes) > 1 ? 's' : '' ?></span>
+                                                        </th>
+                                                        <td class="pointage-histo-total">
+                                                            <?= intdiv($totalJour, 60) ?> h <?= sprintf('%02d', $totalJour % 60) ?>
+                                                        </td>
+                                                    </tr>
+                                                    <?php foreach ($lignes as $entry): ?>
+                                                        <tr>
+                                                            <td class="pointage-histo-duree"><?= (int) $entry['duree_minutes'] ?> min</td>
+                                                            <td><?= $entry['cle_document']
+                                                                ? prefaEscape(preg_replace('/^[a-f0-9]{32}-/', '', (string) $entry['cle_document']))
+                                                                : '<span class="atelier-muted">non précisé</span>' ?></td>
+                                                            <td><?= !empty($entry['type_soudure'])
+                                                                ? prefaEscape($entry['type_soudure'])
+                                                                : '<span class="atelier-muted">—</span>' ?></td>
+                                                            <td><?= $entry['commentaire']
+                                                                ? prefaEscape($entry['commentaire'])
+                                                                : '<span class="atelier-muted">—</span>' ?></td>
+                                                        </tr>
+                                                    <?php endforeach; ?>
+                                                </tbody>
+                                            <?php endforeach; ?>
+                                        </table>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>

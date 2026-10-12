@@ -32,11 +32,14 @@ try {
         $elementId = filter_var($_POST['element'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
         if (!$elementId) { $db->rollBack(); prefaError(400, 'Plan invalide.'); }
         atelierChangeElement($db, $requestId, $elementId, $operation, $_POST['reference'] ?? '', $_POST['libelle'] ?? '');
-    } elseif (in_array($operation, ['element', 'documents'], true)) {
+    } elseif ($operation === 'element') {
+        // Création d'un plan : c'est le seul moment où l'on choisit ses fichiers d'un bloc,
+        // puisqu'il n'en a encore aucun.
         $reference = trim((string) ($_POST['reference'] ?? ''));
         $label = trim((string) ($_POST['libelle'] ?? ''));
         $documents = $_POST['documents'] ?? [];
-        if (($operation === 'element' && ($reference === '' || mb_strlen($reference) > 80 || $label === '' || mb_strlen($label) > 180)) || !is_array($documents) || count($documents) > 100) {
+        if ($reference === '' || mb_strlen($reference) > 80 || $label === '' || mb_strlen($label) > 180
+            || !is_array($documents) || count($documents) > 100) {
             $db->rollBack(); prefaError(400, 'Indiquez une référence et un libellé valides.');
         }
         $links = [];
@@ -49,18 +52,53 @@ try {
         if (!array_filter($links, fn($link) => $link[0] === 'plan')) {
             $db->rollBack(); prefaError(400, 'Sélectionnez au moins un fichier de plan / ISO.');
         }
-        if ($operation === 'element') {
-            $db->prepare('INSERT INTO element_atelier (id_demande, reference, libelle, cree_par) VALUES (?, ?, ?, ?)')->execute([$requestId, $reference, $label, $actor['id']]);
-            $elementId = (int) $db->lastInsertId();
-        } else {
-            $elementId = filter_var($_POST['element'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-            $stmt = $db->prepare('SELECT id FROM element_atelier WHERE id = ? AND id_demande = ? FOR UPDATE');
-            $stmt->execute([$elementId ?: 0, $requestId]);
-            if (!$stmt->fetchColumn()) { $db->rollBack(); prefaError(400, 'Plan introuvable dans cette demande.'); }
-            $db->prepare('DELETE FROM element_atelier_document WHERE id_element = ?')->execute([$elementId]);
-        }
+        $db->prepare('INSERT INTO element_atelier (id_demande, reference, libelle, cree_par) VALUES (?, ?, ?, ?)')->execute([$requestId, $reference, $label, $actor['id']]);
+        $elementId = (int) $db->lastInsertId();
         $link = $db->prepare('INSERT INTO element_atelier_document (id_element, type_document, cle_document) VALUES (?, ?, ?)');
         foreach ($links as [$kind, $key]) $link->execute([$elementId, $kind, $key]);
+    } elseif ($operation === 'documents') {
+        // Les documents annexes d'un plan : QMOS, DMOS, matériel. Les feuilles ISO ne
+        // passent plus par ici — elles se déposent et se retirent une par une dans le
+        // volet, et chacune porte ses coulées et sa liste soudure.
+        //
+        // Ce formulaire ne réécrit plus tous les rattachements de l'élément. Il le faisait,
+        // et chaque enregistrement donnait de nouveaux identifiants aux feuilles : la base
+        // suivant en cascade, les coulées posées et les listes soudure de TOUTES les
+        // feuilles disparaissaient sans un mot. On ne touche donc qu'à ce qui change.
+        $documents = $_POST['documents'] ?? [];
+        $elementId = filter_var($_POST['element'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        if (!$elementId || !is_array($documents) || count($documents) > 100) {
+            $db->rollBack(); prefaError(400, 'Documents invalides.');
+        }
+        $stmt = $db->prepare('SELECT id FROM element_atelier WHERE id = ? AND id_demande = ? FOR UPDATE');
+        $stmt->execute([$elementId, $requestId]);
+        if (!$stmt->fetchColumn()) { $db->rollBack(); prefaError(400, 'Plan introuvable dans cette demande.'); }
+
+        $souhaites = [];
+        foreach ($documents as $token) {
+            if (!is_string($token)) { $db->rollBack(); prefaError(400, 'Document invalide.'); }
+            [$kind, $key] = array_pad(explode(':', $token, 2), 2, '');
+            // Une page ouverte avant ce changement peut encore cocher des plans : on les
+            // laisse où ils sont plutôt que de refuser l'enregistrement.
+            if ($kind === 'plan') continue;
+            if (!atelierDocumentName($db, $requestId, $kind, $key)) { $db->rollBack(); prefaError(400, 'Ce document n’appartient pas à la demande.'); }
+            $souhaites[$kind . ':' . $key] = [$kind, $key];
+        }
+
+        $actuels = $db->prepare("SELECT id, type_document, cle_document FROM element_atelier_document
+            WHERE id_element = ? AND type_document <> 'plan'");
+        $actuels->execute([$elementId]);
+        $retirer = $db->prepare('DELETE FROM element_atelier_document WHERE id = ?');
+        $gardes = [];
+        foreach ($actuels->fetchAll() as $lien) {
+            $token = $lien['type_document'] . ':' . $lien['cle_document'];
+            if (isset($souhaites[$token])) { $gardes[$token] = true; continue; }
+            $retirer->execute([(int) $lien['id']]);
+        }
+        $ajouter = $db->prepare('INSERT INTO element_atelier_document (id_element, type_document, cle_document) VALUES (?, ?, ?)');
+        foreach ($souhaites as $token => [$kind, $key]) {
+            if (!isset($gardes[$token])) $ajouter->execute([$elementId, $kind, $key]);
+        }
     } else {
         $elementId = filter_var($_POST['element'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
         $type = $_POST['type'] ?? '';

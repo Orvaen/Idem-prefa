@@ -63,7 +63,26 @@ try {
             // Serialize daily totals for a worker, including across different assignments.
             $sum->execute([$actor['id'], $day]);
             if ((int) $sum->fetchColumn() + $minutes > 1440) { $db->rollBack(); prefaError(400, 'Le total des pointages dépasse 24 heures pour cette journée.'); }
-            $db->prepare('INSERT INTO pointage_atelier (id_affectation, id_utilisateur, date_travail, duree_minutes, commentaire, cle_saisie) VALUES (?, ?, ?, ?, ?, ?)')->execute([$id, $actor['id'], $day, $minutes, $comment ?: null, $key]);
+            // Type de soudure déclaré sur la journée. Libre et facultatif : il ne concerne que le
+            // soudage, et c'est plan_soudure qui fait foi pour la conformité du cordon.
+            $procede = trim(mb_substr((string) ($_POST['type_soudure'] ?? ''), 0, 30));
+            // La feuille ISO travaillée. Elle doit appartenir à l'élément de l'affectation :
+            // sans ce contrôle, un pointage pourrait se ranger sous le plan d'un autre.
+            $document = filter_var($_POST['document'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: null;
+            // La page du cahier, s'il en a plusieurs : c'est elle qui dira dans quelle
+            // liste de soudures ce pointage se proposera.
+            $page = filter_var($_POST['page'] ?? 1, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: 1;
+            if ($document) {
+                $verif = $db->prepare("SELECT pages FROM element_atelier_document
+                    WHERE id = ? AND id_element = ? AND type_document = 'plan'");
+                $verif->execute([$document, $assignment['id_element']]);
+                $pages = $verif->fetchColumn();
+                if ($pages === false) { $db->rollBack(); prefaError(400, 'Ce plan n’appartient pas à cet élément.'); }
+                if ($page > (int) $pages) { $db->rollBack(); prefaError(400, 'Cette page n’existe pas dans ce plan.'); }
+            } else {
+                $page = 1;
+            }
+            $db->prepare('INSERT INTO pointage_atelier (id_affectation, id_document, page, id_utilisateur, date_travail, duree_minutes, type_soudure, commentaire, cle_saisie) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')->execute([$id, $document, $page, $actor['id'], $day, $minutes, $procede, $comment ?: null, $key]);
         }
     }
     $db->commit();

@@ -88,6 +88,9 @@ if ($isAdmin || $isWorkshopChief) {
 
     <link href="../css/dashboard/planning.css?v=<?= filemtime(__DIR__ . '/../css/dashboard/planning.css') ?>" rel="stylesheet" />
     <link href="../css/dashboard/atelier.css?v=<?= filemtime(__DIR__ . '/../css/dashboard/atelier.css') ?>" rel="stylesheet" />
+    <link href="../css/dashboard/nomenclature.css?v=<?= filemtime(__DIR__ . '/../css/dashboard/nomenclature.css') ?>" rel="stylesheet" />
+    <link href="../css/dashboard/plan-viewer.css?v=<?= filemtime(__DIR__ . '/../css/dashboard/plan-viewer.css') ?>" rel="stylesheet" />
+    <link href="../css/dashboard/suggestions.css?v=<?= filemtime(__DIR__ . '/../css/dashboard/suggestions.css') ?>" rel="stylesheet" />
     <link href="../css/floating-fields.css?v=<?= filemtime(__DIR__ . '/../css/floating-fields.css') ?>" rel="stylesheet" />
     <link href="../css/dashboard/pink-theme.css?v=<?= filemtime(__DIR__ . '/../css/dashboard/pink-theme.css') ?>" rel="stylesheet" />
     <link href="../css/dashboard/light-theme.css?v=<?= filemtime(__DIR__ . '/../css/dashboard/light-theme.css') ?>" rel="stylesheet" />
@@ -406,11 +409,16 @@ if ($isAdmin || $isWorkshopChief) {
     <!-- All scripts js -->
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.11/dist/htmx.js" integrity="sha384-gmJEF2eAKY4e+FDN+qtKIivWyb6ANwDB7JUdUybKgQspPKyEX/pIRZG/0uaRoW2C" crossorigin="anonymous"></script>
     <script src="https://code.jquery.com/jquery-4.0.0.min.js" integrity="sha256-OaVG6prZf4v69dPg6PhVattBXkcOWQB62pdZ3ORyrao=" crossorigin="anonymous"></script>
+    <!-- En premier : sa touche Échap ferme la liste ouverte avant que le volet latéral ou
+         une fenêtre ne la prennent pour eux. -->
+    <script src="../js/suggestions.js?v=<?= hash_file('sha256', __DIR__ . '/../js/suggestions.js') ?>"></script>
     <script src="../js/dashboard-navigation.js?v=<?= hash_file('sha256', __DIR__ . '/../js/dashboard-navigation.js') ?>"></script>
     <script src="../js/dashboard-forms.js?v=<?= hash_file('sha256', __DIR__ . '/../js/dashboard-forms.js') ?>"></script>
     <script src="../js/prefa-interactions.js?v=<?= hash_file('sha256', __DIR__ . '/../js/prefa-interactions.js') ?>"></script>
     <script src="../js/planning.js?v=<?= hash_file('sha256', __DIR__ . '/../js/planning.js') ?>"></script>
     <script src="../js/atelier.js?v=<?= hash_file('sha256', __DIR__ . '/../js/atelier.js') ?>"></script>
+    <script src="../js/tableaux-plan.js?v=<?= hash_file('sha256', __DIR__ . '/../js/tableaux-plan.js') ?>"></script>
+    <script src="../js/plan-viewer.js?v=<?= hash_file('sha256', __DIR__ . '/../js/plan-viewer.js') ?>"></script>
     <script src="../js/dashboard-sidebar.js?v=<?= hash_file('sha256', __DIR__ . '/../js/dashboard-sidebar.js') ?>"></script>
     <script src="../js/dashboard-accounts.js?v=<?= hash_file('sha256', __DIR__ . '/../js/dashboard-accounts.js') ?>"></script>
     <script src="../js/iso.js?v=<?= hash_file('sha256', __DIR__ . '/../js/iso.js') ?>"></script>

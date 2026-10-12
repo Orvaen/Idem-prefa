@@ -10,7 +10,13 @@
 /** @var array<int, array<string, mixed>> $workshopUsers */
 
 require_once __DIR__ . '/../includes/atelier.php';
+require_once __DIR__ . '/../includes/plan_document.php';
+require_once __DIR__ . '/../includes/nomenclature.php';
+require_once __DIR__ . '/../includes/soudure.php';
+require_once __DIR__ . '/../includes/plan_viewer.php';
 $elements = atelierElements($db, $requestId);
+// Les coulées des certificats de la demande : une seule lecture pour tous ses plans.
+$couleesDisponibles = nomenclatureCouleesDisponibles($db, $requestId);
 $types = ['plan' => 'Plan / ISO', 'montage' => 'Montage', 'soudage' => 'Suivi soudage'];
 $taken = !empty($row['prise_en_charge_atelier']);
 $documentOptions = [];
@@ -70,43 +76,53 @@ foreach ($elements as $element) foreach ($element['affectations'] as $assignment
                             else $history[] = $assignment;
                         }
                         $formId = 'atelier-manage-' . (int) $element['id'];
+                        // Les feuilles ISO se montrent dans leur propre section, avec de quoi
+                        // les ouvrir et les travailler : on ne garde ici que les autres
+                        // documents — QMOS, DMOS, matériel — qui n'ont qu'à se télécharger.
                         $availableDocuments = [];
+                        $documentsAnnexes = [];
                         foreach ($element['documents'] as $doc) {
                             $name = atelierDocumentName($db, $requestId, $doc['type_document'], $doc['cle_document']);
-                            if ($name !== null) {
-                                $endpoint = $doc['type_document'] === 'plan' ? 'download_prefa_attachment.php' : 'download_' . $doc['type_document'] . '.php';
-                                // La référence voyage dans l'adresse, pas l'identifiant technique.
-                                $availableDocuments[] = ['name' => $name, 'url' => 'actions/' . $endpoint . '?ref=' . rawurlencode(prefaReference($requestId)) . '&file=' . rawurlencode($doc['cle_document'])];
-                            }
+                            if ($name === null) continue;
+                            $endpoint = $doc['type_document'] === 'plan' ? 'download_prefa_attachment.php' : 'download_' . $doc['type_document'] . '.php';
+                            // La référence voyage dans l'adresse, pas l'identifiant technique.
+                            $lien = ['name' => $name, 'type' => $doc['type_document'],
+                                'url' => 'actions/' . $endpoint . '?ref=' . rawurlencode(prefaReference($requestId)) . '&file=' . rawurlencode($doc['cle_document'])];
+                            $availableDocuments[] = $lien;
+                            if ($doc['type_document'] !== 'plan') $documentsAnnexes[] = $lien;
                         }
+                        // Le dépliant du bas ne propose que ce qu'il gère : les plans se
+                        // déposent et se retirent feuille par feuille, plus bas dans le volet.
+                        $optionsAnnexes = array_filter($documentOptions,
+                            static fn (string $token): bool => !str_starts_with($token, 'plan:'), ARRAY_FILTER_USE_KEY);
                     ?>
                         <article class="atelier-plan-block" <?php if ($plusieursPlans): ?>role="tabpanel" id="plan-pane-<?= (int) $element['id'] ?>" aria-labelledby="plan-tab-<?= (int) $element['id'] ?>"<?= $index === 0 ? '' : ' hidden' ?><?php else: ?>aria-label="Plan <?= prefaEscape($element['reference']) ?>"<?php endif; ?>>
                             <div class="atelier-plan-identity"><h3><?= prefaEscape($element['reference']) ?></h3><span class="atelier-row-description"><?= prefaEscape($element['libelle']) ?></span>
                                 <?php if (!$availableDocuments): ?><span class="atelier-missing-file"><?= !empty($attachmentsByRequest[$requestId]) ? 'Le fichier de la demande reste à rattacher à ce plan.' : 'Aucun fichier rattaché à ce plan.' ?></span><?php endif; ?>
-                                <?php if ($availableDocuments): ?>
-                                    <div class="atelier-plan-files atelier-plan-files-inline">
-                                        <?php foreach ($availableDocuments as $doc): ?>
-                                            <a class="prefa-document-link<?= strtolower(pathinfo($doc['name'], PATHINFO_EXTENSION)) === 'pdf' ? ' prefa-pdf-link' : '' ?>" data-name="<?= prefaEscape($doc['name']) ?>" href="<?= prefaEscape($doc['url']) ?>"><?= prefaEscape($doc['name']) ?></a>
-                                        <?php endforeach; ?>
-                                    </div>
-                                <?php endif; ?>
-                                <?php if ($canManageWorkshop && $taken): ?>
-                                    <details class="atelier-plan-information atelier-file-management">
-                                        <summary>Gérer les fichiers</summary>
-                                            <form class="atelier-action prefa-form atelier-document-edit" data-endpoint="save_atelier.php">
-                                                <input type="hidden" name="csrf" value="<?= prefaEscape($_SESSION['prefa_csrf']) ?>"><input type="hidden" name="id" value="<?= $requestId ?>"><input type="hidden" name="operation" value="documents"><input type="hidden" name="element" value="<?= (int) $element['id'] ?>">
-                                                <p class="atelier-muted">Fichiers associés à ce plan (au moins un plan / ISO) :</p>
-                                                <?php $selectedDocuments = array_map(fn($doc) => $doc['type_document'] . ':' . $doc['cle_document'], $element['documents']); ?>
-                                                <?php foreach ($documentOptions as $token => $label): ?>
-                                                    <label class="atelier-checkbox"><input type="checkbox" name="documents[]" value="<?= prefaEscape($token) ?>" <?= in_array($token, $selectedDocuments, true) ? 'checked' : '' ?>><span><?= prefaEscape($label) ?></span></label>
-                                                <?php endforeach; ?>
-                                                <?php if (!$documentOptions): ?><p class="atelier-muted">Ajoutez d’abord un fichier à la demande.</p><?php endif; ?>
-                                                <div class="atelier-form-actions"><button type="submit" <?= !$documentOptions ? 'disabled' : '' ?>>Enregistrer</button><span class="atelier-message" role="status" aria-live="polite"></span></div>
-                                            </form>
-                                    </details>
-                                <?php endif; ?>
-
                             </div>
+
+                            <?php if ($canManageWorkshop && $taken): ?>
+                                <!-- Ces deux commandes portent sur le plan lui-même — son nom,
+                                     sa description, son existence — et non sur ses feuilles.
+                                     Elles se tiennent donc contre son titre, et le disent :
+                                     « Modifier » et « Supprimer » tout court laissaient croire
+                                     qu'on allait toucher aux fichiers. -->
+                                <div class="atelier-plan-actions-area">
+                                    <div class="atelier-plan-actions">
+                                        <button type="button" class="prefa-toggle atelier-open-plan-edit" data-dialog="atelier-plan-dialog-<?= $requestId ?>" data-element="<?= (int) $element['id'] ?>" data-reference="<?= prefaEscape($element['reference']) ?>" data-description="<?= prefaEscape($element['libelle']) ?>">Renommer</button>
+                                        <form class="atelier-action atelier-delete-plan" data-endpoint="save_atelier.php" data-plan-name="<?= prefaEscape($element['reference']) ?>">
+                                            <input type="hidden" name="csrf" value="<?= prefaEscape($_SESSION['prefa_csrf']) ?>">
+                                            <input type="hidden" name="id" value="<?= $requestId ?>">
+                                            <input type="hidden" name="element" value="<?= (int) $element['id'] ?>">
+                                            <input type="hidden" name="operation" value="delete_element">
+                                            <button type="submit" class="prefa-toggle atelier-plan-delete-button">Supprimer le plan</button>
+                                            <span class="atelier-message" role="status" aria-live="polite"></span>
+                                        </form>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+
+                            <h4 class="atelier-plan-titre-section">Affectations</h4>
                             <div class="atelier-plan-work-grid">
                             <?php foreach ($types as $type => $label): $assignment = $active[$type] ?? null; ?>
                                 <section class="atelier-plan-work"><h4><?= prefaEscape($label) ?></h4>
@@ -135,20 +151,63 @@ foreach ($elements as $element) foreach ($element['affectations'] as $assignment
                                 </section>
                             <?php endforeach; ?>
                             </div>
-                            <?php if ($canManageWorkshop && $taken): ?>
-                                <div class="atelier-plan-actions-area">
-                                    <div class="atelier-plan-actions">
-                                        <button type="button" class="prefa-toggle atelier-open-plan-edit" data-dialog="atelier-plan-dialog-<?= $requestId ?>" data-element="<?= (int) $element['id'] ?>" data-reference="<?= prefaEscape($element['reference']) ?>" data-description="<?= prefaEscape($element['libelle']) ?>">Modifier</button>
-                                        <form class="atelier-action atelier-delete-plan" data-endpoint="save_atelier.php" data-plan-name="<?= prefaEscape($element['reference']) ?>">
-                                            <input type="hidden" name="csrf" value="<?= prefaEscape($_SESSION['prefa_csrf']) ?>">
-                                            <input type="hidden" name="id" value="<?= $requestId ?>">
-                                            <input type="hidden" name="element" value="<?= (int) $element['id'] ?>">
-                                            <input type="hidden" name="operation" value="delete_element">
-                                            <button type="submit" class="prefa-toggle atelier-plan-delete-button">Supprimer</button>
-                                            <span class="atelier-message" role="status" aria-live="polite"></span>
+
+                            <?php
+                            // Un élément porte plusieurs ISO, et un cahier déposé d'un bloc
+                            // porte plusieurs pages. Chaque page a sa liste soudure imprimée :
+                            // on la prépare ici, et elle voyage avec sa feuille jusqu'à la
+                            // fenêtre du plan, où elle se remplit en regardant le dessin.
+                            $elementIso = (int) $element['id'];
+                            $modifiableIso = $canManageWorkshop && $taken;
+                            $soudeursIso = soudureSoudeursDisponibles($db, $elementIso);
+                            $plansIso = array_map(static function (array $doc) use ($db, $elementIso, $soudeursIso, $modifiableIso): array {
+                                $listes = [];
+                                $reperes = [];
+                                $empreintes = [];
+                                for ($page = 1; $page <= $doc['pages']; $page++) {
+                                    $listes[$page] = soudureRendu(
+                                        soudureLignes($db, $elementIso, $doc['id'], $page),
+                                        $soudeursIso, $elementIso, $doc['id'], $modifiableIso,
+                                        soudureEmpreinte($db, $elementIso, $doc['id'], $page), $page);
+                                    $reperes[$page] = nomenclatureLignes($db, $elementIso, $doc['id'], $page);
+                                    $empreintes[$page] = nomenclatureEmpreinte($db, $elementIso, $doc['id'], $page);
+                                }
+                                return $doc + [
+                                    'reperes' => $reperes,
+                                    'empreintes' => $empreintes,
+                                    'soudures' => $listes,
+                                    'cordons' => soudureCompte($db, $elementIso, $doc['id']),
+                                ];
+                            }, planDocuments($db, $elementIso));
+                            ?>
+
+                            <?= planViewerRendu($elementIso, $plansIso, $couleesDisponibles, $modifiableIso) ?>
+
+                            <?php if ($documentsAnnexes || ($canManageWorkshop && $taken && $optionsAnnexes)): ?>
+                                <!-- Les pièces qui accompagnent le plan sans être des feuilles :
+                                     on les télécharge, on ne travaille pas dessus. Repliées,
+                                     elles ne prennent pas la place du vrai travail. -->
+                                <details class="atelier-plan-information atelier-file-management">
+                                    <summary>Autres documents de la demande</summary>
+                                    <?php if ($documentsAnnexes): ?>
+                                        <div class="atelier-plan-files atelier-plan-files-inline">
+                                            <?php foreach ($documentsAnnexes as $doc): ?>
+                                                <a class="prefa-document-link<?= strtolower(pathinfo($doc['name'], PATHINFO_EXTENSION)) === 'pdf' ? ' prefa-pdf-link' : '' ?>" data-name="<?= prefaEscape($doc['name']) ?>" href="<?= prefaEscape($doc['url']) ?>"><?= prefaEscape($doc['name']) ?></a>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                    <?php if ($canManageWorkshop && $taken && $optionsAnnexes): ?>
+                                        <form class="atelier-action prefa-form atelier-document-edit" data-endpoint="save_atelier.php">
+                                            <input type="hidden" name="csrf" value="<?= prefaEscape($_SESSION['prefa_csrf']) ?>"><input type="hidden" name="id" value="<?= $requestId ?>"><input type="hidden" name="operation" value="documents"><input type="hidden" name="element" value="<?= (int) $element['id'] ?>">
+                                            <p class="atelier-muted">QMOS et DMOS de la demande à rattacher à ce plan :</p>
+                                            <?php $selectedDocuments = array_map(fn($doc) => $doc['type_document'] . ':' . $doc['cle_document'], $element['documents']); ?>
+                                            <?php foreach ($optionsAnnexes as $token => $label): ?>
+                                                <label class="atelier-checkbox"><input type="checkbox" name="documents[]" value="<?= prefaEscape($token) ?>" <?= in_array($token, $selectedDocuments, true) ? 'checked' : '' ?>><span><?= prefaEscape($label) ?></span></label>
+                                            <?php endforeach; ?>
+                                            <div class="atelier-form-actions"><button type="submit">Enregistrer</button><span class="atelier-message" role="status" aria-live="polite"></span></div>
                                         </form>
-                                    </div>
-                                </div>
+                                    <?php endif; ?>
+                                </details>
                             <?php endif; ?>
 
                         <?php if ($canManageWorkshop && $taken): ?>

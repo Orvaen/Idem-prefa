@@ -1,0 +1,905 @@
+/* =========================================================
+   NUMÉROS DE COULÉE SUR LE PLAN
+   Le volet n'affiche qu'un résumé : un plan A4 tassé dans une colonne
+   ne se lit pas. Le travail se fait dans une fenêtre plein écran, où le
+   plan s'agrandit et où l'on peut viser une case au clic.
+   ========================================================= */
+
+.plan-viewer {
+    margin-top: 1rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--border);
+}
+
+.plan-viewer-entete {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.plan-viewer-entete h4 {
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.plan-viewer-boutons {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+/* Le label porte l'apparence : le champ de fichier natif est masqué, parce qu'il ne
+   se met pas aux couleurs du tableau de bord. */
+.plan-viewer-deposer,
+.plan-viewer-remplacer,
+.plan-viewer-supprimer,
+.plan-viewer-final,
+.plan-viewer-ouvrir {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--accent);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.plan-viewer-deposer:hover,
+.plan-viewer-remplacer:hover,
+.plan-viewer-final:hover,
+.plan-viewer-ouvrir:hover:not([disabled]) {
+    background: var(--hover);
+}
+
+/* Même langage que la suppression d'un plan dans le volet : la commande reste en retrait
+   et ne prend sa couleur d'alerte qu'au survol, pour ne pas crier sur une ligne qu'on ne
+   fait que lire. */
+.plan-viewer-supprimer {
+    color: var(--text-muted);
+}
+
+.plan-viewer-supprimer:hover:not([disabled]) {
+    color: #b42318;
+    border-color: #b42318;
+}
+
+.plan-viewer-supprimer[disabled] {
+    opacity: 0.5;
+    cursor: default;
+}
+
+/* C'est un lien, pas un bouton : il garde l'apparence des autres commandes du volet,
+   mais sans soulignement ni couleur de lien visité. */
+.plan-viewer-final {
+    text-decoration: none;
+}
+
+.plan-viewer-final:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.plan-viewer-ouvrir[disabled] {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.plan-viewer-deposer:focus-within,
+.plan-viewer-remplacer:focus-within {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.plan-viewer-resume {
+    margin: 0.4rem 0 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* ---------- La fenêtre ---------- */
+
+/* Toute la fenêtre du navigateur : un plan A3 n'a jamais trop de place, et la bande de
+   fond qu'on laissait autour ne servait à rien — elle réduisait le dessin d'autant. */
+.plan-dialog {
+    width: 100vw;
+    height: 100vh;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: var(--surface);
+    color: var(--text);
+    overflow: hidden;
+}
+
+/* En colonne : la barre prend ce qu'il lui faut, le plan prend tout le reste. Mesurer
+   cette hauteur à la main obligeait à deviner celle de la barre, et le compte tombait
+   faux dès qu'un bouton passait à la ligne.
+   Sur [open] seulement : une boîte de dialogue fermée est masquée par display:none, et
+   la déclarer flex ici la rendrait visible en permanence. */
+.plan-dialog[open] {
+    display: flex;
+    flex-direction: column;
+}
+
+.plan-dialog::backdrop {
+    background: rgba(15, 23, 42, 0.55);
+}
+
+.plan-dialog-barre {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 0.45rem 0.8rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+}
+
+.plan-dialog-titre {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-right: auto;
+}
+
+.plan-dialog-titre span {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+
+/* ---------- Les commandes de la fenêtre ----------
+   Une seule hauteur, un seul arrondi, une seule graisse de contour. Ce qui va ensemble
+   se touche — les flèches et leur valeur ne font qu'un bloc — et le message prend la
+   place qui reste, ce qui pousse les actions contre le bord droit. */
+.plan-dialog-outils {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* Le message ne pousse personne : vide il ne prend rien, long il se coupe. C'est le
+   titre, à gauche, qui tient déjà les commandes contre le bord droit. */
+.plan-dialog-outils .plan-viewer-message {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 26rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.plan-dialog-groupe {
+    display: inline-flex;
+    align-items: stretch;
+    height: 28px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+/* La valeur sépare les deux boutons du groupe : ses filets tiennent lieu de séparateurs,
+   et il n'y a donc rien à dessiner de plus. */
+.plan-dialog-groupe > span {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 0.6rem;
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.plan-viewer-enregistrer {
+    height: 28px;
+    padding: 0 14px;
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    background: var(--accent);
+    color: #ffffff;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.plan-viewer-enregistrer:hover {
+    background: var(--accent-hover);
+}
+
+.plan-viewer-enregistrer[disabled] {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.plan-viewer-ouvrir:focus-visible,
+.plan-viewer-supprimer:focus-visible,
+.plan-viewer-enregistrer:focus-visible,
+.plan-zoom:focus-visible,
+.plan-dialog-fermer:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.plan-viewer-message {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.plan-viewer-message.is-error {
+    color: #d93025;
+}
+
+.plan-dialog-fermer {
+    width: 28px;
+    height: 28px;
+    margin-left: 0.25rem;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.plan-dialog-fermer:hover {
+    background: var(--hover);
+    color: var(--text);
+}
+
+/* Le corps défile dans les deux sens : un plan agrandi déborde, et c'est voulu.
+   min-height:0 est ce qui autorise un enfant de flex à être plus petit que son contenu :
+   sans lui, le corps s'étire à la taille du plan agrandi et déborde de la fenêtre au lieu
+   de défiler. */
+.plan-dialog-corps {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 4px;
+    background: #f1f5f9;
+}
+
+/* ---------- Les pages d'un cahier ----------
+   Les flèches encadrent le numéro, comme un lecteur de PDF : c'est le geste attendu. */
+.plan-dialog-pages {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.plan-page,
+.plan-zoom {
+    width: 28px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.plan-page:hover,
+.plan-zoom:hover {
+    background: var(--hover);
+}
+
+.plan-page-valeur {
+    min-width: 6.5rem;
+    justify-content: center;
+    cursor: text;
+}
+
+/* Le champ prend la place du libellé, dans le même creux : la barre ne bouge pas d'un
+   pixel pendant qu'on tape. */
+.plan-page-saisie {
+    width: 100%;
+    height: 20px;
+    padding: 0 0.2rem;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 12px;
+    text-align: center;
+}
+
+.plan-zoom-valeur {
+    min-width: 3.6rem;
+    justify-content: center;
+}
+
+/* ---------- La liste des soudures, à côté du dessin ----------
+   Elle est imprimée sur la feuille : on la remplit en la regardant. D'où cette colonne
+   contre le plan plutôt qu'un volet ailleurs.
+   À droite et non dessous : un isométrique est en paysage, la fenêtre aussi, et c'est la
+   hauteur du dessin qui est comptée. Lui prendre de la largeur coûte bien moins que lui
+   prendre un tiers de sa hauteur. Sous 1000 px la fenêtre n'est plus assez large pour
+   deux colonnes : la liste repasse dessous, plus bas dans ce fichier.
+   Le partage n'est pas figé : la poignée le règle, le bouton replie tout. */
+.plan-dialog-fond {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: row;
+}
+
+.plan-dialog-listes {
+    position: relative;
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    width: 34vw;
+    /* Le même plancher que la poignée : une butée plus haute ici l'aurait rendue inerte
+       dans ses derniers centimètres, sans qu'on comprenne pourquoi. */
+    min-width: 15rem;
+    max-width: 70vw;
+    border-left: 1px solid var(--border);
+    background: var(--surface);
+}
+
+/* Repliée, elle disparaît : le bouton de la barre d'outils la rappelle. Garder une
+   colonne vide pour y loger un titre mangerait ce qu'on vient de rendre au dessin. */
+.plan-dialog-listes[hidden] {
+    display: none;
+}
+
+/* La poignée est posée SUR le bord, à cheval dessus, et non glissée dans la colonne :
+   enfant d'une colonne flex, elle n'avait aucune hauteur et il n'y avait rien à
+   attraper. */
+.plan-dialog-glissiere {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -6px;
+    width: 11px;
+    cursor: ew-resize;
+    z-index: 1;
+}
+
+/* Un repère toujours visible, appuyé au survol : une poignée qu'on ne voit pas est une
+   poignée qui n'existe pas. */
+.plan-dialog-glissiere::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 3px;
+    height: 2.5rem;
+    margin: -1.25rem 0 0 -1.5px;
+    border-radius: 2px;
+    background: var(--border);
+}
+
+.plan-dialog-glissiere:hover::after {
+    background: var(--accent);
+}
+
+.plan-dialog-liste-ouvrir {
+    height: 28px;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.plan-dialog-liste-ouvrir:hover {
+    background: var(--hover);
+}
+
+.plan-dialog-listes-barre {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.55rem 0.9rem 0.4rem;
+}
+
+.plan-dialog-listes-titre {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.plan-dialog-replier {
+    height: 24px;
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.plan-dialog-replier:hover {
+    background: var(--hover);
+}
+
+.plan-dialog-replier:focus-visible,
+.plan-dialog-glissiere:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.plan-dialog-listes-corps {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 0 0.9rem 0.9rem;
+}
+
+.plan-dialog-liste h5 {
+    margin: 0 0 0.4rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.plan-dialog-liste .nomenclature {
+    margin: 0;
+}
+
+/* Deux colonnes demandent de la largeur. En dessous, le dessin et la liste se
+   superposent comme avant : mieux vaut un dessin court qu'un dessin en timbre-poste. */
+@media (max-width: 999px) {
+    .plan-dialog-fond {
+        flex-direction: column;
+    }
+
+    .plan-dialog-listes {
+        width: auto;
+        min-width: 0;
+        max-width: none;
+        height: 32vh;
+        min-height: 5rem;
+        max-height: 80vh;
+        border-left: 0;
+        border-top: 1px solid var(--border);
+    }
+
+    .plan-dialog-glissiere {
+        top: -6px;
+        bottom: auto;
+        left: 0;
+        right: 0;
+        width: auto;
+        height: 11px;
+        cursor: ns-resize;
+    }
+
+    .plan-dialog-glissiere::after {
+        width: 2.5rem;
+        height: 3px;
+        margin: -1.5px 0 0 -1.25rem;
+    }
+}
+
+/* La scène épouse l'image et sert de référentiel aux repères, dont la position est
+   un pourcentage : le zoom ne les déplace donc jamais hors de leur case. */
+.plan-viewer-scene {
+    position: relative;
+    display: block;
+    width: max-content;
+    margin: 0 auto;
+    background: #ffffff;
+    box-shadow: 0 1px 6px rgba(15, 23, 42, 0.15);
+}
+
+.plan-viewer-scene img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+/* Le plan s'attrape : la main ouverte le dit avant qu'on essaie, la main fermée pendant
+   qu'on tire. Une case garde son propre curseur — elle, c'est elle qu'on déplace. */
+.plan-viewer-scene {
+    cursor: grab;
+}
+
+.plan-dialog-corps.est-attrape,
+.plan-dialog-corps.est-attrape .plan-viewer-scene {
+    cursor: grabbing;
+}
+
+/* Le repère est dimensionné en pourcentage du plan et sa police suit le zoom, posée
+   par le script dans --plan-police. Il couvre donc toujours la même portion de la
+   feuille : ni écrasant une fois dézoomé, ni minuscule une fois agrandi. */
+/* Au repos, le repère n'est qu'un numéro posé dans la case, comme s'il y avait été
+   écrit à la main. Les commandes — déplacer, retirer, redimensionner — n'apparaissent
+   qu'au survol : elles encombreraient le plan et masqueraient le numéro. */
+/* ---------- Les cases de coulée ----------
+   Une case se manipule comme un élément de mise en page : on la saisit n'importe où
+   pour la déplacer, huit poignées la redimensionnent, et le double-clic ouvre le choix
+   du numéro. Au repos elle n'est qu'un chiffre posé dans la case du plan, sans rien
+   qui masque le dessin. */
+
+.plan-coulee {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.88);
+    line-height: 1;
+    white-space: nowrap;
+    overflow: visible;
+    cursor: move;
+    outline: none;
+}
+
+.plan-coulee:hover {
+    border-color: rgba(37, 99, 235, 0.5);
+    background: #ffffff;
+}
+
+.plan-coulee.est-choisie {
+    border-color: var(--accent);
+    background: #ffffff;
+    box-shadow: 0 0 0 1px var(--accent);
+    z-index: 3;
+}
+
+.plan-coulee-valeur {
+    overflow: hidden;
+    font-weight: 600;
+    color: #0f172a;
+    pointer-events: none;
+    /* Le chiffre, à la taille des lettres imprimées, occupe 87 % de la hauteur de la case.
+       Il y tient, mais la police le pose bas : elle réserve sous lui la place d'un jambage
+       qu'un numéro n'a pas, et le cadre de la case sélectionnée lui coupait le pied. On
+       ramène sa boîte à la hauteur des capitales : centré par la case, il y respire. */
+    text-box: trim-both cap alphabetic;
+}
+
+/* En édition seulement : le champ recouvre la case le temps du choix.
+   Il garde une taille utilisable même sur une cellule minuscule — une case de huit
+   pixels de haut ne se saisit pas. Mais il déborde alors des deux côtés à parts égales,
+   centré sur la case, au lieu de filer vers la droite comme si le repère avait bougé. */
+.plan-coulee input {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: max(100%, 7rem);
+    height: max(100%, 1.6rem);
+    padding: 0 0.2rem;
+    font: inherit;
+    /* Toujours lisible, et à l'échelle du plan dès que la case dépasse cette taille. */
+    font-size: max(13px, 1em);
+    /* Le numéro s'affiche centré dans sa case : il doit se saisir au même endroit,
+       sinon il saute d'un bord à l'autre entre la saisie et l'affichage. */
+    text-align: center;
+    color: #0f172a;
+    background: #ffffff !important;
+    border: 1px solid var(--accent) !important;
+    border-radius: 3px;
+    z-index: 4;
+}
+
+.plan-coulee.est-en-edition {
+    overflow: visible;
+    z-index: 5;
+}
+
+/* La liste des coulées, ouverte sous le champ pendant la saisie. Son bord droit suit
+   celui du champ et elle s'élargit vers la gauche : la colonne « N° COULÉE » longe le
+   bord de la feuille, une liste centrée en sortirait. Taille d'interface et non du plan :
+   elle se lit pareil à 50 % qu'à 400 %. Même apparence que toutes les listes déroulantes
+   du tableau de bord (suggestions.css, liste des matières). */
+.plan-coulee-choix {
+    position: absolute;
+    top: calc(50% + max(50%, 0.8rem) + 4px);
+    right: calc(50% - max(50%, 3.5rem));
+    z-index: 6;
+    min-width: max(100%, 7rem);
+    max-height: 220px;
+    margin: 0;
+    padding: 4px;
+    overflow-y: auto;
+    list-style: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    color: var(--text);
+    font-size: 13.5px;
+    font-weight: 400;
+    line-height: 1.3;
+    text-align: left;
+    white-space: nowrap;
+    cursor: default;
+}
+
+.plan-coulee-choix li {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.8rem;
+    padding: 7px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* La coulée survolée, désignée au clavier, ou celle que porte déjà la case. */
+.plan-coulee-choix li:hover,
+.plan-coulee-choix li.est-active {
+    background: var(--hover);
+    color: var(--accent);
+}
+
+.plan-coulee-choix-note {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--text-muted);
+}
+
+/* Le message d'une liste vide se lit, il ne se choisit pas. */
+.plan-coulee-choix li.plan-coulee-choix-vide {
+    display: block;
+    max-width: 16rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    white-space: normal;
+    background: none;
+    box-shadow: none;
+    cursor: default;
+}
+
+/* Huit poignées, comme sur n'importe quel éditeur de mise en page. Taille fixe : une
+   poignée qui rétrécit avec le zoom devient impossible à viser. */
+.plan-poignee {
+    position: absolute;
+    display: none;
+    width: 9px;
+    height: 9px;
+    border: 1px solid var(--accent);
+    border-radius: 2px;
+    background: #ffffff;
+    z-index: 4;
+}
+
+/* Zone d'attrape nettement plus large que le carré visible : viser 9 px à la souris
+   est pénible, surtout sur un plan dézoomé. */
+.plan-poignee::before {
+    content: "";
+    position: absolute;
+    inset: -7px;
+}
+
+.plan-coulee.est-choisie .plan-poignee {
+    display: block;
+}
+
+/* Pendant la saisie, les poignées s'effacent. Sur une case minuscule, le champ déborde
+   et passe sous elles : leur zone d'attrape, volontairement large, avalait le clic
+   destiné à la liste déroulante. On ne redimensionne pas une case et on ne choisit pas
+   son numéro dans le même geste, de toute façon. */
+.plan-coulee.est-en-edition .plan-poignee {
+    display: none;
+}
+
+.poignee-nw { top: -5px; left: -5px; cursor: nwse-resize; }
+.poignee-n  { top: -5px; left: 50%; margin-left: -4.5px; cursor: ns-resize; }
+.poignee-ne { top: -5px; right: -5px; cursor: nesw-resize; }
+.poignee-e  { top: 50%; right: -5px; margin-top: -4.5px; cursor: ew-resize; }
+.poignee-se { bottom: -5px; right: -5px; cursor: nwse-resize; }
+.poignee-s  { bottom: -5px; left: 50%; margin-left: -4.5px; cursor: ns-resize; }
+.poignee-sw { bottom: -5px; left: -5px; cursor: nesw-resize; }
+.poignee-w  { top: 50%; left: -5px; margin-top: -4.5px; cursor: ew-resize; }
+
+/* Les valeurs de la liste soudure, reportées dans le tableau du plan. Elles ne
+   s'éditent pas ici : leur place est le tableau du volet, qui porte les contrôles et
+   le visa. Rien ne les encadre — elles doivent se lire comme écrites sur le plan. */
+/* La case ne rogne pas en hauteur : le texte est à la taille des lettres imprimées, donc
+   un peu plus haut qu'elle — elle est posée en retrait des traits, lui s'étend jusqu'à
+   eux sans les toucher. C'est le texte lui-même qui coupe, et seulement en largeur. */
+.plan-soudure {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #0f172a;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+/* Le texte porté par la cellule. Il coupe à droite plutôt que de déborder de part et
+   d'autre : un fragment lisible du début vaut mieux qu'un mot rogné aux deux bouts. */
+.plan-soudure-valeur {
+    overflow: hidden;
+}
+
+/* Les lignes ajoutées sous le tableau quand le bureau d'études n'en a pas prévu assez.
+   Même encre et même épaisseur que les traits imprimés — mesurée sur l'image par le
+   script — pour que le tableau prolongé ne se lise pas comme un rajout. */
+.plan-soudure-trait,
+.plan-soudure-bord {
+    position: absolute;
+    background: #0f172a;
+    pointer-events: none;
+}
+
+.plan-soudure-trait {
+    height: var(--plan-trait, 1px);
+}
+
+.plan-soudure-bord {
+    width: var(--plan-trait, 1px);
+}
+
+/* En consultation, la case n'est qu'un numéro posé sur le plan, sans cadre : rien ne s'y
+   manipule, et son chiffre, à la taille des lettres imprimées, déborderait d'un cadre. */
+.plan-coulee.is-figee {
+    color: #0f172a;
+    font-weight: 600;
+    cursor: default;
+}
+
+.plan-coulee.is-figee:hover {
+    border-color: transparent;
+}
+
+
+/* =========================================================
+   LA LISTE DES FEUILLES ISO
+   Un élément porte plusieurs ISO : une ligne par feuille, avec son nom, ce qu'on y a
+   posé et de quoi l'ouvrir. Avec vingt feuilles, la liste doit rester une liste —
+   d'où une ligne compacte plutôt qu'un bloc par plan.
+   ========================================================= */
+
+.plan-viewer-plans {
+    margin-top: 1rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--border);
+}
+
+.plan-viewer-vide,
+.plan-viewer-depot-message {
+    margin: 0.5rem 0 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.plan-viewer-depot-message.is-error {
+    color: #d93025;
+}
+
+.plan-viewer-ligne {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    padding: 0.45rem 0;
+    border-bottom: 1px solid var(--border);
+}
+
+/* ---------- Choisir plusieurs feuilles ----------
+   La barre reste discrète tant que rien n'est coché : elle ne porte alors que « Tout
+   sélectionner », et le bouton de retrait n'apparaît qu'avec une sélection. */
+.plan-viewer-selection {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    padding: 0.35rem 0;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+
+.plan-viewer-tout-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+}
+
+.plan-viewer-choix,
+.plan-viewer-tout {
+    width: 15px;
+    height: 15px;
+    margin: 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.plan-viewer-supprimer-lot {
+    padding: 5px 11px;
+    border: 1px solid #b42318;
+    border-radius: 999px;
+    background: transparent;
+    color: #b42318;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.plan-viewer-supprimer-lot:hover:not([disabled]) {
+    background: rgba(180, 35, 24, 0.12);
+}
+
+.plan-viewer-supprimer-lot[disabled] {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.plan-viewer-supprimer-lot:focus-visible,
+.plan-viewer-choix:focus-visible,
+.plan-viewer-tout:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.plan-viewer-nom {
+    flex: 1 1 14rem;
+    min-width: 0;
+    font-size: 0.88rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+/* Le résumé s'efface devant le nom : c'est une indication, pas le sujet de la ligne. */
+.plan-viewer-ligne .plan-viewer-resume {
+    margin: 0;
+    flex: 0 1 auto;
+}
+
+.plan-viewer-ligne .plan-viewer-boutons {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
+/* Une liste soudure par feuille, repliée : vingt tableaux dépliés noieraient le volet. */
+.plan-soudures-feuille > summary {
+    padding: 0.4rem 0;
+    font-size: 0.85rem;
+    color: var(--accent);
+    cursor: pointer;
+}
+
+.plan-soudures-feuille > summary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* Le lecteur « muet » : ses fenêtres, sans sa liste.
+   Sur la page Pointage, la feuille se choisit déjà dans la ligne du tableau — afficher la
+   liste une seconde fois serait du bruit. Mais on ne peut pas masquer le conteneur avec
+   hidden : une boîte de dialogue placée dans un sous-arbre display:none n'est pas rendue
+   du tout, elle s'ouvre en mesurant zéro par zéro et rien n'apparaît. On masque donc les
+   seules lignes, et le conteneur reste dans le flux sans rien occuper. */
+.plan-viewer-plans-muet {
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.plan-viewer-plans-muet > .plan-viewer-entete,
+.plan-viewer-plans-muet .plan-viewer-ligne {
+    display: none;
+}

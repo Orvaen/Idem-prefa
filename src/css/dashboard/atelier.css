@@ -1008,6 +1008,23 @@
     grid-row: 1;
 }
 
+/* Les sections du volet se suivent sur toute la largeur : sans cela, la grille à deux
+   colonnes de l'en-tête les rangeait côte à côte, et on lisait le volet en zigzag. */
+.atelier-plan-titre-section,
+.atelier-plan-block > .plan-viewer-plans,
+.atelier-plan-block > .atelier-file-management {
+    grid-column: 1 / -1;
+}
+
+.atelier-plan-titre-section {
+    margin: 10px 0 -6px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
 /* ===== FICHIERS DU PLAN ===== */
 
 .plans-iso-page .atelier-plan-files-inline .prefa-document-link {
@@ -1263,13 +1280,22 @@
     grid-column: 1 / -1;
 }
 
-.prefa-detail-row .atelier-plan-block {
-    grid-template-columns: minmax(0, 1fr);
-}
+/* Le volet fait 720 px : les deux commandes du plan tiennent sur la ligne de son titre,
+   et les reléguer en dessous coûtait une ligne pour rien.
+   La requête de media n'est pas décorative : sans elle, ces deux règles l'emporteraient
+   par spécificité sur celles du téléphone, plus bas, et les boutons resteraient collés au
+   titre sur un écran de 360 px. */
+@media (min-width: 761px) {
+    .prefa-detail-row .atelier-plan-block {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+    }
 
-.prefa-detail-row .atelier-plan-actions-area {
-    grid-column: 1;
-    grid-row: 2;
+    .prefa-detail-row .atelier-plan-actions-area {
+        grid-column: 2;
+        grid-row: 1;
+        justify-self: end;
+    }
 }
 
 .prefa-detail-row .plans-iso-body {
@@ -1658,6 +1684,9 @@
     vertical-align: middle;
 }
 
+/* Les largeurs sont désignées par la POSITION de la colonne : insérer une colonne décale
+   toutes les suivantes. Les numéros ci-dessous suivent l'en-tête — demande, plan, travail,
+   date, durée — et sont à reprendre si l'ordre change. */
 .pointage-table th:nth-child(4),
 .pointage-table td:nth-child(4) {
     width: 160px;
@@ -1666,6 +1695,44 @@
 .pointage-table th:nth-child(5),
 .pointage-table td:nth-child(5) {
     width: 110px;
+}
+
+/* La feuille ISO et son bouton tiennent sur une ligne : la liste se resserre si la place
+   manque, le bouton garde la sienne — un bouton à moitié coupé ne se lit plus. */
+.pointage-iso-cell {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    max-width: 230px;
+}
+
+.pointage-iso-cell .pointage-iso {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.pointage-iso-ouvrir {
+    flex: none;
+    height: 34px;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--accent);
+    font: inherit;
+    font-size: 12px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.pointage-iso-ouvrir:hover {
+    background: var(--hover);
+}
+
+.pointage-iso-ouvrir:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
 }
 
 .pointage-table th:last-child,
@@ -1730,3 +1797,69 @@
 .plans-iso-take .atelier-message:empty {
     display: none;
 }
+
+/* =========================================================
+   HISTORIQUE DES POINTAGES
+   Une liste à plat ne disait pas ce que chaque valeur représentait : « TIG » flottait
+   sans en-tête, et un commentaire fait de chiffres passait pour un numéro. Un tableau
+   nomme ses colonnes, et le regroupement par jour répond à la question qu'on se pose
+   vraiment en relisant — combien de temps ce jour-là.
+   ========================================================= */
+
+.pointage-histo {
+    width: 100%;
+    margin-top: 4px;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.pointage-histo thead th {
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 11.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    text-align: left;
+}
+
+.pointage-histo td,
+.pointage-histo tbody th {
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    vertical-align: top;
+}
+
+/* La bande du jour : elle sépare les journées et porte leur total. */
+.pointage-histo-jour > th,
+.pointage-histo-jour > td {
+    background: var(--hover);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.pointage-histo-jour > th span {
+    margin-left: 10px;
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.pointage-histo-total {
+    text-align: right !important;
+    color: var(--accent);
+}
+
+.pointage-histo-duree {
+    white-space: nowrap;
+    font-weight: 600;
+}
+
+.pointage-histo thead th:first-child,
+.pointage-histo-duree {
+    width: 5.5rem;
+}
+
+.pointage-histo thead th:nth-child(2) { width: 14rem; }
+.pointage-histo thead th:nth-child(3) { width: 9rem; }

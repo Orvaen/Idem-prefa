@@ -108,8 +108,6 @@ function ccpuRendu(array $document, string $csrf): string
 {
     $id = (int) $document['id'];
     $jeton = prefaEscape($csrf);
-    $relire = static fn (string $libelle): string =>
-        '<button type="button" class="ccpu-relire" data-ccpu-document="' . $id . '" data-csrf="' . $jeton . '">' . $libelle . '</button>';
 
     if (empty($document['date_lecture'])) {
         return '<div class="ccpu-lecture is-en-attente" data-ccpu-lire="' . $id . '" data-csrf="' . $jeton . '" role="status">Lecture des coulées…</div>';
@@ -117,7 +115,9 @@ function ccpuRendu(array $document, string $csrf): string
 
     if ($document['lecture'] === 'echec') {
         return '<div class="ccpu-lecture is-echec"><p>Lecture impossible : '
-            . prefaEscape($document['erreur'] ?: 'raison inconnue') . '</p>' . $relire('Réessayer') . '</div>';
+            . prefaEscape($document['erreur'] ?: 'raison inconnue') . '</p>'
+            . '<button type="button" class="ccpu-relire" data-ccpu-document="' . $id
+            . '" data-csrf="' . $jeton . '">Réessayer</button></div>';
     }
 
     // Une lecture qui n'a rien reconnu se dit en une phrase, pas en une grille de champs vides.
@@ -156,7 +156,8 @@ function ccpuRendu(array $document, string $csrf): string
         $html .= ' class="est-vide">Aucune reconnue, à relever sur le certificat';
     }
 
-    // Pas de bouton pour relire une lecture réussie : le lecteur est déterministe, il
-    // rendrait exactement la même chose. La relance n'existe qu'après un échec.
+    // Une lecture réussie ne se relance pas : le lecteur est déterministe, et la relire
+    // ne changerait rien tant que le certificat n'a pas bougé. Un certificat remplacé se
+    // dépose à nouveau dans la demande, et c'est son dépôt qui déclenche la lecture.
     return $html . '</dd></div></dl><p class="ccpu-note">' . prefaEscape($note) . '</p></div>';
 }

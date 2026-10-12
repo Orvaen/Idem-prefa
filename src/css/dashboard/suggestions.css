@@ -1,0 +1,35 @@
+/* =========================================================
+   SUGGESTIONS SOUS UN CHAMP LIBRE
+   Même apparence que la liste des matières du formulaire de demande : une seule façon
+   de dérouler un choix dans tout le tableau de bord, quel que soit le thème.
+   ========================================================= */
+
+.suggestions-liste {
+    position: fixed;
+    z-index: 1000;
+    max-height: 220px;
+    margin: 0;
+    padding: 4px;
+    overflow-y: auto;
+    list-style: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.suggestions-liste [role="option"] {
+    padding: 7px 12px;
+    border-radius: 4px;
+    font-size: 13.5px;
+    line-height: 1.3;
+    color: var(--text);
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.suggestions-liste [role="option"]:hover,
+.suggestions-liste [role="option"].est-active {
+    background: var(--hover);
+    color: var(--accent);
+}

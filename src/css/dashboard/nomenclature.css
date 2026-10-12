@@ -1,0 +1,226 @@
+/* =========================================================
+   NOMENCLATURE DE MATÉRIEL D'UN PLAN ISO
+   Reprend la trame du plan papier : des colonnes étroites pour les codes,
+   une colonne large pour la désignation, la coulée à droite.
+   ========================================================= */
+
+.nomenclature {
+    margin-top: 1rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--border);
+}
+
+.nomenclature-entete {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.6rem;
+}
+
+.nomenclature-entete h4 {
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.nomenclature-liens {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.nomenclature-feuille {
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.nomenclature-note {
+    margin: 0 0 0.6rem;
+    font-size: 0.82rem;
+    opacity: 0.75;
+}
+
+/* Le soudeur d'une ligne venue d'un pointage : un nom, pas un choix. Il s'aligne sur la
+   hauteur des champs voisins pour que la ligne reste droite. */
+.soudure-soudeur {
+    display: inline-flex;
+    align-items: center;
+    min-height: 26px;
+    padding: 0 2px;
+}
+
+.nomenclature-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.nomenclature-table th,
+.nomenclature-table td {
+    padding: 0.25rem 0.35rem;
+    border: 1px solid var(--border);
+    text-align: left;
+    vertical-align: middle;
+}
+
+.nomenclature-table th {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    opacity: 0.8;
+}
+
+/* Le rang et le bouton « retirer » encadrent les deux tableaux. */
+.nomenclature-table th:first-child { width: 2.2rem; }
+.nomenclature-table th:last-child { width: 2.2rem; }
+
+/* Liste soudure : le nom du soudeur et le procédé doivent se lire en entier. Les trois
+   contrôles ne portent qu'une mention courte — leur donner la même place qu'un nom
+   écrasait les colonnes utiles, le soudeur se réduisant à « dup… ». */
+.soudure-table th:nth-child(2) { width: 11rem; }
+.soudure-table th:nth-child(3) { width: 8rem; }
+.soudure-table th:nth-child(4) { width: 7.5rem; }
+.soudure-table th:nth-child(5),
+.soudure-table th:nth-child(6),
+.soudure-table th:nth-child(7) { width: 5.5rem; }
+.soudure-table th:nth-child(8) { width: 7rem; }
+
+.nomenclature-rang {
+    text-align: center;
+    opacity: 0.7;
+}
+
+/* Le tableau se lit comme un tableur : la grille des cellules porte les bordures, et
+   les champs n'en ajoutent pas une seconde par-dessus. Les thèmes clair et rose
+   imposent une bordure à tous les champs en !important, d'où la même arme ici, sur un
+   sélecteur plus précis pour gagner quel que soit l'ordre des feuilles. */
+.nomenclature-table td input:not([type="checkbox"]):not([type="radio"]),
+.nomenclature-table td select {
+    width: 100%;
+    min-width: 0;
+    padding: 0.2rem 0.3rem;
+    font: inherit;
+    border-radius: 3px;
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    box-shadow: none !important;
+}
+
+/* La bordure n'apparaît qu'au survol : elle montre où l'on peut écrire, sans
+   quadriller le tableau une deuxième fois au repos. */
+.nomenclature-table td input:not([type="checkbox"]):not([type="radio"]):hover,
+.nomenclature-table td select:hover {
+    border-color: var(--border) !important;
+}
+
+.nomenclature-table td input:not([type="checkbox"]):not([type="radio"]):focus,
+.nomenclature-table td select:focus {
+    border-color: var(--accent) !important;
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+}
+
+/* La liste et le champ libre s'empilent : le champ n'apparaît que sur « Autre ». */
+.nomenclature-coulee {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+/* Une ligne née d'un pointage : son numéro n'est qu'une proposition, et la ligne n'est
+   pas encore enregistrée. Sans ce liseré elle se lirait comme une soudure déjà rattachée,
+   et on croirait le travail fait. */
+.soudure-du-pointage > td:first-child {
+    box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.tableau-retirer {
+    width: 100%;
+    padding: 2px;
+    line-height: 1;
+    cursor: pointer;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: var(--text-muted);
+    font: inherit;
+}
+
+.tableau-retirer:hover {
+    color: var(--text);
+    background: var(--hover);
+    border-color: var(--border);
+}
+
+.tableau-retirer:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.nomenclature-vide {
+    text-align: center;
+    opacity: 0.7;
+}
+
+.nomenclature-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 0.8rem;
+    flex-wrap: wrap;
+}
+
+/* Mêmes conventions que le reste du tableau de bord : l'action secondaire est une
+   pastille bordée, l'action qui enregistre est pleine et accentuée. */
+.tableau-ajouter {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--accent);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.tableau-ajouter:hover {
+    background: var(--hover);
+}
+
+.tableau-enregistrer {
+    padding: 7px 14px;
+    border: 0;
+    border-radius: 4px;
+    background: var(--accent);
+    color: #ffffff;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.tableau-enregistrer:hover {
+    background: var(--accent-hover);
+}
+
+.tableau-enregistrer[disabled] {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.tableau-ajouter:focus-visible,
+.tableau-enregistrer:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.nomenclature-message {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.nomenclature-message.is-error {
+    color: #d93025;
+}
