@@ -2,6 +2,7 @@
 // Enregistre un PV : état, date, commentaire, et dépôt ou retrait de documents.
 require_once __DIR__ . '/../includes/prefa_context.php';
 require_once __DIR__ . '/../includes/pv.php';
+require_once __DIR__ . '/../includes/commandes.php';
 prefaPost();
 if (!$canFillPv) prefaError(403, 'Les PV sont renseignés par le chef d’atelier.');
 
@@ -93,6 +94,13 @@ try {
         $db->prepare('UPDATE pv_prefabrication SET statut = ?, date_pv = ?, commentaire = ?, maj_par = ?, date_maj = NOW(), revision = revision + 1 WHERE id = ?')
             ->execute([$statut, $datePv ?: null, $commentaire ?: null, $actor['id'], $pv['id']]);
 
+        // Le tableau des commandes voyage avec le PV de réception : une seule sauvegarde
+        // pour le formulaire entier, et la même transaction — on ne veut pas d'un PV
+        // enregistré dont les commandes se seraient perdues.
+        if ($type === 'reception_materiel' && isset($_POST['commande']) && is_array($_POST['commande'])) {
+            commandesEnregistrer($db, $idDemande, $_POST['commande'], (int) $actor['id']);
+        }
+
         if ($documents) {
             $dossier = pvDocumentDirectory((int) $pv['id']);
             if (!is_dir($dossier) && !@mkdir($dossier, 0775, true)) throw new RuntimeException('Dossier de dépôt indisponible.');
@@ -116,6 +124,8 @@ try {
 
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode(['success' => true, 'message' => 'PV enregistré' . ($documents ? ' avec ' . count($documents) . ' document(s).' : '.')]);
+} catch (DomainException $refus) {
+    prefaError(409, $refus->getMessage());
 } catch (PDOException $e) {
     if ($db->inTransaction()) $db->rollBack();
     prefaError(500, 'Impossible d’enregistrer le PV. Réessayez.');

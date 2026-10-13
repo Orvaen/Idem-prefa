@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/prefa_context.php';
 require_once __DIR__ . '/../includes/pv.php';
+require_once __DIR__ . '/../includes/commandes.php';
 if (!$canViewPv) prefaError(403, 'Cette page est réservée à l’atelier et aux demandeurs.');
 // Le chargé d'affaire suit l'avancement de ses PV sans les renseigner : la saisie
 // appartient au chef d'atelier.
@@ -149,6 +150,18 @@ ksort($demandeurs);
                                                         </div>
                                                     <?php endif; ?>
 
+                                                    <?php if ($type === 'reception_materiel'):
+                                                        $commandes = commandesDeLaDemande($db, $id); ?>
+                                                        <div class="pv-lecture-bloc">
+                                                            <h3>Commandes fournisseur</h3>
+                                                            <?php if ($commandes): ?>
+                                                                <?php require __DIR__ . '/../partials/commandes_table.php'; ?>
+                                                            <?php else: ?>
+                                                                <p class="pv-lecture-vide">Aucune commande saisie.</p>
+                                                            <?php endif; ?>
+                                                        </div>
+                                                    <?php endif; ?>
+
                                                     <div class="pv-lecture-bloc">
                                                         <h3>Documents</h3>
                                                         <?php if ($pv['documents']): ?>
@@ -199,6 +212,11 @@ ksort($demandeurs);
                                                         <input id="pv-date-<?= prefaEscape($cle) ?>" name="date_pv" type="date" value="<?= prefaEscape((string) ($pv['date_pv'] ?? '')) ?>">
                                                     </div>
                                                 </div>
+
+                                                <?php if ($type === 'reception_materiel'):
+                                                    $commandes = commandesDeLaDemande($db, $id); ?>
+                                                    <?php require __DIR__ . '/../partials/commandes_form.php'; ?>
+                                                <?php endif; ?>
 
                                                 <div class="form-group">
                                                     <label for="pv-commentaire-<?= prefaEscape($cle) ?>">Commentaire</label>

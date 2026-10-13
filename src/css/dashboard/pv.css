@@ -46,7 +46,7 @@
 }
 
 .pv-etat-a_faire {
-    color: #e0a92a;
+    color: var(--attente-texte);
 }
 
 .pv-etat-fait {

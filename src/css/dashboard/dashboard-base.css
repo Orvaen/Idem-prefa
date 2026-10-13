@@ -69,6 +69,10 @@
     --alerte-texte: #f6a4a4;
     --alerte-fond: #382326;
     --alerte-bord: #694047;
+    /* Ce qui n'est pas encore arrivé : un PV à faire, une commande non reçue. L'ambre était
+       écrit en dur à deux endroits, et le même ton pensé pour le fond sombre tombait à
+       2,3:1 sur du blanc — lisible nulle part en thème clair. */
+    --attente-texte: #e0a92a;
     --font: -apple-system, "Segoe UI", system-ui, "Noto Sans", "Ubuntu", sans-serif;
     --scrollbar-thumb: #414b5b;
     --scrollbar-thumb-hover: #637086;

@@ -162,8 +162,9 @@ function dashboardMenu(): array
             'page' => 'pages/pv.php',
             'pour' => [Role::ChargeDeProduction, Role::ChefDAtelier, Role::ChargeDAffaire],
             'icone' => '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z" /><path d="M14 3v5h5" /><path d="m9 14 2 2 4-4" />',
-            'styles' => ['dashboard/pv.css'],
-            'scripts' => ['pv.js'],
+            // Le tableau des commandes fournisseur vit dans le PV « Réception matériel ».
+            'styles' => ['dashboard/pv.css', 'dashboard/commandes.css'],
+            'scripts' => ['pv.js', 'commandes.js'],
         ],
         [
             'id' => 'urgent-prefa',

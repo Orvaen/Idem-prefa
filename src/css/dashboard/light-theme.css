@@ -29,6 +29,7 @@ body[data-theme="light"],
     --alerte-texte: #991b1b;
     --alerte-fond: #fef2f2;
     --alerte-bord: #fca5a5;
+    --attente-texte: #a16207;
     --accent: #2563eb;
     --accent-hover: #1d4ed8;
     --radius: 8px;
@@ -343,7 +344,9 @@ body[data-theme="light"],
    input » : on reprend donc sa forme exacte, la classe du tableau en plus, sinon seules
    les listes déroulantes étaient corrigées et les champs gardaient leur cadre. */
 [data-theme="light"] .affaires-table input:not([type="checkbox"]):not([type="radio"]),
-[data-theme="light"] .affaires-table select {
+[data-theme="light"] .affaires-table select,
+[data-theme="light"] .commandes-editable input:not([type="checkbox"]):not([type="radio"]),
+[data-theme="light"] .commandes-editable select {
     border-color: transparent !important;
     background-color: transparent !important;
 }
@@ -351,13 +354,19 @@ body[data-theme="light"],
 [data-theme="light"] .affaires-table tbody tr:hover input:not([type="checkbox"]),
 [data-theme="light"] .affaires-table tbody tr:hover select,
 [data-theme="light"] .affaires-table tbody tr:focus-within input:not([type="checkbox"]),
-[data-theme="light"] .affaires-table tbody tr:focus-within select {
+[data-theme="light"] .affaires-table tbody tr:focus-within select,
+[data-theme="light"] .commandes-editable tbody tr:hover input:not([type="checkbox"]),
+[data-theme="light"] .commandes-editable tbody tr:hover select,
+[data-theme="light"] .commandes-editable tbody tr:focus-within input:not([type="checkbox"]),
+[data-theme="light"] .commandes-editable tbody tr:focus-within select {
     border-color: #cbd5e1 !important;
     background-color: #ffffff !important;
 }
 
 [data-theme="light"] .affaires-table tbody tr input:not([type="checkbox"]):focus,
-[data-theme="light"] .affaires-table tbody tr select:focus {
+[data-theme="light"] .affaires-table tbody tr select:focus,
+[data-theme="light"] .commandes-editable tbody tr input:not([type="checkbox"]):focus,
+[data-theme="light"] .commandes-editable tbody tr select:focus {
     border-color: #2563eb !important;
 }
 

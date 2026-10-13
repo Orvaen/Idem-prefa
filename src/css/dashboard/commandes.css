@@ -1,0 +1,282 @@
+/* ==========================================================================
+   COMMANDES FOURNISSEUR — PV « RÉCEPTION MATÉRIEL »
+   ==========================================================================
+
+   Le bon de commande est déposé en PDF juste en dessous ; ce tableau en reprend ce qu'on
+   a besoin de lire sans rouvrir le document. Même grammaire que les autres tableaux :
+   lignes de 40 px, filets discrets, en-tête sans fond. */
+
+.commandes-saisie {
+    margin: 4px 0 8px;
+}
+
+.commandes-entete {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.commandes-entete h3 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.commandes-ajouter {
+    height: var(--ctrl-sm);
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.12s ease;
+}
+
+.commandes-ajouter:hover {
+    background: var(--hover);
+}
+
+/* Le défilement horizontal est assumé ici : dans un volet étroit il vaut mieux faire
+   glisser le tableau que d'écraser les colonnes au point qu'on ne s'y relise plus. */
+.commandes-scroll {
+    overflow-x: auto;
+}
+
+.commandes-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+/* Les largeurs sont tenues plutôt que réparties : laissé libre, le navigateur rogne la
+   colonne des numéros — « 957-MAT-I-03-2… » — et il faut cliquer dans le champ pour relire
+   une référence qu'on vient de recopier du bon.
+
+   Leur somme, 652 px, tient dans les 663 px que le volet des PV offre réellement : il est
+   large de 711 px quelle que soit la fenêtre, un second écran n'y changerait rien. C'est
+   aussi pourquoi les deux échéances partagent une colonne au lieu d'en occuper deux. */
+.commandes-editable {
+    min-width: 652px;
+    table-layout: fixed;
+}
+
+/* Le numéro est la clé du bon : tronqué, il oblige à cliquer dans le champ pour se relire.
+   Le lieu est du texte libre, qui défile dans son champ — c'est lui qui cède la place. */
+.commandes-editable .col-numero { width: 156px; }
+.commandes-editable .col-fournisseur { width: 100px; }
+.commandes-editable .col-livraison { width: 148px; }
+.commandes-editable .col-lieu { width: 104px; }
+/* « Non reçu » est le plus long des deux libellés : plus étroit, la flèche de la liste
+   mord sur le « u ». */
+.commandes-editable .col-etat { width: 112px; }
+.commandes-editable .col-retirer { width: 32px; }
+
+/* ===== LES DEUX ÉCHÉANCES ===== */
+
+/* La plupart des commandes arrivent en une fois. La seconde date se déplie à la demande,
+   sinon chaque ligne porterait un champ vide en permanence — et les lignes passeraient de
+   40 à 62 px pour un cas qui est l'exception. */
+.commande-date-rang {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.commande-plier-date {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+.commande-plier-date:hover,
+.commande-plier-date:focus-visible {
+    background: var(--hover);
+    color: var(--text);
+}
+
+/* Repliée, la seconde date disparaît ; le champ reste dans le document pour que les
+   tableaux parallèles de l'envoi gardent le même nombre de cases. */
+/* La classe du tableau est reprise ici : « .commandes-editable input » pèse plus lourd que
+   « .commande-date-2e », et sa largeur de 100 % reprenait le dessus. */
+.commandes-editable .commande-date-2e {
+    display: none;
+    /* La place du « + » est retenue au-dessus : sans cela la seconde date serait plus large
+       que la première et leurs deux calendriers ne tomberaient pas l'un sous l'autre. */
+    width: calc(100% - 24px);
+    margin-top: 4px;
+}
+
+.commandes-editable .commande-livraison.est-depliee .commande-date-2e {
+    display: block;
+}
+
+.commande-livraison.est-depliee .commande-plier-date {
+    visibility: hidden;
+}
+
+.commandes-table th {
+    height: var(--ligne-th);
+    padding: 0 8px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.commandes-table td {
+    height: var(--ligne-td);
+    padding: 0 8px;
+    border-bottom: 1px solid var(--border-faint);
+    vertical-align: middle;
+}
+
+.commandes-table tbody tr:last-child > td {
+    border-bottom: 0;
+}
+
+.commande-numero {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* La seconde échéance se lit sous la première : côte à côte, on ne sait plus laquelle
+   est laquelle. */
+.commande-date-2 {
+    display: block;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.commande-vide {
+    color: var(--text-muted);
+}
+
+/* ===== L'ÉTAT ===== */
+
+.commande-etat {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.commande-etat::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.commande-etat-attendu {
+    color: var(--attente-texte);
+}
+
+.commande-etat-complete {
+    color: var(--succes-texte);
+}
+
+.commande-recu-par {
+    display: block;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+/* ===== LA SAISIE ===== */
+
+/* Les champs d'une ligne sont du texte tant qu'on ne la touche pas : six cadres par ligne
+   sur six colonnes feraient une grille de boîtes, et c'est le tableau qu'on doit lire. */
+.commandes-editable input,
+.commandes-editable select {
+    width: 100%;
+    min-width: 0;
+    height: var(--ctrl-xs);
+    padding: 0 8px;
+    border: 1px solid transparent;
+    border-radius: var(--r-sm);
+    background-color: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+
+
+.commandes-editable tbody tr:hover input,
+.commandes-editable tbody tr:hover select,
+.commandes-editable tbody tr:focus-within input,
+.commandes-editable tbody tr:focus-within select {
+    border-color: var(--border);
+    background-color: var(--surface);
+}
+
+.commandes-editable tbody tr input:focus,
+.commandes-editable tbody tr select:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+
+.commandes-editable input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.7;
+}
+
+.commande-retirer {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+.commande-retirer .icon {
+    width: 13px;
+    height: 13px;
+}
+
+.commandes-editable tbody tr:hover .commande-retirer:hover,
+.commande-retirer:focus-visible {
+    background: var(--alerte-fond);
+    color: var(--alerte-texte);
+}
+
+.commandes-vide {
+    margin: 0;
+    padding: 10px 0 0;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+/* Le libellé d'une colonne sans intitulé visible : la colonne des croix. */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
