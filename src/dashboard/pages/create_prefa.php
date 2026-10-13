@@ -77,7 +77,7 @@ if ($editing && !empty($request['revetement'])) {
 <section class="page prefa-page prefa-simple">
     <div class="prefa-shell">
         <div class="prefa-heading">
-            <h1><?= $editing ? 'Modifier la demande ' . prefaEscape(prefaReferenceComplete((int) $request['id'])) : 'Nouvelle demande' ?></h1>
+            <h1><?= $editing ? 'Modifier la demande ' . prefaEscape(prefaReferenceComplete((int) $request['id'])) : 'Nouvelle Affaire' ?></h1>
             <p><?= $editing ? 'Après modification, la demande repassera en attente de validation.' : 'Renseignez votre affaire, puis transmettez-la pour validation.' ?></p>
         </div>
         <form id="prefa-form" class="prefa-form" novalidate enctype="multipart/form-data" data-hours-per-inch="<?= prefaEscape($hoursPerInch) ?>">
@@ -85,9 +85,26 @@ if ($editing && !empty($request['revetement'])) {
             <?php if ($editing): ?><input type="hidden" name="id" value="<?= (int) $request['id'] ?>"><?php endif; ?>
             <div class="prefa-section">
                 <div class="prefa-grid">
+                    <?php
+                    // Ce champ ne nomme pas la demande : il nomme l'AFFAIRE à laquelle elle
+                    // se rattache, et une affaire en porte plusieurs. L'appeler « nom de la
+                    // demande » alors que le menu annonce « Mes affaires » faisait croire
+                    // qu'on créait une affaire à chaque fois.
+                    //
+                    // Les affaires déjà ouvertes sont proposées : c'est ainsi qu'on en
+                    // rejoint une au lieu d'en créer une jumelle à une faute de frappe près.
+                    $affairesConnues = $db->query('SELECT nom FROM affaire ORDER BY nom')->fetchAll(PDO::FETCH_COLUMN);
+                    ?>
                     <div class="form-group prefa-full">
-                        <label for="nom-demande">Nom de la demande <span class="required-mark" aria-hidden="true">*</span></label>
-                        <input id="nom-demande" name="nom_affaire" type="text" value="<?= $field('nom_affaire') ?>" maxlength="255" required placeholder="Ex. : Réseau vapeur — bâtiment A">
+                        <label for="nom-demande">Affaire <span class="required-mark" aria-hidden="true">*</span></label>
+                        <input id="nom-demande" name="nom_affaire" type="text" value="<?= $field('nom_affaire') ?>" maxlength="255" required
+                            list="affaires-ouvertes" autocomplete="off" placeholder="Ex. : Réseau vapeur — bâtiment A">
+                        <datalist id="affaires-ouvertes">
+                            <?php foreach ($affairesConnues as $nomAffaire): ?>
+                                <option value="<?= prefaEscape($nomAffaire) ?>"></option>
+                            <?php endforeach; ?>
+                        </datalist>
+                        <small class="prefa-aide">Choisissez un chantier déjà ouvert pour y ajouter cette demande, ou saisissez-en un nouveau.</small>
                     </div>
                     <div class="form-group prefa-full">
                         <label for="plan-documents">Plans BPE / ISO et pièces jointes<?php if (!$editing): ?> <span class="required-mark">*</span><?php endif; ?></label>
@@ -217,7 +234,7 @@ if ($editing && !empty($request['revetement'])) {
                     </div>
                     <div class="form-group">
                         <label for="revetement-type">Revêtement des tubes</label>
-                        <select id="revetement-type" name="revetement_type" class="prefa-select" onchange="toggleRevetementDetails(this)">
+                        <select id="revetement-type" name="revetement_type" class="prefa-select">
                             <option value="aucun" <?= $currentRevetementType === 'aucun' ? 'selected' : '' ?>>Sans revêtement</option>
                             <option value="exterieur" <?= $currentRevetementType === 'exterieur' ? 'selected' : '' ?>>Revêtement extérieur</option>
                             <option value="interieur" <?= $currentRevetementType === 'interieur' ? 'selected' : '' ?>>Revêtement intérieur</option>
@@ -259,376 +276,3 @@ if ($editing && !empty($request['revetement'])) {
         </form>
     </div>
 </section>
-
-<script>
-    (function() {
-        function openPassivation() {
-            var options = document.getElementById('passivation-options');
-            var input = document.getElementById('passivation-search');
-            if (!options || !input) return;
-            options.hidden = false;
-            options.style.display = 'block';
-            input.setAttribute('aria-expanded', 'true');
-            filterPassivation(input.value);
-        }
-
-        function closePassivation() {
-            var options = document.getElementById('passivation-options');
-            var input = document.getElementById('passivation-search');
-            if (!options) return;
-            options.hidden = true;
-            options.style.display = 'none';
-            if (input) input.setAttribute('aria-expanded', 'false');
-        }
-
-        function filterPassivation(val) {
-            var options = document.getElementById('passivation-options');
-            if (!options) return;
-            var query = (val || '').trim().toLowerCase();
-            if (query === 'autre') query = '';
-            var items = options.querySelectorAll('[role="option"]:not(#passivation-option-autre)');
-            var visibleCount = 0;
-            items.forEach(function(item) {
-                var text = (item.textContent || '').trim().toLowerCase();
-                var match = query === '' || text.indexOf(query) !== -1;
-                item.hidden = !match;
-                item.style.display = match ? 'block' : 'none';
-                if (match) visibleCount++;
-            });
-
-            var noResults = options.querySelector('.passivation-no-results');
-            if (noResults) {
-                noResults.hidden = visibleCount > 0;
-                noResults.style.display = visibleCount > 0 ? 'none' : 'block';
-            }
-
-            var autreOpt = document.getElementById('passivation-option-autre');
-            if (autreOpt) {
-                autreOpt.hidden = false;
-                autreOpt.style.display = 'block';
-            }
-        }
-
-        function selectPassivation(val, text) {
-            var input = document.getElementById('passivation-search');
-            var hiddenInput = document.querySelector('[name="id_passivation"]');
-            var autreField = document.getElementById('passivation-autre-field');
-            var autreInput = document.getElementById('passivation-autre');
-
-            if (val === 'autre') {
-                if (input) input.value = 'Autre';
-                if (hiddenInput) hiddenInput.value = 'autre';
-                if (autreField) {
-                    autreField.hidden = false;
-                    autreField.style.display = 'flex';
-                }
-                if (autreInput) {
-                    autreInput.required = true;
-                    var lastQuery = input ? input.dataset.lastQuery : '';
-                    if (lastQuery && lastQuery.toLowerCase() !== 'autre') {
-                        autreInput.value = lastQuery;
-                    }
-                    setTimeout(function() {
-                        autreInput.focus();
-                    }, 50);
-                }
-            } else {
-                if (input) input.value = val ? text : '';
-                if (hiddenInput) hiddenInput.value = val || '';
-                if (autreField) {
-                    autreField.hidden = true;
-                    autreField.style.display = 'none';
-                }
-                if (autreInput) {
-                    autreInput.required = false;
-                    autreInput.value = '';
-                }
-            }
-
-            var allOptions = document.querySelectorAll('#passivation-options [role="option"]');
-            allOptions.forEach(function(opt) {
-                opt.setAttribute('aria-selected', opt.dataset.value === val ? 'true' : 'false');
-            });
-
-            closePassivation();
-        }
-
-        $(document).off('.passivation')
-            .on('focus.passivation click.passivation', '#passivation-search', function() {
-                openPassivation();
-            })
-            .on('input.passivation', '#passivation-search', function() {
-                var raw = this.value.trim();
-                if (raw && raw.toLowerCase() !== 'autre') {
-                    this.dataset.lastQuery = raw;
-                }
-                var form = $(this).closest('form');
-                var curVal = form.find('[name="id_passivation"]').val();
-                if (curVal !== 'autre' || raw.toLowerCase() !== 'autre') {
-                    form.find('[name="id_passivation"]').val('');
-                    var f = document.getElementById('passivation-autre-field');
-                    if (f) {
-                        f.hidden = true;
-                        f.style.display = 'none';
-                    }
-                    var inp = document.getElementById('passivation-autre');
-                    if (inp) {
-                        inp.required = false;
-                    }
-                }
-                openPassivation();
-            })
-            .on('click.passivation', '#passivation-options [role="option"]', function(e) {
-                e.stopPropagation();
-                selectPassivation(this.dataset.value, $(this).text().trim());
-            })
-            .on('click.passivation', '#passivation-clear', function(e) {
-                e.stopPropagation();
-                selectPassivation('', '');
-                var input = document.getElementById('passivation-search');
-                if (input) {
-                    delete input.dataset.lastQuery;
-                    input.focus();
-                }
-            })
-            .on('keydown.passivation', '#passivation-search', function(e) {
-                var options = $('#passivation-options [role="option"]:visible');
-                var selected = options.filter('[aria-selected="true"]');
-                if (e.key === 'Escape' || e.key === 'Tab') {
-                    closePassivation();
-                    return;
-                }
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if (selected.length) {
-                        selected.trigger('click');
-                    } else if (options.length === 1) {
-                        options.trigger('click');
-                    } else {
-                        $('#passivation-option-autre').trigger('click');
-                    }
-                }
-                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    openPassivation();
-                    if (!options.length) return;
-                    var idx = options.index(selected);
-                    idx = e.key === 'ArrowDown' ? (idx + 1) % options.length : (idx <= 0 ? options.length - 1 : index - 1);
-                    options.attr('aria-selected', 'false');
-                    var opt = options.eq(idx).attr('aria-selected', 'true');
-                    if (opt[0]) opt[0].scrollIntoView({
-                        block: 'nearest'
-                    });
-                }
-            })
-            .on('click.passivation', function(e) {
-                if (!$(e.target).closest('.passivation-select').length) {
-                    closePassivation();
-                }
-            });
-    })();
-    (function() {
-        function syncMatiereAvailability(focus) {
-            var material = document.querySelector('[name="id_matiere"]');
-            var availability = document.getElementById('matiere-disponibilite');
-            var marker = document.getElementById('matiere-disponibilite-required');
-            var required = Boolean(material && material.value);
-            var group = document.getElementById('matiere-disponibilite-field');
-            if (group) group.hidden = !required;
-            if (marker) marker.hidden = !required;
-            if (!availability) return;
-            availability.required = required;
-            if (!required) availability.value = '';
-            if (focus && required) availability.focus();
-        }
-
-        function openMatiere() {
-            var options = document.getElementById('matiere-options');
-            var input = document.getElementById('matiere-search');
-            if (!options || !input) return;
-            options.hidden = false;
-            options.style.display = 'block';
-            input.setAttribute('aria-expanded', 'true');
-            filterMatiere(input.value);
-        }
-
-        function closeMatiere() {
-            var options = document.getElementById('matiere-options');
-            var input = document.getElementById('matiere-search');
-            if (!options) return;
-            options.hidden = true;
-            options.style.display = 'none';
-            if (input) input.setAttribute('aria-expanded', 'false');
-        }
-
-        function filterMatiere(val) {
-            var options = document.getElementById('matiere-options');
-            if (!options) return;
-            var query = (val || '').trim().toLowerCase();
-            if (query === 'autre') query = '';
-            var items = options.querySelectorAll('[role="option"]:not(#matiere-option-autre)');
-            var visibleCount = 0;
-            items.forEach(function(item) {
-                var text = (item.textContent || '').trim().toLowerCase();
-                var match = query === '' || text.indexOf(query) !== -1;
-                item.hidden = !match;
-                item.style.display = match ? 'block' : 'none';
-                if (match) visibleCount++;
-            });
-
-            var noResults = options.querySelector('.matiere-no-results');
-            if (noResults) {
-                noResults.hidden = visibleCount > 0;
-                noResults.style.display = visibleCount > 0 ? 'none' : 'block';
-            }
-
-            var autreOpt = document.getElementById('matiere-option-autre');
-            if (autreOpt) {
-                autreOpt.hidden = false;
-                autreOpt.style.display = 'block';
-            }
-        }
-
-        function selectMatiere(val, text) {
-            var input = document.getElementById('matiere-search');
-            var hiddenInput = document.querySelector('[name="id_matiere"]');
-            var autreField = document.getElementById('matiere-autre-field');
-            var autreInput = document.getElementById('matiere-autre');
-
-            if (val === 'autre') {
-                if (input) input.value = 'Autre';
-                if (hiddenInput) hiddenInput.value = 'autre';
-                if (autreField) {
-                    autreField.hidden = false;
-                    autreField.style.display = 'flex';
-                }
-                if (autreInput) {
-                    autreInput.required = true;
-                    var lastQuery = input ? input.dataset.lastQuery : '';
-                    if (lastQuery && lastQuery.toLowerCase() !== 'autre') {
-                        autreInput.value = lastQuery;
-                    }
-                    setTimeout(function() {
-                        autreInput.focus();
-                    }, 50);
-                }
-            } else {
-                if (input) input.value = val ? text : '';
-                if (hiddenInput) hiddenInput.value = val || '';
-                if (autreField) {
-                    autreField.hidden = true;
-                    autreField.style.display = 'none';
-                }
-                if (autreInput) {
-                    autreInput.required = false;
-                    autreInput.value = '';
-                }
-            }
-
-            var allOptions = document.querySelectorAll('#matiere-options [role="option"]');
-            allOptions.forEach(function(opt) {
-                opt.setAttribute('aria-selected', opt.dataset.value === val ? 'true' : 'false');
-            });
-
-            closeMatiere();
-            syncMatiereAvailability(val !== 'autre');
-        }
-
-        $(document).off('.matiere')
-            .on('focus.matiere click.matiere', '#matiere-search', function() {
-                openMatiere();
-            })
-            .on('input.matiere', '#matiere-search', function() {
-                var raw = this.value.trim();
-                if (raw && raw.toLowerCase() !== 'autre') {
-                    this.dataset.lastQuery = raw;
-                }
-                var form = $(this).closest('form');
-                var curVal = form.find('[name="id_matiere"]').val();
-                if (curVal !== 'autre' || raw.toLowerCase() !== 'autre') {
-                    form.find('[name="id_matiere"]').val('');
-                    syncMatiereAvailability(false);
-                    var f = document.getElementById('matiere-autre-field');
-                    if (f) {
-                        f.hidden = true;
-                        f.style.display = 'none';
-                    }
-                    var inp = document.getElementById('matiere-autre');
-                    if (inp) {
-                        inp.required = false;
-                    }
-                }
-                openMatiere();
-            })
-            .on('click.matiere', '#matiere-options [role="option"]', function(e) {
-                e.stopPropagation();
-                selectMatiere(this.dataset.value, $(this).text().trim());
-            })
-            .on('click.matiere', '#matiere-clear', function(e) {
-                e.stopPropagation();
-                selectMatiere('', '');
-                var input = document.getElementById('matiere-search');
-                if (input) {
-                    delete input.dataset.lastQuery;
-                    input.focus();
-                }
-            })
-            .on('change.matiere', '#matiere-autre', function() {
-                if (this.value.trim()) syncMatiereAvailability(true);
-            })
-            .on('keydown.matiere', '#matiere-search', function(e) {
-                var options = $('#matiere-options [role="option"]:visible');
-                var selected = options.filter('[aria-selected="true"]');
-                if (e.key === 'Escape' || e.key === 'Tab') {
-                    closeMatiere();
-                    return;
-                }
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if (selected.length) {
-                        selected.trigger('click');
-                    } else if (options.length === 1) {
-                        options.trigger('click');
-                    } else {
-                        $('#matiere-option-autre').trigger('click');
-                    }
-                }
-                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    openMatiere();
-                    if (!options.length) return;
-                    var idx = options.index(selected);
-                    idx = e.key === 'ArrowDown' ? (idx + 1) % options.length : (idx <= 0 ? options.length - 1 : idx - 1);
-                    options.attr('aria-selected', 'false');
-                    var opt = options.eq(idx).attr('aria-selected', 'true');
-                    if (opt[0]) opt[0].scrollIntoView({
-                        block: 'nearest'
-                    });
-                }
-            })
-            .on('click.matiere', function(e) {
-                if (!$(e.target).closest('.matiere-select').length) {
-                    closeMatiere();
-                }
-            });
-    })();
-
-    function toggleRevetementDetails(select) {
-        if (!select) select = document.getElementById('revetement-type');
-        var isCoated = select && select.value !== 'aucun';
-        var details = document.getElementById('revetement-details');
-        var input = document.getElementById('revetement-precision');
-        if (details) {
-            details.hidden = !isCoated;
-            details.style.display = isCoated ? 'flex' : 'none';
-        }
-        if (!isCoated && input) {
-            input.value = '';
-        }
-        if (isCoated && input) {
-            setTimeout(function() {
-                input.focus();
-            }, 50);
-        }
-    }
-</script>

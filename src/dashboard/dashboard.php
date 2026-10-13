@@ -142,7 +142,7 @@ if ($isAdmin || $isWorkshopChief) {
                             <path d="M3 7v9l7 4v-9M17 7v5M10 20l3-1.7" />
                             <path d="M18 15v6M15 18h6" />
                         </svg>
-                        <span>Créer une demande</span>
+                        <span>Créer une affaire</span>
                     </button>
                 <?php endif; ?>
 
@@ -151,7 +151,7 @@ if ($isAdmin || $isWorkshopChief) {
                         <rect x="5" y="4" width="14" height="17" rx="2" />
                         <path d="M9 4V2h6v2M9 10l2 2 4-4M9 16h6" />
                     </svg>
-                    <span><?= $isAdmin ? 'Valider les demandes' : ($isWorkshopChief ? 'Suivi des demandes' : ($isWorkshopPersonnel ? 'Mes affectations' : 'Mes demandes')) ?></span>
+                    <span><?= $isAdmin ? 'Valider les demandes' : ($isWorkshopChief ? 'Suivi des demandes' : ($isWorkshopPersonnel ? 'Mes affectations' : 'Mes affaires')) ?></span>
                     <?php if ($isAdmin): ?>
                         <span id="urgent-pending-count" class="nav-urgent-badge" aria-live="polite" aria-label="<?= $urgentPending ?> demandes urgentes en attente" title="Demandes urgentes en attente" <?= $urgentPending === 0 ? 'hidden' : '' ?>><?= $urgentPending ?></span>
                     <?php endif; ?>
@@ -421,6 +421,8 @@ if ($isAdmin || $isWorkshopChief) {
     <script src="../js/plan-viewer.js?v=<?= hash_file('sha256', __DIR__ . '/../js/plan-viewer.js') ?>"></script>
     <script src="../js/dashboard-sidebar.js?v=<?= hash_file('sha256', __DIR__ . '/../js/dashboard-sidebar.js') ?>"></script>
     <script src="../js/dashboard-accounts.js?v=<?= hash_file('sha256', __DIR__ . '/../js/dashboard-accounts.js') ?>"></script>
+    <script src="../js/liste-filtrable.js?v=<?= hash_file('sha256', __DIR__ . '/../js/liste-filtrable.js') ?>"></script>
+    <script src="../js/create-users.js?v=<?= hash_file('sha256', __DIR__ . '/../js/create-users.js') ?>"></script>
     <script src="../js/iso.js?v=<?= hash_file('sha256', __DIR__ . '/../js/iso.js') ?>"></script>
     <script src="../js/pv.js?v=<?= hash_file('sha256', __DIR__ . '/../js/pv.js') ?>"></script>
 </body>
