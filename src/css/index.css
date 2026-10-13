@@ -1,149 +1,218 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+/* ==========================================================================
+   ÉCRAN DE CONNEXION
+   ==========================================================================
+
+   Deux colonnes : le formulaire à gauche sur le fond de l'application, le visuel à
+   droite. Le formulaire tenait au milieu d'une page vide, et rien ne disait de quelle
+   application il ouvrait la porte.
+
+   Les mêmes jetons que le tableau de bord — c'est le premier écran qu'on voit, il ne
+   peut pas avoir sa propre charte. Le thème suit le choix mémorisé par le tableau de
+   bord : passer d'une connexion claire à un tableau sombre faisait un à-coup. */
+
+:root {
+    color-scheme: dark;
+    --frame: #141820;
+    --surface: #1c222d;
+    --border: #343d4c;
+    --text: #e2e7ef;
+    --text-muted: #a2adbd;
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --danger: #f6a4a4;
+    --ctrl-sm: 32px;
+    --ctrl-md: 44px;
+    --r-sm: 4px;
+    --r-md: 6px;
+    --font: -apple-system, "Segoe UI", system-ui, "Noto Sans", "Ubuntu", sans-serif;
+}
+
+:root[data-theme="light"] {
+    color-scheme: light;
+    --frame: #f1f5f9;
+    --surface: #ffffff;
+    --border: #cbd5e1;
+    --text: #0f172a;
+    --text-muted: #64748b;
+    --danger: #b91c1c;
+}
 
 * {
     box-sizing: border-box;
-    padding: 0;
     margin: 0;
-}
-
-html {
-    min-height: 100dvh;
-    width: 100%;
-}
-
-label {
-    font-family: "Roboto", sans-serif;
-    font-weight: 400;
-    font-size: 16px;
-    color: #333;
-
-    width: 100%;
-    margin: 0 0 6px;
     padding: 0;
 }
 
+html,
+body {
+    height: 100%;
+}
 
 body {
-    min-height: 100dvh;
-    width: 100%;
-
-    display: flex;
-    flex-direction: row;
+    display: grid;
+    /* Le visuel cède la place avant le formulaire : sur un écran étroit, c'est le
+       formulaire qu'on est venu chercher. */
+    grid-template-columns: minmax(420px, 46%) 1fr;
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    -webkit-font-smoothing: antialiased;
 }
 
-form {
+/* ===== LA COLONNE DU FORMULAIRE ===== */
+
+.connexion-panneau {
     display: flex;
     flex-direction: column;
-    width: 100%;
     min-height: 100%;
-    justify-content: center;
-    align-items: center;
+    padding: 36px 48px;
+    background: var(--surface);
+    overflow-y: auto;
 }
 
-.contenaire {
-    gap: 5px;
-    display: flex;
+/* La marque reste en haut à gauche, comme dans la barre du tableau de bord : on
+   retrouve le même repère au même endroit une fois connecté. */
+/* Le même recadrage que la barre du tableau de bord : le fichier porte le verrou complet
+   — IDEM, la goutte et PROCESS — alors qu'on ne veut que le monogramme. */
+.connexion-marque img {
+    display: block;
+    height: 42px;
+    width: auto;
+    object-fit: cover;
+    object-position: left center;
+    aspect-ratio: 470 / 213;
+}
+
+/* Le fond blanc du logo n'est utile que sur le thème sombre : le dessin est bleu clair
+   et blanc, il disparaîtrait sur le cadre. */
+:root:not([data-theme="light"]) .connexion-marque img {
+    padding: 3px 6px;
+    border-radius: var(--r-md);
+    background: #ffffff;
+}
+
+/* Le bloc central flotte entre la marque et le pied : « margin: auto » le centre
+   verticalement dans la place qui reste, quelle que soit la hauteur de la fenêtre. */
+.connexion-corps {
     width: 100%;
-
-    box-sizing: border-box;
-    max-width: 500px;
-    margin-inline: auto;
-    padding: 24px 20px;
+    max-width: 360px;
+    margin: auto;
+    padding: 32px 0;
 }
 
-input {
-    width: 100%;
-    padding: 14px 10px;
-    font-size: 16px;
-    min-height: 44px;
-    margin: 0 0 16px;
-    color: #1a1a1a;
-    background-color: #fff;
-    border: 1px solid #d0d0d0;
-    border-radius: 6px;
-    margin-top: 6px;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-::selection {
-    background-color: rgba(110 198 250 / 0.6);
-    color: black;
-}
-
-button {
-    background-color: rgb(13, 13, 13);
-    border: none;
-    padding: 16px;
-
-    margin-top: 15px;
-    color: #fff;
+.connexion-surtitre {
+    margin: 0 0 4px;
+    color: var(--text-muted);
     font-size: 14px;
-    border-radius: 999px;
-
-    width: 100%;
-    cursor: pointer;
-
-    transition: all ease-in;
 }
 
-button:hover {
-    background-color: rgba(13, 13, 13, 0.774);
-    border: none;
-    padding: 16px;
-
-    margin-top: 15px;
-    color: #fff;
-    font-size: 14px;
-    border-radius: 999px;
-
-    width: 100%;
-}
-
-.box-submit {
-    margin-top: 5px;
-    width: 100%;
-}
-
-h1 {
-    font-family: "Roboto", sans-serif;
-    font-optical-sizing: auto;
+.connexion-corps h1 {
+    margin: 0 0 24px;
+    font-size: 26px;
     font-weight: 600;
-    text-align: center;
-    font-style: normal;
-    font-variation-settings: "wdth" 100;
-
-    width: 100%;
-    margin-bottom: 18px;
+    letter-spacing: -0.01em;
 }
 
-svg {
-    color: #fff;
+#login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 
+/* Les champs sont habillés par floating-fields.css ; il ne reste ici que ce qui est
+   propre à cet écran. Le thème clair y redéfinit ses couleurs : cette page ne charge
+   pas la feuille du thème clair du tableau de bord. */
+:root[data-theme="light"] .floating-field {
+    --field-surface: #ffffff;
+    --field-text: #0f172a;
+    --field-muted: #64748b;
+    --field-border: #cbd5e1;
+    --field-focus: #2563eb;
+}
+
+/* Le bouton d'envoi, et lui seul : « #login-form button » prenait aussi l'œil des mots de
+   passe, qui arrivait en bloc bleu de 42 px poussé de 16 px vers le bas. */
+#login-form button[type="submit"] {
+    height: 42px;
+    margin-top: 16px;
+    border: 0;
+    border-radius: var(--r-md);
+    background: var(--accent);
+    color: #ffffff;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+#login-form button[type="submit"]:hover:not(:disabled) {
+    background: var(--accent-hover);
+}
+
+#login-form button[type="submit"]:disabled {
+    opacity: 0.6;
+    cursor: progress;
+}
+
+#login-form button[type="submit"]:focus-visible,
+.floating-field .floating-control:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* Le message n'existe qu'une fois rempli : vide, il réservait sa place et poussait le
+   bouton vers le bas au premier échec. */
 #form-message {
     display: none;
     margin-top: 12px;
-    padding: 10px 12px;
-    border-radius: 8px;
-    font-size: 14px;
-
-    font-family: "Roboto", sans-serif;
-    font-optical-sizing: auto;
-    font-weight: 400;
-    text-align: center;
-    font-style: normal;
-    font-variation-settings: "wdth" 100;
+    padding: 9px 12px;
+    border-radius: var(--r-md);
+    background: rgb(246 164 164 / 12%);
+    color: var(--danger);
+    font-size: 13px;
+    line-height: 1.4;
 }
 
-/* Dark theme, including native controls and autofill. */
-:root { color-scheme: dark; }
-body { background: #141820; color: #e2e7ef; }
-label { color: #e2e7ef; }
-input { color: #e2e7ef; background: #1c222d; border-color: #343d4c; }
-input::placeholder { color: #a2adbd; }
-input:focus-visible { outline: 2px solid #6095f5; outline-offset: 2px; }
-input:autofill { box-shadow: inset 0 0 0 1000px #1c222d; -webkit-text-fill-color: #e2e7ef; }
-button { background: #2563eb; }
-button:hover { background: #1d4ed8; }
-button:focus-visible { outline: 2px solid #6095f5; outline-offset: 3px; }
-::selection { background: #315a88; color: #e2e7ef; }
+.connexion-pied {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+/* ===== LA COLONNE DU VISUEL ===== */
+
+.connexion-visuel {
+    min-height: 100%;
+    /* « cover » et non « contain » : l'image n'a pas de sujet à préserver, c'est une
+       matière. Elle se recadre par son centre quelle que soit la forme de la colonne. */
+    background: #16213f url("../assets/login-fond.jpg") center / cover no-repeat;
+}
+
+/* ===== ÉCRANS ÉTROITS ===== */
+
+@media (max-width: 860px) {
+    body {
+        grid-template-columns: 1fr;
+    }
+
+    .connexion-panneau {
+        padding: 28px 24px;
+    }
+
+    /* Le visuel passe derrière le haut du formulaire : sur un téléphone, une colonne
+       d'image à côté n'a plus de place, mais la page resterait nue sans elle. */
+    .connexion-visuel {
+        display: none;
+    }
+}
+
+::selection {
+    background: #315a88;
+    color: #e2e7ef;
+}
+
+:root[data-theme="light"] ::selection {
+    background: #bfdbfe;
+    color: #1e3a8a;
+}

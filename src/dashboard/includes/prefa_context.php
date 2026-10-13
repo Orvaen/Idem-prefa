@@ -1,7 +1,18 @@
 <?php
+
+/**
+ * Le contexte commun à toutes les pages et actions du tableau de bord : qui est connecté,
+ * sur quelle base, et les quelques fonctions que tout le monde appelle.
+ *
+ * Il ne lit plus $_SESSION lui-même. La session est un modèle — src/modeles/Session.php —
+ * et l'identité est un objet, Utilisateur, qui porte ses droits. Ce qui suit n'en est que
+ * la traduction dans les anciens noms.
+ */
 require_once __DIR__ . '/../../db.php';
+require_once __DIR__ . '/../../modeles/autoload.php';
 require_once __DIR__ . '/prefa_references.php';
-session_start();
+
+Session::demarrer();
 header('Cache-Control: no-store');
 date_default_timezone_set('Europe/Paris');
 
@@ -13,34 +24,41 @@ function prefaError(int $status, string $message): never
     exit;
 }
 
-if (!isset($_SESSION['identifiant'])) prefaError(401, 'Veuillez vous reconnecter.');
-
 $db = new MyPDO(__DIR__ . '/../../my_setting.ini');
-$stmt = $db->prepare('SELECT u.id, u.id_role, r.name AS role_name FROM Utilisateur u JOIN role r ON r.id = u.id_role WHERE u.identifiant = ?');
-$stmt->execute([$_SESSION['identifiant']]);
-$actor = $stmt->fetch();
 
-if (!$actor) prefaError(401, 'Veuillez vous reconnecter.');
+/** La personne connectée. C'est elle qu'on interroge pour tout droit. */
+$utilisateur = Session::utilisateur($db);
+// Session vide, ou compte supprimé depuis la connexion : dans les deux cas il faut
+// repasser par l'écran d'ouverture.
+if (!$utilisateur) prefaError(401, 'Veuillez vous reconnecter.');
 
-$isAdmin = (int) $actor['id_role'] === 1;
-$isWorkshopChief = (int) $actor['id_role'] === 2;
-$canViewAllPrefa = $isAdmin || $isWorkshopChief;
-$isWorkshopPersonnel = (int) $actor['id_role'] === 3;
-// Les demandes sont créées et modifiées par le demandeur, pas par l’atelier.
-$isRequester = (int) $actor['id_role'] === 5;
-$canEditPrefa = $isAdmin || $isRequester;
-$canManageWorkshop = $isAdmin || $isWorkshopChief;
-// Les PV sont renseignés par l’atelier. Le chargé d’affaire les consulte pour suivre
-// l’avancement, mais seulement sur les demandes qu’il a déposées.
-$canFillPv = $isAdmin || $isWorkshopChief;
-$canViewPv = $canFillPv || $isRequester;
-$pvLimiteAuDemandeur = $isRequester && !$canFillPv;
-$_SESSION['prefa_csrf'] ??= bin2hex(random_bytes(32));
+// Le jeton est posé dès maintenant : les formulaires l'écrivent dans leur balisage, et
+// certains sont rendus avant qu'une action ne l'ait demandé.
+Session::jeton();
+
+// ---------------------------------------------------------------------------------------
+// Les anciens noms, dérivés de l'objet. Cinquante fichiers les lisent encore ; ils
+// disparaîtront au fur et à mesure que chacun passera à $utilisateur, sans qu'il faille
+// tout reprendre d'un coup.
+// ---------------------------------------------------------------------------------------
+$actor = ['id' => $utilisateur->id, 'id_role' => $utilisateur->idRole, 'role_name' => $utilisateur->roleEnBase];
+
+$isAdmin = $utilisateur->est(Role::ChargeDeProduction);
+$isWorkshopChief = $utilisateur->est(Role::ChefDAtelier);
+$isWorkshopPersonnel = $utilisateur->est(Role::PersonnelAtelier);
+$isRequester = $utilisateur->est(Role::ChargeDAffaire);
+
+$canViewAllPrefa = $utilisateur->voitToutesLesDemandes();
+$canEditPrefa = $utilisateur->deposeDesDemandes();
+$canManageWorkshop = $utilisateur->gereLAtelier();
+$canFillPv = $utilisateur->remplitLesPv();
+$canViewPv = $utilisateur->consulteLesPv();
+$pvLimiteAuDemandeur = $utilisateur->pvLimitesASesDemandes();
 
 function prefaPost(): void
 {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') prefaError(405, 'Méthode non autorisée.');
-    if (!hash_equals($_SESSION['prefa_csrf'], (string) ($_POST['csrf'] ?? ''))) {
+    if (!Session::jetonValide($_POST['csrf'] ?? null)) {
         prefaError(403, 'Rechargez la page puis réessayez.');
     }
 }

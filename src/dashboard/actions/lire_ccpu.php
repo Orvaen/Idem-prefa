@@ -4,7 +4,7 @@
 require_once __DIR__ . '/../includes/prefa_context.php';
 require_once __DIR__ . '/../includes/ccpu_demande.php';
 prefaPost();
-$csrf = $_SESSION['prefa_csrf'];
+$csrf = Session::jeton();
 // La lecture d'un scan dure plusieurs secondes. On rend la session avant : PHP la
 // verrouille le temps de la requête, et toutes les autres pages du même utilisateur
 // attendraient derrière celle-ci.

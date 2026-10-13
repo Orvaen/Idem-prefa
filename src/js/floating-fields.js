@@ -44,6 +44,18 @@
     } else {
         enhanceFields();
     }
-    // Dashboard pages and detail forms are inserted through jQuery and HTMX.
-    new MutationObserver(enhanceFields).observe(document.documentElement, { childList: true, subtree: true });
+    // Les volets arrivent par jQuery et HTMX ; et data-theme change sur <html> quand on
+    // bascule de thème.
+    //
+    // Ce second cas comptait : la couleur de fond est relevée sur l'ancêtre et écrite en dur
+    // dans --field-surface au moment où le champ est décoré. Elle restait donc celle de
+    // l'ancien thème — les champs gardaient leur fond sombre sur une page devenue claire
+    // jusqu'au prochain rechargement complet. Relancer la décoration la recalcule ; la
+    // fonction est faite pour être rejouée, elle ne redécore pas ce qui l'est déjà.
+    new MutationObserver(enhanceFields).observe(document.documentElement, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['data-theme'],
+    });
 })();

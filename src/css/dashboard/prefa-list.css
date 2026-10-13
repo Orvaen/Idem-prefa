@@ -137,14 +137,53 @@
     font-weight: 500;
 }
 
+/* La référence est un code, pas une phrase : des chiffres de largeur fixe, pour que la
+   colonne reste droite d'une ligne à l'autre. */
+.prefa-reference {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: var(--text-muted);
+}
+
+/* Les commandes d'une ligne sont des boutons fantômes : encadrées, elles faisaient trois
+   rectangles par ligne et le tableau devenait une barre d'outils. Elles ne prennent leur
+   fond qu'au survol de la ligne. */
 .prefa-toggle,
 .edit-prefa {
-    padding: 5px 12px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    background: var(--surface);
-    color: var(--text);
+    display: inline-flex;
+    align-items: center;
+    height: var(--ctrl-xs);
+    padding: 0 10px;
+    border: 1px solid transparent;
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 13px;
+    white-space: nowrap;
     cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+
+/* La ligne révèle ses commandes : elles prennent leur contour, et celle qu'on pointe se
+   remplit. Au repos, une ligne n'est que ses données.
+ *
+ * Le focus compte autant que le survol : sans lui, on tabule sur des commandes qui ne se
+ * voient pas. */
+tbody tr:hover .prefa-toggle,
+tbody tr:hover .edit-prefa,
+tbody tr:hover .delete-prefa,
+tbody tr:focus-within .prefa-toggle,
+tbody tr:focus-within .edit-prefa,
+tbody tr:focus-within .delete-prefa {
+    border-color: var(--border);
+    color: var(--text);
+}
+
+.prefa-toggle:hover,
+.edit-prefa:hover {
+    background: var(--active);
+    border-color: var(--border);
+    color: var(--text);
 }
 
 .edit-prefa:hover,
@@ -733,30 +772,62 @@ body.prefa-viewer-open {
     color: var(--text-muted);
 }
 
-/* ===== TABLE ===== */
+/* ===== TABLEAUX =====
+   Des lignes serrées, des filets presque invisibles, et une seule graisse de texte. Les
+   lignes faisaient cinquante pixels de haut avec une bordure franche sous chacune : on
+   lisait la grille avant les données, et huit demandes remplissaient l'écran.
+
+   Rien ne se répète d'une colonne à l'autre, rien n'est encadré : ce qui distingue une
+   ligne, c'est son contenu, et ce qui la désigne, c'est le survol. */
 
 table {
     width: 100%;
     border-collapse: collapse;
     background: var(--surface);
+    font-size: 13px;
 }
 
 th,
 td {
-    padding: 8px 12px;
+    padding: 0 12px;
     text-align: left;
-    border-bottom: 1px solid var(--border);
 }
 
+/* L'en-tête ne porte pas de fond : un bandeau gris au-dessus d'un tableau clair le coupe
+   en deux. Un filet un peu plus marqué que ceux des lignes suffit à le poser.
+ *
+ * Il reste collé en haut quand on fait défiler, et doit donc masquer les lignes qui
+ * passent dessous : il prend la surface de la page, pas une teinte à lui. */
 th {
-    background: var(--frame);
+    height: 34px;
+    border-bottom: 1px solid var(--border);
     color: var(--text-muted);
     font-size: 12px;
     font-weight: 500;
+    white-space: nowrap;
 }
 
 td {
+    height: 40px;
+    border-bottom: 1px solid var(--border-faint);
     color: var(--text);
+    font-weight: 450;
+}
+
+/* La ligne survolée s'éclaire d'un bloc : c'est elle qu'on suit du regard jusqu'à la
+   colonne des actions, à l'autre bout. Le clavier l'éclaire aussi — c'est le même repère,
+   et sans lui on tabule dans un tableau qui ne dit pas où l'on est.
+ *
+ * Le volet de détail est exclu : il n'est pas une ligne de données mais un écran entier
+   déplié sous elle, et il contient des champs qui prennent le focus. */
+tbody tr:hover:not(.prefa-detail-row) > td,
+tbody tr:focus-within:not(.prefa-detail-row) > td {
+    background: var(--ligne-survol);
+}
+
+/* Le dernier filet ne sert à rien : il double le bord du tableau. */
+tbody tr:last-child > td {
+    border-bottom: 0;
 }
 
 
@@ -768,8 +839,12 @@ td {
     }
 }
 
+/* C'est le bandeau qui porte le rembourrage, pas le titre. Le titre avait le sien et le
+   chapeau n'en avait aucun : les deux ne commençaient pas à la même abscisse, et le
+   bandeau était plus court que celui des autres écrans. */
 .list-h1 {
-    padding: 12px 16px;
+    margin: 0;
+    padding: 0;
     font-size: 18px;
     line-height: 24px;
     font-weight: 600;
@@ -778,11 +853,11 @@ td {
 
 .header-list input {
     width: 100%;
-    height: 30px;
-    padding: 0 8px;
+    height: var(--ctrl-sm);
+    padding: 0 10px;
     margin-right: 5px;
     border: 1px solid var(--border);
-    border-radius: 4px;
+    border-radius: var(--r-sm);
 
     background: var(--surface);
     color: var(--text);
@@ -797,6 +872,7 @@ td {
     width: 100%;
     display: flex;
     align-items: center;
+    padding: 18px 16px;
 }
 
 .header-list input {
@@ -806,9 +882,9 @@ td {
 .users-page .header-list {
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
 }
 
+/* Les filtres sont dans le bandeau, qui pose déjà les côtés. */
 .users-filters {
     display: flex;
     align-items: center;
@@ -816,7 +892,7 @@ td {
     gap: 10px;
     width: 100%;
     margin: 0;
-    padding: 0 16px 12px;
+    padding: 10px 0 0;
 }
 
 .users-page .users-filters input {
@@ -827,10 +903,10 @@ td {
 .users-filters select {
     min-width: 170px;
     max-width: 100%;
-    height: 30px;
-    padding: 0 8px;
+    height: var(--ctrl-sm);
+    padding: 0 10px;
     border: 1px solid var(--border);
-    border-radius: 4px;
+    border-radius: var(--r-sm);
     background: var(--surface);
     color: var(--text);
     font: inherit;
@@ -924,37 +1000,150 @@ td {
     color: var(--accent);
 }
 
-.dashboard-welcome {
+/* ---------- L'accueil ----------
+   Un bonjour, quelques chiffres, et ce qui a bougé aujourd'hui. Tout est carré et à plat :
+   ce sont les filets qui séparent, pas les ombres ni les marges. Le fond du cadre passe
+   entre les tuiles — c'est lui qui aère, sans qu'aucune ne flotte. */
+/* En colonne, pour que le journal prenne toute la hauteur qui reste : sans cela le fond
+   du cadre reprenait sous le dernier bloc, et la page semblait coupée en deux. */
+.accueil {
     height: 100%;
-    padding: 48px 24px;
-    display: grid;
-    place-items: center;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    background: var(--frame);
 }
 
-.welcome-card {
-    max-width: 360px;
-    text-align: center;
+.accueil-entete {
+    padding: 20px 24px 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
 }
 
-.welcome-icon {
-    width: 40px;
-    height: 40px;
-    margin-bottom: 16px;
-    color: var(--text-muted);
-}
-
-.welcome-card h1 {
-    margin-bottom: 8px;
-    font-size: 18px;
-    line-height: 24px;
+.accueil-entete h1 {
+    margin: 0 0 2px;
+    font-size: 20px;
+    line-height: 28px;
     font-weight: 600;
     color: var(--text);
 }
 
-.welcome-card p {
+.accueil-entete p {
+    margin: 0;
     font-size: 13px;
-    line-height: 20px;
+    color: var(--text-muted);
+}
+
+/* Les tuiles se touchent par un filet d'un pixel : la grille a un trou d'un pixel entre
+   les cellules, et le fond du cadre le remplit. Pas de bordure à dessiner, donc pas de
+   double trait là où deux tuiles se rejoignent. */
+.accueil-tuiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 1px;
+    border-bottom: 1px solid var(--border);
+}
+
+.accueil-tuile {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 18px 20px 20px;
+    border: 0;
+    border-radius: 0;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.accueil-tuile[disabled] {
+    cursor: default;
+}
+
+.accueil-tuile:not([disabled]):hover {
+    background: var(--hover);
+}
+
+.accueil-tuile-valeur {
+    font-size: 30px;
+    line-height: 36px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Un chiffre qui attend quelque chose de vous se voit : rien d'autre ne change de couleur
+   sur cet écran, c'est ce qui le rend lisible d'un coup d'œil. */
+.accueil-tuile.est-en-alerte .accueil-tuile-valeur {
+    color: var(--accent);
+}
+
+.accueil-tuile-libelle {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.accueil-tuile-detail {
+    font-size: 12px;
+    line-height: 16px;
+    color: var(--text-muted);
+}
+
+.accueil-journal {
+    flex: 1;
+    padding: 18px 24px 24px;
+    background: var(--surface);
+}
+
+.accueil-journal h2 {
+    margin: 0 0 10px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+}
+
+.accueil-evenements {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.accueil-evenement {
+    display: flex;
+    gap: 12px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+}
+
+.accueil-evenement:last-child {
+    border-bottom: 0;
+}
+
+/* L'heure en chiffres tabulaires : la colonne reste droite d'une ligne à l'autre. */
+.accueil-heure {
+    flex: none;
+    width: 3.2rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Un filet de couleur dit de quoi il s'agit, sans un mot de plus. */
+.accueil-evenement .accueil-texte {
+    border-left: 2px solid var(--border);
+    padding-left: 10px;
+}
+
+.accueil-evenement.est-depot .accueil-texte { border-left-color: var(--accent); }
+.accueil-evenement.est-validation .accueil-texte { border-left-color: #16a34a; }
+.accueil-evenement.est-refus .accueil-texte { border-left-color: #dc2626; }
+
+.accueil-rien {
+    margin: 0;
+    font-size: 13px;
     color: var(--text-muted);
 }
 
@@ -984,9 +1173,74 @@ td {
 
 .dashboard-toolbar {
     display: flex;
+    align-items: center;
     flex-shrink: 0;
     padding: 2px 4px;
     border-bottom: 1px solid var(--border);
+}
+
+/* Le compte tient la droite de la barre : c'est là qu'on le cherche. */
+.toolbar-compte {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Au pied de la barre de navigation, le nom et le rôle tenaient sur deux lignes. En haut,
+   la place est horizontale : le nom suffit, le rôle se lit dans le menu qui s'ouvre. */
+.toolbar-compte .nav-subfooter .subtitle {
+    display: none;
+}
+
+.toolbar-compte .account-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+}
+
+.toolbar-compte .account-trigger:hover,
+.toolbar-compte .account-trigger[aria-expanded="true"],
+.toolbar-compte .nav-theme:hover,
+.toolbar-compte .nav-theme[aria-expanded="true"],
+.toolbar-compte .nav-logout:hover {
+    background: var(--hover);
+}
+
+/* La hauteur de ligne colle aux lettres. À 16 px pour un texte de 13, la boîte réservait
+   sous la ligne de base la place des jambages — que « Alan Admin » n'a pas — et le nom
+   tombait deux pixels sous la pastille et le chevron, qui sont centrés sur leur dessin. */
+.toolbar-compte .nav-subfooter .title {
+    font-size: 13px;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+/* Les trois commandes ont la même boîte : rien ne dépasse, rien n'est arrondi. */
+.toolbar-compte .nav-theme,
+.toolbar-compte .nav-logout {
+    display: flex;
+    align-items: center;
+    margin: 0;
+    padding: 6px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+/* Sous 700 px, le nom s'efface : l'initiale suffit à savoir qui est connecté. */
+@media (max-width: 700px) {
+    .toolbar-compte .nav-subfooter {
+        display: none;
+    }
 }
 
 #btn-hide {
@@ -1281,23 +1535,25 @@ summary {
     min-width: 100px;
 }
 
+/* Supprimer est une commande de ligne comme les autres : même boîte, même effacement au
+   repos. Elle gardait son cadre rouge en permanence — un rectangle coloré par ligne, pour
+   l'action qu'on fait le moins souvent de tout l'écran. Le rouge ne vient qu'au survol. */
 .delete-prefa {
-    color: #f6a4a4;
-    background: var(--surface);
-    border: 1px solid #694047;
-    padding: 8px 14px;
-    border-radius: 4px;
-}
-
-.prefa-toggle,
-.edit-prefa {
-    min-height: 0;
-    padding: 8px 14px;
+    display: inline-flex;
+    align-items: center;
+    height: var(--ctrl-xs);
+    padding: 0 10px;
+    border: 1px solid transparent;
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--text-muted);
+    transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
 
 .delete-prefa:hover:not(:disabled) {
-    border-color: #f6a4a4;
+    border-color: #694047;
     background: #382326;
+    color: #f6a4a4;
 }
 
 .prefa-actions .cancel-prefa-edit {
@@ -1310,12 +1566,26 @@ summary {
     background: var(--hover);
 }
 
-.passivation-select {
+/* ---------- Le champ « liste filtrable » ----------
+   Un champ de saisie, une croix pour effacer, et le volet des choix dessous. Ces règles
+   existaient en double, une fois pour la passivation et une fois pour la matière, avec les
+   identifiants écrits dedans : un troisième champ demandait une troisième copie. Le
+   balisage vient maintenant d'un composant, et ce jeu de classes sert à tous. */
+.liste-filtrable {
     position: relative;
     width: 100%;
+    /* La marge du champ remonte ici. Elle était portée par le .floating-field posé à
+       l'intérieur, ce qui rendait la boîte du composant plus haute que son champ : la
+       croix, centrée sur le composant, tombait deux pixels au-dessus du centre du champ.
+       Portée par le composant, sa boîte est exactement celle du champ. */
+    margin: 8px 0 4px;
 }
 
-.passivation-select #passivation-search {
+.liste-filtrable .floating-field {
+    margin: 0;
+}
+
+.liste-filtrable-champ {
     width: 100%;
     height: 38px;
     padding: 0 34px 0 11px;
@@ -1326,37 +1596,87 @@ summary {
     font-size: 14px;
 }
 
-.passivation-select #passivation-search:focus {
+.liste-filtrable-champ:focus {
     border-color: var(--accent);
     outline: none;
 }
 
-#passivation-clear {
+/* Un glyphe discret posé dans le champ, pas une commande : il s'allume au survol et
+   s'efface le reste du temps. Le sélecteur est scopé au composant pour tenir devant les
+   règles de formulaire, qui portent deux classes. */
+.liste-filtrable .liste-filtrable-effacer {
     position: absolute;
     top: 50%;
     right: 8px;
-    width: 22px;
-    height: 22px;
-    padding: 0;
-    transform: translateY(-50%);
-    border: 0;
-    border-radius: 4px;
-    background: transparent;
-    color: var(--text-muted);
-    font-size: 18px;
-    line-height: 22px;
-    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    transform: translateY(-50%);
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
 }
 
-#passivation-clear:hover {
+.liste-filtrable .liste-filtrable-effacer .icon {
+    width: 14px;
+    height: 14px;
+}
+
+.liste-filtrable .liste-filtrable-effacer:hover {
     background: var(--hover);
     color: var(--text);
 }
 
-#passivation-options {
+.liste-filtrable .liste-filtrable-effacer:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+/* ---------- Le champ filtrable dans une cellule ----------
+   Il n'a ni étiquette ni groupe de formulaire : c'est l'intitulé de la colonne qui le
+   nomme. Sa boîte est celle des autres contrôles du tableau, et c'est la ligne qui la
+   révèle — le reste vient des règles de l'écran, qui visent « input ». */
+.liste-filtrable-tableau {
+    margin: 0;
+}
+
+.liste-filtrable-tableau .liste-filtrable-champ {
+    height: var(--ctrl-xs);
+    /* De quoi laisser passer la croix d'effacement sans que le texte lui coure dessous. */
+    padding: 0 28px 0 8px;
+    font-size: 13px;
+    text-overflow: ellipsis;
+}
+
+/* La croix ne se montre pas au repos : dans un tableau, une ligne au repos est du texte,
+   et cinq croix alignées en faisaient une colonne de commandes. */
+.liste-filtrable-tableau .liste-filtrable-effacer {
+    right: 4px;
+    width: 20px;
+    height: 20px;
+    opacity: 0;
+    transition: opacity 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+
+.liste-filtrable-tableau:hover .liste-filtrable-effacer,
+.liste-filtrable-tableau:focus-within .liste-filtrable-effacer {
+    opacity: 1;
+}
+
+.liste-filtrable-tableau .liste-filtrable-effacer .icon {
+    width: 12px;
+    height: 12px;
+}
+
+/* Le volet flotte au-dessus du formulaire : il ne doit pas pousser les champs suivants
+   quand il s'ouvre. */
+.liste-filtrable-options {
     position: absolute;
     top: calc(100% + 4px);
     left: 0;
@@ -1370,7 +1690,7 @@ summary {
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
 
-#passivation-options [role="option"] {
+.liste-filtrable-options [role="option"] {
     min-height: 36px;
     padding: 9px 12px;
     cursor: pointer;
@@ -1378,111 +1698,26 @@ summary {
     color: var(--text);
 }
 
-#passivation-options [role="option"]:hover,
-#passivation-options [aria-selected="true"] {
+.liste-filtrable-options [role="option"]:hover,
+.liste-filtrable-options [aria-selected="true"] {
     background: var(--hover);
     color: var(--accent);
 }
 
-.passivation-option-autre {
+/* « Autre » se détache du catalogue : ce n'est pas un choix de plus, c'est une sortie. */
+.liste-filtrable-autre {
     border-top: 1px dashed var(--border) !important;
     color: var(--accent) !important;
     font-weight: 500;
 }
 
-.passivation-no-results {
+.liste-filtrable-vide {
     padding: 10px 12px;
     color: var(--text-muted);
     font-size: 13px;
     margin: 0;
 }
 
-.matiere-select {
-    position: relative;
-    width: 100%;
-}
-
-.matiere-select #matiere-search {
-    width: 100%;
-    height: 38px;
-    padding: 0 34px 0 11px;
-    border: 1px solid var(--border);
-    border-radius: 5px;
-    background: var(--surface);
-    color: var(--text);
-    font-size: 14px;
-}
-
-.matiere-select #matiere-search:focus {
-    border-color: var(--accent);
-    outline: none;
-}
-
-#matiere-clear {
-    position: absolute;
-    top: 50%;
-    right: 8px;
-    width: 22px;
-    height: 22px;
-    padding: 0;
-    transform: translateY(-50%);
-    border: 0;
-    border-radius: 4px;
-    background: transparent;
-    color: var(--text-muted);
-    font-size: 18px;
-    line-height: 22px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-#matiere-clear:hover {
-    background: var(--hover);
-    color: var(--text);
-}
-
-#matiere-options {
-    position: absolute;
-    top: calc(100% + 4px);
-    left: 0;
-    right: 0;
-    z-index: 50;
-    max-height: 220px;
-    overflow-y: auto;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-}
-
-#matiere-options [role="option"] {
-    min-height: 36px;
-    padding: 9px 12px;
-    cursor: pointer;
-    font-size: 13.5px;
-    color: var(--text);
-}
-
-#matiere-options [role="option"]:hover,
-#matiere-options [aria-selected="true"] {
-    background: var(--hover);
-    color: var(--accent);
-}
-
-.matiere-option-autre {
-    border-top: 1px dashed var(--border) !important;
-    color: var(--accent) !important;
-    font-weight: 500;
-}
-
-.matiere-no-results {
-    padding: 10px 12px;
-    color: var(--text-muted);
-    font-size: 13px;
-    margin: 0;
-}
 
 .page.prefa-simple {
     background: var(--surface);
@@ -1518,50 +1753,10 @@ summary {
     padding: 8px 0;
 }
 
-#prefa-search {
-    width: 200px;
-    max-width: 100%;
-    min-width: 0;
-    height: 30px;
-    padding: 0 8px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    font-size: 13px;
-    margin-left: auto;
-}
-
-.prefa-filters {
-    display: flex;
-    align-items: end;
-    flex-wrap: wrap;
-    gap: 12px;
-    padding: 0 16px 14px;
-}
-
-.prefa-filters label {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    color: var(--text-muted);
-    font-size: 12px;
-}
-
-.prefa-filters input,
-.prefa-filters select {
-    min-width: 150px;
-    height: 36px;
-    padding: 0 8px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    background: var(--surface);
-    color: var(--text);
-    font: inherit;
-}
-
-.prefa-filters #prefa-search {
-    height: 36px;
-    margin-left: 0;
-}
+/* Les filtres étaient des champs de formulaire empilés sous leur étiquette. Ils sont
+   maintenant des pastilles — voir filtres.css — et ces règles, qui visaient « tout input,
+   tout label de la barre », rhabillaient le nouveau balisage : les cases à cocher passaient
+   sous leur texte, et l'icône de recherche se posait sur la saisie. */
 
 .prefa-list-summary {
     margin: 0;
@@ -1754,22 +1949,14 @@ summary {
 }
 
 @media (max-width: 700px) {
-    .prefa-filters label {
-        flex: 1 1 160px;
-    }
-
-    .prefa-filters input,
-    .prefa-filters select {
-        width: 100%;
-    }
 }
 
 @media (pointer: coarse) {
 
-    .prefa-filters input,
-    .prefa-filters select,
-    .prefa-filters #prefa-search {
-        height: 44px;
-        font-size: 16px;
+    /* Au doigt, la cible doit faire quarante-quatre pixels. */
+    .filtres-recherche input,
+    .filtre,
+    .filtre-option {
+        min-height: 44px;
     }
 }

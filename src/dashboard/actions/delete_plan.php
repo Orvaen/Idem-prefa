@@ -29,10 +29,10 @@ if (!$elementId) prefaError(400, 'Élément invalide.');
 
 $stmt = $db->prepare('SELECT e.id_demande FROM element_atelier e
     JOIN demande_prefabrication d ON d.id = e.id_demande
-    WHERE e.id = ? AND d.id_statut = 2 AND d.prise_en_charge_atelier = 1');
+    WHERE e.id = ? AND d.id_statut = 2');
 $stmt->execute([$elementId]);
 $requestId = (int) $stmt->fetchColumn();
-if (!$requestId) prefaError(404, 'Élément introuvable, demande non validée ou non prise en charge.');
+if (!$requestId) prefaError(404, 'Élément introuvable ou demande non validée.');
 
 // Une feuille, ou plusieurs : « documents[] » pour un lot, « document » pour une seule.
 $demandes = $_POST['documents'] ?? ($_POST['document'] ?? null);

@@ -84,7 +84,7 @@ if ($validatedRequests) {
 
 $totalValidated = count($validatedRequests);
 $isPlansIsoPage = true;
-$toTakeCharge = count(array_filter($validatedRequests, fn($r) => empty($r['prise_en_charge_atelier'])));
+$toTakeCharge = count(array_filter($validatedRequests, fn($r) => ($planCounts[(int) $r['id']] ?? 0) === 0));
 $totalPlans = array_sum($planCounts);
 ?>
 
@@ -122,13 +122,11 @@ $totalPlans = array_sum($planCounts);
                         <th scope="col">Date limite de livraison</th>
                         <th scope="col">Plans / ISO</th>
                         <th scope="col">Priorité</th>
-                        <th scope="col">Prise en charge</th>
                         <th scope="col">Actions</th>
                     </tr></thead>
                 <?php foreach ($validatedRequests as $index => $req):
                     $row = $req;
                     $requestId = (int) $row['id'];
-                    $isTaken = !empty($row['prise_en_charge_atelier']);
                     $nbPlans = $planCounts[$requestId] ?? 0;
                     $ownerName = trim(($row['prenom'] ?? '') . ' ' . ($row['name'] ?? ''));
                     $filterData = mb_strtolower(prefaReference($requestId) . ' ' . $requestId . ' ' . ($row['nom_affaire'] ?? '') . ' ' . $ownerName);
@@ -145,18 +143,13 @@ $totalPlans = array_sum($planCounts);
                             <td><?= !empty($row['date_livraison_prevue']) ? prefaEscape(prefaFormatDate($row['date_livraison_prevue'])) : '—' ?></td>
                             <td><?= $nbPlans ?> plan<?= $nbPlans > 1 ? 's' : '' ?></td>
                             <td><?php if (!empty($row['urgent'])): ?><span class="prefa-urgent">Urgente</span><?php else: ?>Normale<?php endif; ?></td>
-                            <td><?= $isTaken ? prefaEscape($row['prise_en_charge_nom'] ?: 'Pris en charge') : '<span class="prefa-a-prendre">À prendre en charge</span>' ?></td>
                             <td>
                                 <button type="button" class="prefa-toggle" aria-expanded="false" aria-controls="prefa-detail-<?= $requestId ?>">Détails</button>
-                                <?php if ($isTaken): ?>
-                                    <button type="button" class="prefa-toggle plans-iso-toggle" aria-expanded="false" aria-controls="plans-iso-detail-<?= $requestId ?>">Plans & affectations</button>
-                                    <button type="button" class="prefa-toggle atelier-open-plan-create" data-dialog="atelier-create-dialog-<?= $requestId ?>">Ajouter un plan</button>
-                                <?php else: ?>
-                                    <?php require __DIR__ . '/../partials/atelier_take.php'; ?>
-                                <?php endif; ?>
+                                <button type="button" class="prefa-toggle plans-iso-toggle" aria-expanded="false" aria-controls="plans-iso-detail-<?= $requestId ?>">Plans & affectations</button>
+                                <button type="button" class="prefa-toggle atelier-open-plan-create" data-dialog="atelier-create-dialog-<?= $requestId ?>">Ajouter un plan</button>
                             </td>
                         </tr>
-                        <tr id="plans-iso-detail-<?= $requestId ?>" class="plans-iso-detail prefa-detail-row" hidden><td colspan="8">
+                        <tr id="plans-iso-detail-<?= $requestId ?>" class="plans-iso-detail prefa-detail-row" hidden><td colspan="7">
                             <div class="plans-iso-body">
                                 <div class="prefa-detail-heading">
                                     <div>

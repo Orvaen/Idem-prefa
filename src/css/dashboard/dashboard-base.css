@@ -3,6 +3,10 @@
     --frame: #141820;
     --surface: #1c222d;
     --border: #343d4c;
+    /* Le filet qui sépare deux lignes d'un tableau. Plus discret que la bordure d'un cadre :
+       sur quarante lignes, une bordure franche fait une grille, et c'est la grille qu'on
+       lit au lieu des données. */
+    --border-faint: #252c38;
     --text: #e2e7ef;
     --text-muted: #a2adbd;
     --hover: #2a3342;
@@ -10,6 +14,61 @@
     --accent: #2563eb;
     --accent-hover: #1d4ed8;
     --radius: 8px;
+
+    /* ---------- L'échelle des contrôles ----------
+       Trois hauteurs, et pas une de plus. Les boutons se mesuraient à 30, 30, 32, 32, 33,
+       35, 36, 38 et 39 pixels selon l'écran, avec quatre rayons et trois corps de texte :
+       en passant d'une page à l'autre, rien ne tombait au même endroit.
+
+       xs  dans une cellule de tableau : la ligne fait 40, le contrôle doit y tenir
+       sm  partout ailleurs — boutons, barres d'outils, filtres
+       md  les champs de formulaire, qui portent une étiquette flottante et ont besoin
+           de la place pour la laisser monter */
+    --ctrl-xs: 28px;
+    --ctrl-sm: 32px;
+    --ctrl-md: 44px;
+
+    /* Deux rayons : le petit pour ce qui est posé dans la page, le grand pour ce qui
+       flotte au-dessus. On en comptait six — 3, 4, 5, 6, 7 et 8. */
+    --r-sm: 4px;
+    --r-md: 6px;
+
+    /* Les lignes d'un tableau. L'en-tête est plus court que les lignes : c'est un repère,
+       pas une donnée. */
+    --ligne-th: 34px;
+    --ligne-td: 40px;
+
+    /* Le fond d'une ligne de tableau au survol. Ce n'est pas celui des menus : une gélule
+       de menu se détache par sa forme, une ligne de tableau n'a que sa teinte. Sur fond
+       sombre les deux se valent, sur fond clair le gris des menus ne faisait que 3 % d'écart
+       avec le blanc — on survolait sans rien voir bouger. */
+    --ligne-survol: var(--hover);
+
+    /* La ligne retenue dans une sélection. Plus franche que le survol : on doit distinguer
+       « je la pointe » de « je l'ai prise ». */
+    --selection-fond: #1e3050;
+    --selection-filet: #2a4470;
+
+    /* La pastille d'un filtre posé : assez teintée pour se distinguer des filtres vides
+       de la même barre, assez sobre pour ne pas crier à côté du tableau. */
+    --filtre-fond: #1b2639;
+    --filtre-bord: #35496e;
+
+    /* Le rouge des suppressions, nommé une fois. */
+    --danger-texte: #f6a4a4;
+    --danger-bord: #694047;
+    --danger-fond: #b42318;
+
+    /* Les bandeaux de résultat — « enregistré », « impossible ». Leurs couleurs étaient
+       écrites en dur dans quatre feuilles, pensées pour le fond sombre : sur le thème clair,
+       un succès s'affichait en vert foncé sur blanc. Nommées ici, les deux thèmes les
+       redéfinissent au même endroit. */
+    --succes-texte: #86dba6;
+    --succes-fond: #183329;
+    --succes-bord: #315b43;
+    --alerte-texte: #f6a4a4;
+    --alerte-fond: #382326;
+    --alerte-bord: #694047;
     --font: -apple-system, "Segoe UI", system-ui, "Noto Sans", "Ubuntu", sans-serif;
     --scrollbar-thumb: #414b5b;
     --scrollbar-thumb-hover: #637086;
@@ -151,6 +210,9 @@ input[type="number"]::-webkit-outer-spin-button {
     background: var(--frame);
 }
 
+/* La barre porte le seul trait de l'écran : c'est lui qui sépare la navigation du travail.
+   Tout le reste est à plat, sans marge ni coin arrondi — les panneaux flottants donnaient
+   trois traits et deux gouttières là où un suffit. */
 #left-panel {
     width: 260px;
     min-width: 150px;
@@ -158,6 +220,7 @@ input[type="number"]::-webkit-outer-spin-button {
 
     display: flex;
     flex-direction: column;
+    border-right: 1px solid var(--border);
 }
 
 #right-panel {
@@ -165,10 +228,7 @@ input[type="number"]::-webkit-outer-spin-button {
     flex: 1;
     min-width: 200px;
 
-    margin: 6px 6px 6px 0;
     background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
 
     overflow: hidden;
     display: flex;
@@ -181,8 +241,64 @@ input[type="number"]::-webkit-outer-spin-button {
     overflow: hidden;
 }
 
-
 /* ===== SIDEBAR ===== */
+
+/* La marque coiffe la barre, à la même hauteur que la barre d'outils d'en face : les deux
+   traits se rejoignent d'un bord à l'autre de l'écran. */
+.nav-marque {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 56px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    overflow: hidden;
+}
+
+/* Le logo garde sa taille quelle que soit la largeur de la barre : un logo qui enfle quand
+   on tire la poignée n'est plus une marque, c'est une image de fond.
+ *
+ * Le fichier porte le verrou complet — IDEM, la goutte, PROCESS — sur 1403 pixels de large.
+ * On n'en montre que le premier tiers, le monogramme : c'est lui qui identifie la maison, et
+ * le reste ne se lirait pas à cette hauteur. Le cadrage se fait au rapport, pas au pixel,
+ * pour qu'il tienne si le fichier est remplacé par une version plus fine. */
+.nav-marque img {
+    height: 45px;
+    width: auto;
+    flex: none;
+    object-fit: cover;
+    object-position: left center;
+    aspect-ratio: 470 / 213;
+}
+
+/* Le dessin est fait pour du papier blanc : ses contours gris foncé et la queue noire du
+   ruban disparaissent sur fond sombre. Éclaircir ne suffit pas — du noir multiplié reste
+   du noir — alors on lui rend son papier : une plaque claire à sa taille, arrondie comme
+   le reste. C'est le seul moyen de garder le logo fidèle sans une version monochrome, qui
+   serait la vraie réponse si le graphiste peut en fournir une. */
+:root:not([data-theme="light"]) .nav-marque img {
+    padding: 3px 6px;
+    border-radius: 6px;
+    background: #ffffff;
+}
+
+.nav-marque-mot {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--text);
+}
+
+/* Le métier, en plus petit : la barre dit de quelle application il s'agit, pas seulement
+   de quelle maison. Il s'efface quand la barre devient étroite. */
+.nav-marque-metier {
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 
 .nav-header {
     padding: 8px 6px;
@@ -190,6 +306,80 @@ input[type="number"]::-webkit-outer-spin-button {
     display: flex;
     flex-direction: column;
     gap: 1px;
+    overflow-y: auto;
+}
+
+/* ---------- Les rayons de la barre ----------
+   Onze entrées à la file, toutes de la même taille, ne disaient pas ce qui allait avec
+   quoi. Trois intitulés discrets les rangent, et chacun se replie. */
+.nav-rayon {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+/* L'intitulé est la ligne de repli : elle se clique en entier, et ne ressemble pas à une
+   rubrique — plus petite, en capitales, sans icône. */
+.nav-rayon-titre {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    margin: 10px 0 2px;
+    padding: 4px 8px;
+    border: 0;
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-align: left;
+    cursor: pointer;
+}
+
+.nav-rayon:first-child .nav-rayon-titre {
+    margin-top: 2px;
+}
+
+.nav-rayon-titre:hover {
+    color: var(--text);
+}
+
+/* Le chevron ne se montre qu'au survol ou au clavier : au repos, il ajouterait un signe
+   par rayon pour un geste qu'on fait rarement. */
+.nav-rayon-chevron {
+    width: 12px;
+    height: 12px;
+    opacity: 0;
+    transition: opacity 0.15s ease, transform 0.18s ease;
+}
+
+.nav-rayon:hover .nav-rayon-chevron,
+.nav-rayon-titre:focus-visible .nav-rayon-chevron {
+    opacity: 0.7;
+}
+
+.nav-rayon-titre[aria-expanded="false"] .nav-rayon-chevron {
+    transform: rotate(-90deg);
+}
+
+.nav-rayon-corps {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.nav-rayon-titre[aria-expanded="false"] + .nav-rayon-corps {
+    display: none;
+}
+
+/* L'action principale se détache du reste : c'est ce qu'on vient faire, pas une rubrique
+   où l'on va voir. */
+.nav-btn-avant {
+    margin-bottom: 2px;
+    font-weight: 600;
 }
 
 .nav-btn {
@@ -229,7 +419,6 @@ input[type="number"]::-webkit-outer-spin-button {
     outline: 1px solid var(--accent);
     outline-offset: -1px;
 }
-
 
 /* ===== USER ===== */
 
@@ -304,42 +493,44 @@ input[type="number"]::-webkit-outer-spin-button {
     color: var(--text);
 }
 
-
 /* ===== RESIZE ===== */
 
+/* La poignée n'occupe plus de place : elle se superpose au trait de la barre. Six pixels
+   de large, c'était six pixels de vide entre les deux panneaux. */
 #drag {
     position: relative;
-
-    width: 6px;
+    width: 0;
     flex-shrink: 0;
-
     cursor: col-resize;
+    z-index: 2;
 }
 
+/* La zone qu'on attrape déborde de part et d'autre du trait, et reste invisible : on
+   n'attrape pas un trait d'un pixel à la souris. */
 #drag::before {
     content: "";
     position: absolute;
-    inset: 0 -3px;
+    inset: 0 -4px;
 }
 
+/* Ce qui se voit au survol : un trait fin, gris et translucide, posé sur la bordure. Le
+   bleu plein large de huit pixels sautait aux yeux pour un geste qu'on fait une fois par
+   mois — et il annonçait une poignée trois fois plus épaisse que le trait qu'elle déplace. */
 #drag::after {
     content: "";
     position: absolute;
-
-    top: 6px;
-    bottom: 6px;
-    left: 50%;
+    top: 0;
+    bottom: 0;
+    left: -1px;
     width: 2px;
-
-    transform: translateX(-50%);
-    background: transparent;
-    transition: background 0.15s ease;
+    background-color: hsl(220 9% 55% / 0);
+    transition: background-color 0.18s ease;
 }
 
-#drag:hover::after {
-    background: var(--accent);
+#drag:hover::after,
+#drag.is-resizing::after {
+    background-color: hsl(220 9% 55% / 0.38);
 }
-
 
 /* ===== BOUTON HIDE ===== */
 
@@ -367,304 +558,26 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 /* ===== THÈME ROSE ULTIME (100% PINK EDITION - TOUT EN ROSE !) ===== */
-html[data-theme="pink"],
-body[data-theme="pink"],
-[data-theme="pink"] {
-    color-scheme: dark;
-    --frame: #9d174d;
-    --surface: #a82062;
-    --border: #bd5284;
-    --text: #fff5fb;
-    --text-muted: #fbd5e8;
-    --hover: #b3236c;
-    --active: #be185d;
-    --accent: #be185d;
-    --accent-hover: #9d174d;
-    --radius: 8px;
-    --scrollbar-thumb: #f472b6;
-    --scrollbar-thumb-hover: #be185d;
-}
-
-[data-theme="pink"] ::selection {
-    background: #f472b6 !important;
-    color: var(--text) !important;
-}
 
 /* Fond général et conteneur principal */
-[data-theme="pink"] #contenaire {
-    background: linear-gradient(135deg, #831843 0%, #9d174d 40%, #b3236c 100%) !important;
-}
-
-[data-theme="pink"] #right-panel {
-    background: #921653 !important;
-    border-color: var(--border) !important;
-}
-
-[data-theme="pink"] #content {
-    background: transparent !important;
-}
-
-[data-theme="pink"] .page,
-[data-theme="pink"] .page.prefa-list,
-[data-theme="pink"] .settings-page,
-[data-theme="pink"] .atelier-page,
-[data-theme="pink"] .planning-page {
-    background: transparent !important;
-}
 
 /* Sidebar ultra rose éclatante */
-[data-theme="pink"] #left-panel {
-    background: linear-gradient(180deg, #be185d 0%, #9d174d 55%, #9d174d 100%) !important;
-    border-right-color: var(--border) !important;
-}
-
-[data-theme="pink"] #left-panel .nav-btn {
-    color: var(--text) !important;
-    font-weight: 600;
-}
-
-[data-theme="pink"] #left-panel .nav-btn .icon {
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] #left-panel .nav-btn:hover,
-[data-theme="pink"] #left-panel .nav-btn.is-active {
-    background: #be185d !important;
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] #left-panel .nav-subfooter .title {
-    color: var(--text) !important;
-    font-weight: 700;
-}
-
-[data-theme="pink"] #left-panel .nav-subfooter .subtitle {
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] .user-avatar {
-    background: #a82062 !important;
-    color: var(--text) !important;
-    font-weight: 800;
-    border-color: #9d174d !important;
-}
-
-[data-theme="pink"] .nav-logout {
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] .nav-logout:hover {
-    background: #be185d !important;
-    color: var(--text) !important;
-}
 
 /* Barre d'outils supérieure */
-[data-theme="pink"] .dashboard-toolbar {
-    background: linear-gradient(90deg, #9d174d, #a82062) !important;
-    border-bottom-color: var(--border) !important;
-}
-
-[data-theme="pink"] #btn-hide {
-    color: var(--text) !important;
-    background: #a82062 !important;
-    border-color: var(--border) !important;
-}
-
-[data-theme="pink"] #btn-hide:hover {
-    background: #9d174d !important;
-}
 
 /* Carte de bienvenue */
-[data-theme="pink"] .welcome-card {
-    background: linear-gradient(135deg, #a82062 0%, #9d174d 100%) !important;
-    border-color: var(--border) !important;
-}
-
-[data-theme="pink"] .welcome-card h1 {
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] .welcome-card p {
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] .welcome-icon {
-    color: var(--text) !important;
-}
 
 /* Titres, textes et labels */
-[data-theme="pink"] h1,
-[data-theme="pink"] h2,
-[data-theme="pink"] h3,
-[data-theme="pink"] h4,
-[data-theme="pink"] .settings-header h1,
-[data-theme="pink"] .list-h1,
-[data-theme="pink"] .prefa-heading h1,
-[data-theme="pink"] .settings-card-title,
-[data-theme="pink"] .atelier-heading h1 {
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] p,
-[data-theme="pink"] label,
-[data-theme="pink"] .settings-header p,
-[data-theme="pink"] .settings-card-desc,
-[data-theme="pink"] .prefa-heading p {
-    color: var(--text) !important;
-}
 
 /* Cartes, conteneurs et sections */
-[data-theme="pink"] .settings-card,
-[data-theme="pink"] .prefa-section,
-[data-theme="pink"] .prefa-card,
-[data-theme="pink"] .atelier-card,
-[data-theme="pink"] .atelier-element-card,
-[data-theme="pink"] .atelier-plan-heading {
-    background: #a82062 !important;
-    border-color: var(--border) !important;
-}
 
 /* Onglets de navigation des pages */
-[data-theme="pink"] .settings-tabs-bar {
-    border-bottom-color: var(--border) !important;
-}
-
-[data-theme="pink"] .settings-tab-btn {
-    color: var(--text) !important;
-    font-weight: 600;
-}
-
-[data-theme="pink"] .settings-tab-btn:hover {
-    color: var(--text) !important;
-    background: #9d174d !important;
-}
-
-[data-theme="pink"] .settings-tab-btn.is-active {
-    color: var(--text) !important;
-    border-bottom-color: #9d174d !important;
-    background: #9d174d !important;
-    font-weight: 800;
-}
 
 /* Boutons primaires & secondaires */
-[data-theme="pink"] button.settings-btn-primary,
-[data-theme="pink"] button.btn-primary,
-[data-theme="pink"] button.prefa-btn-primary,
-[data-theme="pink"] button.atelier-btn-primary,
-[data-theme="pink"] button.planning-btn-primary,
-[data-theme="pink"] .btn-apply-theme[data-theme="pink"],
-[data-theme="pink"] input[type="submit"] {
-    background: linear-gradient(135deg, #be185d 0%, #9d174d 100%) !important;
-    color: var(--text) !important;
-    font-weight: 700 !important;
-    cursor: pointer;
-}
-
-[data-theme="pink"] button.settings-btn-primary:hover,
-[data-theme="pink"] button.btn-primary:hover,
-[data-theme="pink"] button.prefa-btn-primary:hover,
-[data-theme="pink"] button.atelier-btn-primary:hover,
-[data-theme="pink"] button.planning-btn-primary:hover,
-[data-theme="pink"] input[type="submit"]:hover {
-    background: linear-gradient(135deg, #be185d 0%, #be185d 100%) !important;
-    transform: translateY(-1px);
-}
-
-[data-theme="pink"] button.settings-btn-secondary,
-[data-theme="pink"] button.btn-secondary,
-[data-theme="pink"] button.prefa-btn-secondary {
-    background: #a82062 !important;
-    color: var(--text) !important;
-    border-color: var(--border) !important;
-    font-weight: 600 !important;
-}
-
-[data-theme="pink"] button.settings-btn-secondary:hover,
-[data-theme="pink"] button.btn-secondary:hover,
-[data-theme="pink"] button.prefa-btn-secondary:hover {
-    background: #9d174d !important;
-    color: var(--text) !important;
-}
 
 /* Champs de formulaires */
-[data-theme="pink"] input:not([type="checkbox"]):not([type="radio"]),
-[data-theme="pink"] select,
-[data-theme="pink"] textarea {
-    background: #a82062 !important;
-    border-color: var(--border) !important;
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] input:focus,
-[data-theme="pink"] select:focus,
-[data-theme="pink"] textarea:focus {
-    border-color: #be185d !important;
-    outline: none !important;
-}
-
-[data-theme="pink"] .floating-field label {
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] .floating-field input:focus ~ label,
-[data-theme="pink"] .floating-field select:focus ~ label {
-    color: var(--text) !important;
-    font-weight: 700;
-}
 
 /* Tableaux (Général, Prefa, Utilisateurs, Atelier) */
-[data-theme="pink"] table,
-[data-theme="pink"] .prefa-table,
-[data-theme="pink"] #users-results table {
-    background: #a82062 !important;
-    border-color: var(--border) !important;
-    overflow: hidden;
-}
-
-[data-theme="pink"] th,
-[data-theme="pink"] thead th,
-[data-theme="pink"] .prefa-table th {
-    background: linear-gradient(90deg, #b3236c 0%, #f472b6 100%) !important;
-    color: var(--text) !important;
-    font-weight: 800 !important;
-    border-bottom-color: #be185d !important;
-    text-transform: uppercase;
-    font-size: 11px;
-    letter-spacing: 0.5px;
-}
-
-[data-theme="pink"] td,
-[data-theme="pink"] .prefa-table td {
-    color: var(--text) !important;
-    border-bottom-color: #9d174d !important;
-}
-
-[data-theme="pink"] tbody tr:nth-child(even) td {
-    background: #921653 !important;
-}
 
 /* Badges et alertes */
-[data-theme="pink"] .prefa-badge,
-[data-theme="pink"] .atelier-state,
-[data-theme="pink"] .status-badge,
-[data-theme="pink"] .nav-urgent-badge {
-    background: #b3236c !important;
-    color: var(--text) !important;
-    border-color: var(--border) !important;
-    font-weight: 700 !important;
-}
-
-[data-theme="pink"] .nav-urgent-badge,
-[data-theme="pink"] .prefa-badge.urgent {
-    background: linear-gradient(135deg, #be185d, #e11d48) !important;
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] .prefa-message.success {
-    background: #9d174d !important;
-    border-color: #be185d !important;
-    color: var(--text) !important;
-    font-weight: 600;
-}
-
 

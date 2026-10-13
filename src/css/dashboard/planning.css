@@ -9,7 +9,9 @@
        défilement rétrécit la page de ~15 px, la timeline se redessine, la hauteur
        retombe, la barre disparaît… et le bas de la page oscille sans fin. */
     scrollbar-gutter: stable;
-    padding: 24px 28px 48px;
+    /* Les mêmes 18 et 16 pixels que les autres écrans : le titre démarrait douze pixels
+       plus à droite et six plus bas que celui des demandes. */
+    padding: 18px 16px 48px;
     background: var(--surface);
     color: var(--text);
     font-family: var(--font, inherit);
@@ -25,14 +27,14 @@
 
 .planning-page h1 {
     margin: 0;
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 600;
     color: var(--text);
 }
 
 .planning-subtitle {
-    margin: 4px 0 0;
-    font-size: 12px;
+    margin: 2px 0 0;
+    font-size: 13px;
     color: var(--text-muted);
 }
 
@@ -58,15 +60,15 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 32px;
-    padding: 5px 12px;
+    height: var(--ctrl-sm);
+    padding: 0 12px;
     margin: 0;
     border: 1px solid var(--border);
-    border-radius: 4px;
+    border-radius: var(--r-sm);
     background: var(--frame);
     color: var(--text);
     font: inherit;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 500;
     cursor: pointer;
     white-space: nowrap;
@@ -124,8 +126,8 @@
 }
 
 .planning-page .planning-icon-button {
-    width: 32px;
-    padding: 5px;
+    width: var(--ctrl-sm);
+    padding: 0;
 }
 
 .planning-calendar-heading {
@@ -177,11 +179,6 @@
     border-left: 3px solid #f87171;
     border-radius: 4px;
     padding: 10px 12px;
-}
-
-html[data-theme="pink"] #contenaire #planning-page-message.is-removed {
-    background: #881337;
-    color: #ffe4e6 !important;
 }
 
 /* ==========================================================================
@@ -1140,331 +1137,8 @@ dialog.planning-dialog::backdrop {
 }
 
 /* ===== PLANNING - THEME ROSE INTENSE (100% PINK EDITION) ===== */
-[data-theme="pink"] .planning-page {
-    background: #831843 !important;
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] .gantt-outer-container {
-    background: #a82062 !important;
-    border-color: var(--border) !important;
-}
-
-[data-theme="pink"] .gantt-header-row {
-    background: #9d174d !important;
-    border-bottom-color: var(--border) !important;
-}
-
-[data-theme="pink"] .gantt-header-corner {
-    background: #b3236c !important;
-    color: var(--text) !important;
-    border-right-color: var(--border) !important;
-    font-weight: 800;
-}
-
-[data-theme="pink"] .gantt-weeks-header {
-    background: #9d174d !important;
-    border-bottom-color: var(--border) !important;
-}
-
-[data-theme="pink"] .gantt-week-cell {
-    background: #b3236c !important;
-    color: var(--text) !important;
-    border-right-color: var(--border) !important;
-    font-weight: 800;
-}
-
-[data-theme="pink"] .gantt-day-number {
-    border-right-color: #b3236c !important;
-}
-
-[data-theme="pink"] .gantt-day-number.is-workday {
-    background: #831843 !important;
-    color: var(--text) !important;
-    font-weight: 700;
-}
-
-[data-theme="pink"] .gantt-day-number.is-weekend {
-    background: #9d174d !important;
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] .gantt-day-number.is-today {
-    background: #be185d !important;
-    color: var(--text) !important;
-    font-weight: 900;
-}
-
-[data-theme="pink"] .gantt-bg-col.is-workday {
-    background: rgba(157, 23, 77, 0.65) !important;
-    border-right-color: rgba(244, 114, 182, 0.25) !important;
-}
-
-[data-theme="pink"] .gantt-bg-col.is-weekend {
-    background: rgba(131, 24, 67, 0.85) !important;
-    border-right-color: rgba(244, 114, 182, 0.3) !important;
-}
-
-[data-theme="pink"] .gantt-today-line {
-    background: #be185d !important;
-    width: 4px !important;
-}
-
-[data-theme="pink"] .gantt-row {
-    border-bottom-color: #9d174d !important;
-}
-
-[data-theme="pink"] .gantt-row.is-selected {
-    background: rgba(236, 72, 153, 0.12) !important;
-}
-
-[data-theme="pink"] .gantt-label-col {
-    background: #a82062 !important;
-    border-right-color: var(--border) !important;
-}
-
-[data-theme="pink"] .gantt-affaire-badge {
-    background: #831843 !important;
-    border-color: var(--border) !important;
-    color: var(--text) !important;
-    font-weight: 700;
-}
-
-[data-theme="pink"] .gantt-affaire-badge:hover,
-[data-theme="pink"] .gantt-row.is-selected .gantt-affaire-badge {
-    background: #be185d !important;
-    border-color: #9d174d !important;
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] .gantt-bar.gantt-yellow {
-    background: #b3236c !important;
-    border-color: var(--border) !important;
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] .gantt-bar.gantt-lightblue {
-    background: #f472b6 !important;
-    border-color: #be185d !important;
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] .gantt-bar.gantt-blue {
-    background: #9d174d !important;
-    border-color: #be185d !important;
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] .planning-card {
-    background: #a82062 !important;
-    border-color: var(--border) !important;
-}
-
-[data-theme="pink"] .planning-card-header {
-    background: linear-gradient(135deg, #be185d 0%, #9d174d 100%) !important;
-    color: var(--text) !important;
-    border-bottom-color: #be185d !important;
-    font-weight: 800;
-}
-
-[data-theme="pink"] .planning-card-body {
-    background: #a82062 !important;
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] .planning-card-footer {
-    background: #831843 !important;
-    border-top-color: #9d174d !important;
-}
-
-[data-theme="pink"] .planning-matrix-table th {
-    background: #9d174d !important;
-    color: var(--text) !important;
-    border-color: var(--border) !important;
-}
-
-[data-theme="pink"] .planning-matrix-table td {
-    border-color: #9d174d !important;
-}
-
-[data-theme="pink"] .planning-matrix-table td.step-label {
-    background: #831843 !important;
-    color: var(--text) !important;
-    border-color: var(--border) !important;
-    font-weight: 700;
-}
-
-[data-theme="pink"] .planning-matrix-table td.status-ok {
-    background: #b3236c !important;
-    color: var(--text) !important;
-    font-weight: 800;
-}
-
-[data-theme="pink"] .planning-matrix-table td.status-non-ok {
-    background: #881337 !important;
-    color: var(--text) !important;
-    font-weight: 800;
-}
-
-[data-theme="pink"] .planning-matrix-table td.status-ras {
-    background: #831843 !important;
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] .comment-item {
-    background: #831843 !important;
-    border-left-color: #be185d !important;
-    border-color: #9d174d !important;
-}
-
-[data-theme="pink"] .comment-meta {
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] .comment-text {
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] .planning-info-item dt {
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] .planning-info-item dd {
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] .planning-delivery-info strong {
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] .planning-button {
-    background: #9d174d !important;
-    border-color: var(--border) !important;
-    color: var(--text) !important;
-    font-weight: 700 !important;
-}
-
-[data-theme="pink"] .planning-button:hover {
-    background: #be185d !important;
-    color: var(--text) !important;
-    border-color: #9d174d !important;
-}
 
 /* Modale de planification en mode Rose */
-[data-theme="pink"] dialog.planning-dialog {
-    background: #a82062 !important;
-    border-color: var(--border) !important;
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] dialog.planning-dialog::backdrop {
-    background: rgba(131, 24, 67, 0.35) !important;
-    backdrop-filter: blur(8px) !important;
-}
-
-[data-theme="pink"] .planning-dialog-heading {
-    border-bottom-color: #9d174d !important;
-}
-
-[data-theme="pink"] .planning-dialog-badge {
-    color: var(--text) !important;
-    background: #831843 !important;
-    border-color: var(--border) !important;
-}
-
-[data-theme="pink"] .planning-dialog-heading h2 {
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] .planning-dialog-close {
-    background: #831843 !important;
-    border-color: var(--border) !important;
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] .planning-dialog-close:hover {
-    background: #9d174d !important;
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] .planning-meta-chip {
-    background: #921653 !important;
-    border-color: var(--border) !important;
-}
-
-[data-theme="pink"] .planning-meta-chip .meta-label {
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] .planning-meta-chip .meta-val {
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] .planning-label {
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] .planning-date-input {
-    background: #a82062 !important;
-    border-color: var(--border) !important;
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] .planning-date-input:focus {
-    border-color: #be185d !important;
-}
-
-[data-theme="pink"] .planning-help-text {
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] .planning-preview {
-    background: #921653 !important;
-    border-color: var(--border) !important;
-}
-
-[data-theme="pink"] .planning-preview-dates {
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] .planning-preview-badge {
-    background: #b3236c !important;
-    color: var(--text) !important;
-    border-color: var(--border) !important;
-}
-
-[data-theme="pink"] .planning-dialog-actions {
-    border-top-color: #9d174d !important;
-}
-
-[data-theme="pink"] .planning-btn-remove {
-    border-color: var(--border) !important;
-    color: var(--text) !important;
-    background: #921653 !important;
-}
-
-[data-theme="pink"] .planning-btn-remove:hover {
-    background: #881337 !important;
-}
-
-[data-theme="pink"] .planning-btn-cancel {
-    border-color: var(--border) !important;
-    color: var(--text) !important;
-    background: #a82062 !important;
-}
-
-[data-theme="pink"] .planning-btn-cancel:hover {
-    background: #9d174d !important;
-    color: var(--text) !important;
-}
-
-[data-theme="pink"] .planning-btn-submit {
-    background: linear-gradient(135deg, #be185d 0%, #9d174d 100%) !important;
-}
-
-[data-theme="pink"] .planning-btn-submit:hover {
-    background: linear-gradient(135deg, #be185d 0%, #be185d 100%) !important;
-}
 
 /* Compact planning form in both themes. */
 .planning-page .icon,

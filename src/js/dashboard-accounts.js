@@ -9,18 +9,34 @@
     const popovers = [];
 
     // Les menus sont en position fixe : la barre latérale défile et les découperait.
+    //
+    // L'état ouvert se lit dans aria-expanded, que le CSS suit : on réécrivait ici le
+    // className du déclencheur, ce qui effaçait sa classe de départ — le bouton de la barre
+    // perdait son habillage à la première ouverture, et comme ce bloc sert aussi au menu du
+    // thème, ouvrir celui-ci restylait le bouton des comptes.
     function popover(declencheur, panneau, premierFocus) {
         function placer() {
             const repere = declencheur.getBoundingClientRect();
             const largeur = panneau.offsetWidth;
             const hauteur = panneau.offsetHeight;
+
+            // Le menu se range du côté où il y a la place, sans jamais recouvrir ce qui
+            // l'ouvre : à droite du déclencheur quand elle y est, sinon dessous, et
+            // au-dessus en dernier recours. Il ouvrait avant vers le haut en toute
+            // circonstance, ce qui le posait sur le bouton depuis que celui-ci a rejoint la
+            // barre du haut.
             let gauche = repere.right + marge;
             let haut = repere.bottom - hauteur;
+
             if (gauche + largeur > window.innerWidth - marge) {
-                // Pas la place à droite : le menu s’ouvre au-dessus du déclencheur.
-                gauche = repere.left;
-                haut = repere.top - hauteur - marge;
+                // Aligné sur le bord droit du déclencheur plutôt que sur son bord gauche :
+                // contre le bord de la fenêtre, c'est le seul alignement qui tienne.
+                gauche = repere.right - largeur;
+                haut = repere.bottom + hauteur + marge <= window.innerHeight
+                    ? repere.bottom + marge
+                    : repere.top - hauteur - marge;
             }
+
             panneau.style.left = Math.max(marge, Math.min(gauche, window.innerWidth - largeur - marge)) + 'px';
             panneau.style.top = Math.max(marge, Math.min(haut, window.innerHeight - hauteur - marge)) + 'px';
         }
@@ -131,19 +147,14 @@
     });
 
     // ===== THÈME =====
-    // Même stockage que la page Paramètres : 'light', 'pink', ou rien pour le thème sombre.
+    // La décision vit dans theme.js, chargé en tête de page : ici on ne fait que montrer
+    // l'état et transmettre le choix.
     const declencheurTheme = document.getElementById('theme-menu-button');
     const menuTheme = document.getElementById('theme-menu');
     if (declencheurTheme && menuTheme) {
         const menuThemes = popover(declencheurTheme, menuTheme, '.theme-option[aria-checked="true"], .theme-option');
 
-        const themeActif = () => {
-            try {
-                return localStorage.getItem('app_theme') || 'default';
-            } catch (error) {
-                return document.documentElement.dataset.theme || 'default';
-            }
-        };
+        const themeActif = () => (window.Theme ? window.Theme.choix() : 'auto');
 
         function marquerActif() {
             const actuel = themeActif();
@@ -157,19 +168,7 @@
         }
 
         function appliquerTheme(nom) {
-            const racine = document.documentElement;
-            if (nom === 'light' || nom === 'pink') {
-                racine.setAttribute('data-theme', nom);
-                document.body.setAttribute('data-theme', nom);
-            } else {
-                racine.removeAttribute('data-theme');
-                document.body.removeAttribute('data-theme');
-            }
-            // Le stockage peut être refusé (navigation privée) : le thème s'applique quand même.
-            try {
-                if (nom === 'light' || nom === 'pink') localStorage.setItem('app_theme', nom);
-                else localStorage.removeItem('app_theme');
-            } catch (error) { /* le choix ne sera pas mémorisé */ }
+            if (window.Theme) window.Theme.appliquer(nom);
             marquerActif();
         }
 

@@ -123,7 +123,7 @@ foreach ($assignments as $assignment) {
                                      ligne s'arrête avec elle au lieu d'aller jusqu'au bord. -->
                                 <div class="pointage-actions">
                                 <form id="pointage-<?= $id ?>" class="atelier-action prefa-form pointage-row-form" data-endpoint="update_atelier.php">
-                                    <input type="hidden" name="csrf" value="<?= prefaEscape($_SESSION['prefa_csrf']) ?>">
+                                    <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
                                     <input type="hidden" name="affectation" value="<?= $id ?>">
                                     <input type="hidden" name="operation" value="time">
                                     <input type="hidden" name="cle_saisie" value="<?= bin2hex(random_bytes(16)) ?>">

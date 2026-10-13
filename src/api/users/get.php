@@ -45,26 +45,43 @@ $pageUrl = static function ($number) use ($q, $roleFilter) {
      hx-get="<?= $pageUrl($page) ?>"
      hx-trigger="usersChanged from:body"
      hx-target="this" hx-swap="outerHTML">
-    <table>
+    <!-- data-selection suffit : le script reconnaît la table, ses lignes à leur data-id,
+         et sait quoi appeler pour l'action en lot. -->
+    <table data-selection
+           data-selection-action="/dashboard/actions/delete_user.php"
+           data-selection-libelle="compte"
+           data-csrf="<?= prefaEscape(Session::jeton()) ?>">
         <thead>
             <tr><th>ID</th><th>Nom</th><th>Prénom</th><th>Identifiant</th><th>Rôle</th><th>Date de création</th><th>Actions</th></tr>
         </thead>
         <tbody id="search-results">
         <?php foreach ($users as $user): ?>
-            <tr>
+            <?php $cestMoi = (int) $user['id'] === $utilisateur->id; ?>
+            <tr data-id="<?= (int) $user['id'] ?>"
+                data-nom="<?= prefaEscape(trim($user['prenom'] . ' ' . $user['name'])) ?>"
+                <?= $cestMoi
+                    ? 'data-protege title="Votre propre compte : il ne peut être ni sélectionné ni supprimé."'
+                    : 'aria-selected="false"' ?>>
                 <td><?= (int) $user['id'] ?></td>
                 <td><?= htmlspecialchars($user['name'], ENT_QUOTES, 'UTF-8') ?></td>
                 <td><?= htmlspecialchars($user['prenom'], ENT_QUOTES, 'UTF-8') ?></td>
                 <td><?= htmlspecialchars($user['identifiant'], ENT_QUOTES, 'UTF-8') ?></td>
                 <td><?= htmlspecialchars(userRoleLabel($user), ENT_QUOTES, 'UTF-8') ?></td>
                 <td><?= htmlspecialchars(userCreationLabel($user), ENT_QUOTES, 'UTF-8') ?></td>
-                <td>
+                <td class="users-actions">
                     <button hx-get="/api/users/edit.php?id=<?= (int) $user['id'] ?>"
                             hx-target="closest tr" hx-swap="outerHTML">Modifier</button>
-                    <button hx-post="/dashboard/actions/delete_user.php"
-                            hx-vals='<?= prefaEscape(json_encode(['id' => (int) $user['id'], 'csrf' => $_SESSION['prefa_csrf']])) ?>'
-                            hx-confirm="Supprimer cet utilisateur ?"
-                            hx-target="closest tr" hx-swap="outerHTML">Supprimer</button>
+                    <?php if ((int) $user['id'] === $utilisateur->id): ?>
+                        <!-- Son propre compte : le bouton reste, éteint, avec la raison.
+                             Le retirer ferait croire à un oubli, et l'action le refuse de
+                             toute façon — autant le dire avant le clic plutôt qu'après. -->
+                        <button type="button" disabled title="Vous ne pouvez pas supprimer votre propre compte.">Supprimer</button>
+                    <?php else: ?>
+                        <button hx-post="/dashboard/actions/delete_user.php"
+                                hx-vals='<?= prefaEscape(json_encode(['id' => (int) $user['id'], 'csrf' => Session::jeton()])) ?>'
+                                hx-confirm="Supprimer <?= prefaEscape(trim($user['prenom'] . ' ' . $user['name'])) ?> ? Cette action est définitive."
+                                hx-target="closest tr" hx-swap="outerHTML">Supprimer</button>
+                    <?php endif; ?>
                 </td>
             </tr>
         <?php endforeach; ?>

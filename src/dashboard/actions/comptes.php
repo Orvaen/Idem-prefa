@@ -14,14 +14,14 @@ if ($operation === 'add') {
     $login = trim((string) ($_POST['login'] ?? ''));
     $password = (string) ($_POST['password'] ?? '');
     if ($login === '' || $password === '') prefaError(400, 'Renseignez l’identifiant et le mot de passe.');
-    $precedent = (string) $_SESSION['identifiant'];
+    $precedent = (string) Session::identifiant();
     if (!$user->login($login, $password)) prefaError(401, 'Identifiants incorrects.');
     comptesRemember($precedent);
-    comptesRemember((string) $_SESSION['identifiant']);
+    comptesRemember((string) Session::identifiant());
     session_regenerate_id(true);
 } elseif ($operation === 'switch') {
     if (!in_array($compte, comptesSession(), true)) prefaError(403, 'Ce compte n’est pas connecté sur cet appareil.');
-    if ($compte !== $_SESSION['identifiant']) {
+    if ($compte !== Session::identifiant()) {
         if (!$user->startSession($compte)) {
             comptesForget($compte);
             prefaError(404, 'Ce compte n’existe plus.');
@@ -30,7 +30,7 @@ if ($operation === 'add') {
     }
 } elseif ($operation === 'remove') {
     comptesForget($compte);
-    if ($compte === $_SESSION['identifiant']) {
+    if ($compte === Session::identifiant()) {
         // Retirer le compte actif bascule sur le premier compte encore valide…
         $suivant = null;
         foreach (comptesStored() as $identifiant) {
@@ -40,8 +40,7 @@ if ($operation === 'add') {
             session_regenerate_id(true);
         } else {
             // … et s’il n’en reste aucun, la session est fermée immédiatement.
-            $_SESSION = [];
-            session_destroy();
+            Session::fermer();
             $redirect = '../auth/logout.php';
         }
     }

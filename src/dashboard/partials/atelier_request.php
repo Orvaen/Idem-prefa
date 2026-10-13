@@ -18,7 +18,9 @@ $elements = atelierElements($db, $requestId);
 // Les coulées des certificats de la demande : une seule lecture pour tous ses plans.
 $couleesDisponibles = nomenclatureCouleesDisponibles($db, $requestId);
 $types = ['plan' => 'Plan / ISO', 'montage' => 'Montage', 'soudage' => 'Suivi soudage'];
-$taken = !empty($row['prise_en_charge_atelier']);
+// Une demande validée est ouverte au travail de l'atelier : il n'y a plus d'étape de
+// prise en charge à franchir avant d'y préparer des plans.
+$taken = true;
 $documentOptions = [];
 foreach ($attachmentsByRequest[$requestId] ?? [] as $file) $documentOptions['plan:' . $file['key']] = $file['name'];
 foreach (['qmos' => $qmosByRequest[$requestId] ?? [], 'dmos' => $dmosByRequest[$requestId] ?? []] as $kind => $files) {
@@ -36,7 +38,7 @@ foreach ($elements as $element) foreach ($element['affectations'] as $assignment
                     <h2 id="atelier-create-title-<?= $requestId ?>">Ajouter un plan</h2>
                     <button type="button" class="atelier-close-plan-edit modal-close" aria-label="Fermer"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg></button>
                 </div>
-                <input type="hidden" name="csrf" value="<?= prefaEscape($_SESSION['prefa_csrf']) ?>"><input type="hidden" name="id" value="<?= $requestId ?>"><input type="hidden" name="operation" value="element">
+                <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>"><input type="hidden" name="id" value="<?= $requestId ?>"><input type="hidden" name="operation" value="element">
                 <div><label for="atelier-ref-<?= $requestId ?>">Nom du plan</label><input id="atelier-ref-<?= $requestId ?>" name="reference" maxlength="80" required></div>
                 <div><label for="atelier-label-<?= $requestId ?>">Description</label><input id="atelier-label-<?= $requestId ?>" name="libelle" maxlength="180" required></div>
                 <?php if ($documentOptions): ?>
@@ -111,7 +113,7 @@ foreach ($elements as $element) foreach ($element['affectations'] as $assignment
                                     <div class="atelier-plan-actions">
                                         <button type="button" class="prefa-toggle atelier-open-plan-edit" data-dialog="atelier-plan-dialog-<?= $requestId ?>" data-element="<?= (int) $element['id'] ?>" data-reference="<?= prefaEscape($element['reference']) ?>" data-description="<?= prefaEscape($element['libelle']) ?>">Renommer</button>
                                         <form class="atelier-action atelier-delete-plan" data-endpoint="save_atelier.php" data-plan-name="<?= prefaEscape($element['reference']) ?>">
-                                            <input type="hidden" name="csrf" value="<?= prefaEscape($_SESSION['prefa_csrf']) ?>">
+                                            <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
                                             <input type="hidden" name="id" value="<?= $requestId ?>">
                                             <input type="hidden" name="element" value="<?= (int) $element['id'] ?>">
                                             <input type="hidden" name="operation" value="delete_element">
@@ -198,7 +200,7 @@ foreach ($elements as $element) foreach ($element['affectations'] as $assignment
                                     <?php endif; ?>
                                     <?php if ($canManageWorkshop && $taken && $optionsAnnexes): ?>
                                         <form class="atelier-action prefa-form atelier-document-edit" data-endpoint="save_atelier.php">
-                                            <input type="hidden" name="csrf" value="<?= prefaEscape($_SESSION['prefa_csrf']) ?>"><input type="hidden" name="id" value="<?= $requestId ?>"><input type="hidden" name="operation" value="documents"><input type="hidden" name="element" value="<?= (int) $element['id'] ?>">
+                                            <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>"><input type="hidden" name="id" value="<?= $requestId ?>"><input type="hidden" name="operation" value="documents"><input type="hidden" name="element" value="<?= (int) $element['id'] ?>">
                                             <p class="atelier-muted">QMOS et DMOS de la demande à rattacher à ce plan :</p>
                                             <?php $selectedDocuments = array_map(fn($doc) => $doc['type_document'] . ':' . $doc['cle_document'], $element['documents']); ?>
                                             <?php foreach ($optionsAnnexes as $token => $label): ?>
@@ -216,7 +218,7 @@ foreach ($elements as $element) foreach ($element['affectations'] as $assignment
                                     <div id="<?= $formId ?>" class="atelier-manage-panel" hidden>
                                         <h5 class="atelier-manage-title">Affecter une personne</h5>
                                         <form class="atelier-action prefa-form atelier-manage-form" data-endpoint="save_atelier.php">
-                                            <input type="hidden" name="csrf" value="<?= prefaEscape($_SESSION['prefa_csrf']) ?>"><input type="hidden" name="id" value="<?= $requestId ?>"><input type="hidden" name="operation" value="assign"><input type="hidden" name="element" value="<?= (int) $element['id'] ?>"><input type="hidden" name="type" value="plan">
+                                            <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>"><input type="hidden" name="id" value="<?= $requestId ?>"><input type="hidden" name="operation" value="assign"><input type="hidden" name="element" value="<?= (int) $element['id'] ?>"><input type="hidden" name="type" value="plan">
                                             <div><label for="atelier-user-<?= $element['id'] ?>">Personnel atelier</label><select id="atelier-user-<?= $element['id'] ?>" name="utilisateur" required>
                                                     <option value="">Sélectionner une personne</option><?php foreach ($workshopUsers as $user): ?><option value="<?= (int) $user['id'] ?>"><?= prefaEscape($user['nom']) ?></option><?php endforeach; ?>
                                                 </select></div>
@@ -254,7 +256,7 @@ foreach ($elements as $element) foreach ($element['affectations'] as $assignment
                         <h2 id="atelier-plan-dialog-title-<?= $requestId ?>">Modifier le plan</h2>
                         <button type="button" class="atelier-close-plan-edit modal-close" aria-label="Fermer"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg></button>
                     </div>
-                    <input type="hidden" name="csrf" value="<?= prefaEscape($_SESSION['prefa_csrf']) ?>">
+                    <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
                     <input type="hidden" name="id" value="<?= $requestId ?>">
                     <input type="hidden" name="element">
                     <input type="hidden" name="operation" value="update_element">
@@ -275,7 +277,7 @@ foreach ($elements as $element) foreach ($element['affectations'] as $assignment
                         <button type="button" class="atelier-close-plan-edit modal-close" aria-label="Fermer"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg></button>
                     </div>
                     <p class="atelier-muted atelier-progress-target"></p>
-                    <input type="hidden" name="csrf" value="<?= prefaEscape($_SESSION['prefa_csrf']) ?>">
+                    <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
                     <input type="hidden" name="id" value="<?= $requestId ?>">
                     <input type="hidden" name="operation" value="progress">
                     <input type="hidden" name="affectation">

@@ -36,7 +36,7 @@ function planViewerRendu(int $elementId, array $plans, array $coulees, bool $mod
     $proposees = array_map(static fn (string $numero, bool $confirmee): array =>
         ['numero' => $numero, 'confirmee' => $confirmee], array_keys($proposees), $proposees);
     $couleesJson = prefaEscape(json_encode($proposees));
-    $csrf = $modifiable ? prefaEscape($_SESSION['prefa_csrf']) : '';
+    $csrf = $modifiable ? prefaEscape(Session::jeton()) : '';
 
     ob_start();
     ?>

@@ -6,6 +6,7 @@ if ($isWorkshopPersonnel) {
     exit;
 }
 require_once __DIR__ . '/../partials/prefa_list_data.php';
+require_once __DIR__ . '/../includes/filtres.php';
 
 // Les chefs d'atelier ne changent pas d'une ligne à l'autre : une seule requête,
 // et seulement pour l'administrateur, qui est le seul à désigner quelqu'un d'autre.
@@ -46,12 +47,14 @@ if ($urgentView) {
     $pageTitle = 'Demandes de préfabrication';
     $pageDescription = 'Vérifiez les demandes en attente avant de les valider ou de les refuser.';
 } else {
-    $pageTitle = 'Mes affaires';
-    $pageDescription = 'Vos chantiers et les demandes de préfabrication de chacun.';
+    $pageTitle = 'Mes demandes';
+    $pageDescription = 'Vos demandes de préfabrication, rangées par affaire.';
 }
 
 if ($isWorkshopChief) {
-    $pageDescription = 'Suivez vos demandes et prenez en charge les demandes validées pour les affecter à un utilisateur atelier.';
+    // La prise en charge n'existe plus : une demande validée est ouverte à l'atelier, et
+    // plusieurs chefs y travaillent.
+    $pageDescription = 'Suivez les demandes et préparez les plans de celles qui sont validées.';
 }
 if ($isWorkshopPersonnel) {
     $pageTitle = 'Mes affectations';
@@ -94,161 +97,61 @@ if ($isWorkshopPersonnel) {
 
             </div>
 
-            <!-- Filtres -->
+            <!-- Filtres : une pastille par critère, qui ouvre sa liste à cocher. Le
+                 balisage vient de includes/filtres.php ; le rafraîchissement sérialise ce
+                 formulaire, il n'a donc rien de particulier à savoir. -->
             <form
                 id="prefa-filters"
                 class="prefa-filters"
                 role="search">
 
-                <!-- Recherche -->
-                <div class="floating-field">
-
-                    <label for="prefa-search">
-                        Rechercher
-                    </label>
-
+                <!-- La recherche n'est pas un filtre à choix : elle garde son champ, en
+                     tête de barre, à l'échelle des barres d'outils. -->
+                <div class="filtres-recherche">
+                    <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
                     <input
                         id="prefa-search"
-                        class="floating-control"
                         type="search"
                         name="q"
                         value="<?= prefaEscape($q) ?>"
-                        placeholder="N° de demande">
-
+                        aria-label="Rechercher une demande"
+                        placeholder="N° de demande, affaire…">
                 </div>
 
+                <?php
+                $barre = '';
 
-                <?php if ($canViewAllPrefa): ?>
+                if ($canViewAllPrefa) {
+                    $barre .= filtreRendu('user', 'Utilisateur', array_map(
+                        static fn (array $u): array => [
+                            'id' => (int) $u['id'],
+                            'libelle' => trim(($u['prenom'] ?? '') . ' ' . ($u['name'] ?? '')),
+                        ],
+                        $users
+                    ), $userId, ['aucun' => 'Aucun utilisateur à ce nom.']);
+                }
 
-                    <!-- Utilisateur -->
-                    <div class="floating-field floating-always">
+                $barre .= filtreRendu('status', 'Statut', array_map(
+                    static fn (array $s): array => ['id' => (int) $s['id'], 'libelle' => (string) $s['libelle']],
+                    $statuses
+                ), $status);
 
-                        <label for="prefa-filter-user">
-                            Utilisateur
-                        </label>
+                // L'écran des demandes urgentes est un filtre figé : on ne propose pas de
+                // le défaire, sinon l'entrée du menu ne voudrait plus rien dire.
+                if ($urgentView) {
+                    echo '<input type="hidden" name="view" value="urgent">';
+                    echo '<input type="hidden" name="priority[]" value="1">';
+                } else {
+                    $barre .= filtreRendu('priority', 'Priorité', [
+                        ['id' => 1, 'libelle' => 'Urgentes'],
+                        ['id' => 0, 'libelle' => 'Normales'],
+                    ], $priority);
+                }
 
-                        <select
-                            id="prefa-filter-user"
-                            class="floating-control"
-                            name="user">
-
-                            <option value="">
-                                Tous
-                            </option>
-
-                            <?php foreach ($users as $user): ?>
-
-                                <?php
-                                $userName = trim(
-                                    ($user['prenom'] ?? '') . ' ' .
-                                        ($user['name'] ?? '')
-                                );
-                                ?>
-
-                                <option
-                                    value="<?= (int) $user['id'] ?>"
-                                    <?= (int) $userId === (int) $user['id']
-                                        ? 'selected'
-                                        : '' ?>>
-                                    <?= prefaEscape($userName) ?>
-                                </option>
-
-                            <?php endforeach; ?>
-
-                        </select>
-
-                    </div>
-
-
-                    
-
-                <?php endif; ?>
-
-
-                <!-- Statut -->
-                <div class="floating-field floating-always">
-
-                    <label for="prefa-filter-status">
-                        Statut
-                    </label>
-
-                    <select
-                        id="prefa-filter-status"
-                        class="floating-control"
-                        name="status">
-
-                        <option value="">
-                            Tous
-                        </option>
-
-                        <?php foreach ($statuses as $item): ?>
-
-                            <option
-                                value="<?= (int) $item['id'] ?>"
-                                <?= $status === (string) $item['id']
-                                    ? 'selected'
-                                    : '' ?>>
-                                <?= prefaEscape($item['libelle']) ?>
-                            </option>
-
-                        <?php endforeach; ?>
-
-                    </select>
-
-                </div>
-
-
-                <?php if ($urgentView): ?>
-
-                    <input
-                        type="hidden"
-                        name="view"
-                        value="urgent">
-
-                    <input
-                        type="hidden"
-                        name="priority"
-                        value="1">
-
-                <?php else: ?>
-
-                    <!-- Priorité -->
-                    <div class="floating-field floating-always">
-
-                        <label for="prefa-filter-priority">
-                            Priorité
-                        </label>
-
-                        <select
-                            id="prefa-filter-priority"
-                            class="floating-control"
-                            name="priority">
-
-                            <option value="">
-                                Toutes
-                            </option>
-
-                            <option
-                                value="1"
-                                <?= $priority === '1'
-                                    ? 'selected'
-                                    : '' ?>>
-                                Urgentes
-                            </option>
-
-                            <option
-                                value="0"
-                                <?= $priority === '0'
-                                    ? 'selected'
-                                    : '' ?>>
-                                Normales
-                            </option>
-
-                        </select>
-
-                    </div>
-
-                <?php endif; ?>
+                $pose = $userId || $status || (!$urgentView && $priority);
+                echo filtresBarre($barre, (bool) $pose);
+                ?>
 
             </form>
 
@@ -359,7 +262,8 @@ if ($isWorkshopPersonnel) {
                         <?php
                         // Une affaire porte plusieurs demandes : chez le demandeur, elles
                         // se rangent sous le nom de leur chantier, annoncé une fois. Sans
-                        // ce titre, « Mes affaires » montrerait une liste de demandes.
+                        // ce titre, on lirait une liste à plat où rien ne dit à quel
+                        // chantier chaque demande appartient.
                         $affaireCourante = null;
                         $parAffaire = [];
                         if ($vueParAffaire) {
@@ -371,22 +275,6 @@ if ($isWorkshopPersonnel) {
                         ?>
 
                         <?php foreach ($requests as $row): ?>
-
-                            <?php if ($vueParAffaire): ?>
-                                <?php $nomAffaire = trim((string) ($row['nom_affaire'] ?? '')); ?>
-                                <?php if ($nomAffaire !== $affaireCourante): ?>
-                                    <?php $affaireCourante = $nomAffaire; ?>
-                                    <tbody class="prefa-affaire-groupe">
-                                        <tr>
-                                            <th colspan="<?= $colonnes ?>" scope="colgroup">
-                                                <?= prefaEscape($nomAffaire !== '' ? $nomAffaire : 'Sans affaire') ?>
-                                                <span><?= $parAffaire[$nomAffaire] ?> demande<?= $parAffaire[$nomAffaire] > 1 ? 's' : '' ?></span>
-                                            </th>
-                                        </tr>
-                                    </tbody>
-                                <?php endif; ?>
-                            <?php endif; ?>
-
                             <?php
                             require __DIR__
                                 . '/../partials/prefa_list_row.php';

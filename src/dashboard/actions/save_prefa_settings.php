@@ -12,6 +12,27 @@ $days = is_scalar($rawDays)
 if ($days === false || $days < 0.0001 || $days > 100) {
     prefaError(400, 'Saisissez une durée entre 0,0001 et 100 jours par pouce ISO.');
 }
+
+/*
+ * La borne ci-dessus laisse passer des cadences que le planning ne sait pas poser : à
+ * 80 jours par pouce — une valeur acceptée — une demande de cent pouces occupe huit mille
+ * jours, et sa validation échouait au moment de la valider, loin de l'écran où le réglage
+ * avait été saisi.
+ *
+ * On confronte donc la cadence aux demandes qui existent vraiment. Un plafond fixe aurait
+ * été une invention de plus ; là, le refus s'explique avec les chiffres de l'atelier.
+ */
+$plusGrosse = (int) $db->query('SELECT COALESCE(MAX(pouces_total_iso), 0) FROM demande_prefabrication
+                                WHERE id_statut = 1')->fetchColumn();
+if ($plusGrosse > 0) {
+    $jours = (int) ceil($plusGrosse * $days);
+    if ($jours > 3650) {
+        prefaError(409, 'À cette cadence, la plus grosse demande en attente (' . $plusGrosse
+            . ' pouces) occuperait ' . number_format($jours, 0, ',', ' ')
+            . ' jours — le planning n’en pose pas plus de 3 650. Réduisez la durée par pouce.');
+    }
+}
+
 $rate = round($days * 24, 4);
 $hours = (int) floor($rate);
 $minutes = (int) round(($rate - $hours) * 60);

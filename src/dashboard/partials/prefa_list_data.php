@@ -3,24 +3,42 @@ require_once __DIR__ . '/../includes/prefa_attachments.php';
 require_once __DIR__ . '/../includes/prefa_hours.php';
 require_once __DIR__ . '/../includes/ccpu_demande.php';
 require_once __DIR__ . '/../includes/prefa_workshop.php';
+require_once __DIR__ . '/../includes/prefa_visibilite.php';
 $workshopUsers = $canManageWorkshop ? prefaWorkshopPersonnel($db) : [];
 
 $q = trim((string) ($_GET['q'] ?? ''));
+
+/**
+ * Les valeurs retenues pour un filtre.
+ *
+ * Un filtre accepte désormais plusieurs choix — « en attente OU validée » — et arrive donc
+ * sous forme de tableau. On ne garde que ce qui figure dans la liste des choix possibles :
+ * ce qui vient de l'adresse n'est jamais une donnée de confiance, et ces valeurs partent
+ * dans la requête.
+ *
+ * L'ancienne forme à valeur unique reste acceptée : les liens déjà envoyés fonctionnent.
+ *
+ * @param list<string> $permis
+ * @return list<string>
+ */
+$filtreRetenu = static function (string $nom, array $permis) : array {
+    $brut = $_GET[$nom] ?? null;
+    if ($brut === null || $brut === '') return [];
+    $valeurs = array_map('strval', is_array($brut) ? $brut : [$brut]);
+    return array_values(array_unique(array_intersect($valeurs, $permis)));
+};
+
 $statuses = $db->query('SELECT id, libelle FROM statut_demande ORDER BY id')->fetchAll();
-$status = (string) ($_GET['status'] ?? '');
-$validStatuses = array_map(static fn($item) => (string) $item['id'], $statuses);
-if (!in_array($status, $validStatuses, true)) $status = '';
+$status = $filtreRetenu('status', array_map(static fn ($item) => (string) $item['id'], $statuses));
 
-$priority = (string) ($_GET['priority'] ?? '');
-if (!in_array($priority, ['0', '1'], true)) $priority = '';
+$priority = $filtreRetenu('priority', ['0', '1']);
 $urgentView = $canViewAllPrefa && ($_GET['view'] ?? '') === 'urgent';
-if ($urgentView) $priority = '1';
-
-$userId = $canViewAllPrefa
-    ? filter_var($_GET['user'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]])
-    : false;
+if ($urgentView) $priority = ['1'];
 $users = $canViewAllPrefa
     ? $db->query('SELECT DISTINCT u.id, u.prenom, u.name FROM Utilisateur u JOIN demande_prefabrication d ON d.idUsers = u.id ORDER BY u.prenom, u.name')->fetchAll()
+    : [];
+$userId = $canViewAllPrefa
+    ? $filtreRetenu('user', array_map(static fn ($u) => (string) $u['id'], $users))
     : [];
 
 
@@ -32,26 +50,30 @@ $joins = ' FROM demande_prefabrication d
     LEFT JOIN Utilisateur staff ON staff.id = d.id_personnel_atelier
     LEFT JOIN type_passivation p ON p.id = d.id_passivation
     LEFT JOIN type_matiere m ON m.id = d.id_matiere ';
-$where = $canViewAllPrefa ? ' WHERE 1=1' : ' WHERE d.idUsers = :user';
-$params = $canViewAllPrefa ? [] : ['user' => $actor['id']];
-if ($isWorkshopPersonnel) $where .= ' AND d.id_statut = 2';
-if ($isWorkshopChief) {
-    $where .= ' AND (d.id_statut = 2 OR d.idUsers = :chief_creator)';
-    $params['chief_creator'] = $actor['id'];
-}
+// Qui voit quoi. La règle est partagée avec l'API : deux copies d'une règle d'accès
+// finissent par diverger, et c'est toujours celle qu'on a oubliée qui laisse passer.
+['where' => $where, 'params' => $params] = prefaDemandesVisibles($utilisateur);
 
-if ($canViewAllPrefa && $userId) {
-    $where .= ' AND d.idUsers = :filter_user';
-    $params['filter_user'] = $userId;
-}
-if ($status !== '') {
-    $where .= ' AND d.id_statut = :status';
-    $params['status'] = (int) $status;
-}
-if ($priority !== '') {
-    $where .= ' AND d.urgent = :priority';
-    $params['priority'] = (int) $priority;
-}
+/**
+ * Colle un filtre à choix multiples : « IN (…) » plutôt que « = ».
+ *
+ * Les marqueurs sont numérotés — :f_user_0, :f_user_1 — parce que l'émulation des requêtes
+ * préparées est coupée : un marqueur ne peut être lié qu'une fois.
+ */
+$filtreEnSql = static function (string $colonne, string $nom, array $valeurs) use (&$where, &$params): void {
+    if (!$valeurs) return;
+    $marqueurs = [];
+    foreach (array_values($valeurs) as $rang => $valeur) {
+        $marqueur = 'f_' . $nom . '_' . $rang;
+        $marqueurs[] = ':' . $marqueur;
+        $params[$marqueur] = (int) $valeur;
+    }
+    $where .= ' AND ' . $colonne . ' IN (' . implode(', ', $marqueurs) . ')';
+};
+
+if ($canViewAllPrefa) $filtreEnSql('d.idUsers', 'user', $userId);
+$filtreEnSql('d.id_statut', 'status', $status);
+$filtreEnSql('d.urgent', 'priority', $priority);
 if ($q !== '') {
     $columns = [
         'CAST(d.id AS CHAR)',
@@ -73,7 +95,7 @@ if ($q !== '') {
     $where .= ' AND (' . implode(' OR ', $conditions) . ')';
 }
 
-// L'écran « Mes affaires » : celui de qui ne voit ni toutes les demandes ni ses seules
+// L'écran « Mes demandes » : celui de qui ne voit ni toutes les demandes ni ses seules
 // affectations. C'est le même critère qui donne son titre à la page et qui range la liste,
 // pour qu'ils ne puissent pas se contredire.
 $vueParAffaire = !$canViewAllPrefa && !$isWorkshopPersonnel;

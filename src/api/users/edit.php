@@ -23,7 +23,7 @@ if (!$user) prefaError(404, 'Compte introuvable.');
         <?= (int) $user['id'] ?>
         <input type="hidden" name="id"
             value="<?= (int) $user['id'] ?>">
-        <input type="hidden" name="csrf" value="<?= prefaEscape($_SESSION['prefa_csrf']) ?>">
+        <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
     </td>
     <td>
         <input
@@ -52,7 +52,7 @@ if (!$user) prefaError(404, 'Compte introuvable.');
 
         <button
             hx-post="/dashboard/actions/delete_user.php"
-            hx-vals='<?= prefaEscape(json_encode(['id' => (int) $user['id'], 'csrf' => $_SESSION['prefa_csrf']])) ?>'
+            hx-vals='<?= prefaEscape(json_encode(['id' => (int) $user['id'], 'csrf' => Session::jeton()])) ?>'
             hx-confirm="Supprimer cet utilisateur ?"
             hx-target="closest tr"
             hx-swap="outerHTML">

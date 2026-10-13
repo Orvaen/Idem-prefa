@@ -45,26 +45,50 @@
 /* Les deux menus partagent la même enveloppe : un filet d'un pixel posé en ombre
    interne (et non en bordure, qui mangerait la largeur utile) et une ombre portée
    en deux passes, une courte pour le relief, une longue pour détacher du fond. */
+/* ---------- Le menu des comptes ----------
+   Une fenêtre surgissante, pas une zone de la page : elle garde donc ses coins arrondis et
+   son ombre, là où le reste de l'écran est à plat.
+
+   Elle n'a pas de marge intérieure : les filets qui séparent les groupes vont ainsi d'un
+   bord à l'autre. C'est chaque groupe qui porte la sienne, et le débord est coupé par le
+   rayon de l'enveloppe. */
 .account-menu {
     position: fixed;
     z-index: 60;
-    width: 320px;
+    width: 300px;
     max-width: calc(100vw - 16px);
-    padding: 6px;
-    border: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--border);
     border-radius: 12px;
     background: var(--surface);
     box-shadow:
-        inset 0 0 0 1px var(--border),
-        0 2px 6px rgb(0 0 0 / 12%),
-        0 8px 24px rgb(0 0 0 / 24%);
+        0 1px 2px rgb(0 0 0 / 10%),
+        0 10px 28px rgb(0 0 0 / 22%);
 }
 
+/* En thème clair, le menu est blanc sur une page blanche : sans un filet net et une ombre
+   plus marquée, il se confond avec l'écran et semble n'avoir aucun fond. */
+[data-theme="light"] .account-menu {
+    border-color: #cbd5e1;
+    box-shadow:
+        0 1px 3px rgb(15 23 42 / 10%),
+        0 14px 36px rgb(15 23 42 / 18%);
+}
+
+/* Un groupe de lignes. Sa marge intérieure tient le fond du survol à l'écart des bords :
+   sans elle, la ligne survolée touchait le filet et le cadre. */
+.account-menu-group {
+    padding: 6px;
+}
+
+/* L'intitulé du groupe : discret, il nomme sans peser. */
 .account-menu-title {
-    padding: 6px 10px 8px;
+    margin: 0;
+    padding: 6px 10px 4px;
     color: var(--text-muted);
-    font-size: 12px;
-    font-weight: 500;
+    font-size: 11.5px;
+    font-weight: 400;
 }
 
 .account-list {
@@ -85,9 +109,10 @@
     display: flex;
     align-items: center;
     gap: 10px;
+    width: 100%;
     flex: 1;
     min-width: 0;
-    padding: 7px 10px;
+    padding: 8px 10px;
     border: 0;
     border-radius: 8px;
     background: transparent;
@@ -199,37 +224,46 @@
     color: var(--accent);
 }
 
+/* La ligne qu'on vient de cliquer garde le focus : elle portait un contour et rien
+   d'autre, ce qui la laissait vide au milieu d'un menu où le survol remplit. Elle prend
+   donc le même fond que le survol, le contour en plus. Le rayon suit celui des lignes —
+   un contour carré sur une gélule se voyait. */
 .account-item:focus-visible,
 .account-remove:focus-visible,
 .account-add:focus-visible,
 .account-manage:focus-visible,
 .account-menu .account-logout:focus-visible {
+    background: var(--hover);
     outline: 1.5px solid var(--accent);
     outline-offset: -1.5px;
     border-radius: 8px;
 }
 
+/* Le filet va d'un bord à l'autre : c'est ce qui fait lire les groupes comme des blocs
+   posés les uns sur les autres plutôt que comme une liste à trous. Posé en retrait, il
+   ressemblait à une ligne barrée au milieu du menu. */
 .account-menu-separator {
     height: 1px;
-    margin: 6px;
-    background: var(--border);
+    margin: 0;
+    background: var(--border-subtle, var(--border));
 }
 
 .account-add,
 .account-manage,
 .account-menu .account-logout {
     display: flex;
-    align-items: center;
-    gap: 10px;
     width: 100%;
-    padding: 7px 10px;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px;
     border: 0;
     border-radius: 8px;
     background: transparent;
     color: var(--text);
     font: inherit;
     font-size: 13.5px;
-    text-align: left;
+    /* « Se déconnecter » est un lien, les deux autres sont des boutons : sans cela il
+       arrivait souligné, et c'est la seule ligne du menu qui ne ressemblait pas aux autres. */
     text-decoration: none;
     cursor: pointer;
     transition: background 0.12s cubic-bezier(0.32, 0.72, 0, 1);
@@ -241,27 +275,25 @@
     background: var(--hover);
 }
 
-/* Les actions portent une pastille de la taille d'un avatar : les lignes s'alignent. */
+/* Un glyphe nu, sans plateau ni filet : trois pastilles encadrées sous les avatars
+   faisaient une seconde colonne de boîtes, et le menu paraissait rempli de boutons. Le
+   dessin aligne son bord gauche sur celui des avatars, ce qui suffit à tenir la colonne. */
 .account-action-icon {
     flex-shrink: 0;
     display: grid;
     place-items: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 9px;
-    /* Un filet en plus du fond : sur le thème rose, fond et surface sont trop proches. */
-    background: var(--hover);
-    box-shadow: inset 0 0 0 1px var(--border);
+    width: 20px;
+    height: 20px;
     color: var(--text-muted);
+}
+
+.account-action-icon .icon {
+    width: 20px;
+    height: 20px;
 }
 
 .account-add .account-action-icon {
     color: #23a55a;
-}
-
-.account-menu .account-logout .icon {
-    width: 32px;
-    color: var(--text-muted);
 }
 
 /* ===== FENÊTRE D'AJOUT DE COMPTE ===== */
@@ -272,7 +304,9 @@
     margin: auto;
     padding: 24px;
     border: 1px solid var(--border);
-    border-radius: 8px;
+    /* Le même rayon que le menu des comptes : ce sont les deux surfaces qui flottent
+       au-dessus de la page, elles ne peuvent pas avoir chacune le sien. */
+    border-radius: 12px;
     background: var(--surface);
     color: var(--text);
     box-shadow: 0 16px 48px rgb(0 0 0 / 20%);
@@ -288,6 +322,13 @@
     gap: 16px;
 }
 
+/* Les champs à étiquette flottante portent leur propre marge — 8 en haut, 4 en bas — qui
+   s'ajoutait au gap du formulaire : les deux champs se trouvaient à 28 px l'un de l'autre
+   quand tout le reste était à 16. Ici c'est le gap qui espace, et lui seul. */
+.account-dialog .floating-field {
+    margin: 0;
+}
+
 .account-dialog-heading {
     display: flex;
     align-items: center;
@@ -301,26 +342,11 @@
 }
 
 .account-dialog-intro {
-    margin: -6px 0 0;
+    /* La marge négative rattrapait le gap du formulaire. Le gap suffit. */
+    margin: 0;
     color: var(--text-muted);
-    font-size: 12px;
+    font-size: 13px;
     line-height: 1.5;
-}
-
-.account-dialog .form-group input {
-    width: 100%;
-    height: 38px;
-    padding: 0 11px;
-    border: 1px solid var(--border);
-    border-radius: 5px;
-    background: var(--surface);
-    color: var(--text);
-    font-size: 14px;
-}
-
-.account-dialog .form-group input:focus {
-    border-color: var(--accent);
-    outline: none;
 }
 
 .account-message:empty {
@@ -346,12 +372,17 @@
     border-top: 1px solid var(--border);
 }
 
+/* La boîte du socle, comme tous les boutons de l'application : ils faisaient 36 px de haut
+   pour un rayon de 5, et étaient les derniers à ne ressembler à rien d'autre. */
 .account-dialog-footer button {
-    min-height: 36px;
-    padding: 8px 16px;
+    display: inline-flex;
+    align-items: center;
+    height: var(--ctrl-sm);
+    padding: 0 12px;
     border: 1px solid transparent;
-    border-radius: 5px;
+    border-radius: var(--r-sm);
     font: inherit;
+    font-size: 13px;
     cursor: pointer;
 }
 
@@ -444,8 +475,9 @@
     background: linear-gradient(135deg, #ffffff 50%, #e2e8f0 50%);
 }
 
-.theme-swatch-pink {
-    background: linear-gradient(135deg, #be185d 50%, #9d174d 50%);
+/* Les deux à la fois : c'est l'un ou l'autre selon ce que dit le système. */
+.theme-swatch-auto {
+    background: linear-gradient(135deg, #ffffff 50%, #141820 50%);
 }
 
 .nav-subfooter .subtitle-metier {

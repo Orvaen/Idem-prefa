@@ -4,11 +4,17 @@
    ========================================================================== */
 
 #pv-page .prefa-shell {
-    padding: 24px 28px 40px;
+    padding: 0 0 40px;
 }
 
 #pv-page .prefa-heading {
-    margin-bottom: 20px;
+    margin-bottom: 8px;
+}
+
+/* Tout ce qui suit l'en-tête reprend ses 16 px de côté. */
+#pv-page .prefa-shell > *:not(.prefa-heading) {
+    padding-left: 16px;
+    padding-right: 16px;
 }
 
 #pv-page .prefa-list-summary {
@@ -61,7 +67,15 @@
     font-size: 11px;
 }
 
+/* Les cellules étaient alignées en haut ici, et au milieu sur tous les autres écrans :
+   d'un tableau à l'autre, le texte ne tombait pas à la même hauteur que les boutons de sa
+   propre ligne. Seule la cellule du volet garde son alignement haut — elle contient un
+   écran entier, pas une donnée. */
 .pv-table td {
+    vertical-align: middle;
+}
+
+.pv-table td.pv-volet {
     vertical-align: top;
 }
 

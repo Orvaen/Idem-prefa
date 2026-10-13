@@ -48,7 +48,9 @@ $(document).on('input', '#prefa-search', function () {
     clearTimeout(prefaFilterTimer);
     prefaFilterTimer = setTimeout(refreshPrefaList, 350);
 });
-$(document).on('change', '#prefa-filters select', refreshPrefaList);
+// Le formulaire émet « change » quand la barre de filtres bouge — c'est elle qui prévient,
+// elle n'appelle pas le rechargement : c'est l'écran qui sait comment se recharger.
+$(document).on('change', '#prefa-filters', refreshPrefaList);
 $(document).on('click', '#refresh-prefa', refreshPrefaList);
 $(document).on('input', '#controles', function () {
     $('#controles-value').val(this.value).prop('required', true).get(0).setCustomValidity('');

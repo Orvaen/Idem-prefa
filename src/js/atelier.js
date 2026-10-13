@@ -33,17 +33,6 @@
         dialog.showModal();
         form.elements.reference.focus();
     });
-    // La fenetre d'affectation vit dans la colonne Actions, toujours visible : pas besoin
-    // de la sortir de son parent comme celle d'ajout de plan.
-    $(document).on('click', '.atelier-open-take', function () {
-        const dialog = document.getElementById(this.dataset.dialog);
-        if (!dialog) return;
-        const form = dialog.querySelector('form');
-        form.reset();
-        form.querySelector('.atelier-message').textContent = '';
-        dialog.showModal();
-        form.elements.chef.focus();
-    });
     $(document).on('click', '.atelier-open-plan-edit', function () {
         const dialog = document.getElementById(this.dataset.dialog);
         if (!dialog) return;

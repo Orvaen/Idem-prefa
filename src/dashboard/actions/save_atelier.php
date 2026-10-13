@@ -7,28 +7,18 @@ prefaPost();
 if (!$canManageWorkshop) prefaError(403, 'Action réservée au chef d’atelier ou à l’administrateur.');
 $requestId = filter_var($_POST['id'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 $operation = $_POST['operation'] ?? '';
-if (!$requestId || !in_array($operation, ['take', 'element', 'update_element', 'delete_element', 'documents', 'assign', 'revoke'], true)) prefaError(400, 'Action atelier invalide.');
+// « take » a disparu : une demande validée est ouverte à l'atelier, et plusieurs chefs y
+// travaillent. L'opération reste refusée explicitement, le temps que les pages ouvertes
+// avant la mise à jour se rechargent.
+if ($operation === 'take') prefaError(410, 'Une demande validée est désormais ouverte à l’atelier sans prise en charge. Rechargez la page.');
+if (!$requestId || !in_array($operation, ['element', 'update_element', 'delete_element', 'documents', 'assign', 'revoke'], true)) prefaError(400, 'Action atelier invalide.');
 try {
     $db->beginTransaction();
     $stmt = $db->prepare('SELECT * FROM demande_prefabrication WHERE id = ? AND id_statut = 2 FOR UPDATE');
     $stmt->execute([$requestId]);
     $request = $stmt->fetch();
     if (!$request) { $db->rollBack(); prefaError(404, 'Demande validée introuvable.'); }
-    if ($operation !== 'take' && empty($request['prise_en_charge_atelier'])) {
-        $db->rollBack(); prefaError(409, 'Prenez d’abord en charge la demande.');
-    }
-    if ($operation === 'take') {
-        $chiefId = (int) $actor['id'];
-        if ($isAdmin) {
-            $chiefId = filter_var($_POST['chef'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-            if (!$chiefId) { $db->rollBack(); prefaError(400, 'Sélectionnez un chef d’atelier.'); }
-            $stmt = $db->prepare('SELECT id FROM Utilisateur WHERE id = ? AND id_role = 2 FOR UPDATE');
-            $stmt->execute([$chiefId]);
-            if (!$stmt->fetchColumn()) { $db->rollBack(); prefaError(400, 'Le responsable doit être un chef d’atelier.'); }
-        }
-        if (!empty($request['prise_en_charge_atelier'])) { $db->rollBack(); prefaError(409, 'Cette demande est déjà prise en charge. Actualisez la liste.'); }
-        $db->prepare('UPDATE demande_prefabrication SET pris_en_charge_par = ?, date_prise_en_charge = NOW(), prise_en_charge_atelier = 1 WHERE id = ?')->execute([$chiefId, $requestId]);
-    } elseif (in_array($operation, ['update_element', 'delete_element'], true)) {
+    if (in_array($operation, ['update_element', 'delete_element'], true)) {
         $elementId = filter_var($_POST['element'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
         if (!$elementId) { $db->rollBack(); prefaError(400, 'Plan invalide.'); }
         atelierChangeElement($db, $requestId, $elementId, $operation, $_POST['reference'] ?? '', $_POST['libelle'] ?? '');

@@ -28,8 +28,10 @@ $(document).on('submit', '#passivation-form', function (event) {
     });
 });
 
+// Seules les pastilles qui comptent des demandes urgentes. Le sélecteur prenait toutes
+// les pastilles de la barre, celle des PV comprise.
 function updateUrgentBadge(count) {
-    $('.nav-urgent-badge').text(count).prop('hidden', count === 0)
+    $('.nav-urgent-badge[data-compteur="urgentes"]').text(count).prop('hidden', count === 0)
         .attr('aria-label', count + ' demandes urgentes en attente');
 }
 

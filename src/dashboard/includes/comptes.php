@@ -1,32 +1,37 @@
 <?php
 
+/**
+ * La bascule entre les comptes connectés sur un même poste.
+ *
+ * La liste elle-même est tenue par le modèle Session : ici on ne fait que la compléter du
+ * compte actif et l'habiller des informations à jour de chacun.
+ */
+require_once __DIR__ . '/../../modeles/autoload.php';
+
 /** Comptes mémorisés dans la session, hors compte actif. */
 function comptesStored(): array
 {
-    $comptes = $_SESSION['comptes'] ?? [];
-    return is_array($comptes) ? array_values(array_filter($comptes, 'is_string')) : [];
+    return Session::comptes();
 }
 
 /** Identifiants des comptes connectés sur cet appareil, compte actif compris. */
 function comptesSession(): array
 {
-    $comptes = comptesStored();
-    $actif = $_SESSION['identifiant'] ?? null;
-    if (is_string($actif) && !in_array($actif, $comptes, true)) $comptes[] = $actif;
+    $comptes = Session::comptes();
+    $actif = Session::identifiant();
+    if ($actif !== null && !in_array($actif, $comptes, true)) $comptes[] = $actif;
     return array_values(array_unique($comptes));
 }
 
 function comptesRemember(string $identifiant): void
 {
     if ($identifiant === '') return;
-    $comptes = comptesSession();
-    if (!in_array($identifiant, $comptes, true)) $comptes[] = $identifiant;
-    $_SESSION['comptes'] = $comptes;
+    Session::retenirCompte($identifiant);
 }
 
 function comptesForget(string $identifiant): void
 {
-    $_SESSION['comptes'] = array_values(array_diff(comptesSession(), [$identifiant]));
+    Session::oublierCompte($identifiant);
 }
 
 /**
@@ -47,6 +52,8 @@ function comptesList(PDO $db): array
     $stmt->execute($comptes);
     $connus = [];
     foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) $connus[$row['identifiant']] = $row;
-    $_SESSION['comptes'] = array_values(array_intersect($comptes, array_keys($connus)));
-    return array_map(fn($identifiant) => $connus[$identifiant], $_SESSION['comptes']);
+    // Un compte supprimé entre-temps sort de la liste plutôt que d'y rester sans fiche.
+    $vivants = array_values(array_intersect($comptes, array_keys($connus)));
+    Session::limiterComptes($vivants);
+    return array_map(fn($identifiant) => $connus[$identifiant], $vivants);
 }

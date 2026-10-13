@@ -66,11 +66,6 @@ body .floating-field:focus-within > label {
     color: var(--field-focus) !important;
 }
 
-body .floating-field .floating-control:focus {
-    border: 2px solid var(--field-focus) !important;
-    padding: 8px 11px !important;
-}
-
 body .floating-field select.floating-control {
     appearance: none;
     padding-right: 40px !important;
@@ -142,10 +137,58 @@ body .floating-field .input-unit input.floating-control:focus {
     padding: 8px 35px 8px 11px !important;
 }
 body .floating-field .input-unit-suffix { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); }
-.passivation-select .floating-control,
-.matiere-select .floating-control { padding-right: 38px !important; }
-.passivation-select .floating-control:focus,
-.matiere-select .floating-control:focus { padding-right: 37px !important; }
+/* ---------- L'œil des mots de passe ----------
+   Posé dans la boîte du champ, qui est déjà positionnée. Discret au repos, il s'allume au
+   survol : c'est une commande d'appoint, pas une action du formulaire. */
+.champ-mdp {
+    position: relative;
+    width: 100%;
+}
+
+.mdp-voir {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    transform: translateY(-50%);
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--field-muted, #a2adbd);
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+.mdp-voir .icon {
+    width: 17px;
+    height: 17px;
+}
+
+.mdp-voir:hover,
+.mdp-voir[aria-pressed="true"] {
+    background: rgb(128 128 128 / 14%);
+    color: var(--field-text, inherit);
+}
+
+.mdp-voir:focus-visible {
+    outline: 2px solid var(--field-focus, #8ab4f8);
+    outline-offset: 1px;
+}
+
+/* Le texte s'arrête avant l'œil. Sans cela, un mot de passe long passait dessous. */
+body .a-mdp-voir .floating-control,
+body .a-mdp-voir input[type="password"],
+body .a-mdp-voir input[type="text"] {
+    padding-right: 42px !important;
+}
+
+/* La croix d'effacement occupe la droite du champ : le texte s'arrête avant elle. */
+.liste-filtrable .floating-control { padding-right: 38px !important; }
+.liste-filtrable .floating-control:focus { padding-right: 37px !important; }
 .settings-inline-action > .floating-field { flex: 0 1 280px; width: 280px; max-width: 100%; }
 .settings-inline-action > .floating-field:has(.input-unit) { flex-basis: 230px; width: 230px; }
 

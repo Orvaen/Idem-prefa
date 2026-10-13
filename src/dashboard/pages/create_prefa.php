@@ -3,6 +3,7 @@ require_once __DIR__ . '/../includes/prefa_context.php';
 if (!$canEditPrefa) prefaError(403, 'Création et modification réservées aux demandeurs.');
 require_once __DIR__ . '/../includes/prefa_attachments.php';
 require_once __DIR__ . '/../includes/prefa_hours.php';
+require_once __DIR__ . '/../includes/liste_filtrable.php';
 
 $editing = isset($_GET['id']);
 $request = [];
@@ -38,17 +39,10 @@ if ($editing) {
     $pdf->execute([$request['id']]);
     $ccpuFiles = $pdf->fetchAll();
 }
+// Les catalogues. Le composant retrouve seul le libellé de l'option retenue : il n'y a
+// plus à le chercher ici pour l'écrire dans le champ.
 $passivations = $db->query('SELECT id, libelle FROM type_passivation ORDER BY libelle')->fetchAll();
-$passivationLabel = '';
-foreach ($passivations as $type) {
-    if ((int) $type['id'] === (int) ($request['id_passivation'] ?? 0)) $passivationLabel = $type['libelle'];
-}
-
 $matieres = $db->query('SELECT id, libelle FROM type_matiere ORDER BY libelle')->fetchAll();
-$matiereLabel = '';
-foreach ($matieres as $type) {
-    if ((int) $type['id'] === (int) ($request['id_matiere'] ?? 0)) $matiereLabel = $type['libelle'];
-}
 
 
 
@@ -77,35 +71,40 @@ if ($editing && !empty($request['revetement'])) {
 <section class="page prefa-page prefa-simple">
     <div class="prefa-shell">
         <div class="prefa-heading">
-            <h1><?= $editing ? 'Modifier la demande ' . prefaEscape(prefaReferenceComplete((int) $request['id'])) : 'Nouvelle Affaire' ?></h1>
-            <p><?= $editing ? 'Après modification, la demande repassera en attente de validation.' : 'Renseignez votre affaire, puis transmettez-la pour validation.' ?></p>
+            <!-- « Nouvelle demande » et non « Nouvelle affaire » : c'est le chargé de
+                 production qui ouvre l'affaire, et on en dépose plusieurs sur la même. -->
+            <h1><?= $editing ? 'Modifier la demande ' . prefaEscape(prefaReferenceComplete((int) $request['id'])) : 'Nouvelle demande' ?></h1>
+            <p><?= $editing ? 'Après modification, la demande repassera en attente de validation.' : 'Rattachez cette demande à l’une de vos affaires, puis transmettez-la pour validation.' ?></p>
         </div>
         <form id="prefa-form" class="prefa-form" novalidate enctype="multipart/form-data" data-hours-per-inch="<?= prefaEscape($hoursPerInch) ?>">
-            <input type="hidden" name="csrf" value="<?= prefaEscape($_SESSION['prefa_csrf']) ?>">
+            <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
             <?php if ($editing): ?><input type="hidden" name="id" value="<?= (int) $request['id'] ?>"><?php endif; ?>
             <div class="prefa-section">
                 <div class="prefa-grid">
                     <?php
-                    // Ce champ ne nomme pas la demande : il nomme l'AFFAIRE à laquelle elle
-                    // se rattache, et une affaire en porte plusieurs. L'appeler « nom de la
-                    // demande » alors que le menu annonce « Mes affaires » faisait croire
-                    // qu'on créait une affaire à chaque fois.
-                    //
-                    // Les affaires déjà ouvertes sont proposées : c'est ainsi qu'on en
-                    // rejoint une au lieu d'en créer une jumelle à une faute de frappe près.
-                    $affairesConnues = $db->query('SELECT nom FROM affaire ORDER BY nom')->fetchAll(PDO::FETCH_COLUMN);
+                    // La demande se rattache à une affaire ouverte, elle n'en crée pas une :
+                    // c'est le chargé de production qui ouvre le chantier et désigne qui le
+                    // suit. On ne choisit donc que parmi les siennes, et sans issue « Autre ».
+                    $affairesOuvertes = Affaire::pour($db, $utilisateur);
                     ?>
-                    <div class="form-group prefa-full">
-                        <label for="nom-demande">Affaire <span class="required-mark" aria-hidden="true">*</span></label>
-                        <input id="nom-demande" name="nom_affaire" type="text" value="<?= $field('nom_affaire') ?>" maxlength="255" required
-                            list="affaires-ouvertes" autocomplete="off" placeholder="Ex. : Réseau vapeur — bâtiment A">
-                        <datalist id="affaires-ouvertes">
-                            <?php foreach ($affairesConnues as $nomAffaire): ?>
-                                <option value="<?= prefaEscape($nomAffaire) ?>"></option>
-                            <?php endforeach; ?>
-                        </datalist>
-                        <small class="prefa-aide">Choisissez un chantier déjà ouvert pour y ajouter cette demande, ou saisissez-en un nouveau.</small>
-                    </div>
+                    <?php if ($affairesOuvertes): ?>
+                        <div class="prefa-full">
+                            <?= listeFiltrableRendu('affaire', 'Affaire',
+                                array_map(static fn (Affaire $a): array => ['id' => $a->id, 'libelle' => $a->nom], $affairesOuvertes),
+                                $request['id_affaire'] ?? null,
+                                ['vide' => 'Choisissez l’affaire…', 'aucun' => 'Aucune affaire de ce nom.',
+                                 'obligatoire' => true, 'chercher' => 'Rechercher parmi vos affaires…',
+                                 'aide' => 'Une affaire porte plusieurs demandes : déposez-en autant que le chantier en demande.']) ?>
+                        </div>
+                    <?php else: ?>
+                        <!-- Sans affaire, rien à déposer : on le dit plutôt que de montrer une
+                             liste vide dont on ne saurait pas quoi faire. -->
+                        <div class="form-group prefa-full">
+                            <label for="affaire-search">Affaire <span class="required-mark" aria-hidden="true">*</span></label>
+                            <p class="prefa-aide">Aucune affaire ne vous est confiée pour l’instant.
+                                Demandez au chargé de production d’en ouvrir une à votre nom.</p>
+                        </div>
+                    <?php endif; ?>
                     <div class="form-group prefa-full">
                         <label for="plan-documents">Plans BPE / ISO et pièces jointes<?php if (!$editing): ?> <span class="required-mark">*</span><?php endif; ?></label>
                         <label class="prefa-dropzone" for="plan-documents" tabindex="0"><strong>Déposer des documents ici</strong><span>ou cliquez pour les choisir · PDF, images, Word, Excel · 50 Mo maximum par fichier</span></label>
@@ -177,52 +176,28 @@ if ($editing && !empty($request['revetement'])) {
                     </div>
 
                     <div class="form-group">
-                        <label for="pouces">Total des pouces ISO <span class="required-mark" aria-hidden="true">*</span></label><input id="pouces" name="pouces_total_iso" value="<?= $field('pouces_total_iso') ?>" type="number" min="0" max="2147483647" step="1" placeholder="0" required>
+                        <label for="pouces">
+                                Total des pouces ISO 
+                                <span class="required-mark" aria-hidden="true">*</span>
+                        </label>
+                        <input id="pouces" name="pouces_total_iso" value="<?= $field('pouces_total_iso') ?>" type="number" min="0" max="2147483647" step="1" placeholder="0" required>
                     </div>
                     <div class="form-group">
                         <label for="heures">Durée estimée (jours)</label><input id="heures" name="heures_chiffrees" value="<?= $editing ? prefaEscape(number_format((float) prefaCalculatedHours((int) $request['pouces_total_iso'], $hoursPerInch) / 24, 2, '.', '')) : '' ?>" type="number" step="0.01" readonly placeholder="0" title="Calcul automatique">
                     </div>
-                    <div class="form-group">
-                        <label for="passivation-search">Type de passivation</label>
-                        <div class="passivation-select">
-                            <input id="passivation-search" type="text" value="<?= prefaEscape($passivationLabel) ?>" placeholder="Rechercher ou sélectionner…" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="passivation-options">
-                            <button type="button" id="passivation-clear" aria-label="Effacer le type de passivation" title="Effacer">×</button>
-                            <input type="hidden" name="id_passivation" value="<?= $field('id_passivation') ?>">
-                            <div id="passivation-options" role="listbox" hidden style="display: none;">
-                                <div id="passivation-none" role="option" aria-selected="<?= empty($request['id_passivation']) ? 'true' : 'false' ?>" data-value="">Aucune passivation</div>
-                                <?php foreach ($passivations as $type): ?>
-                                    <div id="passivation-option-<?= (int) $type['id'] ?>" role="option" aria-selected="<?= (int) $type['id'] === (int) ($request['id_passivation'] ?? 0) ? 'true' : 'false' ?>" data-value="<?= (int) $type['id'] ?>"><?= prefaEscape($type['libelle']) ?></div>
-                                <?php endforeach; ?>
-                                <div id="passivation-option-autre" role="option" aria-selected="false" data-value="autre" class="passivation-option-autre">Autre (préciser)...</div>
-                                <p class="passivation-no-results" hidden style="display: none;">Aucun type trouvé.</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group prefa-full" id="passivation-autre-field" hidden style="display: none;">
-                        <label for="passivation-autre">Préciser le type de passivation <span class="required-mark" aria-hidden="true">*</span></label>
-                        <input id="passivation-autre" name="passivation_autre" type="text" maxlength="100" placeholder="Ex. Passivation électrolytique…" autocomplete="off">
-                    </div>
+                    <?= listeFiltrableRendu('passivation', 'Type de passivation', $passivations,
+                        $request['id_passivation'] ?? null,
+                        ['vide' => 'Aucune passivation', 'autre' => 'Autre (préciser)...',
+                         'aucun' => 'Aucun type trouvé.']) ?>
+                    <?= listeFiltrableAutreRendu('passivation', 'Préciser le type de passivation',
+                        'Ex. Passivation électrolytique…', 'passivation_autre') ?>
 
-                    <div class="form-group">
-                        <label for="matiere-search">Matière</label>
-                        <div class="matiere-select">
-                            <input id="matiere-search" type="text" value="<?= prefaEscape($matiereLabel) ?>" placeholder="Rechercher ou sélectionner…" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="matiere-options">
-                            <button type="button" id="matiere-clear" aria-label="Effacer la matière" title="Effacer">×</button>
-                            <input type="hidden" name="id_matiere" value="<?= $field('id_matiere') ?>">
-                            <div id="matiere-options" role="listbox" hidden style="display: none;">
-                                <div id="matiere-none" role="option" aria-selected="<?= empty($request['id_matiere']) ? 'true' : 'false' ?>" data-value="">Matière non précisée</div>
-                                <?php foreach ($matieres as $type): ?>
-                                    <div id="matiere-option-<?= (int) $type['id'] ?>" role="option" aria-selected="<?= (int) $type['id'] === (int) ($request['id_matiere'] ?? 0) ? 'true' : 'false' ?>" data-value="<?= (int) $type['id'] ?>"><?= prefaEscape($type['libelle']) ?></div>
-                                <?php endforeach; ?>
-                                <div id="matiere-option-autre" role="option" aria-selected="false" data-value="autre" class="matiere-option-autre">Autre (préciser)...</div>
-                                <p class="matiere-no-results" hidden style="display: none;">Aucun type trouvé.</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group prefa-full" id="matiere-autre-field" hidden style="display: none;">
-                        <label for="matiere-autre">Préciser la matière <span class="required-mark" aria-hidden="true">*</span></label>
-                        <input id="matiere-autre" name="matiere_autre" type="text" maxlength="100" placeholder="Ex. Inox 316L…" autocomplete="off">
-                    </div>
+                    <?= listeFiltrableRendu('matiere', 'Matière', $matieres,
+                        $request['id_matiere'] ?? null,
+                        ['vide' => 'Matière non précisée', 'autre' => 'Autre (préciser)...',
+                         'aucun' => 'Aucun type trouvé.']) ?>
+                    <?= listeFiltrableAutreRendu('matiere', 'Préciser la matière',
+                        'Ex. Inox 316L…', 'matiere_autre') ?>
 
                     <div class="form-group" id="matiere-disponibilite-field" <?= empty($request['id_matiere']) ? 'hidden' : '' ?>>
                         <label for="matiere-disponibilite">Disponibilité de la matière <span id="matiere-disponibilite-required" class="required-mark" aria-hidden="true" <?= empty($request['id_matiere']) ? 'hidden' : '' ?>>*</span></label>

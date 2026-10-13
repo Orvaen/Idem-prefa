@@ -177,7 +177,7 @@ ksort($demandeurs);
                                                 </div>
                                             <?php else: ?>
                                             <form class="prefa-form pv-form" data-cle="pv-form-<?= prefaEscape($cle) ?>" enctype="multipart/form-data">
-                                                <input type="hidden" name="csrf" value="<?= prefaEscape($_SESSION['prefa_csrf']) ?>">
+                                                <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
                                                 <input type="hidden" name="demande" value="<?= $id ?>">
                                                 <input type="hidden" name="type" value="<?= prefaEscape($type) ?>">
                                                 <input type="hidden" name="operation" value="save">

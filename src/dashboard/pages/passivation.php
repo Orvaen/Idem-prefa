@@ -7,7 +7,7 @@ $types = $db->query('SELECT id, libelle FROM type_passivation ORDER BY libelle')
 <section class="users-page">
     <div class="header-list"><h1 class="list-h1">Types de passivation</h1></div>
     <form id="passivation-form" class="passivation-form">
-        <input type="hidden" name="csrf" value="<?= prefaEscape($_SESSION['prefa_csrf']) ?>">
+        <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
         <div class="form-group"><label for="passivation-libelle">Nouveau type</label><input id="passivation-libelle" name="libelle" maxlength="100" placeholder="Nom du type de passivation" required></div>
         <button type="submit">Ajouter</button>
         <p class="prefa-message" role="status" aria-live="polite"></p>

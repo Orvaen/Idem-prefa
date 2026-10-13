@@ -269,7 +269,7 @@ function soudureRendu(array $lignes, array $soudeurs, int $elementId, int $docum
         . ' data-page="' . $page . '"'
         . ' data-action="actions/save_soudure.php"'
         . ' data-empreinte="' . prefaEscape($empreinte) . '"'
-        . ($modifiable ? ' data-csrf="' . prefaEscape($_SESSION['prefa_csrf']) . '"' : '') . '>';
+        . ($modifiable ? ' data-csrf="' . prefaEscape(Session::jeton()) . '"' : '') . '>';
     // Le titre est porté par le dépliant qui entoure ce tableau : le répéter ici le
     // dirait deux fois.
     $html .= '<div class="nomenclature-entete"></div>';

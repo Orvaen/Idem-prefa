@@ -31,7 +31,7 @@ $stmt->execute([$actor['id']]);
 $recentProgress = $stmt->fetchAll();
 ?>
 <section class="page prefa-page prefa-list atelier-page" aria-labelledby="atelier-page-title">
-    <div class="prefa-shell">
+    <div class="">
         <header class="prefa-heading prefa-list-heading">
             <div><h1 id="atelier-page-title">Mes affectations</h1><p>Consultez vos plans et mettez à jour l’avancement de vos travaux.</p></div>
             <button type="button" class="atelier-refresh prefa-toggle">Actualiser</button>
@@ -91,7 +91,7 @@ $recentProgress = $stmt->fetchAll();
                                             <p class="atelier-muted">Ces statuts sont partagés par les personnels affectés à cet élément et affichés dans le planning.</p>
                                             <?php $stepState = atelierElementSteps($db, (int) $assignment['id_element']); ?>
                                             <form class="atelier-action prefa-form atelier-grid" data-endpoint="update_atelier.php">
-                                                <input type="hidden" name="csrf" value="<?= prefaEscape($_SESSION['prefa_csrf']) ?>">
+                                                <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
                                                 <input type="hidden" name="affectation" value="<?= $id ?>">
                                                 <input type="hidden" name="operation" value="steps">
                                                 <input type="hidden" name="etapes_revision" value="<?= $stepState['revision'] ?>">
@@ -120,7 +120,7 @@ $recentProgress = $stmt->fetchAll();
                                         </section>
                                         <section class="atelier-detail-panel" role="tabpanel" id="atelier-pane-avancement-<?= $id ?>" aria-labelledby="atelier-tab-avancement-<?= $id ?>" hidden>
                                             <form class="atelier-action prefa-form atelier-grid" data-endpoint="update_atelier.php">
-                                                <input type="hidden" name="csrf" value="<?= prefaEscape($_SESSION['prefa_csrf']) ?>"><input type="hidden" name="affectation" value="<?= $id ?>"><input type="hidden" name="operation" value="progress"><input type="hidden" name="revision" value="<?= (int) $assignment['revision'] ?>">
+                                                <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>"><input type="hidden" name="affectation" value="<?= $id ?>"><input type="hidden" name="operation" value="progress"><input type="hidden" name="revision" value="<?= (int) $assignment['revision'] ?>">
                                                 <div><label for="atelier-progress-<?= $id ?>">Avancement (%)</label><input id="atelier-progress-<?= $id ?>" type="number" name="avancement" min="0" max="100" step="1" value="<?= $progress ?>" required></div>
                                                 <div class="atelier-wide"><label for="atelier-note-<?= $id ?>"><?= $assignment['type_affectation'] === 'soudage' ? 'Compte rendu du suivi soudage' : 'Compte rendu d’avancement' ?></label><textarea id="atelier-note-<?= $id ?>" name="commentaire" maxlength="2000"><?= prefaEscape($assignment['commentaire'] ?? '') ?></textarea></div>
                                                 <div class="atelier-form-actions"><button type="submit">Enregistrer l’avancement</button><span class="atelier-message" role="status" aria-live="polite"></span></div>

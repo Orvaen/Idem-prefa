@@ -23,16 +23,14 @@
     var start = location.hash.slice(1);
     if (start === 'hours' || start === 'passivation' || start === 'theme') show(start);
 
-    // Gestion du sélecteur de thème
+    // Gestion du sélecteur de thème. La décision vit dans theme.js ; ici on montre l'état
+    // et on transmet le choix.
     function updateThemeSelectionUI() {
-        var cur = localStorage.getItem('app_theme') || 'default';
+        var cur = window.Theme ? window.Theme.choix() : 'auto';
         document.querySelectorAll('.theme-card').forEach(function (card) {
             var val = card.dataset.themeVal;
             var isCur = val === cur;
-            if (val === 'pink') {
-                card.style.borderColor = isCur ? '#ec4899' : '#f472b6';
-                card.style.boxShadow = isCur ? '0 0 0 3px #ec4899, 0 6px 16px rgba(236, 72, 153, 0.4)' : 'none';
-            } else if (val === 'light') {
+            if (val === 'light') {
                 card.style.borderColor = isCur ? '#2563eb' : '#cbd5e1';
                 card.style.boxShadow = isCur ? '0 0 0 3px #2563eb, 0 6px 16px rgba(37, 99, 235, 0.25)' : 'none';
             } else {
@@ -44,37 +42,19 @@
         });
     }
 
+    var DITS = {
+        auto: 'Le thème suit maintenant celui de votre système.',
+        light: 'Thème clair activé.',
+        dark: 'Thème sombre activé.'
+    };
+
     function applyTheme(themeName) {
-        if (themeName === 'pink') {
-            document.documentElement.setAttribute('data-theme', 'pink');
-            document.body.setAttribute('data-theme', 'pink');
-            localStorage.setItem('app_theme', 'pink');
-            var msg = document.getElementById('theme-status-message');
-            if (msg) {
-                msg.className = 'prefa-message success';
-                msg.textContent = 'Thème Rose activé avec succès !';
-                msg.style.display = 'block';
-            }
-        } else if (themeName === 'light') {
-            document.documentElement.setAttribute('data-theme', 'light');
-            document.body.setAttribute('data-theme', 'light');
-            localStorage.setItem('app_theme', 'light');
-            var msg = document.getElementById('theme-status-message');
-            if (msg) {
-                msg.className = 'prefa-message success';
-                msg.textContent = 'Thème Clair activé avec succès !';
-                msg.style.display = 'block';
-            }
-        } else {
-            document.documentElement.removeAttribute('data-theme');
-            document.body.removeAttribute('data-theme');
-            localStorage.removeItem('app_theme');
-            var msg = document.getElementById('theme-status-message');
-            if (msg) {
-                msg.className = 'prefa-message success';
-                msg.textContent = 'Thème Sombre Standard rétabli.';
-                msg.style.display = 'block';
-            }
+        if (window.Theme) window.Theme.appliquer(themeName);
+        var msg = document.getElementById('theme-status-message');
+        if (msg) {
+            msg.className = 'prefa-message success';
+            msg.textContent = DITS[themeName] || DITS.auto;
+            msg.style.display = 'block';
         }
         updateThemeSelectionUI();
     }

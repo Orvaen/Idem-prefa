@@ -1,0 +1,339 @@
+/* ==========================================================================
+   BARRE DE FILTRES
+   ==========================================================================
+
+   Une pastille par critère, à l'échelle des barres d'outils. Les filtres étaient quatre
+   champs de formulaire hauts de 44 px, tous affichés même vides, et rien ne disait qu'un
+   filtre était posé. */
+
+.prefa-filters {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 0 16px 12px;
+}
+
+.filtres-barre {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* ===== LA RECHERCHE ===== */
+
+/* Ce n'est pas un filtre à choix : on y tape. Elle garde donc un champ, mais à la hauteur
+   des pastilles — pas celle des formulaires. */
+.filtres-recherche {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 0 1 240px;
+}
+
+.filtres-recherche .icon {
+    position: absolute;
+    left: 9px;
+    width: 15px;
+    height: 15px;
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
+.filtres-recherche input {
+    width: 100%;
+    height: var(--ctrl-sm);
+    padding: 0 10px 0 30px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+}
+
+.filtres-recherche input:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+
+/* La croix de l'aide à la saisie du navigateur double celle qu'on dessine ailleurs. */
+.filtres-recherche input::-webkit-search-cancel-button {
+    appearance: none;
+}
+
+/* ===== LA PASTILLE ===== */
+
+.filtre {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    height: var(--ctrl-sm);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    background: var(--surface);
+}
+
+/* Un filtre posé se teinte : la barre dit d'un coup d'œil ce qui restreint la liste. */
+.filtre.est-actif {
+    border-color: var(--filtre-bord);
+    background: var(--filtre-fond);
+}
+
+.filtre-declencheur {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 100%;
+    padding: 0 8px 0 10px;
+    border: 0;
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.filtre-libelle {
+    color: var(--text-muted);
+}
+
+.filtre.est-actif .filtre-libelle {
+    color: var(--text);
+}
+
+/* Le nombre retenu, quand il y en a plus d'un : c'est l'information qui manque le plus
+   quand une pastille dit seulement « 3 sélectionnés ». */
+.filtre-compte {
+    display: grid;
+    place-items: center;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.filtre-resume {
+    font-weight: 450;
+}
+
+.filtre-chevron {
+    width: 13px;
+    height: 13px;
+    color: var(--text-muted);
+    transition: transform 0.12s ease;
+}
+
+.filtre-declencheur[aria-expanded="true"] .filtre-chevron {
+    transform: rotate(180deg);
+}
+
+/* La croix ne paraît que s'il y a quelque chose à enlever — c'est le composant qui décide,
+   elle n'est pas rendue autrement. */
+.filtre-effacer {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    border-left: 1px solid var(--filtre-bord);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.12s ease, background 0.12s ease;
+}
+
+.filtre-effacer .icon {
+    width: 12px;
+    height: 12px;
+}
+
+.filtre-effacer:hover {
+    background: var(--hover);
+    color: var(--text);
+}
+
+.filtre-declencheur:hover {
+    background: var(--hover);
+}
+
+.filtre-declencheur:focus-visible,
+.filtre-effacer:focus-visible,
+.filtres-tout-effacer:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+.filtres-tout-effacer {
+    height: var(--ctrl-sm);
+    padding: 0 10px;
+    border: 0;
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.filtres-tout-effacer:hover {
+    background: var(--hover);
+    color: var(--text);
+}
+
+/* ===== LE VOLET ===== */
+
+/* Posé en fixe par le script : la barre vit dans un écran qui défile, et un volet en
+   absolu s'y ferait couper. */
+.filtre-volet {
+    position: fixed;
+    z-index: 70;
+    width: 240px;
+    max-height: 320px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    box-shadow:
+        0 1px 2px rgb(0 0 0 / 10%),
+        0 10px 28px rgb(0 0 0 / 22%);
+}
+
+[data-theme="light"] .filtre-volet {
+    box-shadow:
+        0 1px 3px rgb(15 23 42 / 10%),
+        0 14px 36px rgb(15 23 42 / 18%);
+}
+
+.filtre-recherche {
+    padding: 6px;
+    border-bottom: 1px solid var(--border-subtle, var(--border));
+}
+
+.filtre-chercher {
+    width: 100%;
+    height: 28px;
+    padding: 0 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    background: var(--frame);
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+}
+
+.filtre-chercher:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+
+.filtre-options {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px;
+}
+
+.filtre-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: var(--r-sm);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.filtre-option:hover {
+    background: var(--hover);
+}
+
+/* La case du navigateur ne suit aucun thème : on la masque et on dessine la nôtre. */
+.filtre-option input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.filtre-case {
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+    color: transparent;
+}
+
+.filtre-case svg {
+    width: 11px;
+    height: 11px;
+}
+
+.filtre-option input:checked + .filtre-case {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #ffffff;
+}
+
+.filtre-option input:focus-visible + .filtre-case {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+.filtre-texte {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.filtre-vide {
+    margin: 0;
+    padding: 12px 14px;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.filtre-pied {
+    border-top: 1px solid var(--border-subtle, var(--border));
+    padding: 4px;
+}
+
+.filtre-tout {
+    width: 100%;
+    height: 28px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.filtre-tout:hover {
+    background: var(--hover);
+}
+
+@media (max-width: 700px) {
+    .filtres-recherche {
+        flex: 1 1 100%;
+    }
+}

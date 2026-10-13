@@ -95,9 +95,6 @@ $facts = [
 // Qui s'occupe de la demande : visible dans la fiche depuis que la colonne du tableau
 // a ete retiree. Seules les demandes validees passent par l'atelier.
 if ((int) $row['id_statut'] === 2) {
-    $facts['Prise en charge'] = !empty($row['prise_en_charge_nom'])
-        ? $row['prise_en_charge_nom']
-        : 'À prendre en charge';
 }
 
 if ($canViewAllPrefa) {
@@ -275,7 +272,7 @@ $decisionComment = trim((string) ($row['commentaire_validation'] ?? ''));
 
                             </a>
 
-                            <?php if (!empty($group['ccpu'])) echo ccpuRendu($document, $_SESSION['prefa_csrf']); ?>
+                            <?php if (!empty($group['ccpu'])) echo ccpuRendu($document, Session::jeton()); ?>
 
                         </li>
 

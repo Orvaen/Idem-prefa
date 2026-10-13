@@ -155,7 +155,7 @@ function nomenclatureRendu(array $lignes, array $coulees, int $elementId, bool $
     $html = '<div class="nomenclature tableau-editable" data-plan="' . $elementId . '"'
         . ' data-action="actions/save_nomenclature.php"'
         . ' data-empreinte="' . prefaEscape($empreinte) . '"'
-        . ($modifiable ? ' data-csrf="' . prefaEscape($_SESSION['prefa_csrf']) . '"' : '') . '>';
+        . ($modifiable ? ' data-csrf="' . prefaEscape(Session::jeton()) . '"' : '') . '>';
     $html .= '<div class="nomenclature-entete"><h4>N° de coulée par ligne du plan</h4><div class="nomenclature-liens">';
     // Le plan déposé reste la référence : c'est lui qui porte les désignations, et
     // c'est en face de ses lignes qu'on renseigne les coulées.

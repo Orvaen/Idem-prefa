@@ -10,10 +10,25 @@ body[data-theme="light"],
     --surface: #ffffff;
     --border: #cbd5e1;
     --border-subtle: #e2e8f0;
+    --border-faint: #eef2f6;
     --text: #0f172a;
     --text-muted: #64748b;
     --hover: #f1f5f9;
     --active: #e2e8f0;
+    --ligne-survol: #e9edf3;
+    --selection-fond: #dbe7fb;
+    --selection-filet: #bcd3f6;
+    --filtre-fond: #eef4fe;
+    --filtre-bord: #bcd3f6;
+    --danger-texte: #b42318;
+    --danger-bord: #f0b4ae;
+    --danger-fond: #b42318;
+    --succes-texte: #166534;
+    --succes-fond: #f0fdf4;
+    --succes-bord: #86efac;
+    --alerte-texte: #991b1b;
+    --alerte-fond: #fef2f2;
+    --alerte-bord: #fca5a5;
     --accent: #2563eb;
     --accent-hover: #1d4ed8;
     --radius: 8px;
@@ -32,10 +47,10 @@ body[data-theme="light"],
     background: var(--frame) !important;
 }
 
+/* Plus d'ombre portée : le panneau ne flotte plus, il est à plat contre la barre, et une
+   ombre sous un bord collé ne fait qu'un trait flou de plus. */
 [data-theme="light"] #right-panel {
     background: var(--surface) !important;
-    border-color: var(--border-subtle) !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 [data-theme="light"] #content {
@@ -64,11 +79,24 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] #left-panel .nav-btn .icon {
-    color: #64748b !important;
+    color: #475569 !important;
+}
+
+/* Le fond de la barre était hérité du conteneur : posé ici, il ne peut plus rester celui
+   du thème précédent quand on bascule. */
+[data-theme="light"] #left-panel {
+    background: var(--frame) !important;
+}
+
+[data-theme="light"] .nav-rayon-titre {
+    color: #475569 !important;
+}
+
+[data-theme="light"] .nav-rayon-titre:hover {
+    color: #0f172a !important;
 }
 
 [data-theme="light"] #left-panel .nav-btn:hover {
-    background: #f1f5f9 !important;
     color: #0f172a !important;
 }
 
@@ -296,12 +324,41 @@ body[data-theme="light"],
     --field-focus: #2563eb;
 }
 
+/* « background » et non « background-color » effaçait aussi background-image : les
+   listes déroulantes qui dessinent leur propre flèche — celle du système ne suit aucun
+   thème — perdaient la leur en thème clair, et rien n'indiquait plus qu'elles s'ouvrent. */
 [data-theme="light"] input:not([type="checkbox"]):not([type="radio"]),
 [data-theme="light"] select,
 [data-theme="light"] textarea {
-    background: #ffffff !important;
+    background-color: #ffffff !important;
     border: 1px solid #cbd5e1 !important;
     color: #0f172a !important;
+}
+
+/* Les contrôles posés dans une ligne de tableau échappent à la règle ci-dessus : là-bas,
+   une ligne est du texte, et le cadre n'arrive qu'au survol. La règle générale les
+   encadrait tous, en permanence, parce qu'elle vise « input » et « select » sans distinguer
+   un formulaire d'un tableau — et son !important ne laissait rien passer. */
+/* Les deux :not() de la règle générale la font peser plus lourd que « .affaires-table
+   input » : on reprend donc sa forme exacte, la classe du tableau en plus, sinon seules
+   les listes déroulantes étaient corrigées et les champs gardaient leur cadre. */
+[data-theme="light"] .affaires-table input:not([type="checkbox"]):not([type="radio"]),
+[data-theme="light"] .affaires-table select {
+    border-color: transparent !important;
+    background-color: transparent !important;
+}
+
+[data-theme="light"] .affaires-table tbody tr:hover input:not([type="checkbox"]),
+[data-theme="light"] .affaires-table tbody tr:hover select,
+[data-theme="light"] .affaires-table tbody tr:focus-within input:not([type="checkbox"]),
+[data-theme="light"] .affaires-table tbody tr:focus-within select {
+    border-color: #cbd5e1 !important;
+    background-color: #ffffff !important;
+}
+
+[data-theme="light"] .affaires-table tbody tr input:not([type="checkbox"]):focus,
+[data-theme="light"] .affaires-table tbody tr select:focus {
+    border-color: #2563eb !important;
 }
 
 [data-theme="light"] input:focus,
@@ -349,6 +406,22 @@ body[data-theme="light"],
     color: #0f172a !important;
 }
 
+/* La règle ci-dessus repeint en blanc, et en !important, toutes les cellules de
+   l'application : la ligne survolée ne pouvait donc jamais s'éclairer en thème clair, sur
+   aucun écran. On voyait les boutons de la ligne prendre leur contour et le fond ne pas
+   bouger.
+ *
+ * Elle est reprise ici plutôt que rendue plus fine : la rendre plus fine veut dire la
+   découper par tableau, et il y en a huit. Celle-ci pèse une classe de plus qu'elle — et
+   la suit, ce qui suffirait même à spécificité égale. */
+/* Le volet de détail est exclu des deux côtés : ce n'est pas une ligne de données mais un
+   écran déplié sous elle, et le survoler teintait tout son fond. Sa propre règle le
+   protégeait déjà — mais celle-ci, plus spécifique, passait devant. */
+[data-theme="light"] tbody tr:hover:not(.prefa-detail-row) > td,
+[data-theme="light"] tbody tr:focus-within:not(.prefa-detail-row) > td {
+    background: var(--ligne-survol) !important;
+}
+
 /* hover sur lignes de tableau désactivé – uniquement sur les boutons/actions */
 [data-theme="light"] .atelier-editor-row td {
     background: #f8fafc !important;
@@ -372,18 +445,12 @@ body[data-theme="light"],
     color: #ffffff !important;
 }
 
-[data-theme="light"] .prefa-message.success {
-    background: #f0fdf4 !important;
-    border: 1px solid #86efac !important;
-    color: #166534 !important;
-    font-weight: 600;
-}
-
-[data-theme="light"] .prefa-message.error,
+/* Les bandeaux prennent leurs couleurs des jetons --succes-* et --alerte-*, redéfinis plus
+   haut : il ne reste ici que le commentaire de refus, qui n'en est pas un. */
 [data-theme="light"] .prefa-decision-comment.is-refusal {
-    background: #fef2f2 !important;
-    border: 1px solid #fca5a5 !important;
-    color: #991b1b !important;
+    background: var(--alerte-fond) !important;
+    border: 1px solid var(--alerte-bord) !important;
+    color: var(--alerte-texte) !important;
 }
 
 [data-theme="light"] .prefa-document-link {
@@ -482,7 +549,6 @@ body[data-theme="light"],
 
 /* ===== PAGE DE PLANNING ===== */
 [data-theme="light"] .planning-page {
-    background: #f8fafc !important;
     color: #0f172a !important;
 }
 
@@ -932,10 +998,46 @@ body[data-theme="light"],
     border-color: #ffffff !important;
 }
 
-/* ===== PREFA LIST STICKY HEADER ===== */
+/* ===== PREFA LIST STICKY HEADER =====
+   L'en-tête reste collé en haut et doit masquer ce qui défile dessous : il prend donc la
+   surface de la page, et non une teinte à lui. En gris, il faisait un bandeau au-dessus du
+   tableau, qui coupait l'écran en deux. */
 [data-theme="light"] .prefa-list-head-row,
 [data-theme="light"] .prefa-table thead tr {
-    background: var(--frame) !important;
+    background: var(--surface) !important;
+}
+
+/* Les commandes d'une ligne sont des boutons fantômes, dans les deux thèmes. Trois règles
+   d'ici les rhabillaient : « Examiner » revenait encadré et en gras, « Supprimer » encadré
+   de rose. Leurs sélecteurs pèsent deux classes, ceux-ci trois — et ils les suivent. */
+[data-theme="light"] .prefa-list tbody .prefa-toggle,
+[data-theme="light"] .prefa-list tbody .edit-prefa,
+[data-theme="light"] .prefa-list tbody .delete-prefa {
+    background: transparent !important;
+    border-color: transparent !important;
+    color: #64748b !important;
+    font-weight: 450 !important;
+}
+
+[data-theme="light"] .prefa-list tbody tr:hover .prefa-toggle,
+[data-theme="light"] .prefa-list tbody tr:hover .edit-prefa,
+[data-theme="light"] .prefa-list tbody tr:hover .delete-prefa,
+[data-theme="light"] .prefa-list tbody tr:focus-within .prefa-toggle,
+[data-theme="light"] .prefa-list tbody tr:focus-within .edit-prefa,
+[data-theme="light"] .prefa-list tbody tr:focus-within .delete-prefa {
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .prefa-list tbody .prefa-toggle:hover,
+[data-theme="light"] .prefa-list tbody .edit-prefa:hover {
+    background: #f1f5f9 !important;
+}
+
+[data-theme="light"] .prefa-list tbody .delete-prefa:hover:not(:disabled) {
+    background: #fff1f0 !important;
+    border-color: #dc8178 !important;
+    color: #b42318 !important;
 }
 
 /* ===== DROPDOWN / SELECT GÉNÉRAL ===== */
@@ -1273,8 +1375,7 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .account-action-icon {
-    background: #f1f5f9 !important;
-    color: #475569 !important;
+    color: #64748b !important;
 }
 
 [data-theme="light"] .account-add .account-action-icon {

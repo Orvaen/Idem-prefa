@@ -57,7 +57,7 @@ $types = $db->query('SELECT id, libelle FROM type_passivation ORDER BY libelle')
                     <p class="settings-card-desc">Durée nécessaire pour fabriquer 1 pouce (utilisée pour estimer le délai de préfabrication).</p>
 
                     <form id="prefa-settings-form" class="settings-form">
-                        <input type="hidden" name="csrf" value="<?= prefaEscape($_SESSION['prefa_csrf']) ?>">
+                        <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
 
                         <div class="settings-control-group">
                             <label for="duration-days">Jours par pouce :</label>
@@ -87,7 +87,7 @@ $types = $db->query('SELECT id, libelle FROM type_passivation ORDER BY libelle')
                     <p class="settings-card-desc">Gérez les types de passivation proposés aux demandeurs lors de la saisie d'une préfabrication.</p>
 
                     <form id="passivation-form" class="settings-form">
-                        <input type="hidden" name="csrf" value="<?= prefaEscape($_SESSION['prefa_csrf']) ?>">
+                        <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
 
                         <div class="settings-control-group">
                             <label for="passivation-libelle">Ajouter un type de passivation :</label>
@@ -129,8 +129,19 @@ $types = $db->query('SELECT id, libelle FROM type_passivation ORDER BY libelle')
                     <p class="settings-card-desc">Personnalisez l'ambiance visuelle du tableau de bord, des formulaires et du planning.</p>
 
                     <div class="theme-picker-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 16px;">
+                        <!-- Carte Système : l'état de départ, et le seul moyen d'y revenir
+                             une fois qu'on a tranché. -->
+                        <div class="theme-card" data-theme-val="auto" style="border: 2px solid var(--border); border-radius: 8px; padding: 20px; cursor: pointer; transition: all 0.2s; background: linear-gradient(135deg, #ffffff 50%, #141820 50%);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding: 2px 6px; border-radius: 4px; background: var(--surface);">
+                                <strong style="font-size: 15px; color: var(--text);">Celui du système</strong>
+                                <span class="theme-check" style="font-size: 18px; color: var(--accent); font-weight: 700;"></span>
+                            </div>
+                            <p style="font-size: 12px; margin-bottom: 14px; padding: 4px 6px; border-radius: 4px; background: var(--surface); color: var(--text-muted);">L'application suit le réglage de votre ordinateur, et bascule avec lui.</p>
+                            <button type="button" class="settings-btn-secondary btn-apply-theme" data-theme="auto" style="width: 100%;">Suivre le système</button>
+                        </div>
+
                         <!-- Carte Thème Sombre -->
-                        <div class="theme-card" data-theme-val="default" style="border: 2px solid var(--border); border-radius: 8px; padding: 20px; cursor: pointer; transition: all 0.2s; background: var(--frame);">
+                        <div class="theme-card" data-theme-val="dark" style="border: 2px solid var(--border); border-radius: 8px; padding: 20px; cursor: pointer; transition: all 0.2s; background: var(--frame);">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                                 <strong style="font-size: 15px; color: var(--text);">Thème Sombre Standard</strong>
                                 <span class="theme-check" style="font-size: 18px; color: var(--accent); font-weight: 700;"></span>
@@ -142,7 +153,7 @@ $types = $db->query('SELECT id, libelle FROM type_passivation ORDER BY libelle')
                                 <div style="width: 28px; height: 28px; border-radius: 4px; background: #2563eb;" title="Accent Bleu"></div>
                                 <div style="width: 28px; height: 28px; border-radius: 4px; background: #e2e7ef;" title="Texte"></div>
                             </div>
-                            <button type="button" class="settings-btn-secondary btn-apply-theme" data-theme="default" style="width: 100%;">Activer le thème Sombre</button>
+                            <button type="button" class="settings-btn-secondary btn-apply-theme" data-theme="dark" style="width: 100%;">Activer le thème Sombre</button>
                         </div>
 
                         <!-- Carte Thème Clair -->
@@ -161,21 +172,6 @@ $types = $db->query('SELECT id, libelle FROM type_passivation ORDER BY libelle')
                             <button type="button" class="settings-btn-primary btn-apply-theme" data-theme="light" style="width: 100%; background: #2563eb !important; border: none !important; font-weight: 700;">Activer le thème Clair</button>
                         </div>
 
-                        <!-- Carte Thème Rose -->
-                        <div class="theme-card" data-theme-val="pink" style="border: 2px solid #ec4899; border-radius: 8px; padding: 20px; cursor: pointer; transition: all 0.2s; background: #fce7f3;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                <strong style="font-size: 15px; color: #831843;">Thème 100% Rose 🌸</strong>
-                                <span class="theme-badge" style="background: #ec4899; color: #ffffff; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px;">TOTALEMENT ROSE</span>
-                            </div>
-                            <p style="font-size: 12px; color: #be185d; margin-bottom: 14px;">Transforme absolument toute l'application en rose bonbon, fuchsia et framboise !</p>
-                            <div style="display: flex; gap: 8px; margin-bottom: 16px;">
-                                <div style="width: 28px; height: 28px; border-radius: 4px; background: #fbcfe8; border: 1px solid #f472b6;" title="Fond Rose Bonbon"></div>
-                                <div style="width: 28px; height: 28px; border-radius: 4px; background: #fdf2f8; border: 1px solid #f472b6;" title="Surface Rose Poudrée"></div>
-                                <div style="width: 28px; height: 28px; border-radius: 4px; background: #ec4899;" title="Barbie Rose Vif"></div>
-                                <div style="width: 28px; height: 28px; border-radius: 4px; background: #831843;" title="Texte Framboise"></div>
-                            </div>
-                            <button type="button" class="settings-btn-primary btn-apply-theme" data-theme="pink" style="width: 100%; background: linear-gradient(135deg, #ec4899, #db2777) !important; border: none !important; font-weight: 700;">Activer le thème Rose 💖</button>
-                        </div>
                     </div>
 
                     <p id="theme-status-message" class="prefa-message" role="status" aria-live="polite" style="margin-top: 18px;"></p>

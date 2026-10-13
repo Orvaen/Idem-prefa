@@ -33,33 +33,6 @@ function prefaReference(int $id): string
  * la référence est seule, sans nom d'affaire à proximité. Le nom du chantier n'est pas
  * stocké dans la référence : il peut être renommé, et un code figé mentirait.
  */
-/**
- * L'affaire d'un nom donné, créée si elle n'existe pas encore.
- *
- * Une affaire porte plusieurs demandes : c'est son nom qui les regroupe, à la casse et
- * aux accents près — la collation de la colonne s'en charge, de sorte que « BATIMENT A »
- * et « Bâtiment a » tombent sur la même affaire plutôt que d'en créer deux.
- *
- * La demande garde une copie du nom : c'est elle qui s'affiche partout aujourd'hui.
- */
-function prefaAffaireDeNom(PDO $db, string $nom): ?int
-{
-    $nom = trim($nom);
-    if ($nom === '') return null;
-
-    $trouver = $db->prepare('SELECT id FROM affaire WHERE nom = ?');
-    $trouver->execute([$nom]);
-    $id = $trouver->fetchColumn();
-    if ($id !== false) return (int) $id;
-
-    // INSERT IGNORE et non INSERT : deux demandes créées en même temps sur la même
-    // affaire ne doivent pas en faire échouer une.
-    $db->prepare('INSERT IGNORE INTO affaire (nom) VALUES (?)')->execute([$nom]);
-    $trouver->execute([$nom]);
-    $id = $trouver->fetchColumn();
-    return $id === false ? null : (int) $id;
-}
-
 function prefaReferenceComplete(int $id): string
 {
     $ligne = prefaReferences()[$id] ?? null;

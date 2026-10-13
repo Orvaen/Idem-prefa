@@ -9,7 +9,7 @@ function passivationRow(array $type, bool $editing = false, string $error = ''):
         <td class="passivation-name">
         <?php if ($editing): ?>
             <form id="edit-passivation-<?= $id ?>" hx-post="<?= $url ?>" hx-target="closest tr" hx-swap="outerHTML">
-                <input type="hidden" name="csrf" value="<?= prefaEscape($_SESSION['prefa_csrf']) ?>">
+                <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
                 <input type="hidden" name="id" value="<?= $id ?>">
                 <input name="libelle" value="<?= prefaEscape($type['libelle']) ?>" maxlength="100" required aria-label="Nom du type de passivation" autofocus>
                 <p class="prefa-message error" role="alert"><?= prefaEscape($error) ?></p>

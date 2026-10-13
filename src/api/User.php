@@ -1,5 +1,13 @@
 <?php
 
+require_once __DIR__ . '/../modeles/autoload.php';
+
+/**
+ * L'authentification : vérifier un mot de passe, ouvrir une session, créer un compte.
+ *
+ * Qui est connecté et ce qu'il a le droit de faire ne se lit plus ici mais dans les
+ * modèles Session et Utilisateur. Cette classe ne fait qu'ouvrir la porte.
+ */
 class User
 {
     private MyPDO $db;
@@ -44,31 +52,21 @@ class User
         return $this->startSession($identifiant);
     }
 
-    /** Ouvre la session sur un compte déjà authentifié : utilisé par la bascule multi-compte. */
+    /**
+     * Ouvre la session sur un compte déjà authentifié : utilisé par la bascule multi-compte.
+     *
+     * Seul l'identifiant est retenu. Le nom, le prénom, le courriel et le rôle y étaient
+     * recopiés et devenaient faux dès qu'un compte était renommé ; ils se relisent
+     * maintenant en base à chaque requête.
+     */
     public function startSession(string $identifiant): bool
     {
-        $sql = 'SELECT name, prenom, email, id_role, identifiant
-            FROM Utilisateur
-            WHERE identifiant = :identifiant
-            LIMIT 1';
-
-        $stmt = $this->db->prepare($sql);
-
-        $stmt->execute([
-            'identifiant' => $identifiant
-        ]);
-
-        $user = $stmt->fetch();
-
-        if (!$user) {
+        $utilisateur = Utilisateur::parIdentifiant($this->db, $identifiant);
+        if (!$utilisateur) {
             return false;
         }
 
-        $_SESSION['email'] = $user['email'];
-        $_SESSION['name'] = $user['name'];
-        $_SESSION['prenom'] = $user['prenom'];
-        $_SESSION['identifiant'] = $user['identifiant'];
-        $_SESSION['role_name'] = $this->getRole($user['id_role']);
+        Session::ouvrir($utilisateur->identifiant);
 
         return true;
     }

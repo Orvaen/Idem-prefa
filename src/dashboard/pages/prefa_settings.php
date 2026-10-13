@@ -11,7 +11,7 @@ $hoursSettings = prefaHoursSettings($db);
             <p>Indiquez le temps nécessaire pour fabriquer 1 pouce ISO.</p>
         </div>
         <form id="prefa-settings-form" class="prefa-form">
-            <input type="hidden" name="csrf" value="<?= prefaEscape($_SESSION['prefa_csrf']) ?>">
+            <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
             <div class="form-group">
                 <label for="days-per-inch">Temps par pouce ISO</label>
                 <div class="time-inputs-group">

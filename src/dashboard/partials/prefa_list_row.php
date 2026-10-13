@@ -4,13 +4,15 @@ $isPending = (int) $row['id_statut'] === 1;
 $isUrgentPending = !empty($row['urgent']) && $isPending;
 // Une demande validée que l'atelier n'a pas encore reprise : l'action de prise en
 // charge s'offre ici comme sur la page Plans / ISO.
-$isAPrendre = (int) $row['id_statut'] === 2 && empty($row['prise_en_charge_atelier']) && $canManageWorkshop;
+
 $ownerName = trim($row['prenom'] . ' ' . $row['name']);
 ?>
 <tbody class="prefa-request<?= $isUrgentPending ? ' is-urgent-pending' : '' ?>">
     <tr>
-        <?php // Sous le titre de son affaire, la demande n'est plus que son numéro. ?>
-        <td><?= prefaEscape($vueParAffaire ? prefaReference($requestId) : prefaReferenceComplete($requestId)) ?></td>
+        <?php // Le numéro seul : le chantier est dans la colonne d'à côté quand la liste n'est
+              // pas groupée, et dans le titre du groupe quand elle l'est. Le répéter ici
+              // allongeait la colonne de deux cents pixels pour redire la voisine. ?>
+        <td class="prefa-reference"><?= prefaEscape(prefaReference($requestId)) ?></td>
         <?php if (!$vueParAffaire): ?>
             <td><?= prefaEscape($row['nom_affaire'] ?: '—') ?></td>
         <?php endif; ?>
@@ -28,10 +30,10 @@ $ownerName = trim($row['prenom'] . ' ' . $row['name']);
             <?php if ($canEditPrefa): ?><button type="button" class="edit-prefa" data-id="<?= $requestId ?>">Modifier</button><?php endif; ?>
 
             <?php if ($canEditPrefa && ($isAdmin || ($isPending && (int) $row['idUsers'] === (int) $actor['id']))): ?>
-                <button type="button" class="delete-prefa" data-id="<?= $requestId ?>" data-csrf="<?= prefaEscape($_SESSION['prefa_csrf']) ?>">Supprimer</button>
+                <button type="button" class="delete-prefa" data-id="<?= $requestId ?>" data-csrf="<?= prefaEscape(Session::jeton()) ?>">Supprimer</button>
             <?php endif; ?>
 
-            <?php if ($isAPrendre): ?><?php require __DIR__ . '/atelier_take.php'; ?><?php endif; ?>
+
 
         </td>
     </tr>
@@ -41,7 +43,7 @@ $ownerName = trim($row['prenom'] . ' ' . $row['name']);
                 <?php require __DIR__ . '/prefa_detail.php'; ?>
                 <?php if ($isAdmin && $isPending): ?>
                     <form class="prefa-review prefa-form">
-                        <input type="hidden" name="csrf" value="<?= prefaEscape($_SESSION['prefa_csrf']) ?>">
+                        <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
                         <input type="hidden" name="id" value="<?= $requestId ?>">
 
                         <div class="form-group">

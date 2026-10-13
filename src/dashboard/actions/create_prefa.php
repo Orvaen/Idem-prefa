@@ -38,11 +38,20 @@ if ($editing) {
 
 // Champs à donner aux code sql aprés
 $values = [];
-$requestName = $_POST['nom_affaire'] ?? '';
-if (!is_string($requestName) || trim($requestName) === '' || mb_strlen(trim($requestName)) > 255) {
-    prefaError(400, 'Saisissez un nom de demande de 255 caractères maximum.');
-}
-$values['nom_affaire'] = trim($requestName);
+// La demande se rattache à une affaire déjà ouverte : c'est le chargé de production qui
+// ouvre le chantier et désigne qui le suit. On vérifie que celle-ci est bien accessible à
+// qui dépose — un identifiant se change dans le formulaire, et rien n'empêcherait sinon de
+// déposer sur le chantier d'un collègue.
+$idAffaire = filter_var($_POST['id_affaire'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+if (!$idAffaire) prefaError(400, 'Choisissez l’affaire à laquelle rattacher cette demande.');
+
+$affaire = Affaire::accessible($db, $utilisateur, $idAffaire);
+if (!$affaire) prefaError(403, 'Cette affaire ne vous est pas confiée.');
+
+$values['id_affaire'] = $affaire->id;
+// Le nom reste recopié sur la demande : c'est lui qui s'affiche dans les listes et dans les
+// références, sans jointure. Renommer l'affaire met ses demandes à jour.
+$values['nom_affaire'] = $affaire->nom;
 
 $availability = $_POST['matiere_disponibilite'] ?? '';
 $material = $_POST['id_matiere'] ?? '';
@@ -316,10 +325,6 @@ try {
     }
 
     $db->beginTransaction();
-    // L'affaire regroupe les demandes d'un même chantier : elle est créée au premier
-    // nom rencontré, et retrouvée ensuite. Le nom reste recopié sur la demande, c'est
-    // encore lui qui s'affiche.
-    $values['id_affaire'] = prefaAffaireDeNom($db, (string) $values['nom_affaire']);
     $stmt->execute($values);
     $savedId = $editing ? $requestId : (int) $db->lastInsertId();
     if (!$editing) {
@@ -383,6 +388,17 @@ try {
     }
 
     $db->commit();
+
+    // Après le commit, jamais avant : une annonce pour une demande que la transaction
+    // aurait annulée vaut moins que pas d'annonce du tout. Une modification n'en est pas
+    // une nouvelle — on ne prévient que du dépôt.
+    if (!$editing) {
+        Evenement::noter($db, Evenement::DEMANDE_DEPOSEE, $savedId, $utilisateur->id, [
+            'affaire' => (string) ($values['nom_affaire'] ?? ''),
+            'urgente' => (bool) ($values['urgent'] ?? false),
+        ]);
+    }
+
     foreach ($pendingRemoval as $pendingPath) unlink($pendingPath);
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode(['success' => true, 'message' => $editing ? 'Demande modifiée. Elle est en attente de validation.' : 'Demande envoyée. Elle est en attente de validation.']);

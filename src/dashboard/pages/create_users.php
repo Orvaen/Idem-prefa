@@ -1,5 +1,11 @@
 <?php
 
+// Formulaire de création d'utilisateur pour l'administrateur.
+//
+// Le commentaire est en PHP et non en HTML au-dessus de la balise : tout ce qui précède
+// <?php part au navigateur, et la page ne peut alors plus ni ouvrir la session ni poser
+// d'en-tête — « headers already sent ».
+
 require_once __DIR__ . '/../includes/prefa_context.php';
 
 if (!$isAdmin) prefaError(403, 'Seul un administrateur peut créer un compte.');
@@ -14,7 +20,7 @@ if (!$isAdmin) prefaError(403, 'Seul un administrateur peut créer un compte.');
         </div>
 
         <form id="create-user-form">
-            <input type="hidden" name="csrf" value="<?= prefaEscape($_SESSION['prefa_csrf']) ?>">
+            <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
             <div class="form-group">
                 <label for="name">Nom</label>
                 <input

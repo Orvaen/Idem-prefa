@@ -1,0 +1,136 @@
+/* ==========================================================================
+   ALERTES DU FLUX D'ÉVÉNEMENTS
+   ==========================================================================
+
+   Une pile de cartes en bas à droite, posées par-dessus l'écran. Elles annoncent ce qui
+   vient d'arriver sans rien interrompre : on peut continuer à taper, elles s'effacent
+   seules au bout de quelques secondes. */
+
+.flux-alertes {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 320px;
+    max-width: calc(100vw - 32px);
+    /* La pile ne doit pas intercepter les clics sur ce qu'elle recouvre : seules les
+       cartes elles-mêmes les reçoivent. */
+    pointer-events: none;
+}
+
+.flux-alerte {
+    pointer-events: auto;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 10px 10px 12px;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    box-shadow:
+        0 1px 2px rgb(0 0 0 / 10%),
+        0 10px 28px rgb(0 0 0 / 22%);
+    /* Elle entre par la droite, d'où elle vient. */
+    animation: flux-entree 180ms cubic-bezier(0.32, 0.72, 0, 1);
+    transition: opacity 160ms ease, transform 160ms ease;
+}
+
+@keyframes flux-entree {
+    from {
+        opacity: 0;
+        transform: translateX(16px);
+    }
+}
+
+.flux-alerte.est-sortante {
+    opacity: 0;
+    transform: translateX(16px);
+}
+
+[data-theme="light"] .flux-alerte {
+    box-shadow:
+        0 1px 3px rgb(15 23 42 / 10%),
+        0 14px 36px rgb(15 23 42 / 18%);
+}
+
+/* Une demande urgente se signale par son filet, pas par un fond rouge : la carte reste
+   lisible, et c'est le mot « urgente » qui porte l'information. */
+.flux-alerte.est-urgente {
+    border-left-color: #e2622c;
+}
+
+.flux-alerte.est-cliquable {
+    cursor: pointer;
+}
+
+.flux-alerte.est-cliquable:hover {
+    background: var(--hover);
+}
+
+.flux-alerte-texte {
+    flex: 1;
+    min-width: 0;
+}
+
+.flux-alerte-texte strong {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.3;
+}
+
+.flux-alerte-texte span {
+    display: block;
+    margin-top: 2px;
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.flux-alerte-fermer {
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+.flux-alerte-fermer .icon {
+    width: 13px;
+    height: 13px;
+}
+
+.flux-alerte-fermer:hover {
+    background: var(--hover);
+    color: var(--text);
+}
+
+/* Sur un téléphone, la pile tient toute la largeur : une carte de 320 px posée dans un
+   coin y recouvre la moitié de l'écran sans qu'on sache ce qu'il y a dessous. */
+@media (max-width: 600px) {
+    .flux-alertes {
+        right: 8px;
+        bottom: 8px;
+        left: 8px;
+        width: auto;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .flux-alerte {
+        animation: none;
+        transition: none;
+    }
+}

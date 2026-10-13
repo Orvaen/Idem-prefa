@@ -179,18 +179,25 @@
     font-weight: 700;
 }
 
-.prefa-form button:not(.modal-close),
+/* La forme de référence d'un bouton : celle que reprennent tous les écrans.
+ *
+ * Le sélecteur prend tous les boutons du formulaire, et il attrapait la croix d'effacement
+ * des listes filtrables : elle arrivait en bleu plein, texte blanc, posée dans le champ.
+ * Les exceptions se déclarent ici, faute de quoi le prochain petit bouton posé dans un
+ * formulaire repartira en bouton principal sans que personne l'ait demandé. */
+.prefa-form button:not(.modal-close):not(.liste-filtrable-effacer),
 #refresh-prefa {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    min-height: 36px;
-    padding: 8px 16px;
+    gap: 8px;
+    height: var(--ctrl-sm);
+    padding: 0 12px;
     border: 1px solid transparent;
-    border-radius: 5px;
+    border-radius: var(--r-sm);
     background: var(--accent);
     color: #ffffff;
+    font-size: 13px;
     cursor: pointer;
 }
 
@@ -219,7 +226,6 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 20px;
 }
 
 #refresh-prefa {
@@ -270,12 +276,12 @@
 
 .prefa-message.success,
 .status-2 {
-    color: #86dba6;
+    color: var(--succes-texte);
 }
 
 .prefa-message.error,
 .status-3 {
-    color: #f6a4a4;
+    color: var(--alerte-texte);
 }
 
 .status-1 {

@@ -473,7 +473,7 @@ $initialSelectedId = null;
 
                 <div id="planning-request-description" class="planning-request-chips"></div>
 
-                <input type="hidden" name="csrf" value="<?= prefaEscape($_SESSION['prefa_csrf']) ?>">
+                <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
                 <input type="hidden" name="id">
                 <input type="hidden" name="revision">
 
