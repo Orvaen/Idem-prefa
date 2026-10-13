@@ -18,7 +18,12 @@ foreach ($assignments as $assignment) {
         $name = atelierDocumentName($db, (int) $assignment['id_demande'], $doc['type_document'], $doc['cle_document']);
         if (!$name) continue;
         $endpoint = $doc['type_document'] === 'plan' ? 'download_prefa_attachment.php' : 'download_' . $doc['type_document'] . '.php';
-        $documentsByElement[$elementId][] = ['name' => $name, 'url' => 'actions/' . $endpoint . '?id=' . (int) $assignment['id_demande'] . '&file=' . rawurlencode($doc['cle_document'])];
+        // La référence voyage dans l'adresse, pas l'identifiant technique : les cinq points
+        // d'entrée de téléchargement ne lisent que « ref ». Cet écran était resté sur
+        // « id » — tous ses documents répondaient « Document invalide ».
+        $documentsByElement[$elementId][] = ['name' => $name, 'url' => 'actions/' . $endpoint
+            . '?ref=' . rawurlencode(prefaReference((int) $assignment['id_demande']))
+            . '&file=' . rawurlencode($doc['cle_document'])];
     }
 }
 $stmt = $db->prepare('SELECT p.*, e.reference, e.id_demande, a.type_affectation FROM pointage_atelier p JOIN affectation_atelier a ON a.id = p.id_affectation JOIN element_atelier e ON e.id = a.id_element JOIN demande_prefabrication d ON d.id = e.id_demande WHERE p.id_utilisateur = ? AND NOT (COALESCE(a.actif, 0) = 1 AND d.id_statut = 2) ORDER BY p.date_travail DESC, p.id DESC LIMIT 100');
