@@ -63,9 +63,38 @@
         envoyer(new FormData(this), $(this).find('.atelier-message'), $(this).find('button'), ouverts());
     });
 
+    // L'aperçu d'un document déposé, déplié sur place. Le fichier n'est demandé qu'au
+    // premier dépli : une liste de cinq PDF les chargerait tous avec la page, pour des
+    // aperçus que personne n'a encore ouverts.
+    $(document).on('click', '.pv-apercu-bascule', function () {
+        const zone = this.closest('.pv-document').querySelector('.pv-apercu');
+        const ouvert = this.getAttribute('aria-expanded') === 'true';
+
+        if (!ouvert && !zone.firstElementChild) {
+            if (this.dataset.image === '1') {
+                const image = document.createElement('img');
+                image.src = this.dataset.src;
+                image.alt = this.dataset.nom;
+                zone.appendChild(image);
+            } else {
+                const cadre = document.createElement('iframe');
+                cadre.src = this.dataset.src;
+                cadre.title = 'Aperçu de ' + this.dataset.nom;
+                zone.appendChild(cadre);
+            }
+        }
+
+        zone.hidden = ouvert;
+        this.setAttribute('aria-expanded', ouvert ? 'false' : 'true');
+        this.textContent = ouvert ? 'Aperçu' : 'Masquer';
+    });
+
     // La zone de dépôt remplace l'input natif : c'est à elle d'annoncer ce qui est sélectionné.
+    // Elle montre aussi ce qui vient d'être choisi : sans cela on dépose un bon de commande
+    // et rien ne confirme que c'est le bon fichier avant de l'avoir enregistré.
     $(document).on('change', '.pv-fichiers-input', function () {
-        const texte = this.closest('.pv-fichiers').querySelector('.pv-fichiers-texte');
+        const zone = this.closest('.pv-fichiers');
+        const texte = zone.querySelector('.pv-fichiers-texte');
         const fichiers = Array.from(this.files || []);
         if (!fichiers.length) {
             texte.textContent = 'Ajouter des documents';
@@ -74,6 +103,44 @@
         } else {
             texte.textContent = fichiers.length + ' fichiers sélectionnés';
         }
+
+        // La liste se pose après la zone de dépôt, pas dedans : « .pv-depot » est une grille
+        // à deux colonnes — le champ et le bouton « Enregistrer » — et un troisième enfant
+        // s'y retrouverait coincé sur une demi-largeur.
+        const depot = zone.closest('.pv-depot');
+        const formulaire = this.closest('.pv-form');
+
+        // Les adresses de la sélection précédente sont révoquées : le navigateur garde
+        // sinon chaque fichier en mémoire jusqu'au rechargement de la page.
+        let choisis = formulaire.querySelector('.pv-choisis');
+        if (choisis) {
+            choisis.querySelectorAll('[data-objet]').forEach(el => URL.revokeObjectURL(el.dataset.objet));
+            choisis.remove();
+        }
+        if (!fichiers.length) return;
+
+        choisis = document.createElement('ul');
+        choisis.className = 'pv-choisis';
+        fichiers.forEach(fichier => {
+            const item = document.createElement('li');
+            const nom = document.createElement('span');
+            nom.className = 'pv-choisi-nom';
+            nom.textContent = fichier.name;
+            item.appendChild(nom);
+
+            const adresse = URL.createObjectURL(fichier);
+            const vue = fichier.type === 'application/pdf'
+                ? document.createElement('iframe')
+                : (fichier.type.startsWith('image/') ? document.createElement('img') : null);
+            if (vue) {
+                vue.dataset.objet = adresse;
+                vue.src = adresse;
+                if (vue.tagName === 'IMG') vue.alt = fichier.name; else vue.title = 'Aperçu de ' + fichier.name;
+                item.appendChild(vue);
+            }
+            choisis.appendChild(item);
+        });
+        depot.insertAdjacentElement('afterend', choisis);
     });
 
     $(document).on('click', '.pv-retirer-document', function () {

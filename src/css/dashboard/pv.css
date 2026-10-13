@@ -304,13 +304,106 @@
     gap: 6px;
 }
 
+/* La ligne porte désormais son aperçu en dessous : la mise en ligne descend d'un cran,
+   dans le rang, et l'élément de liste devient le bloc qui les empile. */
 .pv-documents li {
-    display: flex;
-    align-items: center;
-    gap: 10px;
     padding: 6px 10px;
     border-radius: 8px;
     background: var(--hover);
+}
+
+.pv-document-rang {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* ===== L'APERÇU ===== */
+
+.pv-apercu-bascule {
+    flex-shrink: 0;
+    padding: 4px 9px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.12s cubic-bezier(0.32, 0.72, 0, 1), color 0.12s ease;
+}
+
+.pv-apercu-bascule:hover,
+.pv-apercu-bascule:focus-visible {
+    background: var(--surface);
+    color: var(--text);
+}
+
+.pv-apercu {
+    margin-top: 8px;
+}
+
+/* 420 px : de quoi lire une page A4 réduite — un bon de commande se recopie depuis cet
+   aperçu, et plus court il faudrait faire défiler pour chaque ligne. */
+.pv-apercu iframe {
+    display: block;
+    width: 100%;
+    height: 420px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: #ffffff;
+}
+
+.pv-apercu img {
+    display: block;
+    width: 100%;
+    max-height: 420px;
+    object-fit: contain;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: #ffffff;
+}
+
+/* ===== CE QUI VIENT D'ÊTRE CHOISI ===== */
+
+/* Avant l'enregistrement, le fichier n'a pas d'adresse sur le serveur : l'aperçu se fait
+   sur l'objet local, pour confirmer qu'on dépose bien le bon document. */
+.pv-choisis {
+    list-style: none;
+    display: grid;
+    gap: 8px;
+    margin: 10px 0 0;
+    padding: 0;
+}
+
+.pv-choisis li {
+    padding: 8px 10px;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+}
+
+.pv-choisi-nom {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--text-muted);
+    font-size: 12px;
+    word-break: break-all;
+}
+
+.pv-choisis iframe,
+.pv-choisis img {
+    display: block;
+    width: 100%;
+    height: 320px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: #ffffff;
+}
+
+.pv-choisis img {
+    height: auto;
+    max-height: 320px;
+    object-fit: contain;
 }
 
 .pv-documents a {

@@ -1352,7 +1352,7 @@ summary {
     .nav-btn,
     #btn-hide,
     #create-user-form button,
-    .prefa-form button:not(.modal-close),
+    .prefa-form button:not(.modal-close):not(.bouton-discret),
     #refresh-prefa,
     .prefa-toggle,
     .edit-prefa,

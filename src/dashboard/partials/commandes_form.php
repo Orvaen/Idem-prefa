@@ -16,7 +16,7 @@ $etats = commandeEtats();
 <div class="commandes-saisie" data-commandes>
     <div class="commandes-entete">
         <h3>Commandes fournisseur</h3>
-        <button type="button" class="commandes-ajouter">Ajouter une commande</button>
+        <button type="button" class="commandes-ajouter bouton-discret">Ajouter une commande</button>
     </div>
 
     <div class="commandes-scroll">
@@ -50,7 +50,7 @@ $etats = commandeEtats();
                         <td class="commande-livraison<?= $commande['date_livraison_2'] ? ' est-depliee' : '' ?>">
                             <div class="commande-date-rang">
                                 <input name="commande[date_bl][]" type="date" value="<?= prefaEscape((string) ($commande['date_bl'] ?? '')) ?>" aria-label="Date de livraison">
-                                <button type="button" class="commande-plier-date" title="Seconde date de livraison" aria-label="Ajouter une seconde date de livraison">+</button>
+                                <button type="button" class="commande-plier-date bouton-discret" title="Seconde date de livraison" aria-label="Ajouter une seconde date de livraison">+</button>
                             </div>
                             <!-- Le champ existe même replié : les lignes partent en tableaux
                                  parallèles, et une case absente décalerait toutes les suivantes. -->
@@ -65,7 +65,7 @@ $etats = commandeEtats();
                             </select>
                         </td>
                         <td>
-                            <button type="button" class="commande-retirer" aria-label="Retirer cette commande" title="Retirer">
+                            <button type="button" class="commande-retirer bouton-discret" aria-label="Retirer cette commande" title="Retirer">
                                 <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg>
                             </button>
                         </td>
@@ -90,7 +90,7 @@ $etats = commandeEtats();
             <td class="commande-livraison">
                 <div class="commande-date-rang">
                     <input name="commande[date_bl][]" type="date" aria-label="Date de livraison">
-                    <button type="button" class="commande-plier-date" title="Seconde date de livraison" aria-label="Ajouter une seconde date de livraison">+</button>
+                    <button type="button" class="commande-plier-date bouton-discret" title="Seconde date de livraison" aria-label="Ajouter une seconde date de livraison">+</button>
                 </div>
                 <input class="commande-date-2e" name="commande[date_livraison_2][]" type="date" aria-label="Seconde date de livraison">
             </td>
@@ -103,7 +103,7 @@ $etats = commandeEtats();
                 </select>
             </td>
             <td>
-                <button type="button" class="commande-retirer" aria-label="Retirer cette commande" title="Retirer">
+                <button type="button" class="commande-retirer bouton-discret" aria-label="Retirer cette commande" title="Retirer">
                     <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg>
                 </button>
             </td>

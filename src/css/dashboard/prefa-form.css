@@ -183,9 +183,13 @@
  *
  * Le sélecteur prend tous les boutons du formulaire, et il attrapait la croix d'effacement
  * des listes filtrables : elle arrivait en bleu plein, texte blanc, posée dans le champ.
- * Les exceptions se déclarent ici, faute de quoi le prochain petit bouton posé dans un
- * formulaire repartira en bouton principal sans que personne l'ait demandé. */
-.prefa-form button:not(.modal-close):not(.liste-filtrable-effacer),
+ *
+ * La liste des exceptions s'allongeait d'une négation à chaque petit bouton ajouté — et le
+ * suivant repartait en bouton principal sans que personne l'ait demandé. « bouton-discret »
+ * est le marqueur qu'on pose dessus : la croix d'une ligne de tableau, un dépli, un
+ * « Retirer » en bout de ligne. Il ne décrit pas une apparence, seulement un refus de
+ * celle-ci ; chacun garde la sienne dans sa propre feuille. */
+.prefa-form button:not(.modal-close):not(.liste-filtrable-effacer):not(.bouton-discret),
 #refresh-prefa {
     display: inline-flex;
     align-items: center;
@@ -201,7 +205,7 @@
     cursor: pointer;
 }
 
-.prefa-form button:not(.modal-close):hover:not(:disabled) {
+.prefa-form button:not(.modal-close):not(.bouton-discret):hover:not(:disabled) {
     background: var(--accent-hover);
 }
 

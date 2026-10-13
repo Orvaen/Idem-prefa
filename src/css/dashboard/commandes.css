@@ -264,6 +264,16 @@
     color: var(--alerte-texte);
 }
 
+/* Les boutons d'une ligne sont exclus de la cible tactile de 44 px — elle ferait éclater
+   une ligne de 40 px. Au doigt, ils passent quand même de 20 à 32 px. */
+@media (pointer: coarse) {
+    .commande-plier-date,
+    .commande-retirer {
+        width: 32px;
+        height: 32px;
+    }
+}
+
 .commandes-vide {
     margin: 0;
     padding: 10px 0 0;

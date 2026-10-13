@@ -165,18 +165,7 @@ ksort($demandeurs);
                                                     <div class="pv-lecture-bloc">
                                                         <h3>Documents</h3>
                                                         <?php if ($pv['documents']): ?>
-                                                            <ul class="pv-documents">
-                                                                <?php foreach ($pv['documents'] as $document): ?>
-                                                                    <li>
-                                                                        <a href="actions/download_pv_document.php?id=<?= (int) $document['id'] ?>&amp;preview=1" target="_blank" rel="noopener">
-                                                                            <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                                                                                <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z" /><path d="M14 3v5h5" />
-                                                                            </svg>
-                                                                            <?= prefaEscape($document['nom']) ?>
-                                                                        </a>
-                                                                    </li>
-                                                                <?php endforeach; ?>
-                                                            </ul>
+                                                            <?php $modifiable = false; require __DIR__ . '/../partials/pv_documents.php'; ?>
                                                         <?php else: ?>
                                                             <p class="pv-lecture-vide">Aucun document déposé.</p>
                                                         <?php endif; ?>
@@ -224,19 +213,7 @@ ksort($demandeurs);
                                                 </div>
 
                                                 <?php if ($pv['documents']): ?>
-                                                    <ul class="pv-documents">
-                                                        <?php foreach ($pv['documents'] as $document): ?>
-                                                            <li>
-                                                                <a href="actions/download_pv_document.php?id=<?= (int) $document['id'] ?>&amp;preview=1" target="_blank" rel="noopener">
-                                                                    <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                                                                        <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z" /><path d="M14 3v5h5" />
-                                                                    </svg>
-                                                                    <?= prefaEscape($document['nom']) ?>
-                                                                </a>
-                                                                <button type="button" class="pv-retirer-document" data-demande="<?= $id ?>" data-type="<?= prefaEscape($type) ?>" data-document="<?= (int) $document['id'] ?>" data-nom="<?= prefaEscape($document['nom']) ?>" aria-label="Retirer <?= prefaEscape($document['nom']) ?>">Retirer</button>
-                                                            </li>
-                                                        <?php endforeach; ?>
-                                                    </ul>
+                                                    <?php $modifiable = true; require __DIR__ . '/../partials/pv_documents.php'; ?>
                                                 <?php endif; ?>
 
                                                 <div class="pv-depot">
