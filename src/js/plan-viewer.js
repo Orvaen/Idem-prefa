@@ -27,6 +27,11 @@
     // soudure : écrire plus petit que l'imprimé à côté se voit.
     const POLICE_PLAN = 1.24;
 
+    // Le numéro de page écrit dans le cartouche n'a pas de cellule : sa boîte est celle du
+    // mot qu'il remplace, mesurée sur l'encre, et non une case en retrait de ses traits.
+    // Même valeur que PLAN_FINAL_POLICE_CARTOUCHE, côté PDF.
+    const POLICE_CARTOUCHE = 1.0;
+
     // Un seul geste à la fois : déplacer une case ou la redimensionner. Un état unique
     // évite que deux gestionnaires se marchent dessus.
     let geste = null;
@@ -52,7 +57,7 @@
 
     // Seul le numéro suit l'échelle du plan : il doit remplir sa case comme s'il y avait
     // été écrit. Les poignées gardent une taille fixe, sinon elles deviennent invisibles.
-    function ajusterPolice(repere) {
+    function ajusterPolice(repere, facteur) {
         const hauteur = repere.getBoundingClientRect().height;
         if (hauteur <= 0) return;
         // À la taille des lettres imprimées. Le chiffre dépasse un peu la case en hauteur :
@@ -62,7 +67,7 @@
         // pixels le faisait grossir par rapport au plan dès qu'on dézoomait — il devenait
         // alors plus gros que les lettres voisines, et ne montrait plus ce qui sortirait
         // à l'impression. Trop petit pour se lire, c'est au zoom de le régler.
-        const taille = hauteur * POLICE_PLAN;
+        const taille = hauteur * (facteur || POLICE_PLAN);
         repere.style.fontSize = taille.toFixed(2) + 'px';
 
         // La hauteur ne suffit pas quand la case est large d'un seul chiffre et qu'on y
@@ -157,6 +162,10 @@
         const image = viewer.querySelector('.plan-viewer-scene img');
         // L'image n'est demandée qu'ici : inutile de charger un plan qu'on n'ouvre pas.
         if (image && !image.src && image.dataset.src) image.src = image.dataset.src;
+        // Les vignettes du sommaire suivent la même règle, et ne partent qu'une fois.
+        viewer.querySelectorAll('.plan-sommaire-page img').forEach(vignette => {
+            if (!vignette.src && vignette.dataset.src) vignette.src = vignette.dataset.src;
+        });
         viewer.querySelector('.plan-dialog').showModal();
         const caler = () => {
             appliquerZoom(viewer, Number(viewer.dataset.zoom) || 100);
@@ -196,7 +205,14 @@
         fetch('actions/detecter_lignes.php', { method: 'POST', body: donnees })
             .then(reponse => reponse.json().then(corps => ({ ok: reponse.ok, corps })))
             .then(({ ok, corps }) => {
-                if (!ok || (!corps.cases || !corps.cases.length) && !corps.soudures) {
+                if (!ok) {
+                    if (!automatique) message(viewer, corps.message || 'Détection impossible.', true);
+                    return;
+                }
+                // Posé avant le reste : une feuille dont aucun tableau n'est reconnu porte
+                // quand même son numéro de page sur le plan final, et doit donc le montrer.
+                marquerPageSurPlan(viewer, corps.cartouche);
+                if ((!corps.cases || !corps.cases.length) && !corps.soudures) {
                     if (!automatique) message(viewer, corps.message || 'Détection impossible.', true);
                     return;
                 }
@@ -244,25 +260,18 @@
 
     // Sur la page Pointage, la feuille se choisit dans une liste et s'ouvre d'un bouton :
     // le lecteur correspondant vit dans la ligne, masqué, et c'est sa fenêtre qu'on ouvre.
-    // Les bornes de la page suivent la feuille choisie : un cahier de quinze pages n'a
-    // pas les mêmes qu'un ISO d'une seule, et une feuille unique n'a pas de page à dire.
-    $(document).on('change', '.pointage-iso', function () {
-        const cellule = this.closest('.pointage-iso-cell');
-        const champ = cellule && cellule.querySelector('input[name="page"]');
-        if (!champ) return;
-        const pages = Math.max(1, Number(this.options[this.selectedIndex].dataset.pages) || 1);
-        champ.max = pages;
-        champ.disabled = pages < 2;
-        if (Number(champ.value) > pages) champ.value = pages;
-    });
-
     $(document).on('click', '.pointage-iso-ouvrir', function () {
         const cellule = this.closest('.pointage-iso-cell');
         const ligne = this.closest('tr');
         const choisi = cellule && cellule.querySelector('.pointage-iso');
         if (!choisi || !ligne) return;
-        const lecteur = ligne.querySelector('.pointage-iso-lecteurs .plan-viewer[data-document="' + choisi.value + '"]');
-        if (lecteur) lecteur.querySelector('.plan-viewer-ouvrir').click();
+        // Le choix dit la feuille ET la page : la fenêtre s'ouvre donc sur l'isométrique
+        // qu'on vient de désigner, pas sur la première page de son cahier.
+        const [feuille, page] = String(choisi.value).split(':');
+        const lecteur = ligne.querySelector('.pointage-iso-lecteurs .plan-viewer[data-document="' + feuille + '"]');
+        if (!lecteur) return;
+        lecteur.querySelector('.plan-viewer-ouvrir').click();
+        allerPage(lecteur, Number(page) || 1);
     });
 
     $(document).on('click', '.plan-dialog-fermer', function () {
@@ -284,7 +293,14 @@
 
         bloc.querySelectorAll('tbody tr.tableau-ligne').forEach(tr => {
             const champ = nom => tr.querySelector('[name="' + nom + '"]');
-            const lu = nom => (champ(nom) ? champ(nom).value : '').trim();
+            const lu = nom => {
+                const element = champ(nom);
+                if (!element) return '';
+                // Un contrôle est une case à cocher : cochée, elle vaut sa croix.
+                return element.type === 'checkbox'
+                    ? (element.checked ? element.value : '')
+                    : element.value.trim();
+            };
             const numero = lu('numero');
             if (!/^\d+$/.test(numero)) return;
             const rang = Number(numero) - 1;
@@ -418,6 +434,7 @@
         });
         const valeur = viewer.querySelector('.plan-page-valeur');
         if (valeur) valeur.textContent = 'Page ' + demandee + ' / ' + total;
+        marquerSommaire(viewer, demandee);
 
         message(viewer, '', false);
         image.addEventListener('load', () => {
@@ -432,6 +449,75 @@
     $(document).on('click', '.plan-page', function () {
         const viewer = this.closest('.plan-viewer');
         allerPage(viewer, pageVue(viewer) + Number(this.dataset.saut));
+    });
+
+    /**
+     * Écrit le numéro de page sur le plan, à la place de l'intitulé « Numéro de ligne » du
+     * cartouche — exactement ce que le plan final écrira. Un cahier ISO ne numérote pas
+     * ses feuilles, et un tirage papier mélangé ne se remet plus dans l'ordre.
+     *
+     * Une feuille seule n'a pas de page à annoncer : on ne lui écrit rien.
+     */
+    function marquerPageSurPlan(viewer, boite) {
+        const scene = viewer.querySelector('.plan-viewer-scene');
+        if (!scene) return;
+        const ancienne = scene.querySelector('.plan-page-cartouche');
+        if (ancienne) ancienne.remove();
+
+        const total = Math.max(1, Number(viewer.dataset.pages) || 1);
+        if (!boite || total < 2) return;
+
+        // Le cache déborde un peu du mot : c'est lui qui occupe la place à l'écran, comme
+        // le rectangle blanc du PDF.
+        const cache = boite.cache || boite;
+        const marque = document.createElement('div');
+        marque.className = 'plan-page-cartouche';
+        marque.style.left = (cache.x * 100).toFixed(4) + '%';
+        marque.style.top = (cache.y * 100).toFixed(4) + '%';
+        marque.style.width = (cache.w * 100).toFixed(4) + '%';
+        marque.style.height = (cache.h * 100).toFixed(4) + '%';
+
+        const valeur = document.createElement('span');
+        valeur.className = 'plan-soudure-valeur';
+        valeur.textContent = 'Page ' + pageVue(viewer) + ' / ' + total;
+        marque.appendChild(valeur);
+        scene.appendChild(marque);
+
+        // La police se mesure sur le mot remplacé et non sur le cache qui le déborde :
+        // c'est la règle du PDF, et l'écran doit montrer la même chose.
+        ajusterPolice(marque, POLICE_CARTOUCHE * boite.h / cache.h);
+    }
+
+    /**
+     * Marque la page affichée dans le sommaire et la ramène sous les yeux : un cahier de
+     * quinze pages défile, et la vignette courante sortait du champ dès qu'on avançait
+     * aux flèches.
+     */
+    function marquerSommaire(viewer, page) {
+        viewer.querySelectorAll('.plan-sommaire-page').forEach(entree => {
+            const sienne = Number(entree.dataset.page) === page;
+            entree.classList.toggle('est-vue', sienne);
+            if (!sienne) return entree.removeAttribute('aria-current');
+            entree.setAttribute('aria-current', 'page');
+            entree.scrollIntoView({ block: 'nearest' });
+        });
+    }
+
+    $(document).on('click', '.plan-sommaire-page', function () {
+        allerPage(this.closest('.plan-viewer'), Number(this.dataset.page));
+    });
+
+    // Le sommaire se range comme la liste des soudures : son propre bouton le replie, et
+    // celui de la barre d'outils le rappelle.
+    $(document).on('click', '.plan-dialog-sommaire-replier', function () {
+        const dialogue = this.closest('.plan-dialog');
+        dialogue.querySelector('.plan-dialog-sommaire').hidden = true;
+        dialogue.querySelector('.plan-dialog-sommaire-ouvrir').hidden = false;
+    });
+
+    $(document).on('click', '.plan-dialog-sommaire-ouvrir', function () {
+        this.closest('.plan-dialog').querySelector('.plan-dialog-sommaire').hidden = false;
+        this.hidden = true;
     });
 
     // ---------------------------------------------------------------- dépôt d'un plan
@@ -834,15 +920,24 @@
     document.addEventListener('mousedown', function (evenement) {
         const glissiere = evenement.target.closest('.plan-dialog-glissiere');
         if (!glissiere) return;
-        const listes = glissiere.closest('.plan-dialog-listes');
-        const cadre = listes.getBoundingClientRect();
+        const panneau = glissiere.closest('.plan-dialog-sommaire, .plan-dialog-listes');
+        if (!panneau) return;
+        const sommaire = panneau.classList.contains('plan-dialog-sommaire');
+        const cadre = panneau.getBoundingClientRect();
         evenement.preventDefault();
         geste = {
             quoi: 'liste',
-            cible: listes,
+            cible: panneau,
             // À droite on tire en largeur, dessous en hauteur. L'orientation se lit sur la
             // mise en page plutôt que de redire ici le seuil de la feuille de style.
-            colonne: getComputedStyle(listes.parentElement).flexDirection === 'row',
+            colonne: getComputedStyle(panneau.parentElement).flexDirection === 'row',
+            // Le sommaire borde le dessin à gauche : la main qui s'en éloigne l'élargit.
+            // La liste des soudures le borde à droite, et c'est donc l'inverse.
+            sens: sommaire ? 1 : -1,
+            // Ce qu'il faut garder à chacun pour qu'il serve encore à quelque chose : une
+            // vignette reconnaissable d'un côté, une ligne de soudure lisible de l'autre.
+            mini: sommaire ? { largeur: 96, hauteur: 72 } : { largeur: 240, hauteur: 80 },
+            maxi: sommaire ? { largeur: 0.4, hauteur: 0.5 } : { largeur: 0.7, hauteur: 0.8 },
             x: evenement.clientX,
             y: evenement.clientY,
             largeur: cadre.width,
@@ -939,15 +1034,15 @@
         }
 
         if (geste.quoi === 'liste') {
-            // La souris va vers le plan, la liste grandit. Jamais au point de le chasser :
-            // on garde de quoi voir ce sur quoi on écrit.
+            // La souris s'éloigne du dessin, le panneau grandit. Jamais au point de le
+            // chasser : on garde de quoi voir ce sur quoi on travaille.
             if (geste.colonne) {
-                const largeur = borner(geste.largeur - (evenement.clientX - geste.x),
-                    240, window.innerWidth * 0.7);
+                const largeur = borner(geste.largeur + geste.sens * (evenement.clientX - geste.x),
+                    geste.mini.largeur, window.innerWidth * geste.maxi.largeur);
                 geste.cible.style.width = largeur + 'px';
             } else {
-                const hauteur = borner(geste.hauteur - (evenement.clientY - geste.y),
-                    80, window.innerHeight * 0.8);
+                const hauteur = borner(geste.hauteur + geste.sens * (evenement.clientY - geste.y),
+                    geste.mini.hauteur, window.innerHeight * geste.maxi.hauteur);
                 geste.cible.style.height = hauteur + 'px';
             }
             return;

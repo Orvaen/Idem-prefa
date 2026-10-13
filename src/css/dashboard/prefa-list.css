@@ -709,7 +709,25 @@ body.prefa-viewer-open {
     }
 }
 
-.prefa-table .prefa-table-empty {
+.prefa-table /* Le titre d'une affaire dans la liste du demandeur : un bandeau discret qui coiffe ses
+   demandes, assez marqué pour qu'on voie où commence le chantier suivant. */
+.prefa-affaire-groupe th {
+    padding: 14px 16px 8px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    font-weight: 600;
+    text-align: left;
+    color: var(--text);
+}
+
+.prefa-affaire-groupe th span {
+    margin-left: 10px;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-muted);
+}
+
+.prefa-table-empty {
     padding: 40px 16px;
     text-align: center;
     color: var(--text-muted);

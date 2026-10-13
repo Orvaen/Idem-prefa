@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/prefa_attachments.php';
 require_once __DIR__ . '/plan_table.php';
+require_once __DIR__ . '/plan_cartouche.php';
 require_once __DIR__ . '/soudure.php';
 
 /**
@@ -15,7 +16,7 @@ require_once __DIR__ . '/soudure.php';
  * l'ancien code survivrait au nouveau : le plan n'ayant pas bougé, il serait resservi tel
  * quel et personne ne verrait jamais le changement.
  */
-const PLAN_LIGNES_VERSION = 9;
+const PLAN_LIGNES_VERSION = 10;
 
 /**
  * Un cache par page : les pages d'un cahier n'ont ni le même tableau soudure ni le même
@@ -31,7 +32,7 @@ function planLignesCache(int $requestId, string $cle, int $page = 1): string
  * Les deux tableaux du plan, sur la page demandée. La détection est déterministe : son
  * résultat est gardé à côté du plan et refait seulement si le fichier a changé.
  *
- * @return array{version:int, cases:list<array>, soudures:?array, pages:int}
+ * @return array{version:int, cases:list<array>, soudures:?array, cartouche:?array, pages:int}
  */
 function planLignesAnalyse(string $source, string $cache, int $page = 1): array
 {
@@ -47,6 +48,9 @@ function planLignesAnalyse(string $source, string $cache, int $page = 1): array
         // Chaque page d'un cahier a sa nomenclature imprimée, donc ses propres cases.
         'cases' => planTableDetecter($source, $page),
         'soudures' => planTableSoudures($source, $page),
+        // Lu au même moment : c'est une demi-seconde d'OCR, et la garder ici évite de
+        // rouvrir le fichier à chaque téléchargement du plan final.
+        'cartouche' => planCartoucheNumeroDeLigne($source, $page),
         // Retenu ici parce qu'on tient le fichier ouvert : le volet s'en sert pour dire à
         // l'atelier qu'il travaille sur la première page d'un cahier.
         'pages' => planLignesNombreDePages($source),

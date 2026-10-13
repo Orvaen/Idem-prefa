@@ -1010,6 +1010,28 @@
 
 /* Les sections du volet se suivent sur toute la largeur : sans cela, la grille à deux
    colonnes de l'en-tête les rangeait côte à côte, et on lisait le volet en zigzag. */
+/* La cellule « Plan / élément » du pointage : le nom et sa description sur une ligne,
+   le choix de l'isométrique sur la suivante. Trois lignes empilées faisaient chercher
+   où l'on était. */
+.pointage-plan-nom {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.pointage-iso-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.pointage-iso-cell .pointage-iso {
+    min-width: 13rem;
+    max-width: 22rem;
+}
+
 .atelier-plan-titre-section,
 .atelier-plan-block > .plan-viewer-plans,
 .atelier-plan-block > .atelier-file-management {
@@ -1772,7 +1794,15 @@
     display: none;
 }
 
+/* La cellule reste une cellule : c'est elle qui porte la bordure de la ligne, et une
+   cellule en « flex » n'en est plus une — la colonne disparaît de la grille et le trait
+   du bas s'arrête avant le bord du tableau. L'alignement se fait donc dans la boîte
+   qu'elle contient. */
 .pointage-actions-cell {
+    white-space: nowrap;
+}
+
+.pointage-actions {
     display: flex;
     align-items: center;
     flex-wrap: nowrap;

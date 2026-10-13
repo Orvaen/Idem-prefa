@@ -46,8 +46,8 @@ if ($urgentView) {
     $pageTitle = 'Demandes de préfabrication';
     $pageDescription = 'Vérifiez les demandes en attente avant de les valider ou de les refuser.';
 } else {
-    $pageTitle = 'Mes demandes';
-    $pageDescription = 'Consultez le statut et la réponse de l’administrateur.';
+    $pageTitle = 'Mes affaires';
+    $pageDescription = 'Vos chantiers et les demandes de préfabrication de chacun.';
 }
 
 if ($isWorkshopChief) {
@@ -303,9 +303,13 @@ if ($isWorkshopPersonnel) {
                                 Demande n°
                             </th>
 
-                            <th scope="col">
-                                Nom du chantier
-                            </th>
+                            <?php if (!$vueParAffaire): ?>
+                                <!-- Rangée sous le nom de son affaire, une demande n'a pas
+                                     besoin de le répéter à chaque ligne. -->
+                                <th scope="col">
+                                    Affaire
+                                </th>
+                            <?php endif; ?>
 
                             <th scope="col">
                                 Création
@@ -343,9 +347,45 @@ if ($isWorkshopPersonnel) {
 
                     </thead>
 
+                    <?php
+                    // Une colonne de moins quand l'affaire coiffe déjà ses demandes. Posé
+                    // avant les deux branches : la ligne « aucune demande » s'en sert aussi,
+                    // et sans valeur son colspan retombait à une seule colonne.
+                    $colonnes = $vueParAffaire ? 9 : 10;
+                    ?>
+
                     <?php if (!empty($requests)): ?>
 
+                        <?php
+                        // Une affaire porte plusieurs demandes : chez le demandeur, elles
+                        // se rangent sous le nom de leur chantier, annoncé une fois. Sans
+                        // ce titre, « Mes affaires » montrerait une liste de demandes.
+                        $affaireCourante = null;
+                        $parAffaire = [];
+                        if ($vueParAffaire) {
+                            foreach ($requests as $ligne) {
+                                $nom = trim((string) ($ligne['nom_affaire'] ?? ''));
+                                $parAffaire[$nom] = ($parAffaire[$nom] ?? 0) + 1;
+                            }
+                        }
+                        ?>
+
                         <?php foreach ($requests as $row): ?>
+
+                            <?php if ($vueParAffaire): ?>
+                                <?php $nomAffaire = trim((string) ($row['nom_affaire'] ?? '')); ?>
+                                <?php if ($nomAffaire !== $affaireCourante): ?>
+                                    <?php $affaireCourante = $nomAffaire; ?>
+                                    <tbody class="prefa-affaire-groupe">
+                                        <tr>
+                                            <th colspan="<?= $colonnes ?>" scope="colgroup">
+                                                <?= prefaEscape($nomAffaire !== '' ? $nomAffaire : 'Sans affaire') ?>
+                                                <span><?= $parAffaire[$nomAffaire] ?> demande<?= $parAffaire[$nomAffaire] > 1 ? 's' : '' ?></span>
+                                            </th>
+                                        </tr>
+                                    </tbody>
+                                <?php endif; ?>
+                            <?php endif; ?>
 
                             <?php
                             require __DIR__
@@ -362,7 +402,7 @@ if ($isWorkshopPersonnel) {
 
                                 <td
                                     class="prefa-table-empty"
-                                    colspan="10">
+                                    colspan="<?= $colonnes ?>">
                                     Aucune demande trouvée.
                                 </td>
 

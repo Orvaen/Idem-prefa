@@ -11,6 +11,13 @@ require_once __DIR__ . '/../includes/atelier.php';
 
 const PLAN_IMAGE_DPI = 150;
 
+/**
+ * La définition d'une vignette de sommaire. On y reconnaît la feuille à son tracé, on n'y
+ * lit rien : quinze pages en pleine définition feraient trois méga-octets pour une colonne
+ * large comme le pouce.
+ */
+const PLAN_IMAGE_DPI_VIGNETTE = 25;
+
 $elementId = filter_var($_GET['plan'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 if (!$elementId) prefaError(400, 'Plan invalide.');
 
@@ -42,14 +49,18 @@ if (!is_file($source)) prefaError(404, 'Plan introuvable.');
 $page = filter_var($_GET['page'] ?? 1, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 if (!$page || $page > (int) $plan['pages']) prefaError(404, 'Page du plan introuvable.');
 
+// Le sommaire demande les mêmes pages en tout petit. La vignette a son propre fichier de
+// cache : elle ne remplace pas le plan, elle l'annonce.
+$vignette = !empty($_GET['vignette']);
+
 // L'image n'est refaite que si le plan a changé depuis la dernière fois.
 $cache = prefaAttachmentDirectory($requestId) . '/apercu-' . substr($cle, 0, 32)
-    . ($page > 1 ? '-p' . $page : '') . '.jpg';
+    . ($page > 1 ? '-p' . $page : '') . ($vignette ? '-v' : '') . '.jpg';
 if (!is_file($cache) || filemtime($cache) < filemtime($source)) {
     $base = substr($cache, 0, -4);
     exec(sprintf(
         'pdftoppm -r %d -jpeg -f %d -l %d -singlefile %s %s 2>/dev/null',
-        PLAN_IMAGE_DPI,
+        $vignette ? PLAN_IMAGE_DPI_VIGNETTE : PLAN_IMAGE_DPI,
         $page,
         $page,
         escapeshellarg($source),

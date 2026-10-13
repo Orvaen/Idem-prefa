@@ -41,6 +41,23 @@
     opacity: 0.75;
 }
 
+/* Les trois contrôles — RT, VI, PT — se cochent : une croix sur le plan, ou rien. La
+   colonne se centre en entier, en-tête comprise, pour que la ligne du volet se lise comme
+   la ligne du plan. Le sélecteur nomme le tableau parce que la règle générale des cellules
+   les aligne à gauche. */
+.nomenclature-table .soudure-controle {
+    text-align: center;
+    font-weight: 600;
+}
+
+.soudure-croix {
+    width: 16px;
+    height: 16px;
+    margin: 4px 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
 /* Le soudeur d'une ligne venue d'un pointage : un nom, pas un choix. Il s'aligne sur la
    hauteur des champs voisins pour que la ligne reste droite. */
 .soudure-soudeur {

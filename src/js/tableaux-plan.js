@@ -105,7 +105,12 @@
                 // Les listes d'aide ne partent pas : c'est le champ qu'elles remplissent
                 // qui porte la valeur, saisie libre comprise.
                 if (champ.name.endsWith('_liste')) return;
-                donnees.set(`lignes[${index}][${champ.name}]`, champ.value.trim());
+                // Une case à cocher porte sa valeur même décochée : c'est son état qu'il
+                // faut lire, pas son contenu.
+                const valeur = champ.type === 'checkbox'
+                    ? (champ.checked ? champ.value : '')
+                    : champ.value.trim();
+                donnees.set(`lignes[${index}][${champ.name}]`, valeur);
             });
         });
 

@@ -300,7 +300,7 @@ try {
         
 
         $stmt = $db->prepare('UPDATE demande_prefabrication SET
-            nom_affaire = :nom_affaire, plan_bpe_iso = :plan_bpe_iso, date_fin_prevue = :date_fin_prevue, date_livraison_prevue = :date_livraison_prevue,
+            nom_affaire = :nom_affaire, id_affaire = :id_affaire, plan_bpe_iso = :plan_bpe_iso, date_fin_prevue = :date_fin_prevue, date_livraison_prevue = :date_livraison_prevue,
             pouces_total_iso = :pouces_total_iso, heures_chiffrees = :heures_chiffrees,
             CDN = :CDN, ` QMOS` = :QMOS, urgent = :urgent, controles_cdn = :controles_cdn,
             revetement = :revetement, commentaire_revetement = :commentaire_revetement,
@@ -311,11 +311,15 @@ try {
 
     } else {
         $stmt = $db->prepare('INSERT INTO demande_prefabrication
-        (idUsers, nom_affaire, DateUpdate, date_creation, date_fin_prevue, date_livraison_prevue, plan_bpe_iso, pouces_total_iso, heures_chiffrees, CDN, ` QMOS`, urgent, controles_cdn, revetement, commentaire_revetement, RT, PT, controles_rt, controles_pt, id_statut, id_passivation, id_matiere, matiere_disponibilite)
-        VALUES (:idUsers, :nom_affaire, NOW(), NOW(), :date_fin_prevue, :date_livraison_prevue, :plan_bpe_iso, :pouces_total_iso, :heures_chiffrees, :CDN, :QMOS, :urgent, :controles_cdn, :revetement, :commentaire_revetement, :RT, :PT, :controles_rt, :controles_pt, 1, :id_passivation, :id_matiere, :matiere_disponibilite)');
+        (idUsers, nom_affaire, id_affaire, DateUpdate, date_creation, date_fin_prevue, date_livraison_prevue, plan_bpe_iso, pouces_total_iso, heures_chiffrees, CDN, ` QMOS`, urgent, controles_cdn, revetement, commentaire_revetement, RT, PT, controles_rt, controles_pt, id_statut, id_passivation, id_matiere, matiere_disponibilite)
+        VALUES (:idUsers, :nom_affaire, :id_affaire, NOW(), NOW(), :date_fin_prevue, :date_livraison_prevue, :plan_bpe_iso, :pouces_total_iso, :heures_chiffrees, :CDN, :QMOS, :urgent, :controles_cdn, :revetement, :commentaire_revetement, :RT, :PT, :controles_rt, :controles_pt, 1, :id_passivation, :id_matiere, :matiere_disponibilite)');
     }
 
     $db->beginTransaction();
+    // L'affaire regroupe les demandes d'un même chantier : elle est créée au premier
+    // nom rencontré, et retrouvée ensuite. Le nom reste recopié sur la demande, c'est
+    // encore lui qui s'affiche.
+    $values['id_affaire'] = prefaAffaireDeNom($db, (string) $values['nom_affaire']);
     $stmt->execute($values);
     $savedId = $editing ? $requestId : (int) $db->lastInsertId();
     if (!$editing) {

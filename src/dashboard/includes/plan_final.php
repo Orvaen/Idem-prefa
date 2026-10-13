@@ -61,10 +61,14 @@ function planFinalPoint(float $fx, float $fy, array $page): array
  *
  * Le texte est tourné comme la page pour rester lisible une fois la page redressée.
  *
- * @param list<array{texte:string, x:float, y:float, w:float, h:float}> $textes positions en fractions
+ * Un cache est un rectangle blanc posé avant d'écrire : on ne retire rien du dessin du
+ * bureau d'études — une mise à jour incrémentale ne sait pas effacer — on le recouvre.
+ *
+ * @param list<array{texte:string, x:float, y:float, w:float, h:float, police?:float}> $textes positions en fractions
  * @param list<array{x1:float, y1:float, x2:float, y2:float}> $traits
+ * @param list<array{x:float, y:float, w:float, h:float}> $caches
  */
-function planFinalFlux(array $textes, array $traits, array $page, float $epaisseurTrait): string
+function planFinalFlux(array $textes, array $traits, array $page, float $epaisseurTrait, array $caches = []): string
 {
     // La matrice qui oriente le texte comme le dessin de la page.
     $matrice = match ($page['rotation']) {
@@ -82,6 +86,20 @@ function planFinalFlux(array $textes, array $traits, array $page, float $epaisse
     // couleur ou notre épaisseur de trait déborderait sur le dessin.
     $flux = "q\n0 0 0 rg 0 0 0 RG\n";
 
+    // Les caches d'abord : ce qu'on recouvre doit disparaître avant qu'on écrive dessus.
+    // Deux coins opposés suffisent à placer le rectangle quelle que soit la rotation de
+    // la page — on les remet dans l'ordre une fois ramenés dans son repère.
+    if ($caches) {
+        $flux .= "1 1 1 rg\n";
+        foreach ($caches as $cache) {
+            [$x1, $y1] = planFinalPoint($cache['x'], $cache['y'], $page);
+            [$x2, $y2] = planFinalPoint($cache['x'] + $cache['w'], $cache['y'] + $cache['h'], $page);
+            $flux .= sprintf("%.2f %.2f %.2f %.2f re f\n",
+                min($x1, $x2), min($y1, $y2), abs($x2 - $x1), abs($y2 - $y1));
+        }
+        $flux .= "0 0 0 rg\n";
+    }
+
     foreach ($traits as $trait) {
         [$x1, $y1] = planFinalPoint($trait['x1'], $trait['y1'], $page);
         [$x2, $y2] = planFinalPoint($trait['x2'], $trait['y2'], $page);
@@ -94,7 +112,7 @@ function planFinalFlux(array $textes, array $traits, array $page, float $epaisse
 
         // Même règle qu'à l'écran : la police vaut 1,24 fois la hauteur de la case, qui est
         // en retrait des traits. Le texte sort ainsi à la taille des lettres imprimées.
-        $corps = $champ['h'] * $cote['h'] * PLAN_FINAL_POLICE;
+        $corps = $champ['h'] * $cote['h'] * ($champ['police'] ?? PLAN_FINAL_POLICE);
         $largeurMax = $champ['w'] * $cote['l'];
         // Un nom trop long pour sa colonne rétrécit plutôt que de mordre sur la voisine.
         $largeur = PdfPlan::largeurPoints($texte, $corps);
@@ -121,6 +139,13 @@ function planFinalFlux(array $textes, array $traits, array $page, float $epaisse
 const PLAN_FINAL_POLICE_NOM = 'PlanFinalF1';
 /** Même facteur qu'à l'écran : mesuré sur les lettres du bureau d'études. */
 const PLAN_FINAL_POLICE = 1.24;
+
+/**
+ * Le numéro de page écrit dans le cartouche n'a pas de cellule : sa boîte est celle de
+ * l'intitulé qu'il remplace, mesurée sur l'encre même. Elle n'est pas en retrait de
+ * traits, le facteur des tableaux l'y ferait donc déborder.
+ */
+const PLAN_FINAL_POLICE_CARTOUCHE = 1.0;
 
 /**
  * Ajoute le calque au PDF, par mise à jour incrémentale.

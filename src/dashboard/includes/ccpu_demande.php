@@ -138,7 +138,16 @@ function ccpuRendu(array $document, string $csrf): string
         . $champ('Nuance', prefaEscape($document['nuances']))
         . '<div class="ccpu-fiche-coulees"><dt>Coulées</dt><dd';
 
-    $note = 'Lecture automatique, à vérifier sur le certificat.';
+    // D'où viennent ces numéros. Les deux chemins n'ont pas la même valeur : la couche
+    // texte rend les caractères mêmes du fichier du fournisseur, exacts, tandis qu'un
+    // scan passe par la reconnaissance d'image, qui confond un 8 et un B. Demander la
+    // même vigilance dans les deux cas, sans dire lequel, c'est n'en obtenir aucune.
+    $note = match ($document['lecture']) {
+        'texte' => 'Lu dans le texte du PDF : ce sont les caractères du fichier du fournisseur, non une reconnaissance d’image. À confirmer sur le certificat.',
+        'ocr' => 'Certificat scanné : lu par reconnaissance d’image, donc à vérifier chiffre par chiffre sur le certificat.',
+        'mixte' => 'Lu dans le texte du PDF, sauf les pages scannées, reconnues à l’image. À vérifier sur le certificat.',
+        default => 'Lecture automatique, à vérifier sur le certificat.',
+    };
     if ($document['coulees']) {
         $aVerifier = false;
         $html .= '><ul class="ccpu-coulees">';

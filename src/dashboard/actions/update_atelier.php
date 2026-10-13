@@ -68,10 +68,12 @@ try {
             $procede = trim(mb_substr((string) ($_POST['type_soudure'] ?? ''), 0, 30));
             // La feuille ISO travaillée. Elle doit appartenir à l'élément de l'affectation :
             // sans ce contrôle, un pointage pourrait se ranger sous le plan d'un autre.
-            $document = filter_var($_POST['document'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: null;
-            // La page du cahier, s'il en a plusieurs : c'est elle qui dira dans quelle
-            // liste de soudures ce pointage se proposera.
-            $page = filter_var($_POST['page'] ?? 1, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: 1;
+            // L'isométrique travaillé : « feuille:page », parce que c'est un seul choix
+            // pour le soudeur. La page dira dans quelle liste de soudures ce pointage se
+            // proposera.
+            [$feuilleBrute, $pageBrute] = array_pad(explode(':', (string) ($_POST['document'] ?? ''), 2), 2, '1');
+            $document = filter_var($feuilleBrute, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: null;
+            $page = filter_var($pageBrute, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: 1;
             if ($document) {
                 $verif = $db->prepare("SELECT pages FROM element_atelier_document
                     WHERE id = ? AND id_element = ? AND type_document = 'plan'");

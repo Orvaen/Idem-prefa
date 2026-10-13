@@ -79,6 +79,16 @@ function planViewerRendu(int $elementId, array $plans, array $coulees, bool $mod
         // Un cahier déposé d'un bloc porte plusieurs pages : la fenêtre les parcourt, et
         // chacune a sa liste soudure. Le résumé le dit sur la ligne, sans avoir à ouvrir.
         $pagesPlan = max(1, (int) ($plan['pages'] ?? 1));
+        // Ce que chaque page porte déjà. Le sommaire le dit sous sa vignette : on retrouve
+        // la feuille où l'on s'était arrêté sans avoir à les ouvrir une par une. Une feuille
+        // unique n'a pas de sommaire, donc rien à compter.
+        $posees = [];
+        foreach ($pagesPlan > 1 ? $plan['reperes'] : [] as $numeroPage => $reperesPage) {
+            $posees[(int) $numeroPage] = count(array_filter(
+                $reperesPage,
+                static fn (array $repere): bool => (string) $repere['numero_coulee'] !== ''
+            ));
+        }
         $resume = [];
         if ($pagesPlan > 1) $resume[] = $pagesPlan . ' pages';
         if (!empty($plan['cordons'])) $resume[] = (int) $plan['cordons']
@@ -155,6 +165,13 @@ function planViewerRendu(int $elementId, array $plans, array $coulees, bool $mod
 
                         <span class="plan-viewer-message" role="status" aria-live="polite"></span>
 
+                        <?php if ($pagesPlan > 1): ?>
+                            <!-- Le sommaire s'ouvre avec la fenêtre, puisque c'est par lui
+                                 qu'on circule : son bouton de rappel ne sert qu'une fois
+                                 replié, et reste donc caché jusque-là. -->
+                            <button type="button" class="plan-dialog-sommaire-ouvrir" hidden>Sommaire</button>
+                        <?php endif; ?>
+
                         <?php if (!empty($plan['soudures'])): ?>
                             <!-- La liste est repliée à l'ouverture : on vient d'abord voir le
                                  plan, en grand. C'est d'ici qu'on la déplie, et c'est ici
@@ -172,6 +189,42 @@ function planViewerRendu(int $elementId, array $plans, array $coulees, bool $mod
                 </div>
 
                 <div class="plan-dialog-fond">
+                <?php if ($pagesPlan > 1): ?>
+                    <!-- Le sommaire du cahier, à gauche du dessin. Un isométrique se
+                         reconnaît à son tracé bien avant à son numéro : les flèches
+                         obligeaient à feuilleter les quinze pages pour retrouver la bonne,
+                         la vignette la donne d'un coup d'œil. Il tient la gauche, comme le
+                         sommaire d'un lecteur de PDF, et la liste des soudures garde la
+                         droite : on ne se demande pas où chercher quoi. -->
+                    <nav class="plan-dialog-sommaire" aria-label="Pages du plan <?= prefaEscape($plan['nom']) ?>">
+                        <!-- Même poignée que la liste des soudures, posée sur l'autre bord :
+                             une colonne de vignettes qu'on ne peut pas élargir se lit mal
+                             dès que le cartouche compte. -->
+                        <div class="plan-dialog-glissiere" role="separator" aria-orientation="vertical"
+                             title="Glisser pour régler la largeur du sommaire"></div>
+                        <div class="plan-dialog-sommaire-barre">
+                            <span class="plan-dialog-listes-titre">Sommaire</span>
+                            <button type="button" class="plan-dialog-sommaire-replier">Replier</button>
+                        </div>
+                        <ol class="plan-dialog-sommaire-corps">
+                            <?php for ($numeroPage = 1; $numeroPage <= $pagesPlan; $numeroPage++): ?>
+                                <li>
+                                    <!-- La vignette n'est demandée qu'à l'ouverture de la
+                                         fenêtre, comme le plan : un volet qui montre vingt
+                                         feuilles ne doit pas en rastériser trois cents. -->
+                                    <button type="button" class="plan-sommaire-page<?= $numeroPage === 1 ? ' est-vue' : '' ?>"
+                                            data-page="<?= $numeroPage ?>" <?= $numeroPage === 1 ? 'aria-current="page"' : '' ?>>
+                                        <img alt="" data-src="actions/plan_image.php?plan=<?= $elementId ?>&amp;document=<?= (int) $plan['id'] ?>&amp;page=<?= $numeroPage ?>&amp;vignette=1">
+                                        <span class="plan-sommaire-numero">Page <?= $numeroPage ?></span>
+                                        <?php if (!empty($posees[$numeroPage])): ?>
+                                            <span class="plan-sommaire-marque"><?= $posees[$numeroPage] ?> coulée<?= $posees[$numeroPage] > 1 ? 's' : '' ?></span>
+                                        <?php endif; ?>
+                                    </button>
+                                </li>
+                            <?php endfor; ?>
+                        </ol>
+                    </nav>
+                <?php endif; ?>
                 <div class="plan-dialog-corps">
                     <div class="plan-viewer-scene" <?= $modifiable ? 'data-posable="1"' : '' ?>>
                         <!-- L'image n'est chargée qu'à l'ouverture : un plan pèse quelques

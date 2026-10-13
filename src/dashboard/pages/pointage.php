@@ -17,7 +17,7 @@ $assignments = $stmt->fetchAll();
 $types = ['plan' => 'Plan / ISO', 'montage' => 'Montage', 'soudage' => 'Suivi soudage'];
 // La feuille ISO voyage avec le pointage : sans elle, l'historique ne dit pas sur quel
 // plan le temps a été passé — et c'est la première question qu'on se pose en le relisant.
-$historique = $db->prepare("SELECT p.*, doc.cle_document
+$historique = $db->prepare("SELECT p.*, doc.cle_document, doc.pages
     FROM pointage_atelier p
     LEFT JOIN element_atelier_document doc ON doc.id = p.id_document
     WHERE p.id_affectation = ? AND p.id_utilisateur = ?
@@ -79,31 +79,34 @@ foreach ($assignments as $assignment) {
                             <td><?= prefaEscape(prefaReferenceComplete((int) $assignment['id_demande'])) ?></td>
                             <?php $iso = $isoParElement[(int) $assignment['id_element']] ?? []; ?>
                             <td>
-                                <strong><?= prefaEscape($assignment['reference']) ?></strong>
-                                <span class="atelier-row-description"><?= prefaEscape($assignment['libelle']) ?></span>
+                                <span class="pointage-plan-nom">
+                                    <strong><?= prefaEscape($assignment['reference']) ?></strong>
+                                    <span class="atelier-row-description"><?= prefaEscape($assignment['libelle']) ?></span>
+                                </span>
                                 <?php if ($iso): ?>
                                     <!-- La feuille ISO travaillée, sous le nom de l'élément : elle
                                          lui appartient, et une colonne de plus faisait déborder
                                          le tableau. -->
+                                    <!-- Un seul choix, et c'est celui que le soudeur se pose :
+                                         sur quel isométrique ai-je travaillé ? Le fichier et sa
+                                         page ne font donc qu'une ligne de liste. Deux contrôles
+                                         côte à côte — la feuille, puis un numéro de page —
+                                         obligeaient à traduire soi-même « page 3 du cahier ». -->
                                     <span class="pointage-iso-cell">
                                         <select class="pointage-input pointage-iso" form="pointage-<?= $id ?>" name="document"
-                                                aria-label="Plan ISO travaillé — <?= prefaEscape($cible) ?>">
-                                            <?php foreach ($iso as $index => $feuille): ?>
-                                                <option value="<?= (int) $feuille['id'] ?>" data-pages="<?= (int) $feuille['pages'] ?>" <?= $index === 0 ? 'selected' : '' ?>><?= prefaEscape($feuille['nom']) ?></option>
+                                                aria-label="Isométrique travaillé — <?= prefaEscape($cible) ?>">
+                                            <?php $premier = true; ?>
+                                            <?php foreach ($iso as $feuille): ?>
+                                                <?php for ($page = 1; $page <= (int) $feuille['pages']; $page++): ?>
+                                                    <option value="<?= (int) $feuille['id'] ?>:<?= $page ?>" <?= $premier ? 'selected' : '' ?>>
+<?php // Sans l'extension et avec « p. » : le nom du fichier mange la largeur, et
+                                                          // c'est la page qu'on doit lire d'un coup d'œil. ?>
+                                                        <?= prefaEscape(preg_replace('/\.pdf$/i', '', $feuille['nom'])) ?><?= (int) $feuille['pages'] > 1 ? ' — p. ' . $page : '' ?>
+                                                    </option>
+                                                    <?php $premier = false; ?>
+                                                <?php endfor; ?>
                                             <?php endforeach; ?>
                                         </select>
-                                        <?php $pagesMax = max(array_map(static fn (array $f): int => (int) $f['pages'], $iso)); ?>
-                                        <?php if ($pagesMax > 1): ?>
-                                            <!-- Un cahier porte une liste de soudures par page : dire
-                                                 laquelle on a travaillée évite que le pointage se
-                                                 propose sur les quinze. -->
-                                            <label class="pointage-iso-page">page
-                                                <input class="pointage-input" form="pointage-<?= $id ?>" name="page" type="number"
-                                                       min="1" max="<?= (int) $iso[0]['pages'] ?>" value="1" step="1"
-                                                       <?= (int) $iso[0]['pages'] > 1 ? '' : 'disabled' ?>
-                                                       aria-label="Page du plan travaillée — <?= prefaEscape($cible) ?>">
-                                            </label>
-                                        <?php endif; ?>
                                         <button type="button" class="pointage-iso-ouvrir">Ouvrir</button>
                                     </span>
                                 <?php endif; ?>
@@ -114,6 +117,11 @@ foreach ($assignments as $assignment) {
                             <td><input class="pointage-input" form="pointage-<?= $id ?>" name="type_soudure" maxlength="30" list="pointage-procedes" placeholder="TIG…" aria-label="Type de soudure — <?= prefaEscape($cible) ?>"></td>
                             <td><input class="pointage-input" form="pointage-<?= $id ?>" name="commentaire" maxlength="500" aria-label="Commentaire du pointage — <?= prefaEscape($cible) ?>"></td>
                             <td class="pointage-actions-cell">
+                                <!-- Les commandes s'alignent dans une boîte à elles, et non dans
+                                     la cellule : une cellule mise en « flex » quitte la grille du
+                                     tableau, cesse de compter comme colonne, et la bordure de la
+                                     ligne s'arrête avec elle au lieu d'aller jusqu'au bord. -->
+                                <div class="pointage-actions">
                                 <form id="pointage-<?= $id ?>" class="atelier-action prefa-form pointage-row-form" data-endpoint="update_atelier.php">
                                     <input type="hidden" name="csrf" value="<?= prefaEscape($_SESSION['prefa_csrf']) ?>">
                                     <input type="hidden" name="affectation" value="<?= $id ?>">
@@ -123,6 +131,7 @@ foreach ($assignments as $assignment) {
                                     <span class="atelier-message" role="status" aria-live="polite"></span>
                                 </form>
                                 <button type="button" class="prefa-toggle" aria-controls="pointage-detail-<?= $id ?>" aria-expanded="false">Historique (<?= count($pointages) ?>)</button>
+                                </div>
 
                                 <?php if ($iso): ?>
                                     <!-- Les fenêtres de lecture des feuilles, une par ISO. Leur
@@ -197,7 +206,8 @@ foreach ($assignments as $assignment) {
                                                         <tr>
                                                             <td class="pointage-histo-duree"><?= (int) $entry['duree_minutes'] ?> min</td>
                                                             <td><?= $entry['cle_document']
-                                                                ? prefaEscape(preg_replace('/^[a-f0-9]{32}-/', '', (string) $entry['cle_document']))
+                                                                ? prefaEscape(preg_replace('/^[a-f0-9]{32}-/', '', (string) $entry['cle_document'])
+                                                                    . ((int) $entry['pages'] > 1 ? ' — page ' . (int) $entry['page'] : ''))
                                                                 : '<span class="atelier-muted">non précisé</span>' ?></td>
                                                             <td><?= !empty($entry['type_soudure'])
                                                                 ? prefaEscape($entry['type_soudure'])

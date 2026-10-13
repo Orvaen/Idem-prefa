@@ -9,8 +9,11 @@ $ownerName = trim($row['prenom'] . ' ' . $row['name']);
 ?>
 <tbody class="prefa-request<?= $isUrgentPending ? ' is-urgent-pending' : '' ?>">
     <tr>
-        <td><?= prefaEscape(prefaReferenceComplete($requestId)) ?></td>
-        <td><?= prefaEscape($row['nom_affaire'] ?: '—') ?></td>
+        <?php // Sous le titre de son affaire, la demande n'est plus que son numéro. ?>
+        <td><?= prefaEscape($vueParAffaire ? prefaReference($requestId) : prefaReferenceComplete($requestId)) ?></td>
+        <?php if (!$vueParAffaire): ?>
+            <td><?= prefaEscape($row['nom_affaire'] ?: '—') ?></td>
+        <?php endif; ?>
         <td><?= $row['date_creation'] ? prefaEscape(prefaFormatDate($row['date_creation'])) : '—' ?></td>
         <td><?= $row['date_fin_prevue'] ? prefaEscape(prefaFormatDate($row['date_fin_prevue'])) : '—' ?></td>
         <td><?= $row['urgent'] ? '<span class="prefa-urgent">Urgente</span>' : 'Normale' ?></td>
@@ -33,7 +36,7 @@ $ownerName = trim($row['prenom'] . ' ' . $row['name']);
         </td>
     </tr>
     <tr id="prefa-detail-<?= $requestId ?>" class="prefa-detail-row" hidden>
-        <td colspan="10">
+        <td colspan="<?= $vueParAffaire ? 9 : 10 ?>">
             <div class="prefa-table-detail">
                 <?php require __DIR__ . '/prefa_detail.php'; ?>
                 <?php if ($isAdmin && $isPending): ?>

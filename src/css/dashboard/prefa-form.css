@@ -43,6 +43,15 @@
     gap: 18px;
 }
 
+/* Un mot sous un champ, pour dire ce qu'il attend quand son intitulé n'y suffit pas. */
+.prefa-aide {
+    display: block;
+    margin-top: 6px;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--text-muted);
+}
+
 .prefa-section {
     min-width: 0;
     padding: 20px 24px 24px;

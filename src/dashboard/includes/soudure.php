@@ -8,14 +8,15 @@
  * être inventé par le logiciel.
  */
 
-// Les réponses courantes aux trois contrôles, proposées à la saisie sans l'enfermer.
-// Un atelier note aussi « N/A » pour un cordon non soumis, « En attente » tant que le
-// labo n'a pas rendu, ou le numéro de son rapport. Même principe que les procédés de
-// soudage du pointage : une aide à la saisie, pas une contrainte.
-const SOUDURE_CONTROLES = ['OK', 'Non OK'];
-
-/** La longueur d'un contrôle : une mention courte, qui doit tenir dans la colonne du plan. */
-const SOUDURE_CONTROLE_MAX = 20;
+/**
+ * Un contrôle se croise, comme sur le papier : le cordon l'a passé, on marque la case ;
+ * sinon elle reste vide. La colonne du plan ne fait que deux pour cent de la feuille —
+ * une croix s'y lit d'un coup d'œil, « Non OK » s'y écrase.
+ *
+ * La lettre X plutôt qu'un signe typographique : le calque du plan final écrit en
+ * Helvetica/WinAnsi, où ✗ n'existe pas et ne sortirait pas à l'impression.
+ */
+const SOUDURE_CROIX = 'X';
 
 /**
  * La liste des soudures d'un plan : les soudures enregistrées, suivies des pointages qui
@@ -225,18 +226,11 @@ function soudureEnregistrer(PDO $db, int $elementId, int $documentId, int $page,
             $date = trim((string) ($ligne['date'] ?? ''));
             $date = preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) ? $date : null;
 
-            // Ce qui est écrit est gardé : la liste des contrôles n'est qu'une suggestion.
-            // Seules les deux réponses courantes sont remises dans leur casse d'usage —
-            // « non ok » tapé à la main doit ressortir « Non OK », puisque c'est cette
-            // forme-là que le plan porte, et qu'une colonne où l'on lit trois graphies
-            // de la même réponse ne se relit plus.
-            $controle = static function (string $valeur): string {
-                $valeur = trim($valeur);
-                foreach (SOUDURE_CONTROLES as $courant) {
-                    if (strcasecmp($valeur, $courant) === 0) return $courant;
-                }
-                return mb_substr($valeur, 0, SOUDURE_CONTROLE_MAX);
-            };
+            // Deux états et pas un de plus : la case est cochée, ou elle ne l'est pas.
+            // Un navigateur n'envoie rien pour une case décochée, et le formulaire ne
+            // peut donc plus déposer dans la colonne du plan trois graphies de la même
+            // réponse.
+            $controle = static fn (string $valeur): string => trim($valeur) === '' ? '' : SOUDURE_CROIX;
 
             $type = trim(mb_substr((string) ($ligne['type'] ?? ''), 0, 30));
             $rt = $controle((string) ($ligne['rt'] ?? ''));
@@ -280,16 +274,6 @@ function soudureRendu(array $lignes, array $soudeurs, int $elementId, int $docum
     // dirait deux fois.
     $html .= '<div class="nomenclature-entete"></div>';
 
-    // Les réponses proposées aux trois contrôles. Le champ reste libre : on suggère. Aucun
-    // champ ne pointe ce datalist par list= ; suggestions.js y lit les valeurs proposées.
-    if ($modifiable) {
-        $html .= '<datalist id="soudure-controles">';
-        foreach (SOUDURE_CONTROLES as $choix) {
-            $html .= '<option value="' . prefaEscape($choix) . '"></option>';
-        }
-        $html .= '</datalist>';
-    }
-
     if (!$soudeurs && $modifiable) {
         $html .= '<p class="nomenclature-note">Aucun soudeur proposé : personne n’a encore pointé'
             . ' sur ce plan. Le soudeur se choisit parmi ceux qui y ont déclaré leur temps.</p>';
@@ -310,8 +294,9 @@ function soudureRendu(array $lignes, array $soudeurs, int $elementId, int $docum
     // leurs propres largeurs, sans quoi le nom du soudeur se retrouve rogné.
     $html .= '<table class="nomenclature-table soudure-table"><thead><tr>'
         . '<th scope="col">N°</th><th scope="col">Soudeur</th><th scope="col">Date</th>'
-        . '<th scope="col">Type de soudure</th><th scope="col">RT</th><th scope="col">VI</th>'
-        . '<th scope="col">PT</th><th scope="col">Visa</th>'
+        . '<th scope="col">Type de soudure</th><th scope="col" class="soudure-controle">RT</th>'
+        . '<th scope="col" class="soudure-controle">VI</th><th scope="col" class="soudure-controle">PT</th>'
+        . '<th scope="col">Visa</th>'
         . ($modifiable ? '<th scope="col"><span class="sr-only">Retirer</span></th>' : '')
         . '</tr></thead><tbody>';
 
@@ -346,10 +331,13 @@ function soudureLigneRendu(array $ligne, array $soudeurs, bool $modifiable): str
     $visa = trim((string) ($ligne['visa_nom'] ?? ''));
 
     if (!$modifiable) {
+        // La croix seule, centrée comme sur le plan : c'est ce que porte la feuille.
+        $croix = static fn (string $cle): string => '<td class="soudure-controle">'
+            . (trim((string) ($ligne[$cle] ?? '')) === '' ? '' : SOUDURE_CROIX) . '</td>';
         return '<tr><td>' . $valeur('numero') . '</td><td>' . $valeur('soudeur_nom') . '</td>'
             . '<td>' . prefaFormatDate($ligne['date_soudure'] ?? null) . '</td>'
-            . '<td>' . $valeur('type_soudure') . '</td><td>' . $valeur('rt') . '</td>'
-            . '<td>' . $valeur('vi') . '</td><td>' . $valeur('pt') . '</td>'
+            . '<td>' . $valeur('type_soudure') . '</td>' . $croix('rt')
+            . $croix('vi') . $croix('pt')
             . '<td>' . prefaEscape($visa !== '' ? $visa : '—') . '</td></tr>';
     }
 
@@ -366,18 +354,13 @@ function soudureLigneRendu(array $ligne, array $soudeurs, bool $modifiable): str
             . prefaEscape($soudeur['nom']) . ((int) $soudeur['affecte'] === 1 ? '' : '') . '</option>';
     }
 
-    // Champ libre adossé à des suggestions : la liste déroulante fermée obligeait à
-    // choisir « OK » ou « Non OK » pour un cordon qui n'est soumis à aucun des trois
-    // contrôles.
-    //
-    // data-suggestions et non list= : la liste native du navigateur ne s'ouvre pas au
-    // focus, ne propose plus rien dès que le champ vaut « OK », et ne se met pas aux
-    // couleurs du tableau de bord. Celle de suggestions.js fait tout cela.
+    // Une case à cocher plutôt qu'un champ : le contrôle est passé ou il ne l'est pas, et
+    // c'est une croix qui le dit sur le plan. Cocher se fait d'un geste ; écrire « OK »
+    // demandait une convention que chacun orthographiait à sa façon.
     $controle = static fn (string $nom, string $actuel): string =>
-        '<input type="text" name="' . $nom . '" value="' . prefaEscape($actuel) . '"'
-        . ' maxlength="' . SOUDURE_CONTROLE_MAX . '" data-suggestions="soudure-controles"'
-        . ' role="combobox" aria-autocomplete="list" aria-expanded="false" autocomplete="off"'
-        . ' placeholder="—" aria-label="Contrôle ' . strtoupper($nom) . '">';
+        '<input type="checkbox" class="soudure-croix" name="' . $nom . '" value="' . SOUDURE_CROIX . '"'
+        . (trim($actuel) !== '' ? ' checked' : '')
+        . ' aria-label="Contrôle ' . strtoupper($nom) . ' conforme">';
 
     // Une ligne issue d'un pointage emporte son origine : lui donner un numéro la
     // rattache, et le pointage cesse alors d'apparaître comme en attente.
@@ -400,9 +383,9 @@ function soudureLigneRendu(array $ligne, array $soudeurs, bool $modifiable): str
         . '<td>' . ($soudeurFige ?? '<select name="soudeur" aria-label="Soudeur">' . $options . '</select>') . '</td>'
         . '<td><input type="date" name="date" value="' . $valeur('date_soudure') . '" aria-label="Date de soudage"></td>'
         . '<td><input type="text" name="type" value="' . $valeur('type_soudure') . '" maxlength="30" aria-label="Type de soudure" placeholder="TIG…"></td>'
-        . '<td>' . $controle('rt', (string) ($ligne['rt'] ?? '')) . '</td>'
-        . '<td>' . $controle('vi', (string) ($ligne['vi'] ?? '')) . '</td>'
-        . '<td>' . $controle('pt', (string) ($ligne['pt'] ?? '')) . '</td>'
+        . '<td class="soudure-controle">' . $controle('rt', (string) ($ligne['rt'] ?? '')) . '</td>'
+        . '<td class="soudure-controle">' . $controle('vi', (string) ($ligne['vi'] ?? '')) . '</td>'
+        . '<td class="soudure-controle">' . $controle('pt', (string) ($ligne['pt'] ?? '')) . '</td>'
         . '<td class="soudure-visa">' . prefaEscape($visa !== '' ? $visa : '—') . '</td>'
         . '<td><button type="button" class="tableau-retirer" aria-label="Retirer la soudure ' . $valeur('numero') . '">✕</button></td>'
         . '</tr>';

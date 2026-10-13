@@ -73,9 +73,19 @@ if ($q !== '') {
     $where .= ' AND (' . implode(' OR ', $conditions) . ')';
 }
 
+// L'écran « Mes affaires » : celui de qui ne voit ni toutes les demandes ni ses seules
+// affectations. C'est le même critère qui donne son titre à la page et qui range la liste,
+// pour qu'ils ne puissent pas se contredire.
+$vueParAffaire = !$canViewAllPrefa && !$isWorkshopPersonnel;
+
 $stmt = $db->prepare(
     'SELECT d.*, s.libelle, u.name, u.prenom, val.name AS valideur_name, val.prenom AS valideur_prenom, TRIM(CONCAT(taker.prenom, \' \', taker.name)) AS prise_en_charge_nom, TRIM(CONCAT(staff.prenom, \' \', staff.name)) AS personnel_atelier_nom, p.libelle AS passivation_libelle, m.libelle AS matiere_libelle' . $joins . $where
-    . ' ORDER BY d.date_creation DESC, d.id DESC'
+    // Celui qui ne voit que ses propres demandes les lit par affaire : elles se suivent
+    // sous leur chantier, la plus récente en tête. L'encadrement et l'atelier gardent
+    // l'ordre chronologique — ils cherchent ce qui vient d'arriver, pas ce qui va ensemble.
+    . ($vueParAffaire
+        ? ' ORDER BY d.nom_affaire, d.date_creation DESC, d.id DESC'
+        : ' ORDER BY d.date_creation DESC, d.id DESC')
 );
 foreach ($params as $key => $value) $stmt->bindValue(':' . $key, $value);
 $stmt->execute();

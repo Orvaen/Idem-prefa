@@ -70,7 +70,12 @@ $couleesDeLaPage = static function (PDO $db, int $elementId, int $documentId, in
 // ne déplacent rien — et le calque s'ajoute au PDF qu'on tient, qui grossit d'une révision
 // par page annotée. Chaque page reçoit ses coulées et sa liste. Une page sans rien à
 // écrire est laissée exactement telle quelle.
-$annotees = 0;
+//
+// Tout est préparé avant d'écrire quoi que ce soit : un cahier dont l'atelier n'a rien
+// rempli ne doit pas sortir en quinze révisions qui ne porteraient que des numéros de page.
+$cahier = (int) $plan['pages'] > 1;
+$aEcrire = [];
+$contenu = 0;
 try {
     for ($numero = 1; $numero <= (int) $plan['pages']; $numero++) {
         $geometrie = planFinalGeometriePage($source, $numero);
@@ -85,22 +90,46 @@ try {
         $dessin = planLignesSoudureDessin($soudures, $liste['valeurs']);
 
         $textes = array_merge($couleesDeLaPage($db, $elementId, (int) $plan['id'], $numero), $dessin['textes']);
-        if (!$textes && !$dessin['traits']) continue;
+        if ($textes || $dessin['traits']) $contenu++;
 
+        // Le numéro de page prend la place de l'intitulé « Numéro de ligne » du cartouche.
+        // Un cahier ISO ne numérote pas ses feuilles : sans cela, un tirage papier qu'on
+        // mélange ne se remet plus dans l'ordre. La valeur au-dessus continue de dire quel
+        // numéro de ligne porte la feuille — c'est le mot qu'on remplace, pas lui.
+        $caches = [];
+        $cartouche = $analyse['cartouche'] ?? null;
+        if ($cahier && $cartouche) {
+            $caches[] = $cartouche['cache'];
+            $textes[] = [
+                'texte' => 'Page ' . $numero . ' / ' . (int) $plan['pages'],
+                'x' => $cartouche['x'], 'y' => $cartouche['y'],
+                'w' => $cartouche['w'], 'h' => $cartouche['h'],
+                'police' => PLAN_FINAL_POLICE_CARTOUCHE,
+            ];
+        }
+
+        if (!$textes && !$dessin['traits']) continue;
+        $aEcrire[$numero] = ['textes' => $textes, 'traits' => $dessin['traits'],
+                             'caches' => $caches, 'geometrie' => $geometrie];
+    }
+
+    // Le numéro de page seul ne fait pas un plan final : c'est un repère, pas le travail
+    // de l'atelier. prefaError s'arrête ici même, avant d'avoir composé quoi que ce soit.
+    if (!$contenu) {
+        prefaError(409, 'Rien à écrire sur ce plan : aucune coulée posée ni soudure numérotée.');
+    }
+
+    foreach ($aEcrire as $numero => $quoi) {
         // Les traits ajoutés ont l'épaisseur de ceux du plan : un point à 100 dpi, la
         // résolution à laquelle les tableaux ont été lus.
-        $epaisseur = max(0.3, min($geometrie['largeur'], $geometrie['hauteur']) / 1169 * 1.0);
-        $pdf = planFinalComposer($pdf, planFinalFlux($textes, $dessin['traits'], $geometrie, $epaisseur), $numero);
-        $annotees++;
+        $epaisseur = max(0.3, min($quoi['geometrie']['largeur'], $quoi['geometrie']['hauteur']) / 1169 * 1.0);
+        $pdf = planFinalComposer($pdf, planFinalFlux($quoi['textes'], $quoi['traits'],
+            $quoi['geometrie'], $epaisseur, $quoi['caches']), $numero);
     }
 } catch (Throwable $erreur) {
     // Le message dit ce qui bloque : un PDF d'un autre gabarit n'est pas une panne, c'est
     // un fichier qu'on ne sait pas annoter, et l'atelier doit pouvoir le comprendre.
     prefaError(422, 'Plan final impossible : ' . $erreur->getMessage());
-}
-
-if (!$annotees) {
-    prefaError(409, 'Rien à écrire sur ce plan : aucune coulée posée ni soudure numérotée.');
 }
 
 $nom = 'Plan-final-' . preg_replace('/[^A-Za-z0-9._-]+/', '-', (string) $plan['reference']) . '.pdf';

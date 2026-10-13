@@ -40,7 +40,10 @@ try {
     $names = [['Martin', 'Emma'], ['Bernard', 'Louis'], ['Dubois', 'Jade'], ['Petit', 'Gabriel'], ['Moreau', 'Camille']];
     $findUser = $db->prepare('SELECT id, id_role FROM Utilisateur WHERE identifiant = ?');
     $insertUser = $db->prepare('INSERT INTO Utilisateur (name, prenom, identifiant, email, id_role, password) VALUES (?, ?, ?, ?, ?, ?)');
-    foreach (['charger' => [5, 5], 'demandeur' => [4, 4]] as $kind => [$role, $count]) {
+    // Les deux sont des demandeurs : « Demandeur » (rôle 5) est le chargé d'affaire de la
+    // fiche métier. Le rôle 4 employé ici n'existe pas dans la table role — les comptes
+    // créés ainsi n'étaient reconnus par aucun écran.
+    foreach (['charger' => [5, 5], 'demandeur' => [5, 4]] as $kind => [$role, $count]) {
         for ($i = 0; $i < $count; $i++) {
             $login = sprintf('demo.%s.%02d', $kind, $i + 1);
             $findUser->execute([$login]);
@@ -57,20 +60,38 @@ try {
     $admin = $db->query('SELECT id FROM Utilisateur WHERE id_role = 1 ORDER BY id LIMIT 1')->fetchColumn() ?: null;
     $materials = $db->query('SELECT id FROM type_matiere ORDER BY id')->fetchAll(PDO::FETCH_COLUMN);
     $passivations = $db->query('SELECT id FROM type_passivation ORDER BY id')->fetchAll(PDO::FETCH_COLUMN);
-    $findRequest = $db->prepare('SELECT id FROM demande_prefabrication WHERE nom_affaire = ? AND idUsers = ?');
+    // Combien de demandes d'essai existent déjà. Elles n'ont pas de clé métier : une
+    // affaire porte plusieurs demandes, et deux demandes du même chantier portent donc le
+    // même nom. C'est le compte qui dit ce qu'il reste à créer.
+    $dejaCreees = (int) $db->query("SELECT COUNT(*) FROM demande_prefabrication WHERE nom_affaire LIKE '[TEST]%'")->fetchColumn();
     $projects = ['Reseau vapeur', 'Collecteur inox', 'Circuit refroidissement', 'Skid filtration', 'Ligne air comprime', 'Station pompage'];
-    for ($i = 0; $i < 24; $i++) {
+    // Combien de demandes au total. Le script saute celles qui existent déjà : relancer
+    // avec un nombre plus grand n'ajoute que ce qui manque, sans toucher au reste.
+    $combien = max(1, (int) ($argv[1] ?? 24));
+    for ($i = $dejaCreees; $i < $combien; $i++) {
         $owner = $users['demandeur'][$i % 4];
-        $name = sprintf('[TEST] ISO-%02d - %s', $i + 1, $projects[$i % 6]);
-        $findRequest->execute([$name, $owner]);
-        if ($findRequest->fetchColumn()) continue;
-        $status = $i < 16 ? 2 : ($i < 22 ? 1 : 3);
+        // Le nom EST celui de l'affaire : avec six chantiers pour vingt-quatre demandes,
+        // chaque affaire en porte plusieurs — c'est ce que fait le métier, et ce que les
+        // écrans doivent savoir montrer.
+        $name = sprintf('[TEST] %s', $projects[$i % 6]);
+        // Les mêmes proportions quel que soit le nombre demandé : deux tiers de validées
+        // — c'est là qu'il y a du travail d'atelier —, puis des demandes à valider, et
+        // une ou deux refusées pour voir cet état. À vingt-quatre, on retrouve la
+        // répartition d'origine : 16, 6, 2.
+        $status = match (true) {
+            $i < (int) ceil($combien * 2 / 3) => 2,
+            $i < (int) ceil($combien * 11 / 12) => 1,
+            default => 3,
+        };
         $hours = (1 + $i % 5) * 24;
-        $planned = $i < 12;
+        $planned = $i < (int) ceil($combien / 2);
         $period = $planned ? planningPeriod($monday->modify('+' . ($i % 4 * 2) . ' days'), $hours, true) : null;
         $data = [
             'idUsers' => $owner, 'DateUpdate' => $today->format('Y-m-d H:i:s'),
-            'date_creation' => $today->modify('-' . (24 - $i) . ' days')->format('Y-m-d H:i:s'),
+            // La première demande est la plus ancienne : « -24 jours » quand il y en a
+            // vingt-quatre. Sans le plancher, une demande au-delà du compte reculait d'un
+            // nombre négatif de jours, et la date ne se construisait plus.
+            'date_creation' => $today->modify('-' . max(0, $combien - $i) . ' days')->format('Y-m-d H:i:s'),
             'date_fin_prevue' => $monday->modify('+' . (3 + $i % 12) . ' days')->format('Y-m-d'),
             'date_livraison_prevue' => $monday->modify('+' . (7 + $i % 12) . ' days')->format('Y-m-d'),
             'nom_affaire' => $name, 'plan_bpe_iso' => 'Plan de demonstration',
