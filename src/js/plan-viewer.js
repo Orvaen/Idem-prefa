@@ -131,7 +131,13 @@
         // Cases de coulée et valeurs de soudure portent une police en pixels : elle se
         // recalcule à chaque zoom, sinon le texte garde la taille du zoom précédent et
         // devient minuscule en grossissant le plan.
-        scene.querySelectorAll('.plan-coulee, .plan-soudure').forEach(ajusterPolice);
+        //
+        // La fonction est enveloppée, et non passée nue : forEach donne l'index en second
+        // argument, qu'ajusterPolice prenait pour son facteur de police. La septième case
+        // s'écrivait donc sept fois trop grande — le tiret imprimé devenait une barre
+        // noire — et seul un clic dessus la remettait d'aplomb, puisqu'il rappelle
+        // ajusterPolice sans ce second argument.
+        scene.querySelectorAll('.plan-coulee, .plan-soudure').forEach(element => ajusterPolice(element));
     }
 
     // Ctrl + molette zoome le plan, pas la page. Écouteur non passif : un gestionnaire
