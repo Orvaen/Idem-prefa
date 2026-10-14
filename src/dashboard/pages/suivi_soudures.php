@@ -45,11 +45,14 @@ foreach ($plans as $plan) {
 }
 ksort($affaires);
 
+// L'état d'un plan : sa clé pour le filtre, son libellé, et la couleur que la maison
+// donne déjà à cet état-là. La pastille est un point coloré et du texte — pas de bordure,
+// pas de fond : c'est la forme de « prefa-status », partout ailleurs dans l'application.
 $etatDuPlan = static function (array $ligne): array {
-    if ($ligne['attentes']) return ['a_valider', 'À valider'];
-    if ($ligne['prevues'] > 0 && $ligne['faites'] >= $ligne['prevues']) return ['complet', 'Toutes soudées'];
-    if ($ligne['faites'] > 0) return ['en_cours', 'En cours'];
-    return ['a_faire', 'Pas commencé'];
+    if ($ligne['attentes']) return ['a_valider', 'À valider', 'status-1'];
+    if ($ligne['prevues'] > 0 && $ligne['faites'] >= $ligne['prevues']) return ['complet', 'Toutes soudées', 'status-2'];
+    if ($ligne['faites'] > 0) return ['en_cours', 'En cours', 'atelier-status-progress'];
+    return ['a_faire', 'Pas commencé', 'atelier-muted'];
 };
 ?>
 <section class="page prefa-page prefa-list atelier-page" id="suivi-soudures-page" aria-labelledby="suivi-soudures-title">
@@ -115,7 +118,7 @@ $etatDuPlan = static function (array $ligne): array {
 
                 <?php foreach ($lignes as $ligne):
                     $elementId = (int) $ligne['id'];
-                    [$etat, $etatLibelle] = $etatDuPlan($ligne);
+                    [$etat, $etatLibelle, $etatClasse] = $etatDuPlan($ligne);
                     $personnes = array_values(array_unique(array_column($ligne['affectations'], 'personne')));
                     $relevees = soudureRelevees($db, $elementId);
                 ?>
@@ -132,7 +135,7 @@ $etatDuPlan = static function (array $ligne): array {
                                 <?php if ($ligne['lues']): ?><span class="atelier-row-description"><?= prefaEscape($ligne['lues']) ?></span><?php endif; ?>
                             </td>
                             <td><?= $ligne['avancement'] ?> %</td>
-                            <td><span class="prefa-status suivi-soudures-etat is-<?= $etat ?>"><?= $etatLibelle ?></span></td>
+                            <td><span class="prefa-status <?= $etatClasse ?>"><?= $etatLibelle ?></span></td>
                             <td><button type="button" class="prefa-toggle" aria-controls="suivi-soudures-detail-<?= $elementId ?>" aria-expanded="false"><?= $ligne['attentes'] ? 'Valider' : 'Voir les cordons' ?></button></td>
                         </tr>
 

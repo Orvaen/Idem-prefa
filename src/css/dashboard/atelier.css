@@ -2001,27 +2001,6 @@
     font-variant-numeric: tabular-nums;
 }
 
-/* Quatre états, et un seul appelle une action : celui-là porte la couleur d'attente, les
-   autres restent sobres. Une liste où tout clignote ne dit plus rien. */
-.suivi-soudures-etat.is-a_valider {
-    border: 1px solid var(--attente-texte);
-    background: transparent;
-    color: var(--attente-texte);
-}
-
-.suivi-soudures-etat.is-complet {
-    border: 1px solid var(--succes-bord);
-    background: var(--succes-fond);
-    color: var(--succes-texte);
-}
-
-.suivi-soudures-etat.is-en_cours,
-.suivi-soudures-etat.is-a_faire {
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--text-muted);
-}
-
 .suivi-soudures-table .atelier-declaration {
     margin-bottom: 18px;
 }
