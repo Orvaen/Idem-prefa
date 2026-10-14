@@ -136,7 +136,10 @@ $etatDuPlan = static function (array $ligne): array {
                             </td>
                             <td><?= $ligne['avancement'] ?> %</td>
                             <td><span class="prefa-status <?= $etatClasse ?>"><?= $etatLibelle ?></span></td>
-                            <td><button type="button" class="prefa-toggle" aria-controls="suivi-soudures-detail-<?= $elementId ?>" aria-expanded="false"><?= $ligne['attentes'] ? 'Valider' : 'Voir les cordons' ?></button></td>
+                            <?php // « Valider » et rien d'autre : c'est ce qu'on vient faire ici, et un
+                                  // libellé qui change d'une ligne à l'autre oblige à lire chaque bouton
+                                  // avant de cliquer. Le volet montre les cordons par la même occasion. ?>
+                            <td><button type="button" class="prefa-toggle" aria-controls="suivi-soudures-detail-<?= $elementId ?>" aria-expanded="false">Valider</button></td>
                         </tr>
 
                         <tr id="suivi-soudures-detail-<?= $elementId ?>" class="prefa-detail-row" hidden>
@@ -151,6 +154,10 @@ $etatDuPlan = static function (array $ligne): array {
                                         </div>
                                         <button type="button" class="prefa-detail-close" data-close-target="suivi-soudures-detail-<?= $elementId ?>" aria-label="Fermer le volet">✕</button>
                                     </div>
+
+                                    <?php if (!$ligne['attentes']): ?>
+                                        <p class="atelier-muted">Aucun avancement n’est en attente : l’atelier n’a rien déclaré depuis la dernière validation.</p>
+                                    <?php endif; ?>
 
                                     <?php foreach ($ligne['attentes'] as $attente): ?>
                                         <?php // Le chiffre annoncé se tient à part du chiffre reconnu : c'est
