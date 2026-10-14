@@ -223,8 +223,4 @@
     }
     $(document).ajaxComplete(amorcer);
     amorcer();
-
-    $(document).on('click', '.atelier-vers-soudures', function () {
-        document.getElementById('btn-soudures')?.click();
-    });
 })();

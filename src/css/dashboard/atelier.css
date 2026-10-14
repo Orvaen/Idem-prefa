@@ -1944,3 +1944,84 @@
     margin: 10px 0 0;
     font-size: 12px;
 }
+
+/* Le renvoi vers l'onglet « Soudures », sur le bloc d'un plan : le compte en une ligne, et
+   la porte. La liste entière vit là-bas, avec celles des autres plans et la validation —
+   deux endroits pour le même chiffre, c'est un chiffre de trop. */
+.atelier-soudures-renvoi {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 10px;
+    margin: 16px 0 0;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-faint);
+    font-size: 13px;
+}
+
+.atelier-soudures-renvoi .atelier-plan-titre-section {
+    margin: 0;
+    flex: 0 0 auto;
+}
+
+.atelier-soudures-renvoi strong {
+    font-size: 17px;
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+}
+
+.atelier-soudures-renvoi .atelier-vers-suivi-soudures {
+    margin-left: auto;
+    padding: 5px 13px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--accent);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background .12s ease;
+}
+
+.atelier-soudures-renvoi .atelier-vers-suivi-soudures:hover {
+    background: var(--hover);
+}
+
+.atelier-soudures-renvoi .atelier-vers-suivi-soudures:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* ===== L'ÉCRAN « SOUDURES » DE L'ENCADREMENT ===== */
+
+.suivi-soudures-cordons strong {
+    font-size: 15px;
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Quatre états, et un seul appelle une action : celui-là porte la couleur d'attente, les
+   autres restent sobres. Une liste où tout clignote ne dit plus rien. */
+.suivi-soudures-etat.is-a_valider {
+    border: 1px solid var(--attente-texte);
+    background: transparent;
+    color: var(--attente-texte);
+}
+
+.suivi-soudures-etat.is-complet {
+    border: 1px solid var(--succes-bord);
+    background: var(--succes-fond);
+    color: var(--succes-texte);
+}
+
+.suivi-soudures-etat.is-en_cours,
+.suivi-soudures-etat.is-a_faire {
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+}
+
+.suivi-soudures-table .atelier-declaration {
+    margin-bottom: 18px;
+}

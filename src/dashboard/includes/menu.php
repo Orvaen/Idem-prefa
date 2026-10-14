@@ -140,6 +140,18 @@ function dashboardMenu(): array
             'scripts' => [...$ressourcesIso['scripts'], 'soudures.js'],
         ],
         [
+            // Le pendant de « Mes soudures » côté encadrement : l'atelier entier d'un coup,
+            // au lieu d'ouvrir une demande après l'autre pour savoir où en sont les cordons.
+            'id' => 'suivi-soudures',
+            'rayon' => 'atelier',
+            'libelle' => 'Soudures',
+            'page' => 'pages/suivi_soudures.php',
+            'pour' => [Role::ChargeDeProduction, Role::ChefDAtelier],
+            'icone' => '<path d="M4 15c2-3 4-3 6 0s4 3 6 0 2-3 4-1" /><path d="M8 5h8M12 5v4" />',
+            'styles' => ['dashboard/atelier.css'],
+            'scripts' => ['atelier.js', 'suivi-soudures.js'],
+        ],
+        [
             'id' => 'plans-iso',
             'rayon' => 'atelier',
             'libelle' => 'Plans / ISO & Affectations',

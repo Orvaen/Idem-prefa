@@ -204,64 +204,19 @@ $avancementsAValider = avancementEnAttentePlusieurs($db, $affectationsActives);
                             </div>
 
                             <?php
-                            // Ce que l'atelier a soudé sur ce plan. La liste se remplit dans la
-                            // fenêtre du plan, feuille par feuille — et elle n'existait que là :
-                            // sur cet écran, rien ne disait qu'un soudeur avait travaillé, ni
-                            // combien de cordons restaient. On le dit donc ici, en lecture.
-                            $relevees = soudureRelevees($db, (int) $element['id']);
-                            $faitesIso = count(array_filter($relevees, static fn (array $l): bool =>
-                                trim((string) $l['type_soudure']) !== '' || !empty($l['date_soudure'])));
+                            // Ce que l'atelier a soudé sur ce plan, en une ligne. La liste
+                            // entière vit dans l'onglet « Soudures » : elle y est avec celles
+                            // des autres plans, et c'est là qu'on valide. La répéter ici
+                            // ferait deux endroits pour le même chiffre.
+                            $faitesIso = avancementSouduresFaites($db, (int) $element['id']);
                             ?>
-                            <?php if ($relevees || $soudureTotal): ?>
-                                <section class="atelier-soudures" aria-label="Soudures relevées sur <?= prefaEscape($element['reference']) ?>">
-                                    <div class="atelier-soudures-entete">
-                                        <h4 class="atelier-plan-titre-section">Soudures</h4>
-                                        <p class="atelier-soudures-compte">
-                                            <strong><?= $faitesIso ?><?= $soudureTotal ? ' / ' . $soudureTotal : '' ?></strong>
-                                            <span><?= $soudureTotal
-                                                ? 'cordon' . ($soudureTotal > 1 ? 's' : '') . ' renseigné' . ($faitesIso > 1 ? 's' : '') . ' sur ' . $soudureTotal . ' prévu' . ($soudureTotal > 1 ? 's' : '') . ' au plan'
-                                                : 'cordon' . ($faitesIso > 1 ? 's' : '') . ' renseigné' . ($faitesIso > 1 ? 's' : '') ?><?php
-                                                if ($soudureOrigine !== '' && ($lues = avancementFeuillesPhrase($prevu))): ?> · <?= prefaEscape($lues) ?><?php endif; ?></span>
-                                        </p>
-                                    </div>
-
-                                    <?php if (!$relevees): ?>
-                                        <p class="atelier-muted">Aucun cordon n’a encore été relevé. Le soudeur les renseigne depuis « Mes soudures ».</p>
-                                    <?php else: ?>
-                                        <table class="atelier-soudures-table">
-                                            <thead><tr>
-                                                <th scope="col">N°</th><th scope="col">Feuille</th>
-                                                <th scope="col">Soudeur</th><th scope="col">Date</th>
-                                                <th scope="col">Type</th>
-                                                <th scope="col" class="soudure-controle">RT</th>
-                                                <th scope="col" class="soudure-controle">VI</th>
-                                                <th scope="col" class="soudure-controle">PT</th>
-                                                <th scope="col">Visa</th>
-                                            </tr></thead>
-                                            <tbody>
-                                                <?php foreach ($relevees as $cordon):
-                                                    $feuilleNom = preg_replace('/^[a-f0-9]{32}-/', '', (string) ($cordon['cle_document'] ?? ''));
-                                                    $feuilleNom = preg_replace('/\.pdf$/i', '', $feuilleNom);
-                                                ?>
-                                                    <tr>
-                                                        <td><?= prefaEscape((string) $cordon['numero']) ?></td>
-                                                        <td><?= prefaEscape($feuilleNom ?: '—') ?><?= (int) ($cordon['pages'] ?? 1) > 1 ? ' — p. ' . (int) $cordon['page'] : '' ?></td>
-                                                        <td><?= prefaEscape((string) ($cordon['soudeur_nom'] ?: '—')) ?></td>
-                                                        <td><?= $cordon['date_soudure'] ? prefaEscape(date('d/m/Y', strtotime((string) $cordon['date_soudure']))) : '—' ?></td>
-                                                        <td><?= prefaEscape((string) ($cordon['type_soudure'] ?: '—')) ?></td>
-                                                        <td class="soudure-controle"><?= trim((string) $cordon['rt']) === '' ? '' : SOUDURE_CROIX ?></td>
-                                                        <td class="soudure-controle"><?= trim((string) $cordon['vi']) === '' ? '' : SOUDURE_CROIX ?></td>
-                                                        <td class="soudure-controle"><?= trim((string) $cordon['pt']) === '' ? '' : SOUDURE_CROIX ?></td>
-                                                        <td><?= prefaEscape((string) ($cordon['visa_nom'] ?: '—')) ?></td>
-                                                    </tr>
-                                                <?php endforeach; ?>
-                                            </tbody>
-                                        </table>
-                                        <?php if ($canManageWorkshop && $taken): ?>
-                                            <p class="atelier-muted atelier-soudures-note">Les contrôles RT, VI et PT se cochent dans la fenêtre du plan, feuille par feuille — c’est là qu’on a le dessin sous les yeux.</p>
-                                        <?php endif; ?>
-                                    <?php endif; ?>
-                                </section>
+                            <?php if ($faitesIso || $soudureTotal): ?>
+                                <p class="atelier-soudures-renvoi">
+                                    <span class="atelier-plan-titre-section">Soudures</span>
+                                    <strong><?= $faitesIso ?><?= $soudureTotal ? ' / ' . $soudureTotal : '' ?></strong>
+                                    <span class="atelier-muted">cordon<?= $faitesIso > 1 ? 's' : '' ?> renseigné<?= $faitesIso > 1 ? 's' : '' ?><?= $soudureTotal ? ' sur ' . $soudureTotal . ' prévu' . ($soudureTotal > 1 ? 's' : '') . ' au plan' : '' ?></span>
+                                    <button type="button" class="atelier-vers-suivi-soudures" title="Ouvre l’écran « Soudures », où l’on voit les cordons et où l’on valide">Voir les cordons ↗</button>
+                                </p>
                             <?php endif; ?>
 
                             <?php

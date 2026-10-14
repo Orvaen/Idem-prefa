@@ -128,6 +128,38 @@ function soudureRelevees(PDO $db, int $elementId): array
 }
 
 /**
+ * Les plans ouverts au travail, avec qui y est affecté.
+ *
+ * C'est la matière de l'écran de suivi des soudures : l'encadrement y regarde l'atelier
+ * entier d'un coup, au lieu d'ouvrir une demande après l'autre. Les comptes de cordons ne
+ * sont pas faits ici — ils viennent d'avancement.php, qui lit le plan — pour que cette
+ * fonction reste une lecture de base et rien d'autre.
+ *
+ * @return list<array<string, mixed>> chaque plan porte ses affectations actives
+ */
+function soudureSuiviPlans(PDO $db): array
+{
+    $plans = $db->query("SELECT e.id, e.reference, e.libelle, e.id_demande, d.nom_affaire
+        FROM element_atelier e
+        JOIN demande_prefabrication d ON d.id = e.id_demande
+        WHERE d.id_statut = 2
+        ORDER BY e.id_demande DESC, e.reference")->fetchAll();
+    if (!$plans) return [];
+
+    $stmt = $db->prepare("SELECT a.id, a.avancement, a.revision, a.type_affectation,
+            TRIM(CONCAT(u.prenom, ' ', u.name)) AS personne
+        FROM affectation_atelier a JOIN Utilisateur u ON u.id = a.id_utilisateur
+        WHERE a.id_element = ? AND a.actif = 1
+        ORDER BY a.type_affectation");
+    foreach ($plans as &$plan) {
+        $stmt->execute([$plan['id']]);
+        $plan['affectations'] = $stmt->fetchAll();
+    }
+    unset($plan);
+    return $plans;
+}
+
+/**
  * Les soudeurs proposés : ceux qui ont pointé sur ce plan.
  *
  * Un cordon est l'œuvre de quelqu'un qui a déclaré son temps dessus. Proposer tout

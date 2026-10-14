@@ -93,6 +93,18 @@
         dialog.showModal();
         (total ? soudures : pourcentage).focus();
     });
+    // Les renvois d'un écran à l'autre. Ils cliquent l'entrée du menu plutôt que de charger
+    // la page eux-mêmes : elle seule tient l'onglet actif et l'historique de navigation.
+    //
+    // Ils sont ici, et non dans soudures.js, parce que l'encadrement ne charge pas ce
+    // fichier-là : il n'a pas « Mes soudures », il a « Soudures ».
+    $(document).on('click', '.atelier-vers-soudures', function () {
+        document.getElementById('btn-soudures')?.click();
+    });
+    $(document).on('click', '.atelier-vers-suivi-soudures', function () {
+        document.getElementById('btn-suivi-soudures')?.click();
+    });
+
     $(document).on('click', '.atelier-close-plan-edit', function () {
         this.closest('dialog')?.close();
     });
