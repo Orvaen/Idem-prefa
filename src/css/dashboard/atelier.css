@@ -1843,3 +1843,104 @@
    du bas s'arrête avant le bord du tableau. L'alignement se fait donc dans la boîte
    qu'elle contient. */
 
+
+/* ===== LES SOUDURES RELEVÉES, VUES DU CHEF ===== */
+
+/* La liste se remplit dans la fenêtre du plan, feuille par feuille. Elle n'existait que
+   là : sur cet écran, rien ne disait qu'un soudeur avait travaillé. Ce bloc la montre en
+   lecture — le compte d'abord, parce que c'est la question qu'on se pose — et renvoie à la
+   fenêtre pour les contrôles, qui se cochent en regardant le dessin. */
+.atelier-soudures {
+    /* Le bloc du plan est une grille à deux colonnes — le travail à gauche, les feuilles à
+       droite. Sans cette ligne, la liste des cordons se tassait dans la colonne de gauche
+       et chaque date se cassait sur trois lignes. */
+    grid-column: 1 / -1;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-faint);
+}
+
+.atelier-soudures-entete {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 6px 18px;
+    margin-bottom: 10px;
+}
+
+.atelier-soudures-entete .atelier-plan-titre-section {
+    margin: 0;
+}
+
+.atelier-soudures-compte {
+    margin: 0;
+    font-size: 13px;
+}
+
+.atelier-soudures-compte strong {
+    margin-right: 6px;
+    font-size: 17px;
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+}
+
+.atelier-soudures-compte span {
+    color: var(--text-muted);
+}
+
+.atelier-soudures-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+}
+
+.atelier-soudures-table th {
+    padding: 0 8px 6px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-align: left;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.atelier-soudures-table td {
+    padding: 7px 8px;
+    border-bottom: 1px solid var(--border-faint);
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+/* Le nom de la feuille est le seul qui puisse être long : il se coupe plutôt que de
+   pousser les colonnes suivantes hors de l'écran. */
+.atelier-soudures-table td:nth-child(2) {
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.atelier-soudures-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.atelier-soudures-table tbody tr:hover {
+    background: var(--hover);
+}
+
+.atelier-soudures-table td:first-child {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.atelier-soudures-table .soudure-controle {
+    width: 34px;
+    text-align: center;
+}
+
+.atelier-soudures-note {
+    margin: 10px 0 0;
+    font-size: 12px;
+}

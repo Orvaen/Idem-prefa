@@ -103,6 +103,31 @@ function soudureCompte(PDO $db, int $elementId, int $documentId): int
 }
 
 /**
+ * Tous les cordons relevés sur un plan, feuilles et pages confondues.
+ *
+ * L'encadrement les remplit page par page dans la fenêtre du plan, en regardant le dessin.
+ * Mais pour savoir si l'atelier a travaillé — et sur quoi — il faut les voir ensemble, et
+ * sans ouvrir quinze feuilles. C'est à quoi sert cette lecture : elle ne sert pas à saisir.
+ *
+ * @return list<array<string, mixed>> chaque ligne porte le nom de sa feuille et sa page
+ */
+function soudureRelevees(PDO $db, int $elementId): array
+{
+    $stmt = $db->prepare("SELECT s.*,
+            TRIM(CONCAT(u.prenom, ' ', u.name)) AS soudeur_nom,
+            TRIM(CONCAT(v.prenom, ' ', v.name)) AS visa_nom,
+            d.cle_document, d.pages
+        FROM plan_soudure s
+        LEFT JOIN Utilisateur u ON u.id = s.id_soudeur
+        LEFT JOIN Utilisateur v ON v.id = s.vise_par
+        LEFT JOIN element_atelier_document d ON d.id = s.id_document
+        WHERE s.id_element = ?
+        ORDER BY d.id, s.page, LENGTH(s.numero), s.numero");
+    $stmt->execute([$elementId]);
+    return $stmt->fetchAll();
+}
+
+/**
  * Les soudeurs proposés : ceux qui ont pointé sur ce plan.
  *
  * Un cordon est l'œuvre de quelqu'un qui a déclaré son temps dessus. Proposer tout
