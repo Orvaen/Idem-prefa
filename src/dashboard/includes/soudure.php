@@ -160,6 +160,52 @@ function soudureSuiviPlans(PDO $db): array
 }
 
 /**
+ * Pose ou retire le visa sur des cordons désignés par leur identifiant.
+ *
+ * La liste soudure de la fenêtre du plan travaille par numéro, page par page, parce qu'elle
+ * réécrit une page entière. L'écran de suivi, lui, montre les cordons d'un plan toutes
+ * feuilles confondues : deux cordons peuvent y porter le même numéro sur deux feuilles
+ * différentes, et c'est donc l'identifiant qui désigne la ligne.
+ *
+ * Le visa garde son auteur d'origine : revalider ce qui l'est déjà n'est pas signer de
+ * nouveau. Le retirer efface la signature et sa date — un cordon repris n'est plus celui
+ * qu'on avait accepté.
+ *
+ * L'appartenance au plan est vérifiée ici, et pas seulement par l'appelant : un identifiant
+ * se tape à la main.
+ *
+ * @param array<int, bool> $visas identifiant de cordon => visé ou non
+ * @return array{poses:int, retires:int}
+ */
+function soudureViser(PDO $db, int $elementId, array $visas, int $auteur): array
+{
+    if (!$visas) return ['poses' => 0, 'retires' => 0];
+
+    $poser = $db->prepare('UPDATE plan_soudure SET vise_par = ?, date_visa = ?
+        WHERE id = ? AND id_element = ? AND vise_par IS NULL');
+    $retirer = $db->prepare('UPDATE plan_soudure SET vise_par = NULL, date_visa = NULL
+        WHERE id = ? AND id_element = ? AND vise_par IS NOT NULL');
+
+    // L'heure en UTC, comme celles que la base pose elle-même : les écrans la ramènent à
+    // l'heure de Paris pour l'afficher.
+    $maintenant = gmdate('Y-m-d H:i:s');
+    $poses = 0;
+    $retires = 0;
+    foreach ($visas as $id => $vise) {
+        $id = (int) $id;
+        if ($id < 1) continue;
+        if ($vise) {
+            $poser->execute([$auteur, $maintenant, $id, $elementId]);
+            $poses += $poser->rowCount();
+        } else {
+            $retirer->execute([$id, $elementId]);
+            $retires += $retirer->rowCount();
+        }
+    }
+    return ['poses' => $poses, 'retires' => $retires];
+}
+
+/**
  * Les soudeurs proposés : ceux qui ont pointé sur ce plan.
  *
  * Un cordon est l'œuvre de quelqu'un qui a déclaré son temps dessus. Proposer tout
