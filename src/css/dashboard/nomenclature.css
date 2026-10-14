@@ -241,3 +241,45 @@
 .nomenclature-message.is-error {
     color: #d93025;
 }
+
+/* Le visa d'un cordon : une case, et le nom de qui l'a posé. Pas une croix comme RT, VI et
+   PT — une croix ne dit pas qui s'engage, et c'est un nom qui s'imprime sur le plan final.
+   Tant que personne n'a signé, la case annonce ce qu'elle fera. */
+.soudure-visa-case {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+    cursor: pointer;
+}
+
+/* Même case que les contrôles d'à côté : trois cases de seize pixels et une quatrième de
+   treize, sur la même ligne, se remarquent tout de suite. */
+.soudure-visa-case input {
+    flex: 0 0 auto;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.soudure-visa-case span {
+    min-width: 0;
+    overflow: hidden;
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Pas encore signé : le mot reste en retrait, pour qu'une colonne de « À viser » ne se lise
+   pas comme une colonne de noms. */
+.soudure-visa-case input:not(:checked) + span {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.soudure-visa-case input:checked + span {
+    color: var(--text);
+    font-weight: 600;
+}

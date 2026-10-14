@@ -109,8 +109,13 @@ function soudureAtelierFeuille(PDO $db, int $elementId, array $plan, int $page, 
             'remplie' => $remplie,
             // Une soudure posée par quelqu'un d'autre se lit, ne se reprend pas : son nom
             // est sur le plan final, et ce n'est pas au voisin de le changer.
+            //
+            // Un cordon visé est figé pour tout le monde, le sien compris : le chef a
+            // accepté ce cordon-là, et le reprendre derrière lui ferait porter sa signature
+            // à autre chose. Il retire son visa s'il veut qu'on y revienne.
             'a_moi' => $aMoi,
-            'verrouillee' => $remplie && !$aMoi,
+            'vise' => $saisie !== null && !empty($saisie['vise_par']),
+            'verrouillee' => ($remplie && !$aMoi) || ($saisie !== null && !empty($saisie['vise_par'])),
         ];
     };
 
