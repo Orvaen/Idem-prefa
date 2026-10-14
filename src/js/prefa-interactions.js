@@ -187,7 +187,34 @@ $(document).on('click', '.edit-prefa', function () {
         if (status === 'error') $(this).text('Impossible de charger cette demande. Revenez à la liste puis réessayez.');
     });
 });
-$(document).on('click', '.cancel-prefa-edit', function () { $('#btn-list-prefa').trigger('click'); });
+/**
+ * Quitter le formulaire de demande : par le bouton du haut, par « Annuler », ou par Échap.
+ *
+ * Une saisie en cours ne se jette pas sans un mot : le formulaire porte une marque dès
+ * qu'un champ bouge, et c'est elle qui décide s'il faut demander confirmation.
+ */
+function quitterFormulairePrefa() {
+    const formulaire = document.getElementById('prefa-form');
+    if (formulaire?.dataset.modifie === '1'
+        && !window.confirm('Quitter sans enregistrer ? Les modifications seront perdues.')) return;
+    $('#btn-list-prefa').trigger('click');
+}
+
+$(document).on('click', '.cancel-prefa-edit, .prefa-retour', quitterFormulairePrefa);
+$(document).on('input change', '#prefa-form', function () { this.dataset.modifie = '1'; });
+
+// Échap quitte le formulaire — mais seulement s'il n'y a rien d'autre à refermer d'abord.
+// Les fenêtres, les volets de filtres et les listes déroulantes se ferment eux aussi sur
+// Échap, sans arrêter l'événement : c'est donc à nous de leur laisser la main.
+const OUVERT_AVANT_LE_FORMULAIRE =
+    'dialog[open], .filtre-volet:not([hidden]), .liste-filtrable-champ[aria-expanded="true"]';
+
+document.addEventListener('keydown', function (event) {
+    if (event.key !== 'Escape' || event.defaultPrevented) return;
+    if (!document.getElementById('prefa-form')) return;
+    if (document.querySelector(OUVERT_AVANT_LE_FORMULAIRE)) return;
+    quitterFormulairePrefa();
+});
 
 $(document).on('click', '.delete-prefa', function () {
     const id = this.dataset.id;
@@ -258,6 +285,57 @@ $(document).on('click', '.prefa-detail-close', function () {
         const toggleBtn = document.querySelector(`.prefa-toggle[aria-controls="${details.id}"]`);
         if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
     }
+});
+
+// ===== Dépôt d'un document depuis la fiche d'une demande =====
+// Déposer par « Modifier » renvoie la demande en attente de validation : c'est voulu pour
+// une date ou un métrage, pas pour un certificat qui arrive après coup. Le dépôt a donc
+// son action à lui, et il se fait sans quitter la fiche.
+$(document).on('change', '.prefa-depot-champ', function () {
+    const champ = this;
+    const fichiers = [...champ.files];
+    if (!fichiers.length) return;
+
+    const zone = champ.closest('.prefa-document-group');
+    const mot = zone.querySelector('.prefa-depot-mot');
+    const bouton = zone.querySelector('.prefa-depot-bouton');
+    champ.disabled = true;
+    bouton.classList.add('est-occupe');
+    mot.textContent = fichiers.length > 1 ? 'Dépôt de ' + fichiers.length + ' fichiers…' : 'Dépôt…';
+
+    const donnees = new FormData();
+    donnees.set('csrf', champ.dataset.csrf);
+    donnees.set('demande', champ.dataset.demande);
+    donnees.set('type', champ.dataset.type);
+    fichiers.forEach(fichier => donnees.append('documents[]', fichier));
+
+    fetch('actions/deposer_document.php', {method: 'POST', body: donnees})
+        .then(reponse => reponse.json().then(corps => ({ok: reponse.ok, corps})))
+        .then(({ok, corps}) => {
+            if (!ok) { mot.textContent = corps.message || 'Dépôt impossible.'; return; }
+
+            // La liste est toujours là, même vide : on l'affiche et on range le « Aucun
+            // document » plutôt que de reconstruire le bloc.
+            const liste = zone.querySelector('.prefa-document-list');
+            liste.insertAdjacentHTML('beforeend', corps.html);
+            liste.hidden = false;
+            // Une famille repliée s'''ouvre : déposer sans rien voir arriver laisse croire
+            // que le dépôt a échoué.
+            zone.open = true;
+            zone.querySelector('.prefa-no-document').hidden = true;
+            zone.querySelector('.prefa-document-compte').textContent =
+                liste.querySelectorAll(':scope > li').length;
+            mot.textContent = corps.message;
+
+            // Un certificat déposé se lit tout seul, comme à l'ouverture de la fiche.
+            if (typeof lireCcpuVisibles === 'function') lireCcpuVisibles();
+        })
+        .catch(() => { mot.textContent = 'Dépôt impossible. Réessayez.'; })
+        .finally(() => {
+            champ.value = '';
+            champ.disabled = false;
+            bouton.classList.remove('est-occupe');
+        });
 });
 
 // ===== Certificats matière (CCPU) =====

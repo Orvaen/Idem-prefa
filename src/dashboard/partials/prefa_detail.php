@@ -8,294 +8,246 @@
 /** @var array<int, array<int, array<string, mixed>>> $dmosByRequest */
 /** @var array<int, array<int, array<string, mixed>>> $materielByRequest */
 /** @var array<int, array<int, array<string, mixed>>> $ccpuByRequest */
+/** @var array<int, list<array<string, mixed>>> $commandesByRequest */
 
 $requestId = (int) $row['id'];
 
-$documentGroups = [
+// Les cinq familles sont déclarées dans prefa_documents.php : la fiche les affiche,
+// l'action de dépôt y écrit, et aucune des deux n'a sa propre idée de ce qui existe.
+$documentsParFamille = [
+    'plan' => $attachmentsByRequest[$requestId] ?? [],
+    'qmos' => $qmosByRequest[$requestId] ?? [],
+    'dmos' => $dmosByRequest[$requestId] ?? [],
+    'materiel' => $materielByRequest[$requestId] ?? [],
+    'ccpu' => $ccpuByRequest[$requestId] ?? [],
+];
+
+// Ce qui reste des demandes d'avant les tables de documents : un nom de fichier, écrit
+// dans une colonne de la demande. La colonne s'appelle bien « espace QMOS » — l'espace
+// fait partie du nom en base, et sans lui la clé n'existe pas.
+$documentsAnciens = [
+    'plan' => $row['plan_bpe_iso'] ?? '',
+    'qmos' => $row[' QMOS'] ?? '',
+];
+
+$documentGroups = [];
+foreach (prefaDocumentFamilles() as $famille => $declaration) {
+    $documentGroups[] = $declaration + [
+        'cle' => $famille,
+        'files' => $documentsParFamille[$famille],
+        'legacy' => $documentsAnciens[$famille] ?? '',
+    ];
+}
+
+// Déposer depuis la fiche plutôt que par « Modifier » : même droit, mais la demande ne
+// repart pas en attente de validation pour un certificat arrivé après coup.
+$peutDeposer = prefaPeutDeposer($row, $canEditPrefa, $isAdmin, (int) $actor['id']);
+
+$statut = (int) $row['id_statut'];
+$estValidee = $statut === 2;
+$isRefused = $statut === 3;
+
+$oui = static fn (string $champ, string $pourcentage): string =>
+    !empty($row[$champ]) ? (string) $row[$pourcentage] . ' %' : 'Non';
+
+// Ce qu'on vient chercher en premier, et qu'on doit lire sans chercher : en grand, en haut.
+//
+// Chacun porte son explication. « Livraison préfa » ne disait pas de quelle livraison il
+// s'agissait, ni si le chiffre à côté en venait ; et la durée tombait du ciel. Le taux est
+// relu sur la demande elle-même — heures ÷ pouces — et non dans le paramétrage : celui-ci
+// a pu changer depuis, et c'est le calcul de cette demande-là qu'on explique.
+$pouces = (int) $row['pouces_total_iso'];
+$heures = (float) $row['heures_chiffrees'];
+$taux = $pouces > 0 ? $heures / $pouces : 0.0;
+
+$nombre = static fn (float $valeur): string => rtrim(rtrim(number_format($valeur, 2, ',', ' '), '0'), ',');
+
+$chiffres = [
     [
-        'title' => 'Plans BPE / ISO',
-        'files' => $attachmentsByRequest[$requestId] ?? [],
-        'action' => 'download_prefa_attachment.php',
-        'legacy' => $row['plan_bpe_iso'] ?? '',
+        'libelle' => 'Pouces ISO',
+        'valeur' => (string) $pouces,
+        'aide' => 'Total des pouces relevés sur l’ISO, saisi dans la demande. C’est lui qui donne la durée estimée.',
     ],
     [
-        'title' => 'QMOS',
-        'files' => $qmosByRequest[$requestId] ?? [],
-        'action' => 'download_qmos.php',
-        // La colonne s'appelle bien « espace QMOS » : l'espace fait partie du nom en base.
-        // Sans lui la clé n'existe pas, et l'ancienne référence disparaît sans un mot.
-        'legacy' => $row[' QMOS'] ?? '',
+        'libelle' => 'Durée estimée',
+        'valeur' => $nombre($heures / 24) . ' j',
+        'aide' => $pouces > 0
+            ? $pouces . ' pouce' . ($pouces > 1 ? 's' : '') . ' × ' . $nombre($taux) . ' h par pouce = '
+                . $nombre($heures) . ' h de fabrication, soit ' . $nombre($heures / 24)
+                . ' j à 24 h par jour. Le temps par pouce est réglé dans les paramètres.'
+            : 'Aucun pouce saisi : la durée ne peut pas être estimée.',
     ],
     [
-        'title' => 'DMOS',
-        'files' => $dmosByRequest[$requestId] ?? [],
-        'action' => 'download_dmos.php',
-        'legacy' => '',
-    ],
-    [
-        'title' => 'Commande matériel',
-        'files' => $materielByRequest[$requestId] ?? [],
-        'action' => 'download_materiel.php',
-        'legacy' => '',
-    ],
-    [
-        'title' => 'CCPU',
-        'files' => $ccpuByRequest[$requestId] ?? [],
-        'action' => 'download_ccpu.php',
-        'legacy' => '',
-        // Sous chaque certificat, les coulées que la lecture automatique y a trouvées.
-        'ccpu' => true,
+        'libelle' => 'Livraison préfa',
+        'valeur' => prefaFormatDate($row['date_livraison_prevue']),
+        'aide' => 'Date limite à laquelle la préfabrication doit être livrée. Elle est demandée par le chargé d’affaire, elle ne se calcule pas : c’est la durée estimée qui dit si elle est tenable.',
     ],
 ];
 
-$facts = [
-    'Nom de la demande' => $row['nom_affaire'] ?: 'Non renseigné',
-    'Statut' => $row['libelle'],
-    'Pouces ISO' => $row['pouces_total_iso'],
-
-    'Durée estimée (jours)' =>
-        number_format((float) $row['heures_chiffrees'] / 24, 2, ',', ' ') . ' j',
-
-    'Date limite de livraison de la préfabrication' =>
-        prefaFormatDate($row['date_livraison_prevue']),
-
-    'Matière' =>
-        $row['matiere_libelle'] ?? 'Non précisée',
-
-    'Passivation' =>
-        $row['passivation_libelle'] ?? 'Aucune',
-
-    'CND' =>
-        !empty($row['CDN'])
-            ? $row['controles_cdn'] . ' %'
-            : 'Non',
-
-    'Radiographie RT' =>
-        !empty($row['RT'])
-            ? $row['controles_rt'] . ' %'
-            : 'Non',
-
-    'Ressuage PT' =>
-        !empty($row['PT'])
-            ? $row['controles_pt'] . ' %'
-            : 'Non',
-
-    'Revêtement' =>
-        !empty($row['revetement'])
-            ? ($row['commentaire_revetement'] ?: 'Oui')
-            : 'Non',
-
-    'Création' =>
-        prefaFormatDate($row['date_creation'], true),
-
-    'Mise à jour' =>
-        prefaFormatDate($row['DateUpdate'], true),
+// Le reste, rangé par ce qu'il décrit. Seize valeurs en une grille de quatre, c'était une
+// grille à lire ; trois rubriques nommées, c'est une fiche à parcourir.
+$rubriques = [
+    'Fabrication' => [
+        'Matière' => $row['matiere_libelle'] ?? 'Non précisée',
+        'Passivation' => $row['passivation_libelle'] ?? 'Aucune',
+        'Revêtement' => !empty($row['revetement']) ? ($row['commentaire_revetement'] ?: 'Oui') : 'Non',
+    ],
+    'Contrôles' => [
+        'CND' => $oui('CDN', 'controles_cdn'),
+        'Radiographie RT' => $oui('RT', 'controles_rt'),
+        'Ressuage PT' => $oui('PT', 'controles_pt'),
+    ],
+    'Suivi' => [
+        'Création' => prefaFormatDate($row['date_creation'], true),
+        'Mise à jour' => prefaFormatDate($row['DateUpdate'], true),
+    ],
 ];
 
-// Qui s'occupe de la demande : visible dans la fiche depuis que la colonne du tableau
-// a ete retiree. Seules les demandes validees passent par l'atelier.
-if ((int) $row['id_statut'] === 2) {
+// Une demande validée a un planning d'atelier, les autres non : la rubrique ne l'annonce
+// que lorsqu'il peut exister.
+if ($estValidee) {
+    $rubriques['Suivi']['Début planifié'] = !empty($row['date_debut_planifiee']) ? prefaFormatDate($row['date_debut_planifiee']) : 'Non planifié';
+    $rubriques['Suivi']['Fin planifiée'] = !empty($row['date_fin_planifiee']) ? prefaFormatDate($row['date_fin_planifiee']) : 'Non planifiée';
 }
 
-if ($canViewAllPrefa) {
-    $facts['Demandeur'] = trim(
-        ($row['prenom'] ?? '') . ' ' .
-        ($row['name'] ?? '')
-    );
+// Qui l'a déposée, et qui a tranché : une phrase sous le titre, pas quatre cases.
+$deposant = $canViewAllPrefa ? trim(($row['prenom'] ?? '') . ' ' . ($row['name'] ?? '')) : '';
+$decideur = trim(($row['valideur_prenom'] ?? '') . ' ' . ($row['valideur_name'] ?? ''));
+$parcours = [];
+$parcours[] = ($deposant !== '' ? 'Déposée par ' . $deposant : 'Déposée')
+    . ($row['date_creation'] ? ' le ' . prefaFormatDate($row['date_creation']) : '');
+if ($decideur !== '' && in_array($statut, [2, 3], true)) {
+    $parcours[] = ($estValidee ? 'validée' : 'refusée') . ' par ' . $decideur
+        . (!empty($row['date_validation']) ? ' le ' . prefaFormatDate($row['date_validation']) : '');
 }
 
-// « Décision » restait flou : on nomme le sens de la décision, qui dépend du statut.
-// Validée et refusée alimentent les mêmes colonnes, d'où l'aiguillage.
-[$auteurLabel, $dateLabel] = match ((int) $row['id_statut']) {
-    2 => ['Validée par', 'Validée le'],
-    3 => ['Refusée par', 'Refusée le'],
-    default => ['Décision par', 'Décision du'],
-};
-
-if (!empty($row['valideur_prenom']) || !empty($row['valideur_name'])) {
-    $facts[$auteurLabel] = trim(
-        ($row['valideur_prenom'] ?? '') . ' ' .
-        ($row['valideur_name'] ?? '')
-    );
-}
-
-if (!empty($row['date_validation'])) {
-    $facts[$dateLabel] = prefaFormatDate(
-        $row['date_validation'],
-        true
-    );
-}
-
-$planningFacts = [
-    'Début planifié' =>
-        !empty($row['date_debut_planifiee'])
-            ? prefaFormatDate($row['date_debut_planifiee'])
-            : 'Non planifié',
-
-    'Fin planifiée' =>
-        !empty($row['date_fin_planifiee'])
-            ? prefaFormatDate($row['date_fin_planifiee'])
-            : 'Non planifiée',
-
-];
-
-$isRefused = (int) $row['id_statut'] === 3;
 $decisionComment = trim((string) ($row['commentaire_validation'] ?? ''));
 
 ?>
 
-<!-- En-tête -->
-<div class="prefa-detail-heading">
-    <div>
-        <h2>
-            Détails de la demande
-            <span><?= prefaEscape(prefaReferenceComplete($requestId)) ?></span>
+<!-- En-tête : ce qui identifie la demande, et où elle en est -->
+<header class="prefa-detail-heading fiche-entete">
+    <div class="fiche-identite">
+        <p class="fiche-surtitre">Demande de préfabrication</p>
+        <h2 class="fiche-titre">
+            <?= prefaEscape(prefaReference($requestId)) ?>
+            <?php if ($row['nom_affaire']): ?><span class="fiche-affaire"><?= prefaEscape($row['nom_affaire']) ?></span><?php endif; ?>
         </h2>
-
-        <p>
-            Informations techniques et documents associés
-        </p>
+        <p class="fiche-parcours"><?= prefaEscape(implode(' · ', $parcours)) ?></p>
     </div>
 
     <div class="prefa-detail-actions">
-        <?php if ((int) $row['id_statut'] === 2 && $canManageWorkshop): ?>
+        <span class="prefa-status status-<?= $statut ?>"><?= prefaEscape($row['libelle']) ?></span>
+        <?php if ($estValidee && $canManageWorkshop): ?>
             <button type="button" class="btn-goto-plans-iso" data-request-id="<?= $requestId ?>">
                 Voir les affectations ↗
             </button>
         <?php endif; ?>
         <button type="button" class="prefa-detail-close" data-close-target="prefa-detail-<?= $requestId ?>" aria-label="Fermer le volet">✕</button>
     </div>
-</div>
+</header>
 
+<div class="fiche-corps">
 
-<!-- Informations générales -->
-<dl class="prefa-facts">
+<div class="fiche-colonne fiche-colonne-infos">
 
-    <?php foreach ($facts as $label => $value): ?>
-
+<!-- Les trois chiffres -->
+<dl class="fiche-chiffres">
+    <?php foreach ($chiffres as $chiffre): ?>
         <div>
-            <dt><?= prefaEscape($label) ?></dt>
-            <dd><?= prefaEscape($value) ?></dd>
+            <dt>
+                <?= prefaEscape($chiffre['libelle']) ?>
+                <span class="fiche-info" tabindex="0" role="img"
+                      title="<?= prefaEscape($chiffre['aide']) ?>"
+                      aria-label="<?= prefaEscape($chiffre['libelle'] . ' : ' . $chiffre['aide']) ?>">i</span>
+            </dt>
+            <dd><?= prefaEscape($chiffre['valeur']) ?></dd>
         </div>
-
     <?php endforeach; ?>
-
 </dl>
 
+<!-- Les rubriques -->
+<?php foreach ($rubriques as $titre => $faits): ?>
+    <section class="fiche-rubrique">
+        <h3 class="fiche-eyebrow"><?= prefaEscape($titre) ?></h3>
+        <dl class="fiche-faits">
+            <?php foreach ($faits as $libelle => $valeur): ?>
+                <div>
+                    <dt><?= prefaEscape($libelle) ?></dt>
+                    <dd<?= in_array($valeur, ['Non', 'Aucune', 'Non précisée', 'Non planifié', 'Non planifiée', 'Non renseignée'], true) ? ' class="est-vide"' : '' ?>><?= prefaEscape($valeur) ?></dd>
+                </div>
+            <?php endforeach; ?>
+        </dl>
+    </section>
+<?php endforeach; ?>
+
+</div><!-- /colonne infos -->
+
+<div class="fiche-colonne fiche-colonne-documents">
 
 <!-- Documents -->
-<div class="prefa-document-groups">
+<section class="fiche-rubrique fiche-documents">
+    <h3 class="fiche-eyebrow">Documents</h3>
 
-    <?php foreach ($documentGroups as $group): ?>
+    <?php foreach ($documentGroups as $group):
+        $famille = $group['cle'];
+        // Une famille chargée s'ouvre repliée : cinq certificats dépliés repoussent les
+        // quatre familles suivantes hors de l'écran, et c'est précisément ce qu'on vient
+        // d'éviter en passant la fiche en pleine page.
+        $ouverte = count($group['files']) <= FICHE_DOCUMENTS_DEPLIES;
+    ?>
+        <?php // La classe prefa-document-group reste : c'est elle que le dépôt cherche pour
+              // savoir dans quelle liste ranger ce qui vient d'arriver. ?>
+        <details class="prefa-document-group fiche-famille<?= $famille === 'ccpu' ? ' prefa-document-group-ccpu' : '' ?>"<?= $ouverte ? ' open' : '' ?>>
 
-        <section class="prefa-document-group<?= !empty($group['ccpu']) ? ' prefa-document-group-ccpu' : '' ?>">
+            <summary class="fiche-famille-titre">
+                <span class="fiche-famille-nom"><?= prefaEscape($group['titre']) ?></span>
+                <span class="prefa-document-compte"><?= count($group['files']) ?></span>
+            </summary>
 
-            <h3>
-                <?= prefaEscape($group['title']) ?>
-                <span><?= count($group['files']) ?></span>
-            </h3>
-
-
-            <?php if (!empty($group['files'])): ?>
-
-                <ul class="prefa-document-list">
-
-                    <?php foreach ($group['files'] as $document): ?>
-
-                        <?php
-                        $documentName =
-                            $document['name']
-                            ?? $document['nom']
-                            ?? 'Document';
-
-                        $documentKey =
-                            $document['key']
-                            ?? $document['id'];
-
-                        $isPdf =
-                            strtolower(
-                                pathinfo(
-                                    $documentName,
-                                    PATHINFO_EXTENSION
-                                )
-                            ) === 'pdf';
-
-                        // C'est la référence qui voyage dans l'adresse, pas l'identifiant
-                        // technique : elle s'affiche au survol du lien, dans l'historique
-                        // de téléchargement et dans l'onglet d'aperçu d'un PDF.
-                        $documentUrl =
-                            'actions/'
-                            . $group['action']
-                            . '?ref='
-                            . rawurlencode(prefaReference($requestId))
-                            . '&file='
-                            . rawurlencode((string) $documentKey);
-                        ?>
-
-                        <li>
-
-                            <a
-                                class="prefa-document-link<?= $isPdf ? ' prefa-pdf-link' : '' ?>"
-                                href="<?= prefaEscape($documentUrl) ?>"
-                                data-name="<?= prefaEscape($documentName) ?>"
-                                <?= $isPdf ? 'aria-haspopup="dialog"' : '' ?>
-                            >
-
-                                <span
-                                    class="prefa-document-type"
-                                    aria-hidden="true"
-                                >
-                                    <?= $isPdf ? 'PDF' : 'DOC' ?>
-                                </span>
-
-                                <span class="prefa-document-text">
-
-                                    <strong>
-                                        <?= prefaEscape($documentName) ?>
-                                    </strong>
-
-                                    <small>
-                                        <?= $isPdf
-                                            ? 'Ouvrir l’aperçu'
-                                            : 'Télécharger le document'
-                                        ?>
-                                    </small>
-
-                                </span>
-
-                                <span
-                                    class="prefa-document-arrow"
-                                    aria-hidden="true"
-                                >
-                                    ↗
-                                </span>
-
-                            </a>
-
-                            <?php if (!empty($group['ccpu'])) echo ccpuRendu($document, Session::jeton()); ?>
-
-                        </li>
-
-                    <?php endforeach; ?>
-
-                </ul>
-
-            <?php else: ?>
-
-                <p class="prefa-no-document">
-                    <?= prefaEscape(
-                        $group['legacy'] ?: 'Aucun document'
-                    ) ?>
-                </p>
-
+            <?php if ($peutDeposer): $champ = 'depot-' . $requestId . '-' . $famille; ?>
+                <div class="prefa-depot-document">
+                    <span class="prefa-depot-mot" role="status" aria-live="polite"></span>
+                    <input type="file" id="<?= prefaEscape($champ) ?>" class="prefa-depot-champ"
+                           accept="application/pdf,.pdf" multiple
+                           data-demande="<?= $requestId ?>"
+                           data-type="<?= prefaEscape($famille) ?>"
+                           data-csrf="<?= prefaEscape(Session::jeton()) ?>">
+                    <label class="prefa-depot-bouton" for="<?= prefaEscape($champ) ?>">
+                        <span aria-hidden="true">+</span> Déposer
+                    </label>
+                </div>
             <?php endif; ?>
 
-        </section>
+            <ul class="prefa-document-list"<?= $group['files'] ? '' : ' hidden' ?>>
+                <?php foreach ($group['files'] as $document) {
+                    echo prefaDocumentLigne($requestId, $group, $document, $canViewAllPrefa);
+                } ?>
+            </ul>
 
+            <p class="prefa-no-document"<?= $group['files'] ? ' hidden' : '' ?>>
+                <?= prefaEscape($group['legacy'] ?: 'Aucun document') ?>
+            </p>
+
+        </details>
     <?php endforeach; ?>
 
-</div>
+    <?php
+    // Le matériel reçu, à la suite des documents : il se relève sur le bon du fournisseur,
+    // qui est déposé juste au-dessus. Réservé à ceux qui tiennent les PV, puisque c'est
+    // là que ces lignes sont saisies ; le chargé d'affaire suit ses réceptions sur sa
+    // page de PV.
+    if ($canFillPv && !empty($commandesByRequest[$requestId])) {
+        $commandes = $commandesByRequest[$requestId];
+        require __DIR__ . '/materiel_commande.php';
+    }
+    ?>
+</section>
 
+
+</div><!-- /colonne documents -->
+
+</div><!-- /corps -->
 
 <!-- Décision -->
 <?php if ($decisionComment !== ''): ?>

@@ -182,6 +182,33 @@ body[data-theme="light"],
     color: #475569 !important;
 }
 
+/* Dans la fiche, un document est une ligne, pas une carte : la règle générale ci-dessous
+   lui donne un fond et un cadre, ce qui refaisait cinq boîtes dans un volet qui n'en veut
+   plus. Le survol suffit à montrer qu'''on peut cliquer, comme en thème sombre. */
+[data-theme="light"] .fiche-famille .prefa-document-link {
+    background: transparent !important;
+    border-color: transparent !important;
+}
+
+[data-theme="light"] .fiche-famille .prefa-document-link:hover {
+    background: #f1f5f9 !important;
+    border-color: transparent !important;
+}
+
+/* La fiche d'une demande range ses informations sous des intitulés sourds : ce sont des
+   étiquettes, pas des titres, et la règle ci-dessus les noircissait tous. */
+[data-theme="light"] .fiche-eyebrow,
+[data-theme="light"] .fiche-surtitre,
+[data-theme="light"] .fiche-parcours,
+[data-theme="light"] .fiche-chiffres dt,
+[data-theme="light"] .fiche-faits dt {
+    color: var(--text-muted) !important;
+}
+
+[data-theme="light"] .fiche-faits dd.est-vide {
+    color: var(--text-muted) !important;
+}
+
 /* ===== PLANS ISO & ACCORDÉONS ===== */
 
 [data-theme="light"] .plans-iso-card {
@@ -347,7 +374,8 @@ body[data-theme="light"],
 [data-theme="light"] .affaires-table select,
 [data-theme="light"] .commandes-editable input:not([type="checkbox"]):not([type="radio"]),
 [data-theme="light"] .commandes-editable select,
-[data-theme="light"] .commande-articles-table input:not([type="checkbox"]):not([type="radio"]) {
+[data-theme="light"] .commande-articles-table input:not([type="checkbox"]):not([type="radio"]),
+[data-theme="light"] .materiel-edition input:not([type="checkbox"]):not([type="radio"]) {
     border-color: transparent !important;
     background-color: transparent !important;
 }
@@ -361,7 +389,9 @@ body[data-theme="light"],
 [data-theme="light"] .commandes-editable tbody tr:focus-within input:not([type="checkbox"]),
 [data-theme="light"] .commandes-editable tbody tr:focus-within select,
 [data-theme="light"] .commande-articles-table tbody tr:hover input:not([type="checkbox"]),
-[data-theme="light"] .commande-articles-table tbody tr:focus-within input:not([type="checkbox"]) {
+[data-theme="light"] .commande-articles-table tbody tr:focus-within input:not([type="checkbox"]),
+[data-theme="light"] .materiel-edition tbody tr:hover input:not([type="checkbox"]),
+[data-theme="light"] .materiel-edition tbody tr:focus-within input:not([type="checkbox"]) {
     border-color: #cbd5e1 !important;
     background-color: #ffffff !important;
 }
@@ -370,7 +400,8 @@ body[data-theme="light"],
 [data-theme="light"] .affaires-table tbody tr select:focus,
 [data-theme="light"] .commandes-editable tbody tr input:not([type="checkbox"]):focus,
 [data-theme="light"] .commandes-editable tbody tr select:focus,
-[data-theme="light"] .commande-articles-table tbody tr input:not([type="checkbox"]):focus {
+[data-theme="light"] .commande-articles-table tbody tr input:not([type="checkbox"]):focus,
+[data-theme="light"] .materiel-edition tbody tr input:not([type="checkbox"]):focus {
     border-color: #2563eb !important;
 }
 

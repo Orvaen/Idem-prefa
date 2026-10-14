@@ -1,0 +1,356 @@
+/* ==========================================================================
+   COMMANDE MATÉRIEL
+   ==========================================================================
+
+   L'écran des bons de commande : le tableau de ce qui est déposé, et la fenêtre où
+   l'encadrement corrige ce que la lecture a cru comprendre.
+
+   Le tableau reprend la grammaire des autres listes — .prefa-table porte déjà les
+   hauteurs de ligne, les filets et l'en-tête. Ne sont écrits ici que les endroits où
+   cet écran dit quelque chose de plus. */
+
+.materiel-liste .materiel-cellule-articles,
+.materiel-liste .materiel-cellule-livraison {
+    font-variant-numeric: tabular-nums;
+}
+
+/* « 04/07/2026 puis 08/07/2026 » tient sur une ligne : coupée en deux, la seconde
+   échéance se lirait comme une autre commande. */
+.materiel-liste .materiel-cellule-livraison {
+    white-space: nowrap;
+}
+
+.materiel-liste .materiel-fichier {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 260px;
+    padding: 4px 6px;
+    border-radius: var(--r-sm);
+    color: var(--text);
+    text-decoration: none;
+}
+
+.materiel-liste .materiel-fichier:hover {
+    background: var(--hover);
+}
+
+.materiel-liste .materiel-fichier strong {
+    display: block;
+    overflow: hidden;
+    font-weight: 400;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* La pastille d'état, le numéro et la date sont habillés par prefa-list.css, que tous les
+   rôles reçoivent : la fiche d'une demande les montre aussi. */
+
+.materiel-aucun-resultat {
+    margin: 0;
+}
+
+/* ===== LA FENÊTRE D'ÉDITION ===== */
+
+/* Quarante lignes de quatre champs : la fenêtre prend ce qu'il faut de l'écran, et c'est
+   le tableau qui défile, pas elle — l'en-tête et les boutons restent sous les yeux. */
+.materiel-dialog {
+    width: min(960px, 94vw);
+    max-width: none;
+    max-height: 90vh;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+}
+
+.materiel-dialog::backdrop {
+    background: #142235b3;
+}
+
+.materiel-dialog[open] {
+    display: flex;
+}
+
+.materiel-dialog form {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    max-height: 90vh;
+    width: 100%;
+}
+
+.materiel-dialog-entete {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 20px 14px;
+}
+
+.materiel-dialog-entete h2 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.materiel-dialog-sous-titre {
+    margin: 4px 0 0;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+/* L'état et la fermeture au même coin : ce sont les deux choses qu'on cherche en haut à
+   droite d'une fenêtre. */
+.materiel-dialog-coin {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.materiel-dialog-etat {
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.materiel-dialog .modal-close {
+    display: grid;
+    place-items: center;
+    width: var(--ctrl-sm);
+    height: var(--ctrl-sm);
+    border: 0;
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.materiel-dialog .modal-close:hover {
+    background: var(--hover);
+    color: var(--text);
+}
+
+.materiel-dialog .modal-close .icon {
+    width: 16px;
+    height: 16px;
+}
+
+/* Ce que vaut ce qui est affiché : une lecture par reconnaissance d'image n'est pas une
+   saisie. La phrase compte, le bandeau qui la portait non — elle se range sous le titre,
+   avec le reste de ce qui situe le bon. */
+.materiel-dialog-note {
+    margin: 6px 0 0;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+
+.materiel-dialog-corps {
+    min-height: 0;
+    padding: 0 20px 4px;
+    overflow-y: auto;
+}
+
+.materiel-dialog-scroll {
+    overflow-x: auto;
+}
+
+.materiel-edition {
+    width: 100%;
+    min-width: 700px;
+    table-layout: fixed;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+/* L'en-tête tient en haut pendant qu'on fait défiler quarante lignes. Son fond suffit à
+   le détacher : c'est le seul endroit de la fenêtre où un filet serait utile, et il ne
+   l'est plus dès que le fond est opaque. */
+.materiel-edition th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    height: var(--ligne-th);
+    padding: 8px 6px;
+    background: var(--surface);
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 500;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.materiel-edition td {
+    height: 38px;
+    padding: 0 2px;
+    vertical-align: middle;
+}
+
+/* La ligne survolée se détache seule : rien à tracer tant qu'on ne la regarde pas. */
+.materiel-edition tbody tr:hover > td,
+.materiel-edition tbody tr:focus-within > td {
+    background: var(--hover);
+}
+
+.materiel-edition tbody tr > td:first-child {
+    border-radius: var(--r-sm) 0 0 var(--r-sm);
+}
+
+.materiel-edition tbody tr > td:last-child {
+    border-radius: 0 var(--r-sm) var(--r-sm) 0;
+}
+
+/* « BPT316PN10DN300 » tient dans ses 160 px : coupée, une référence perd son diamètre,
+   qui est son dernier caractère. La livraison a la sienne : un champ de date porte son
+   bouton de calendrier. */
+.materiel-edition th:nth-child(1) { width: 160px; }
+.materiel-edition th:nth-child(2) { width: auto; }
+.materiel-edition th:nth-child(3) { width: 142px; }
+.materiel-edition th:nth-child(4) { width: 70px; }
+.materiel-edition th:nth-child(5) { width: 96px; }
+.materiel-edition th:nth-child(6) { width: 36px; }
+
+.materiel-champ-date {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Le bouton de calendrier suit la même règle que les cadres : il n'apparaît que sur la
+   ligne qu'on regarde. Seize icônes en permanence, c'''est une colonne de pictogrammes
+   devant une colonne de dates. */
+.materiel-champ-date::-webkit-calendar-picker-indicator {
+    opacity: 0;
+    cursor: pointer;
+}
+
+.materiel-edition tbody tr:hover .materiel-champ-date::-webkit-calendar-picker-indicator,
+.materiel-edition tbody tr:focus-within .materiel-champ-date::-webkit-calendar-picker-indicator {
+    opacity: .55;
+}
+
+/* Les champs sont du texte tant qu'on ne les touche pas : quarante lignes encadrées
+   feraient une grille de boîtes, et c'est la liste qu'on doit lire. */
+.materiel-edition input {
+    width: 100%;
+    height: var(--ctrl-xs);
+    padding: 0 6px;
+    border: 1px solid transparent;
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+}
+
+.materiel-edition tbody tr:hover input,
+.materiel-edition tbody tr:focus-within input {
+    border-color: var(--border);
+    background: var(--frame);
+}
+
+.materiel-edition input:focus {
+    border-color: var(--accent);
+    background: var(--frame);
+    outline: none;
+}
+
+.materiel-champ-nombre {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.materiel-retirer {
+    display: grid;
+    place-items: center;
+    width: var(--ctrl-xs);
+    height: var(--ctrl-xs);
+    border: 0;
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    opacity: 0;
+}
+
+.materiel-edition-ligne:hover .materiel-retirer,
+.materiel-edition-ligne:focus-within .materiel-retirer,
+.materiel-retirer:focus-visible {
+    opacity: 1;
+}
+
+.materiel-retirer:hover {
+    background: var(--hover);
+    color: var(--danger-texte);
+}
+
+.materiel-retirer .icon {
+    width: 14px;
+    height: 14px;
+}
+
+.materiel-edition-vide {
+    margin: 16px 0;
+    color: var(--text-muted);
+    font-size: 13px;
+    text-align: center;
+}
+
+.materiel-dialog-pied {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 14px 20px 18px;
+}
+
+.materiel-dialog-outils,
+.materiel-dialog-boutons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.materiel-dialog-outils button {
+    height: var(--ctrl-sm);
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.materiel-dialog-outils button:hover:not(:disabled) {
+    background: var(--hover);
+}
+
+.materiel-dialog-outils button:disabled {
+    opacity: .55;
+    cursor: progress;
+}
+
+.materiel-message {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+/* « Annuler » n'est pas l'action de la fenêtre : il ne porte pas la couleur d'accent que
+   .prefa-form donne à tous ses boutons. */
+.materiel-dialog-boutons .materiel-fermer {
+    height: var(--ctrl-sm);
+    padding: 0 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.materiel-dialog-boutons .materiel-fermer:hover {
+    background: var(--hover);
+}

@@ -10,6 +10,31 @@
     margin: 0 auto;
 }
 
+/* La sortie, au-dessus du titre : c'''est le premier endroit où l'''œil la cherche, et elle
+   reste atteignable sans redescendre au pied du formulaire. */
+.prefa-retour {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: var(--ctrl-sm);
+    margin-bottom: 14px;
+    padding: 0 12px 0 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background .12s ease, color .12s ease;
+}
+
+.prefa-retour:hover,
+.prefa-retour:focus-visible {
+    background: var(--hover);
+    color: var(--text);
+}
+
 .prefa-heading {
     margin-bottom: 28px;
 }
@@ -216,14 +241,29 @@
     cursor: not-allowed;
 }
 
+/* « Refuser » porte « bouton-discret » : c'''est le marqueur prévu pour sortir de la forme
+   de référence ci-dessus. Sans lui, son sélecteur — quatre classes — écrasait cette règle,
+   et les deux décisions sortaient identiques, en bleu plein. Elles ne le sont pas. */
 .prefa-form button.reject {
-    background: var(--surface);
-    color: #f6a4a4;
-    border-color: #694047;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: var(--ctrl-sm);
+    padding: 0 12px;
+    border: 1px solid var(--danger-bord);
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--danger-texte);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background .12s ease, color .12s ease, border-color .12s ease;
 }
 
 .prefa-form button.reject:hover:not(:disabled) {
-    background: #382326;
+    border-color: var(--danger-fond);
+    background: var(--danger-fond);
+    color: #ffffff;
 }
 
 .prefa-list-heading {

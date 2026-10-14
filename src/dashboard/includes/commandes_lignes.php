@@ -27,6 +27,9 @@ const COMMANDE_LIGNES_PAGES_MAX = 12;
 /** Les unités qu'on rencontre sur un bon de tuyauterie. */
 const COMMANDE_LIGNES_UNITES = ['PCE', 'ML', 'M', 'KG', 'U', 'UN', 'L', 'M2', 'M3', 'ENS'];
 
+/** Rangées lues sous « COMMANDE » pour y trouver le numéro : au-delà, c'est l'adresse. */
+const COMMANDE_LIGNES_ENTETE_RANGEES = 2;
+
 /**
  * Ce qu'on tolère entre la quantité lue et celle que l'arithmétique du bon donne.
  *
@@ -36,15 +39,16 @@ const COMMANDE_LIGNES_UNITES = ['PCE', 'ML', 'M', 'KG', 'U', 'UN', 'L', 'M2', 'M
 const COMMANDE_LIGNES_ECART = 0.01;
 
 /**
- * Les articles du bon, page après page.
+ * Les articles du bon, page après page, et ce que son en-tête annonce.
  *
- * @return array{lignes: list<array<string, mixed>>, lecture: string, pages: int}
+ * @return array{lignes: list<array<string, mixed>>, lecture: string, pages: int,
+ *               numero: ?string, date: ?string}
  *         lecture vaut « texte », « ocr » ou « mixte » ; elle dit au chef d'atelier à
  *         quel point il doit relire.
  */
 function commandeLignesLire(string $pdf): array
 {
-    $vide = ['lignes' => [], 'lecture' => '', 'pages' => 0];
+    $vide = ['lignes' => [], 'lecture' => '', 'pages' => 0, 'numero' => null, 'date' => null];
     if (!is_file($pdf) || ccpuOutilsManquants()) return $vide;
 
     $pages = commandeLignesNombreDePages($pdf);
@@ -56,12 +60,16 @@ function commandeLignesLire(string $pdf): array
 
     $lignes = [];
     $lectures = [];
+    $entete = ['numero' => null, 'date' => null];
     try {
         for ($page = 1; $page <= $pages; $page++) {
             $lecture = null;
             $mots = ccpuMotsDePage($pdf, $page, $tmp, $lecture);
             if (!$mots) continue;
             $lectures[$lecture ?? 'ocr'] = true;
+            // L'en-tête est en première page, mais un bon scanné commence parfois par sa
+            // page de garde : on le cherche tant qu'on ne l'a pas.
+            if ($entete['numero'] === null) $entete = commandeLignesEnTete($mots);
             foreach (commandeLignesDeLaPage($mots) as $ligne) {
                 $ligne['page'] = $page;
                 $lignes[] = $ligne;
@@ -75,7 +83,65 @@ function commandeLignesLire(string $pdf): array
         'lignes' => array_values($lignes),
         'lecture' => count($lectures) > 1 ? 'mixte' : (string) array_key_first($lectures),
         'pages' => $pages,
+        'numero' => $entete['numero'],
+        'date' => $entete['date'],
     ];
+}
+
+/**
+ * Le numéro et la date que l'en-tête du bon annonce : « COMMANDE 957-MAT-I-03-28588
+ * Du 24/06/2026 ».
+ *
+ * C'est le seul endroit où l'on se cale sur un mot imprimé, et c'est tenable parce que
+ * « COMMANDE » est en capitales et en gras, là où « Qté » sort en « Oté ». Le titre et
+ * ce qu'il annonce ne sont pas sur la même rangée pour autant — sur un scan IDEM, le mot
+ * est seul sur sa ligne et le numéro arrive sous lui, précédé des restes du logo — d'où
+ * les quelques rangées qu'on accepte de lire à la suite.
+ *
+ * Rien n'en dépend : sans numéro reconnu, le bon se nomme par son fichier, et ses
+ * articles sont lus de la même façon.
+ *
+ * @param list<array<string, mixed>> $mots
+ * @return array{numero: ?string, date: ?string}
+ */
+function commandeLignesEnTete(array $mots): array
+{
+    $rangees = [];
+    foreach ($mots as $mot) $rangees[$mot['ligne']][] = $mot;
+    $rangees = array_values($rangees);
+
+    foreach ($rangees as $rang => $rangee) {
+        usort($rangee, static fn (array $a, array $b): int => $a['x'] <=> $b['x']);
+        $textes = array_map(static fn (array $m): string => (string) $m['texte'], $rangee);
+
+        $titre = null;
+        foreach ($textes as $position => $texte) {
+            if (strcasecmp($texte, 'COMMANDE') === 0) { $titre = $position; break; }
+        }
+        if ($titre === null) continue;
+
+        // Ce qui suit le titre sur sa rangée, puis les deux suivantes : au-delà on serait
+        // dans l'adresse du fournisseur, qui porte elle aussi des nombres.
+        $suite = array_slice($textes, $titre + 1);
+        foreach (array_slice($rangees, $rang + 1, COMMANDE_LIGNES_ENTETE_RANGEES) as $voisine) {
+            usort($voisine, static fn (array $a, array $b): int => $a['x'] <=> $b['x']);
+            foreach ($voisine as $mot) $suite[] = (string) $mot['texte'];
+        }
+
+        $numero = null;
+        $date = null;
+        foreach ($suite as $texte) {
+            $lue = commandeLignesDate($texte);
+            if ($lue !== null) { $date = $lue; break; }
+            // Un numéro de commande porte des chiffres et des tirets. L'exiger écarte les
+            // débris du logo — « D> », « RA » — et les mots de l'adresse qui suivent.
+            if ($numero === null && preg_match('#^(?=.*[0-9])(?=.*-)[0-9A-Za-z][0-9A-Za-z./-]{6,39}$#', $texte)) {
+                $numero = strtoupper($texte);
+            }
+        }
+        if ($numero !== null) return ['numero' => $numero, 'date' => $date];
+    }
+    return ['numero' => null, 'date' => null];
 }
 
 /** Le nombre de pages du PDF, ou 0 s'il est illisible. */

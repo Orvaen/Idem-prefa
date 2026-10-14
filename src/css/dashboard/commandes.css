@@ -486,3 +486,71 @@
     color: var(--text-muted);
     font-size: 12px;
 }
+
+/* ==========================================================================
+   LE MATÉRIEL COMMANDÉ, DANS LA FICHE D'UNE DEMANDE
+   ==========================================================================
+
+   Les articles sont relevés dans le PV « Réception matériel », par le chef d'atelier.
+   Le chargé de production, lui, travaille dans la fiche de la demande : il y retrouve
+   ce qui a été commandé, en lecture, sous les documents d'où ça sort. */
+
+/* La fiche range ses documents sur trois colonnes ; le matériel prend toute la largeur :
+   une désignation d'article demande ses 230 px, pas un tiers de volet. */
+.prefa-materiel {
+    grid-column: 1 / -1;
+}
+
+.prefa-materiel-corps {
+    padding: 2px 12px 12px;
+}
+
+/* Un filet entre deux bons : sans lui, les articles du second se liraient comme la suite
+   du premier, et ils ne viennent pas du même fournisseur. */
+.prefa-materiel-bon + .prefa-materiel-bon {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+}
+
+.prefa-materiel-bon h4 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 10px 0 6px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.prefa-materiel-fournisseur {
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.prefa-materiel-vide {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+/* Cinq colonnes au lieu de six : il n'y a rien à retirer ici, donc pas de colonne pour le
+   bouton. Les largeurs se reprennent une à une, sinon celle du tableau de saisie laisse
+   « Reçu » sous une colonne qui n'existe pas. La désignation prend ce qui reste. */
+.commande-articles-lecture th:nth-child(1) { width: 120px; }
+.commande-articles-lecture th:nth-child(2) { width: auto; }
+.commande-articles-lecture th:nth-child(3) { width: 56px; }
+.commande-articles-lecture th:nth-child(4) { width: 72px; }
+.commande-articles-lecture th:nth-child(5) { width: 72px; }
+
+/* Une désignation de bon fait parfois quatre-vingts caractères. Coupée, elle garde sa
+   ligne ; en entier, elle se lit au survol — le title est posé sur la cellule. */
+.commande-articles-lecture td {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.commande-articles-lecture .est-vide {
+    color: var(--text-muted);
+}

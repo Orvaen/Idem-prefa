@@ -24,22 +24,65 @@ function commandeEtats(): array
  */
 function commandesDeLaDemande(PDO $db, int $idDemande): array
 {
+    return commandesParDemandes($db, [$idDemande])[$idDemande] ?? [];
+}
+
+/**
+ * Les commandes de plusieurs demandes, rangées par demande.
+ *
+ * La fiche d'une demande est rendue sous chacune des lignes de la liste, repliée : lire
+ * les commandes demande par demande, ce serait cinquante allers-retours pour une page qui
+ * n'en montre aucune tant qu'on n'a rien déplié.
+ *
+ * @param list<int> $idsDemandes
+ * @return array<int, list<array<string, mixed>>>
+ */
+function commandesParDemandes(PDO $db, array $idsDemandes): array
+{
+    $idsDemandes = array_values(array_unique(array_map('intval', $idsDemandes)));
+    if (!$idsDemandes) return [];
+
+    // Marqueurs numérotés, comme pour les articles : l'émulation des requêtes préparées
+    // est coupée, et un marqueur ne se lie qu'une fois.
+    $marqueurs = [];
+    $parametres = [];
+    foreach ($idsDemandes as $rang => $id) {
+        $marqueurs[] = ':d' . $rang;
+        $parametres['d' . $rang] = $id;
+    }
+
     $stmt = $db->prepare('SELECT b.*, TRIM(CONCAT(u.prenom, \' \', u.name)) AS receptionnaire
         FROM bon_livraison b
         LEFT JOIN Utilisateur u ON u.id = b.receptionne_par
-        WHERE b.id_demande = ?
-        ORDER BY COALESCE(b.date_bl, \'9999-12-31\'), b.id');
-    $stmt->execute([$idDemande]);
+        WHERE b.id_demande IN (' . implode(', ', $marqueurs) . ')
+        ORDER BY b.id_demande, COALESCE(b.date_bl, \'9999-12-31\'), b.id');
+    $stmt->execute($parametres);
     $commandes = $stmt->fetchAll(PDO::FETCH_ASSOC);
     if (!$commandes) return [];
 
     // Les articles en une seule requête : un bon en porte quarante, et interroger la base
     // par commande ferait quarante allers-retours pour afficher un volet.
     $articles = commandesArticles($db, array_map(static fn (array $c): int => (int) $c['id'], $commandes));
-    foreach ($commandes as &$commande) {
+
+    $parDemande = [];
+    foreach ($commandes as $commande) {
         $commande['articles'] = $articles[(int) $commande['id']] ?? [];
+        $parDemande[(int) $commande['id_demande']][] = $commande;
     }
-    return $commandes;
+    return $parDemande;
+}
+
+/**
+ * Une quantité telle qu'on la lit sur un bon.
+ *
+ * La base rend « 4.000 » pour quatre brides : trois décimales sur chacune des quarante
+ * lignes, c'est du bruit qui cache les quantités qui en ont vraiment, comme 2,5 m de tube.
+ * Même ménage que le tableau de saisie, qui le fait en JavaScript.
+ */
+function commandeQuantite($valeur): string
+{
+    if ($valeur === null || $valeur === '') return '—';
+    return rtrim(rtrim(number_format((float) $valeur, 3, ',', ' '), '0'), ',');
 }
 
 /**

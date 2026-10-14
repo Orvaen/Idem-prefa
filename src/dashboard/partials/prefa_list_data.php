@@ -4,6 +4,9 @@ require_once __DIR__ . '/../includes/prefa_hours.php';
 require_once __DIR__ . '/../includes/ccpu_demande.php';
 require_once __DIR__ . '/../includes/prefa_workshop.php';
 require_once __DIR__ . '/../includes/prefa_visibilite.php';
+require_once __DIR__ . '/../includes/commandes.php';
+require_once __DIR__ . '/../includes/materiel_bon.php';
+require_once __DIR__ . '/../includes/prefa_documents.php';
 $workshopUsers = $canManageWorkshop ? prefaWorkshopPersonnel($db) : [];
 
 $q = trim((string) ($_GET['q'] ?? ''));
@@ -123,6 +126,7 @@ $qmosByRequest = [];
 $dmosByRequest = [];
 $materielByRequest = [];
 $ccpuByRequest = [];
+$commandesByRequest = [];
 if ($requests) {
     $requestIds = array_column($requests, 'id');
     $placeholders = implode(',', array_fill(0, count($requestIds), '?'));
@@ -143,15 +147,13 @@ if ($requests) {
         $dmosByRequest[$document['id_demande']][] = $document;
     }
 
-    $materielQuery = $db->prepare(
-        'SELECT id, id_demande, nom FROM demande_materiel_documents WHERE id_demande IN (' . $placeholders . ') ORDER BY id'
-    );
-    $materielQuery->execute($requestIds);
-    foreach ($materielQuery->fetchAll() as $document) {
-        $materielByRequest[$document['id_demande']][] = $document;
-    }
+    $materielByRequest = materielParDemandes($db, $requestIds);
 
     $ccpuByRequest = ccpuParDemandes($db, $requestIds);
+
+    // Le matériel commandé ne s'affiche que dans la fiche de ceux qui tiennent les PV :
+    // inutile d'aller le chercher pour les autres.
+    if ($canFillPv) $commandesByRequest = commandesParDemandes($db, $requestIds);
 }
 
 $urgentPending = $canViewAllPrefa

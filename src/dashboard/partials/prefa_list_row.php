@@ -46,15 +46,20 @@ $ownerName = trim($row['prenom'] . ' ' . $row['name']);
                         <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
                         <input type="hidden" name="id" value="<?= $requestId ?>">
 
-                        <div class="form-group">
-                            <label for="comment-<?= $requestId ?>">Commentaire (obligatoire en cas de refus)</label>
-                            <textarea id="comment-<?= $requestId ?>" name="commentaire" maxlength="1000"></textarea>
+                        <div class="prefa-review-barre">
+                            <div class="prefa-review-motif">
+                                <label for="comment-<?= $requestId ?>">Commentaire <span>— obligatoire pour un refus</span></label>
+                                <textarea id="comment-<?= $requestId ?>" name="commentaire" maxlength="1000" rows="1"
+                                          placeholder="Motif, réserve, consigne pour l’atelier…"></textarea>
+                            </div>
+                            <div class="prefa-review-actions">
+                                <p class="prefa-message" role="status" aria-live="polite"></p>
+                                <div class="prefa-buttons">
+                                    <button type="submit" value="3" class="reject bouton-discret">Refuser</button>
+                                    <button type="submit" value="2">Valider</button>
+                                </div>
+                            </div>
                         </div>
-                        <div class="prefa-buttons">
-                            <button type="submit" value="2">Valider</button>
-                            <button type="submit" value="3" class="reject">Refuser</button>
-                        </div>
-                        <p class="prefa-message" role="status" aria-live="polite"></p>
                     </form>
                 <?php endif; ?>
             </div>

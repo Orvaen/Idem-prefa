@@ -37,6 +37,19 @@ CREATE TABLE `Utilisateur` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `affaire` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `nom` varchar(255) NOT NULL,
+  `id_charge_affaire` int DEFAULT NULL COMMENT 'Le chargé d''affaire, rôle 5',
+  `date_creation` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `affaire_nom` (`nom`),
+  KEY `fk_affaire_charge` (`id_charge_affaire`),
+  CONSTRAINT `fk_affaire_charge` FOREIGN KEY (`id_charge_affaire`) REFERENCES `Utilisateur` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `affectation_atelier` (
   `id` int NOT NULL AUTO_INCREMENT,
   `id_element` int NOT NULL,
@@ -83,7 +96,9 @@ CREATE TABLE `bon_livraison` (
   `id_demande` int NOT NULL,
   `numero` varchar(40) NOT NULL,
   `fournisseur` varchar(120) NOT NULL,
-  `date_bl` date NOT NULL,
+  `date_bl` date DEFAULT NULL,
+  `date_livraison_2` date DEFAULT NULL COMMENT 'seconde échéance quand la commande arrive en deux fois',
+  `lieu_livraison` varchar(255) DEFAULT NULL COMMENT 'où la marchandise arrive, repris de l''adresse de livraison du bon',
   `statut` enum('attendu','partielle','complete','refusee') NOT NULL DEFAULT 'attendu',
   `commentaire` varchar(1000) DEFAULT NULL,
   `receptionne_par` int DEFAULT NULL,
@@ -215,9 +230,37 @@ CREATE TABLE `demande_materiel_documents` (
   `nom` varchar(255) NOT NULL,
   `contenu` mediumblob NOT NULL,
   `sha256` binary(32) NOT NULL,
+  `lecture` varchar(10) DEFAULT NULL,
+  `erreur` varchar(255) DEFAULT NULL,
+  `date_lecture` datetime DEFAULT NULL,
+  `numero_commande` varchar(40) DEFAULT NULL COMMENT 'numéro lu dans l''en-tête du bon',
+  `date_commande` date DEFAULT NULL,
+  `verifie_par` int DEFAULT NULL,
+  `date_verification` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `idx_materiel_documents_demande` (`id_demande`),
-  CONSTRAINT `fk_materiel_documents_demande` FOREIGN KEY (`id_demande`) REFERENCES `demande_prefabrication` (`id`) ON DELETE CASCADE
+  KEY `fk_materiel_documents_verificateur` (`verifie_par`),
+  CONSTRAINT `fk_materiel_documents_demande` FOREIGN KEY (`id_demande`) REFERENCES `demande_prefabrication` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_materiel_documents_verificateur` FOREIGN KEY (`verifie_par`) REFERENCES `Utilisateur` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `demande_materiel_lignes` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `id_document` bigint unsigned NOT NULL,
+  `rang` smallint unsigned NOT NULL DEFAULT '0',
+  `page` smallint unsigned NOT NULL DEFAULT '1',
+  `reference` varchar(80) DEFAULT NULL,
+  `designation` varchar(180) NOT NULL,
+  `unite` varchar(16) NOT NULL DEFAULT 'u',
+  `quantite` decimal(12,3) NOT NULL,
+  `date_livraison` date DEFAULT NULL,
+  `confiance` tinyint unsigned NOT NULL DEFAULT '0',
+  `douteuse` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `idx_materiel_lignes_document` (`id_document`),
+  CONSTRAINT `fk_materiel_lignes_document` FOREIGN KEY (`id_document`) REFERENCES `demande_materiel_documents` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -230,6 +273,7 @@ CREATE TABLE `demande_prefabrication` (
   `date_livraison_prevue` date DEFAULT NULL,
   `date_fin_prevue` date DEFAULT NULL,
   `nom_affaire` varchar(255) DEFAULT NULL,
+  `id_affaire` int DEFAULT NULL,
   `plan_bpe_iso` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `pouces_total_iso` int NOT NULL,
   `heures_chiffrees` decimal(15,2) NOT NULL DEFAULT '0.00',
@@ -267,6 +311,8 @@ CREATE TABLE `demande_prefabrication` (
   KEY `idx_prefa_planning` (`id_statut`,`id_charger_affaire`,`date_debut_planifiee`,`date_fin_planifiee`),
   KEY `fk_prefa_personnel_atelier` (`id_personnel_atelier`),
   KEY `fk_prefa_workshop_taker` (`pris_en_charge_par`),
+  KEY `fk_demande_affaire` (`id_affaire`),
+  CONSTRAINT `fk_demande_affaire` FOREIGN KEY (`id_affaire`) REFERENCES `affaire` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_demande_charger_user` FOREIGN KEY (`id_charger_affaire`) REFERENCES `Utilisateur` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_demande_matiere` FOREIGN KEY (`id_matiere`) REFERENCES `type_matiere` (`id`),
   CONSTRAINT `fk_demande_passivation` FOREIGN KEY (`id_passivation`) REFERENCES `type_passivation` (`id`),
@@ -321,6 +367,8 @@ CREATE TABLE `element_atelier_document` (
   `id_element` int NOT NULL,
   `type_document` enum('plan','qmos','dmos') NOT NULL,
   `cle_document` varchar(255) NOT NULL,
+  `pages` smallint unsigned NOT NULL DEFAULT '1',
+  `numeros_ligne` json DEFAULT NULL COMMENT 'numéro de ligne du cartouche, par page : {"1":"YU-PRE-101"}',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_atelier_document` (`id_element`,`type_document`,`cle_document`),
   CONSTRAINT `element_atelier_document_ibfk_1` FOREIGN KEY (`id_element`) REFERENCES `element_atelier` (`id`) ON DELETE CASCADE
@@ -358,6 +406,22 @@ CREATE TABLE `element_atelier_etapes_historique` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `evenement` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `type` varchar(32) NOT NULL COMMENT 'demande.deposee, demande.validee, demande.refusee',
+  `id_demande` int DEFAULT NULL COMMENT 'la demande concernée, pour savoir qui a le droit de voir passer l''événement',
+  `id_acteur` int DEFAULT NULL COMMENT 'qui l''a provoqué : on ne lui annonce pas ce qu''il vient de faire',
+  `id_destinataire` int DEFAULT NULL COMMENT 'destinataire unique ; vide = visible selon la demande',
+  `donnees` json DEFAULT NULL COMMENT 'ce qu''il faut pour écrire l''alerte',
+  `cree_le` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `cree_le` (`cree_le`),
+  KEY `demande` (`id_demande`),
+  KEY `destinataire` (`id_destinataire`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `parametrage_prefabrication` (
   `id` tinyint unsigned NOT NULL,
   `heures_par_pouce` decimal(8,4) NOT NULL DEFAULT '1.0000',
@@ -368,18 +432,88 @@ CREATE TABLE `parametrage_prefabrication` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `plan_nomenclature` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `id_element` int NOT NULL,
+  `id_document` int DEFAULT NULL,
+  `page` smallint unsigned NOT NULL DEFAULT '1',
+  `rang` smallint unsigned NOT NULL,
+  `pos_x` decimal(7,6) DEFAULT NULL,
+  `pos_y` decimal(7,6) DEFAULT NULL,
+  `pos_w` decimal(7,6) NOT NULL DEFAULT '0.090000',
+  `pos_h` decimal(7,6) NOT NULL DEFAULT '0.018000',
+  `quantite` varchar(20) NOT NULL DEFAULT '',
+  `dn` varchar(20) NOT NULL DEFAULT '',
+  `epaisseur` varchar(20) NOT NULL DEFAULT '',
+  `description` varchar(180) NOT NULL DEFAULT '',
+  `numero_coulee` varchar(20) NOT NULL DEFAULT '',
+  `id_coulee` bigint unsigned DEFAULT NULL,
+  `saisie_par` int DEFAULT NULL,
+  `date_saisie` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `nomenclature_rang_par_page` (`id_element`,`id_document`,`page`,`rang`),
+  KEY `idx_nomenclature_coulee` (`id_coulee`),
+  KEY `fk_nomenclature_saisie` (`saisie_par`),
+  KEY `fk_plan_nomenclature_document` (`id_document`),
+  CONSTRAINT `fk_nomenclature_coulee` FOREIGN KEY (`id_coulee`) REFERENCES `demande_ccpu_coulees` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_nomenclature_element` FOREIGN KEY (`id_element`) REFERENCES `element_atelier` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_nomenclature_saisie` FOREIGN KEY (`saisie_par`) REFERENCES `Utilisateur` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_plan_nomenclature_document` FOREIGN KEY (`id_document`) REFERENCES `element_atelier_document` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `plan_soudure` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `id_element` int NOT NULL,
+  `id_document` int DEFAULT NULL,
+  `page` smallint unsigned NOT NULL DEFAULT '1',
+  `numero` varchar(20) NOT NULL,
+  `id_soudeur` int DEFAULT NULL,
+  `id_pointage` int DEFAULT NULL,
+  `date_soudure` date DEFAULT NULL,
+  `type_soudure` varchar(30) NOT NULL DEFAULT '',
+  `rt` varchar(20) NOT NULL DEFAULT '',
+  `vi` varchar(20) NOT NULL DEFAULT '',
+  `pt` varchar(20) NOT NULL DEFAULT '',
+  `vise_par` int DEFAULT NULL,
+  `date_visa` datetime DEFAULT NULL,
+  `saisie_par` int DEFAULT NULL,
+  `date_saisie` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `soudure_par_pointage` (`id_pointage`),
+  UNIQUE KEY `soudure_numero_par_page` (`id_element`,`id_document`,`page`,`numero`),
+  KEY `idx_soudure_soudeur` (`id_soudeur`),
+  KEY `fk_soudure_visa` (`vise_par`),
+  KEY `fk_soudure_saisie` (`saisie_par`),
+  KEY `fk_plan_soudure_document` (`id_document`),
+  CONSTRAINT `fk_plan_soudure_document` FOREIGN KEY (`id_document`) REFERENCES `element_atelier_document` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_soudure_element` FOREIGN KEY (`id_element`) REFERENCES `element_atelier` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_soudure_pointage` FOREIGN KEY (`id_pointage`) REFERENCES `pointage_atelier` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_soudure_saisie` FOREIGN KEY (`saisie_par`) REFERENCES `Utilisateur` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_soudure_soudeur` FOREIGN KEY (`id_soudeur`) REFERENCES `Utilisateur` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_soudure_visa` FOREIGN KEY (`vise_par`) REFERENCES `Utilisateur` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `pointage_atelier` (
   `id` int NOT NULL AUTO_INCREMENT,
   `id_affectation` int NOT NULL,
+  `id_document` int DEFAULT NULL,
+  `page` smallint unsigned NOT NULL DEFAULT '1',
   `id_utilisateur` int NOT NULL,
   `date_travail` date NOT NULL,
   `duree_minutes` smallint unsigned NOT NULL,
+  `type_soudure` varchar(30) NOT NULL DEFAULT '',
   `commentaire` varchar(500) DEFAULT NULL,
   `cle_saisie` char(32) NOT NULL,
   `date_saisie` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_atelier_pointage_saisie` (`id_utilisateur`,`cle_saisie`),
   KEY `id_affectation` (`id_affectation`),
+  KEY `fk_pointage_document` (`id_document`),
+  CONSTRAINT `fk_pointage_document` FOREIGN KEY (`id_document`) REFERENCES `element_atelier_document` (`id`) ON DELETE SET NULL,
   CONSTRAINT `pointage_atelier_ibfk_1` FOREIGN KEY (`id_affectation`) REFERENCES `affectation_atelier` (`id`) ON DELETE CASCADE,
   CONSTRAINT `pointage_atelier_ibfk_2` FOREIGN KEY (`id_utilisateur`) REFERENCES `Utilisateur` (`id`),
   CONSTRAINT `pointage_atelier_chk_1` CHECK (((`duree_minutes` > 0) and (`duree_minutes` <= 1440)))

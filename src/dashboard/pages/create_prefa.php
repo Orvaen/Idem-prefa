@@ -70,6 +70,13 @@ if ($editing && !empty($request['revetement'])) {
 
 <section class="page prefa-page prefa-simple">
     <div class="prefa-shell">
+        <?php // La sortie, en tête de page. Le formulaire tient sur deux écrans et son
+              // « Annuler » est tout en bas : une fois descendu dans les champs, revenir à
+              // la liste demandait de refaire tout le chemin. La touche Échap fait la même
+              // chose, et les deux préviennent avant de jeter une saisie en cours. ?>
+        <button type="button" class="prefa-retour">
+            <span aria-hidden="true">&larr;</span> Retour à la liste
+        </button>
         <div class="prefa-heading">
             <!-- « Nouvelle demande » et non « Nouvelle affaire » : c'est le chargé de
                  production qui ouvre l'affaire, et on en dépose plusieurs sur la même. -->

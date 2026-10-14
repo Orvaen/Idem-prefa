@@ -202,22 +202,26 @@ tbody tr:focus-within .delete-prefa {
     display: none !important;
 }
 
+/* Pleine page : un volet de 720 px obligeait à faire défiler pour une fiche qui tient
+   largement sur un écran, et à perdre le haut pour lire le bas. */
 .prefa-detail-row {
     position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: min(720px, 92vw);
-    height: 100vh;
-    height: 100dvh;
+    inset: 0;
     z-index: 1000;
     background: var(--surface) !important;
-    border-left: 1px solid var(--border);
-    box-shadow: -8px 0 24px rgba(0, 0, 0, 0.45);
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    animation: prefa-drawer-slide-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: prefa-volet-ouverture 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Le contenu reste une colonne centrée : pleine page ne veut pas dire lignes de deux
+   mille pixels. Chaque panneau donne la largeur qui convient à ce qu'il montre. */
+.prefa-detail-row > td > .pv-volet,
+.prefa-detail-row > td > .plans-iso-body,
+.prefa-detail-row > td > .atelier-detail-content {
+    max-width: 1000px;
+    margin: 0 auto;
 }
 
 .prefa-detail-row:hover,
@@ -248,12 +252,14 @@ body:has(.prefa-detail-row:not([hidden]))::before {
     }
 }
 
-@keyframes prefa-drawer-slide-in {
+@keyframes prefa-volet-ouverture {
     from {
-        transform: translateX(100%);
+        opacity: 0;
+        transform: translateY(8px);
     }
     to {
-        transform: translateX(0);
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
@@ -357,90 +363,305 @@ body:has(.prefa-detail-row:not([hidden]))::before {
     outline-offset: 2px;
 }
 
-.prefa-request .prefa-facts {
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 0;
-    margin: 0 0 16px;
-    padding: 0;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    background: var(--surface);
+/* ==========================================================================
+   LA FICHE D'UNE DEMANDE
+   ==========================================================================
+
+   Le volet fait 720 px et tenait seize valeurs en gras dans une grille bordée, puis cinq
+   cartes de documents : on lisait des boîtes, pas une fiche. Ici, une seule colonne et
+   trois registres — ce qui identifie, en grand et en léger ; ce qu'on vient chercher,
+   trois chiffres ; le reste, rangé par rubriques nommées, sans cadre. Les séparations
+   sont faites d'espace et de filets fins, pas de boîtes. */
+
+.prefa-table-detail {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 32px 32px 56px;
 }
 
-.prefa-workshop-planning {
-    margin: 20px 0;
-    padding: 16px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--frame);
-}
-
-.prefa-workshop-planning h3 {
-    margin: 0 0 14px;
-    color: var(--text);
-    font-size: 14px;
-}
-
-.prefa-request .prefa-workshop-planning .prefa-facts {
-    margin-bottom: 0;
-}
-
-.prefa-facts>div {
-    min-width: 0;
-    padding: 10px;
-}
-
-.prefa-facts dt {
-    font-size: 12px;
-    margin-bottom: 4px;
-}
-
-.prefa-facts dd {
-    font-weight: 600;
-    color: var(--text);
-    overflow-wrap: anywhere;
-}
-
-.prefa-document-groups {
+/* La fiche tient sur deux colonnes : à gauche ce que la demande dit d'elle-même, à droite
+   ses pièces. L'une et l'autre se lisent d'un seul coup d'œil, sans faire défiler. */
+.fiche-corps {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    gap: 8px 44px;
+    align-items: start;
 }
 
-.prefa-document-group {
+.fiche-colonne {
     min-width: 0;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    background: var(--surface);
-    overflow: hidden;
 }
 
-.prefa-document-group h3 {
+/* La colonne des pièces n'a pas de filet au-dessus de sa première rubrique : elle
+   commence en haut, à côté des chiffres, pas à la suite d'eux. */
+.fiche-colonne-documents > .fiche-rubrique:first-child {
+    padding-top: 0;
+}
+
+@media (max-width: 1100px) {
+    .fiche-corps {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0;
+    }
+
+    .fiche-colonne-documents > .fiche-rubrique:first-child {
+        padding-top: 18px;
+        border-top: 1px solid var(--border-faint);
+    }
+}
+
+.fiche-entete {
+    align-items: flex-start;
+    flex-wrap: nowrap;
+    margin-bottom: 22px;
+}
+
+/* L'identité prend la place qui reste, les actions gardent la leur : sans cela, la ligne
+   « Déposée par… » pousse l'état et la fermeture à la ligne suivante. */
+.fiche-identite {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* Le surtitre dit ce que c'est ; le titre dit laquelle. Le second n'a pas besoin d'être
+   gras pour être vu : il est le plus grand de la page, et le seul en léger. */
+.fiche-entete .fiche-surtitre {
+    margin: 0 0 6px;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.fiche-entete .fiche-titre {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    align-items: baseline;
     gap: 12px;
+    flex-wrap: wrap;
     margin: 0;
-    padding: 11px 12px;
-    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    font-size: 26px;
+    font-weight: 300;
+    letter-spacing: -.01em;
+    line-height: 1.15;
+}
+
+.fiche-entete .fiche-affaire {
+    color: var(--text-muted);
+    font-size: 17px;
+    font-weight: 400;
+}
+
+.fiche-entete .fiche-parcours {
+    margin: 8px 0 0;
+    color: var(--text-muted);
     font-size: 13px;
 }
 
-.prefa-document-group h3 span {
-    display: inline-grid;
-    place-items: center;
-    min-width: 22px;
-    height: 22px;
-    border-radius: 4px;
-    background: var(--hover);
+.fiche-entete .prefa-detail-actions {
+    flex-shrink: 0;
+    gap: 12px;
+}
+
+.fiche-entete .prefa-status {
+    font-size: 13px;
+}
+
+/* Les trois chiffres : grands, légers, et séparés du reste par un filet. C'est la seule
+   ligne de la fiche où la taille porte le sens. */
+.prefa-request .fiche-chiffres {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin: 0 0 8px;
+    padding: 18px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+}
+
+.fiche-chiffres > div {
+    min-width: 0;
+}
+
+.prefa-request .fiche-chiffres dt {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
     color: var(--text-muted);
     font-size: 12px;
+}
+
+/* Le « i » des chiffres : l'explication tient dans l'infobulle du navigateur, comme
+   partout ailleurs dans l'application. Il reste discret — c'est une aide, pas une
+   alerte — et le curseur d'aide dit qu'il y a quelque chose à lire. */
+.fiche-info {
+    display: inline-grid;
+    place-items: center;
+    width: 14px;
+    height: 14px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    color: var(--text-muted);
+    font-size: 9px;
+    font-style: italic;
+    font-weight: 600;
+    line-height: 1;
+    cursor: help;
+    user-select: none;
+    transition: border-color .12s ease, color .12s ease;
+}
+
+.fiche-info:hover,
+.fiche-info:focus-visible {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.fiche-chiffres dd {
+    margin: 0;
+    color: var(--text);
+    font-size: 24px;
+    font-weight: 300;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.01em;
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+}
+
+/* Une rubrique : un intitulé en capitales espacées, puis ses faits en trois colonnes.
+   Pas de cadre — l'espace au-dessus et l'intitulé suffisent à la détacher. */
+.fiche-rubrique {
+    padding: 18px 0 4px;
+}
+
+.fiche-rubrique + .fiche-rubrique {
+    border-top: 1px solid var(--border-faint);
+}
+
+.fiche-eyebrow {
+    margin: 0 0 12px;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.prefa-request .fiche-faits {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px 20px;
+    margin: 0;
+    font-size: inherit;
+}
+
+.fiche-faits > div {
+    min-width: 0;
+}
+
+.fiche-faits dt {
+    margin-bottom: 3px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+/* Les valeurs en romain, pas en gras : quand tout est gras, rien ne l'est. Une valeur
+   absente — « Non », « Aucune » — s'efface au lieu de peser le même poids qu'un chiffre. */
+.fiche-faits dd {
+    margin: 0;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 400;
+    overflow-wrap: anywhere;
+}
+
+.fiche-faits dd.est-vide {
+    color: var(--text-muted);
+}
+
+/* ===== Les documents ===== */
+
+.fiche-documents {
+    padding-bottom: 0;
+}
+
+/* Une famille : sa ligne de titre — nom, compte, et le dépôt à droite — puis ses fichiers.
+   Les familles se suivent, séparées par un filet fin ; aucune n'a de boîte. */
+.fiche-famille + .fiche-famille {
+    margin-top: 6px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-faint);
+}
+
+/* Le dépôt se pose sur la ligne de titre sans être dans le <summary> : un clic dessus y
+   replierait la famille, et un <div> n'y est pas du HTML valide. */
+.fiche-famille {
+    position: relative;
+}
+
+.fiche-famille-titre {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: var(--ctrl-sm);
+    padding-right: 120px;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    list-style: none;
+}
+
+.fiche-famille-titre::-webkit-details-marker {
+    display: none;
+}
+
+/* Le chevron pointe vers le bas une fois la famille ouverte : c'est le seul signe qui
+   dise dans quel sens elle va bouger. */
+.fiche-famille-titre::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    margin-right: 2px;
+    border-right: 1.5px solid var(--text-muted);
+    border-bottom: 1.5px solid var(--text-muted);
+    transform: rotate(-45deg);
+    transition: transform .15s ease;
+}
+
+.fiche-famille[open] > .fiche-famille-titre::before {
+    transform: rotate(45deg);
+}
+
+.fiche-famille-titre:hover,
+.fiche-famille-titre:focus-visible {
+    color: var(--accent);
+}
+
+.fiche-famille-nom {
+    min-width: 0;
+}
+
+.prefa-document-compte {
+    display: inline-grid;
+    place-items: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 10px;
+    background: var(--hover);
+    color: var(--text-muted);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
 }
 
 .prefa-document-list {
     list-style: none;
     margin: 0;
-    padding: 4px;
+    padding: 2px 0 8px;
 }
 
 .prefa-document-link {
@@ -508,10 +729,6 @@ body:has(.prefa-detail-row:not([hidden]))::before {
 
 /* Un certificat porte des champs, pas seulement un lien : son groupe prend la largeur
    de la fiche au lieu d'une colonne sur trois. */
-.prefa-document-group-ccpu {
-    grid-column: 1 / -1;
-}
-
 .prefa-document-group-ccpu .prefa-document-list > li + li {
     margin-top: 4px;
     padding-top: 4px;
@@ -617,25 +834,237 @@ body:has(.prefa-detail-row:not([hidden]))::before {
     text-decoration: underline;
 }
 
+/* ===== Bons de commande : où en est celui de cette demande ===== */
+
+/* La fiche ne déroule plus les quarante articles d'un bon : elle dit ce qu'il porte et
+   mène à l'écran « Commande matériel », où on les corrige. Ces règles vivent ici, dans
+   la feuille servie à tout le monde : le chargé d'affaire voit le résumé de ses bons
+   sans avoir accès à l'écran, donc sans en recevoir la feuille. */
+.prefa-document-group-materiel .prefa-document-list > li + li {
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid var(--border);
+}
+
+.materiel-lecture {
+    padding: 6px 8px 12px;
+    font-size: 13px;
+}
+
+.materiel-resume {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 0 0 8px;
+    font-size: 13px;
+}
+
+.materiel-compte {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.materiel-livraison {
+    white-space: nowrap;
+}
+
+.materiel-numero {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.materiel-date {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.materiel-vide {
+    color: var(--text-muted);
+}
+
+/* Où en est la lecture : une puce et un mot. La couleur ne porte jamais l'information
+   seule — les quatre états se lisent en toutes lettres. */
+.materiel-etat {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.materiel-etat::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.materiel-etat-a_lire { color: var(--text-muted); }
+.materiel-etat-a_verifier { color: var(--attente-texte); }
+.materiel-etat-verifie { color: var(--succes-texte); }
+.materiel-etat-echec { color: var(--danger-texte); }
+
+.btn-goto-commande-materiel {
+    height: var(--ctrl-sm);
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.btn-goto-commande-materiel:hover {
+    background: var(--hover);
+}
+
+/* Le dépôt, au pied de chaque famille de documents : on le trouve là où on vient de
+   constater que le document manque. Le champ lui-même est masqué — c'''est son étiquette
+   qui fait bouton, seule façon d'''habiller un sélecteur de fichier. */
+.prefa-depot-document {
+    position: absolute;
+    top: 2px;
+    right: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.prefa-depot-champ {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.prefa-depot-bouton {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: var(--ctrl-xs);
+    padding: 0 10px;
+    border: 1px dashed var(--border);
+    border-radius: var(--r-sm);
+    color: var(--text-muted);
+    font-size: 12px;
+    cursor: pointer;
+    transition: background .12s ease, border-color .12s ease, color .12s ease;
+}
+
+.prefa-depot-bouton:hover,
+.prefa-depot-champ:focus-visible + .prefa-depot-bouton {
+    border-color: var(--accent);
+    background: var(--hover);
+    color: var(--text);
+}
+
+.prefa-depot-bouton.est-occupe {
+    border-style: solid;
+    opacity: .6;
+    cursor: progress;
+}
+
+.prefa-depot-mot {
+    color: var(--text-muted);
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+
+/* ===== La décision ===== */
+
+/* Valider ou refuser est l'''action de cet écran, pas une note de bas de page : la barre
+   reste collée au bas de la fenêtre, lisible où qu'''on en soit dans la fiche. */
+.prefa-table-detail .prefa-review {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    margin: 32px 0 0;
+    padding: 14px 0 4px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+}
+
+.prefa-review-barre {
+    display: flex;
+    align-items: flex-end;
+    gap: 24px;
+}
+
+.prefa-review-motif {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.prefa-review-motif label {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+/* « obligatoire pour un refus » est une précision, pas l'''intitulé du champ. */
+.prefa-review-motif label span {
+    font-size: 11px;
+}
+
+.prefa-review-motif textarea {
+    width: 100%;
+    min-height: var(--ctrl-md);
+    resize: vertical;
+}
+
+.prefa-review-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+    padding-bottom: 4px;
+}
+
+@media (max-width: 760px) {
+    .prefa-review-barre {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .prefa-review-actions {
+        justify-content: flex-end;
+    }
+}
+
 .prefa-no-document {
     margin: 0;
-    padding: 18px 12px;
+    padding: 2px 0 10px;
     color: var(--text-muted);
     font-size: 13px;
     overflow-wrap: anywhere;
 }
 
 .prefa-decision-comment {
-    margin-top: 16px;
-    padding: 12px;
-    border-left: 3px solid var(--accent);
-    background: var(--surface);
+    margin-top: 22px;
+    padding: 2px 0 2px 14px;
+    border-left: 2px solid var(--accent);
     font-size: 13px;
 }
 
+.prefa-decision-comment strong {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
 .prefa-decision-comment.is-refusal {
-    border-left-color: #f08080;
-    background: #382326;
+    border-left-color: var(--danger-texte);
 }
 
 .prefa-decision-comment p {

@@ -4,6 +4,9 @@ require_once __DIR__ . '/../includes/prefa_attachments.php';
 require_once __DIR__ . '/../includes/prefa_workshop.php';
 require_once __DIR__ . '/../includes/atelier.php';
 require_once __DIR__ . '/../includes/ccpu_demande.php';
+require_once __DIR__ . '/../includes/commandes.php';
+require_once __DIR__ . '/../includes/materiel_bon.php';
+require_once __DIR__ . '/../includes/prefa_documents.php';
 
 if (!$canManageWorkshop) {
     prefaError(403, 'Cette page est réservée au chef d’atelier et à l’administrateur.');
@@ -37,6 +40,7 @@ $qmosByRequest = [];
 $dmosByRequest = [];
 $materielByRequest = [];
 $ccpuByRequest = [];
+$commandesByRequest = [];
 
 if ($validatedRequests) {
     $requestIds = array_column($validatedRequests, 'id');
@@ -58,13 +62,13 @@ if ($validatedRequests) {
         $dmosByRequest[$doc['id_demande']][] = $doc;
     }
 
-    $materielQuery = $db->prepare("SELECT id, id_demande, nom FROM demande_materiel_documents WHERE id_demande IN ($placeholders) ORDER BY id");
-    $materielQuery->execute($requestIds);
-    foreach ($materielQuery->fetchAll(PDO::FETCH_ASSOC) as $doc) {
-        $materielByRequest[$doc['id_demande']][] = $doc;
-    }
+    $materielByRequest = materielParDemandes($db, $requestIds);
 
     $ccpuByRequest = ccpuParDemandes($db, $requestIds);
+
+    // Le matériel commandé ne s'affiche que dans la fiche de ceux qui tiennent les PV :
+    // inutile d'aller le chercher pour les autres.
+    if ($canFillPv) $commandesByRequest = commandesParDemandes($db, $requestIds);
 }
 // Nombre de plans par demande
 $planCounts = [];

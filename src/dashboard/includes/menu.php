@@ -156,6 +156,20 @@ function dashboardMenu(): array
             'scripts' => ['planning.js'],
         ],
         [
+            // Le bon de commande est déposé sur la demande, mais il ne se lit pas dans sa
+            // fiche : quarante articles entre les documents et la décision, et on ne la
+            // lisait plus. Il a son écran, où l'encadrement fait lire les bons et corrige
+            // ce que la reconnaissance a mal compris.
+            'id' => 'commande-materiel',
+            'rayon' => 'atelier',
+            'libelle' => 'Commande matériel',
+            'page' => 'pages/commande_materiel.php',
+            'pour' => [Role::ChargeDeProduction, Role::ChefDAtelier],
+            'icone' => '<path d="M3 6h18l-1.5 10.5a2 2 0 0 1-2 1.5H6.5a2 2 0 0 1-2-1.5L3 6Z" /><path d="M8 6V4.5A2.5 2.5 0 0 1 10.5 2h3A2.5 2.5 0 0 1 16 4.5V6" /><path d="m9.5 11.5 2 2 3.5-3.5" />',
+            'styles' => ['dashboard/commande-materiel.css'],
+            'scripts' => ['commande-materiel.js'],
+        ],
+        [
             'id' => 'pv',
             'rayon' => 'atelier',
             'libelle' => 'Avancement préfabrication',
