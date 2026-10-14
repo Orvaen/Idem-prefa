@@ -45,6 +45,25 @@ $peutDeposer = prefaPeutDeposer($row, $canEditPrefa, $isAdmin, (int) $actor['id'
 
 $statut = (int) $row['id_statut'];
 $estValidee = $statut === 2;
+
+// Ce que l'atelier déclare et que personne n'a encore tranché. La fiche est l'écran où l'on
+// arrive en suivant une affaire : on y apprenait tout d'une demande, sauf qu'un soudeur
+// attendait. La décision se prend donc aussi d'ici, et c'est la même qu'ailleurs.
+$avancementsAValider = [];
+if ($estValidee && $canManageWorkshop) {
+    require_once __DIR__ . '/../includes/avancement.php';
+    require_once __DIR__ . '/../includes/atelier.php';
+    $attente = $db->prepare("SELECT h.*, a.id AS id_affectation, a.type_affectation, e.reference,
+            TRIM(CONCAT(u.prenom, ' ', u.name)) AS auteur
+        FROM avancement_atelier h
+        JOIN affectation_atelier a ON a.id = h.id_affectation
+        JOIN element_atelier e ON e.id = a.id_element
+        JOIN Utilisateur u ON u.id = h.id_utilisateur
+        WHERE e.id_demande = ? AND h.etat = 'propose' AND a.actif = 1
+        ORDER BY e.reference, a.type_affectation");
+    $attente->execute([$requestId]);
+    $avancementsAValider = $attente->fetchAll();
+}
 $isRefused = $statut === 3;
 
 $oui = static fn (string $champ, string $pourcentage): string =>
@@ -146,6 +165,35 @@ $decisionComment = trim((string) ($row['commentaire_validation'] ?? ''));
         <button type="button" class="prefa-detail-close" data-close-target="prefa-detail-<?= $requestId ?>" aria-label="Fermer le volet">✕</button>
     </div>
 </header>
+
+<?php if ($avancementsAValider): ?>
+    <?php // Au-dessus des chiffres : c'est ce qui attend quelqu'un, et le reste de la fiche
+          // ne fait que raconter. Les travaux d'un même plan se suivent, un bloc chacun. ?>
+    <section class="fiche-a-valider" aria-label="Avancements déclarés par l’atelier">
+        <?php foreach ($avancementsAValider as $declaration): ?>
+            <div class="atelier-declaration">
+                <p class="atelier-declaration-titre">Avancement déclaré, à valider</p>
+                <p class="atelier-declaration-chiffre"><?= prefaEscape(avancementPhrase($declaration)) ?></p>
+                <p class="atelier-muted">
+                    <?= prefaEscape($declaration['reference']) ?> ·
+                    <?= prefaEscape($declaration['auteur']) ?> ·
+                    <?= prefaEscape(atelierLocalDateTime($declaration['date_saisie'])) ?>
+                </p>
+                <?php if ($declaration['commentaire']): ?><p class="atelier-note"><?= prefaEscape($declaration['commentaire']) ?></p><?php endif; ?>
+                <form class="atelier-action atelier-declaration-actions" data-endpoint="update_atelier.php">
+                    <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
+                    <input type="hidden" name="id" value="<?= $requestId ?>">
+                    <input type="hidden" name="operation" value="valider">
+                    <input type="hidden" name="affectation" value="<?= (int) $declaration['id_affectation'] ?>">
+                    <input type="hidden" name="declaration" value="<?= (int) $declaration['id'] ?>">
+                    <button type="submit" name="decision" value="valider" title="L’avancement du plan prendra ce chiffre.">Valider</button>
+                    <button type="submit" name="decision" value="refuser" class="bouton-discret" title="L’avancement ne change pas ; la personne affectée pourra déclarer autre chose.">Refuser</button>
+                    <span class="atelier-message" role="status" aria-live="polite"></span>
+                </form>
+            </div>
+        <?php endforeach; ?>
+    </section>
+<?php endif; ?>
 
 <div class="fiche-corps">
 

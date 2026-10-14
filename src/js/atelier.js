@@ -174,8 +174,14 @@
         $.ajax({ url: 'actions/' + endpoint, method: 'POST', data: data.toString(), dataType: 'json' })
             .done(function () {
                 form[0].closest('dialog')?.close();
-                // Sur la page Plans / ISO, c’est elle qu’il faut recharger, pas « Mes affectations ».
-                if (endpoint === 'update_atelier.php' && !document.getElementById('plans-iso-page')) { refreshStaff(expanded); return; }
+                // « Mes affectations » et « Mes soudures » se rechargent elles-mêmes. Les
+                // écrans de l'encadrement, non : la page Plans / ISO et la liste des demandes
+                // ont chacune leur façon de se remettre à jour, plus bas. Sans cette
+                // exception, valider un avancement depuis la fiche d'une demande emmenait le
+                // chef sur « Mes soudures », qu'il n'a même pas.
+                if (endpoint === 'update_atelier.php'
+                    && !document.getElementById('plans-iso-page')
+                    && !document.getElementById('prefa-filters')) { refreshStaff(expanded); return; }
                 const prefaFilters = document.getElementById('prefa-filters');
                 if (prefaFilters) {
                     const params = new URLSearchParams(new FormData(prefaFilters));

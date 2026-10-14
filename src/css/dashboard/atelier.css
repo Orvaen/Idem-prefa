@@ -1175,8 +1175,7 @@
 
    « 1 / -1 » tient dans les trois gabarits de cette ligne — cinq colonnes au large, trois
    dans le volet et sur petit écran : la bande occupe toute la largeur quelle qu'elle soit. */
-.atelier-plan-work .atelier-declaration {
-    grid-column: 1 / -1;
+.atelier-declaration {
     display: grid;
     gap: 2px;
     margin-top: 4px;
@@ -1185,6 +1184,13 @@
     border-left: 3px solid var(--attente-texte);
     border-radius: var(--r-md);
     background: var(--surface);
+}
+
+/* Dans la ligne d'un travail, la bande prend toute la largeur. « 1 / -1 » tient dans les
+   trois gabarits de cette ligne — cinq colonnes au large, trois dans le volet et sur petit
+   écran. Ailleurs — la fiche d'une demande, l'onglet Soudures — elle coule normalement. */
+.atelier-plan-work .atelier-declaration {
+    grid-column: 1 / -1;
 }
 
 .atelier-declaration p {
