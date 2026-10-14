@@ -70,6 +70,22 @@ $etats = commandeEtats();
                             </button>
                         </td>
                     </tr>
+                    <!-- Les articles du bon, sous leur commande et sur toute la largeur : le
+                         tableau n'a pas de colonne à leur céder, et une ligne d'article a
+                         six champs à elle seule. -->
+                    <tr class="commande-articles-rang">
+                        <td colspan="6">
+                            <button type="button" class="commande-articles-bascule bouton-discret" aria-expanded="false">
+                                <svg class="icon commande-chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+                                Articles <span class="commande-articles-compte"><?= count($commande['articles'] ?? []) ?></span>
+                            </button>
+                            <!-- Les articles partent en JSON : six champs sur quarante lignes
+                                 feraient six tableaux parallèles de deux cent quarante cases,
+                                 et plus personne ne saurait lequel va avec lequel. -->
+                            <input type="hidden" name="commande[articles][]" value="<?= prefaEscape(json_encode($commande['articles'] ?? [], JSON_UNESCAPED_UNICODE)) ?>">
+                            <div class="commande-articles" hidden></div>
+                        </td>
+                    </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
@@ -106,6 +122,22 @@ $etats = commandeEtats();
                 <button type="button" class="commande-retirer bouton-discret" aria-label="Retirer cette commande" title="Retirer">
                     <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg>
                 </button>
+            </td>
+        </tr>
+                    <!-- Les articles du bon, sous leur commande et sur toute la largeur : le
+             tableau n'a pas de colonne à leur céder, et une ligne d'article a
+             six champs à elle seule. -->
+        <tr class="commande-articles-rang">
+            <td colspan="6">
+                <button type="button" class="commande-articles-bascule bouton-discret" aria-expanded="false">
+                    <svg class="icon commande-chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+                    Articles <span class="commande-articles-compte">0</span>
+                </button>
+                <!-- Les articles partent en JSON : six champs sur quarante lignes
+                     feraient six tableaux parallèles de deux cent quarante cases,
+                     et plus personne ne saurait lequel va avec lequel. -->
+                <input type="hidden" name="commande[articles][]" value="[]">
+                <div class="commande-articles" hidden></div>
             </td>
         </tr>
     </template>

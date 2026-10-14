@@ -290,3 +290,199 @@
     clip-path: inset(50%);
     white-space: nowrap;
 }
+
+/* ==========================================================================
+   LES ARTICLES DU BON
+   ==========================================================================
+
+   Ils vivent sur une rangée pleine largeur sous leur commande : le tableau des commandes
+   tient tout juste dans les 663 px du volet, et une ligne d'article a six champs à elle
+   seule. La rangée est repliée tant qu'on ne la demande pas — un bon en porte quarante. */
+
+.commande-articles-rang > td {
+    height: auto;
+    padding: 0 0 6px;
+    border-bottom: 1px solid var(--border-faint);
+}
+
+.commande-articles-bascule {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: var(--ctrl-xs);
+    padding: 0 8px;
+    border: 0;
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+.commande-articles-bascule:hover,
+.commande-articles-bascule:focus-visible {
+    background: var(--hover);
+    color: var(--text);
+}
+
+.commande-articles-compte {
+    padding: 0 6px;
+    border-radius: 10px;
+    background: var(--hover);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Le chevron pointe vers le bas une fois la liste ouverte : c'est le seul signe qui dise
+   dans quel sens la rangée va bouger. */
+.commande-chevron {
+    width: 12px;
+    height: 12px;
+    transition: transform 0.12s ease;
+}
+
+.commande-articles-bascule[aria-expanded="true"] .commande-chevron {
+    transform: rotate(90deg);
+}
+
+.commande-articles-outils {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 4px 0 8px;
+}
+
+.commande-lire-bon,
+.commande-article-ajouter {
+    height: var(--ctrl-xs);
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.commande-lire-bon:hover:not(:disabled),
+.commande-article-ajouter:hover {
+    background: var(--hover);
+}
+
+.commande-lire-bon:disabled {
+    opacity: .55;
+    cursor: progress;
+}
+
+/* Ce que la lecture a compris, et ce qu'elle n'a pas pu faire. Elle propose, elle ne
+   décide pas : le mot reste sous les yeux pendant qu'on relit les lignes. */
+.commande-articles-mot {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.commande-articles-scroll {
+    overflow-x: auto;
+}
+
+.commande-articles-table {
+    width: 100%;
+    min-width: 560px;
+    table-layout: fixed;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.commande-articles-table th {
+    height: 26px;
+    padding: 0 6px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 500;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.commande-articles-table td {
+    height: 30px;
+    padding: 0 6px;
+    border-bottom: 1px solid var(--border-faint);
+    vertical-align: middle;
+}
+
+.commande-articles-table tbody tr:last-child > td {
+    border-bottom: 0;
+}
+
+.commande-articles-table th:nth-child(1) { width: 120px; }
+.commande-articles-table th:nth-child(2) { width: 230px; }
+.commande-articles-table th:nth-child(3) { width: 56px; }
+.commande-articles-table th:nth-child(4) { width: 72px; }
+.commande-articles-table th:nth-child(5) { width: 72px; }
+.commande-articles-table th:nth-child(6) { width: 28px; }
+
+/* Mêmes champs fantômes que le tableau du dessus : quarante lignes encadrées feraient une
+   grille de boîtes, et c'est la liste qu'on doit lire. */
+.commande-articles-table input {
+    width: 100%;
+    height: 24px;
+    padding: 0 6px;
+    border: 1px solid transparent;
+    border-radius: var(--r-sm);
+    background-color: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 12px;
+    transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.commande-articles-table tbody tr:hover input,
+.commande-articles-table tbody tr:focus-within input {
+    border-color: var(--border);
+    background-color: var(--surface);
+}
+
+.commande-articles-table input:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+
+.commande-article-nombre {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+.commande-article-retirer {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+.commande-article-retirer .icon {
+    width: 12px;
+    height: 12px;
+}
+
+.commande-articles-table tbody tr:hover .commande-article-retirer:hover,
+.commande-article-retirer:focus-visible {
+    background: var(--alerte-fond);
+    color: var(--alerte-texte);
+}
+
+.commande-articles-vide {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 12px;
+}

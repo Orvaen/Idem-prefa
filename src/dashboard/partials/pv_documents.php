@@ -28,7 +28,7 @@ $modifiable = $modifiable ?? false;
         // l'adresse telle quelle pour le bouton « Télécharger ».
         $adresse = 'actions/download_pv_document.php?id=' . (int) $document['id'];
         ?>
-        <li class="pv-document">
+        <li class="pv-document" data-document="<?= (int) $document['id'] ?>" data-nom="<?= prefaEscape($document['nom']) ?>" data-pdf="<?= $estPdf ? '1' : '0' ?>">
             <div class="pv-document-rang">
                 <a class="prefa-document-link<?= $estPdf ? ' prefa-pdf-link' : '' ?>"
                    href="<?= prefaEscape($adresse) ?>"
