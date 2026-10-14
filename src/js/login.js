@@ -36,3 +36,39 @@ form.addEventListener('submit', async (event) => {
         submitButton.disabled = false;
     }
 });
+
+// ---------------------------------------------------------------- développement
+//
+// Les comptes proposés sous le formulaire n'existent qu'en développement : le PHP ne rend
+// cette section que si le serveur tourne avec APP_ENV=dev, et l'action le revérifie de
+// son côté. En production, il n'y a rien à écouter ici.
+const comptesDev = document.querySelector('.connexion-dev');
+
+if (comptesDev) {
+    comptesDev.addEventListener('click', async (event) => {
+        const bouton = event.target.closest('.connexion-dev-compte');
+        if (!bouton || bouton.disabled) return;
+
+        bouton.disabled = true;
+        message.style.display = 'none';
+
+        const donnees = new FormData();
+        donnees.set('csrf', comptesDev.dataset.csrf);
+        donnees.set('compte', bouton.dataset.compte);
+
+        try {
+            const reponse = await axios.post('./dev_connexion.php', donnees, { timeout: 15000 });
+            if (reponse.data.success) {
+                window.location.href = '../dashboard/dashboard.php';
+                return;
+            }
+            message.style.display = 'flex';
+            message.innerText = reponse.data.message || 'Connexion impossible.';
+        } catch (erreur) {
+            message.style.display = 'flex';
+            message.innerText = erreur.response?.data?.message || 'Le serveur ne répond pas.';
+        } finally {
+            bouton.disabled = false;
+        }
+    });
+}

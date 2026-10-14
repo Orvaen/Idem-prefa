@@ -5,6 +5,20 @@ require_once __DIR__ . '/../modeles/autoload.php';
 
 Session::demarrer();
 
+// En développement, l'écran de connexion propose les comptes existants : un clic suffit à
+// entrer, sans mot de passe. C'est la seule façon d'essayer les quatre profils sans
+// connaître quatre mots de passe.
+//
+// En production, APP_ENV ne vaut pas « dev », cette requête n'est pas faite et rien de
+// tout cela n'apparaît.
+$comptesDev = [];
+if (Environnement::estDev()) {
+    $db = new MyPDO(__DIR__ . '/../my_setting.ini');
+    $comptesDev = $db->query("SELECT u.identifiant, u.name, u.prenom, u.id_role, r.name AS role_name
+        FROM Utilisateur u JOIN role r ON r.id = u.id_role
+        ORDER BY u.id_role, u.prenom, u.name")->fetchAll(PDO::FETCH_ASSOC);
+}
+
 if (Session::connectee()) {
     header('Location: ../dashboard/dashboard.php');
     exit;
@@ -69,6 +83,37 @@ if (Session::connectee()) {
                 <button type="submit">Se connecter</button>
             </form>
         </div>
+
+        <?php if ($comptesDev): ?>
+            <section class="connexion-dev" data-csrf="<?= htmlspecialchars(Session::jeton(), ENT_QUOTES, 'UTF-8') ?>">
+                <p class="connexion-dev-titre">
+                    Développement
+                    <span class="connexion-dev-marque">dev</span>
+                </p>
+                <p class="connexion-dev-mot">Entrer directement, sans mot de passe.</p>
+
+                <ul class="connexion-dev-liste">
+                    <?php foreach ($comptesDev as $compte):
+                        $nom = trim($compte['prenom'] . ' ' . $compte['name']);
+                        $metier = match ((int) $compte['id_role']) {
+                            1 => 'Chargé de production',
+                            2 => "Chef d'atelier",
+                            3 => 'Personnel atelier',
+                            5 => "Chargé d'affaire",
+                            default => '',
+                        };
+                    ?>
+                        <li>
+                            <button type="button" class="connexion-dev-compte"
+                                    data-compte="<?= htmlspecialchars($compte['identifiant'], ENT_QUOTES, 'UTF-8') ?>">
+                                <span class="connexion-dev-nom"><?= htmlspecialchars($nom, ENT_QUOTES, 'UTF-8') ?></span>
+                                <span class="connexion-dev-role"><?= htmlspecialchars($compte['role_name'] . ($metier !== '' ? ' · ' . $metier : ''), ENT_QUOTES, 'UTF-8') ?></span>
+                            </button>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </section>
+        <?php endif; ?>
 
         <footer class="connexion-pied">
             <p>Pas encore de compte ? Le chargé de production en crée un.</p>

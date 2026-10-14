@@ -63,7 +63,6 @@ function prefaDocumentLigne(int $idDemande, array $groupe, array $document, bool
         . ' href="' . prefaEscape($url) . '"'
         . ' data-name="' . prefaEscape($nom) . '"'
         . ($estPdf ? ' aria-haspopup="dialog"' : '') . '>'
-        . '<span class="prefa-document-type" aria-hidden="true">' . ($estPdf ? 'PDF' : 'DOC') . '</span>'
         . '<span class="prefa-document-text"><strong>' . prefaEscape($nom) . '</strong>'
         . '<small>' . ($estPdf ? 'Ouvrir l’aperçu' : 'Télécharger le document') . '</small></span>'
         . '<span class="prefa-document-arrow" aria-hidden="true">↗</span>'

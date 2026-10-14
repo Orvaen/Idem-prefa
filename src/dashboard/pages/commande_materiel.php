@@ -116,7 +116,6 @@ ksort($affaires);
                                    href="<?= prefaEscape($url) ?>"
                                    data-name="<?= prefaEscape($bon['nom']) ?>"
                                    aria-haspopup="dialog">
-                                    <span class="prefa-document-type" aria-hidden="true">PDF</span>
                                     <span class="prefa-document-text"><strong><?= prefaEscape($bon['nom']) ?></strong></span>
                                 </a>
                             </td>

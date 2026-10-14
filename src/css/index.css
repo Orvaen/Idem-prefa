@@ -180,6 +180,91 @@ body {
     font-size: 12px;
 }
 
+/* ===== DÉVELOPPEMENT ===== */
+
+/* Les comptes proposés sous le formulaire n'existent que lorsque le serveur tourne avec
+   APP_ENV=dev : en production, ce balisage n'est pas rendu et ces règles n'habillent rien.
+   Le bloc est volontairement marqué — bordure en tirets, pastille ambre — pour qu'on ne
+   confonde jamais cet écran avec celui du serveur de l'atelier. */
+.connexion-dev {
+    margin-top: 28px;
+    padding: 14px 16px 10px;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius, 8px);
+}
+
+.connexion-dev-titre {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.connexion-dev-marque {
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: #e0a92a;
+    color: #1b1403;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .08em;
+}
+
+.connexion-dev-mot {
+    margin: 4px 0 10px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.connexion-dev-liste {
+    display: grid;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.connexion-dev-compte {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    width: 100%;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background .12s ease;
+}
+
+.connexion-dev-compte:hover,
+.connexion-dev-compte:focus-visible {
+    background: var(--hover, rgba(0, 0, 0, .05));
+}
+
+.connexion-dev-compte:disabled {
+    opacity: .5;
+    cursor: progress;
+}
+
+.connexion-dev-nom {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.connexion-dev-role {
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
 /* ===== LA COLONNE DU VISUEL ===== */
 
 .connexion-visuel {
