@@ -382,6 +382,17 @@ body[data-theme="light"],
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
 }
 
+/* La règle générale ci-dessus impose sa bordure grise avec !important, et ses deux :not()
+   la font peser plus lourd que « .prefa-form .champ-invalide » : on reprend sa forme
+   exacte, la classe en plus, sinon le rouge et le vert ne passent pas. */
+[data-theme="light"] .prefa-form .champ-invalide:not([type="checkbox"]):not([type="radio"]) {
+    border-color: var(--danger-bord) !important;
+}
+
+[data-theme="light"] .prefa-form .champ-valide:not([type="checkbox"]):not([type="radio"]) {
+    border-color: var(--succes-bord) !important;
+}
+
 [data-theme="light"] input::placeholder,
 [data-theme="light"] textarea::placeholder {
     color: #94a3b8 !important;

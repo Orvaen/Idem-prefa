@@ -434,3 +434,36 @@
     line-height: 1.6;
 }
 
+
+/* ==========================================================================
+   LES CHAMPS OBLIGATOIRES
+   ==========================================================================
+
+   Rouge tant qu'il manque, vert dès qu'il est rempli. Les deux ne s'allument qu'après un
+   premier envoi refusé — c'est le script qui pose les classes, pas « :invalid », qui
+   colorerait un formulaire vierge avant qu'on ait tapé quoi que ce soit.
+
+   La couleur porte sur la bordure et non sur le fond : un champ qu'on est en train de
+   corriger doit rester lisible, et un fond rouge sous du texte saisi ne l'est pas. */
+
+.prefa-form .champ-invalide {
+    border-color: var(--danger-bord);
+    box-shadow: 0 0 0 3px rgb(180 35 24 / 14%);
+}
+
+.prefa-form .champ-valide {
+    border-color: var(--succes-bord);
+}
+
+/* L'intitulé suit son champ : c'est lui qu'on lit en parcourant le formulaire des yeux,
+   et la bordure seule se repère mal au milieu d'une colonne de champs. */
+.prefa-form .form-group:has(.champ-invalide) > label,
+.prefa-form .form-group:has(.champ-invalide) > label .required-mark {
+    color: var(--danger-texte);
+}
+
+/* La zone de dépôt des plans se reproche la même chose, en pointillés comme à son repos. */
+.prefa-form label.prefa-dropzone.champ-invalide {
+    border-color: var(--danger-bord);
+    color: var(--danger-texte);
+}

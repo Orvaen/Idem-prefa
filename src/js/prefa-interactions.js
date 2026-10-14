@@ -337,6 +337,115 @@ $(document).on('click', '.btn-goto-plans-iso', function () {
     setTimeout(function () { clearInterval(checkCard); }, 2000);
 });
 
+// ===================================================================== CHAMPS OBLIGATOIRES
+//
+// Le formulaire de demande tient sur deux écrans. Un champ oublié tout en haut ne se
+// retrouvait pas : le message disait « remplissez les champs obligatoires » sans dire
+// lequel, et le focus seul ne ramène pas l'œil quand la page a défilé. On nomme donc le
+// champ, on y amène, et on le colore — rouge tant qu'il manque, vert dès qu'il est bon.
+//
+// La couleur n'apparaît qu'après un premier envoi refusé. Avant, un formulaire vierge
+// s'allumerait en rouge avant qu'on ait tapé quoi que ce soit, et un formulaire modifié
+// virerait au vert partout : dans les deux cas la couleur ne dirait plus rien.
+
+/** Le nom du champ tel que son intitulé l'écrit, sans l'astérisque. */
+function nomDuChamp(champ) {
+    // La zone de dépôt est elle-même un intitulé : son propre texte annonce le fichier
+    // attendu, et remonter au groupe donnerait le titre de toute la section.
+    if (champ.matches('label.prefa-dropzone')) return 'un document du plan BPE / ISO';
+    const groupe = champ.closest('.form-group, .liste-filtrable, .prefa-dropzone-groupe');
+    const intitule = groupe && groupe.querySelector('label');
+    const texte = intitule ? intitule.textContent.replace('*', '').trim() : '';
+    return texte || champ.name || 'un champ obligatoire';
+}
+
+/** Pose la couleur sur un champ, selon qu'il est rempli ou non. */
+function colorerChamp(champ) {
+    const bon = champ.checkValidity();
+    champ.classList.toggle('champ-invalide', !bon);
+    champ.classList.toggle('champ-valide', bon);
+}
+
+/**
+ * Colore tous les champs obligatoires visibles et rend ceux qui manquent.
+ *
+ * @return {HTMLElement[]}
+ */
+function marquerChampsObligatoires(form) {
+    form.data('verifie', true);
+    const manquants = [];
+    form.find(':input[required]:visible').each(function () {
+        colorerChamp(this);
+        if (!this.checkValidity()) manquants.push(this);
+    });
+    return manquants;
+}
+
+/**
+ * Colore les listes filtrables obligatoires et rend celles qu'on n'a pas renseignées.
+ *
+ * Leur valeur est dans un champ caché : « required » ne la couvre pas, et le champ qu'on
+ * colore — celui où l'on tape — n'est pas celui qui porte la réponse.
+ *
+ * @return {HTMLElement[]}
+ */
+function marquerListesObligatoires(form) {
+    const manquantes = [];
+    form.find('.liste-filtrable[data-obligatoire="1"]').each(function () {
+        const cache = this.querySelector('input[type="hidden"]');
+        const saisie = this.querySelector('.liste-filtrable-champ');
+        if (!saisie) return;
+        const vide = !cache || cache.value.trim() === '';
+        saisie.classList.toggle('champ-invalide', vide);
+        saisie.classList.toggle('champ-valide', !vide);
+        if (vide) manquantes.push(saisie);
+    });
+    return manquantes;
+}
+
+/** Du haut de la page vers le bas : c'est l'ordre dans lequel on remplit un formulaire. */
+function ordreDePage(a, b) {
+    return (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) ? -1 : 1;
+}
+
+/**
+ * Amène le champ sous les yeux, puis lui donne le focus.
+ *
+ * Le focus seul suffirait à faire défiler, mais d'un coup sec et en bord d'écran : on
+ * place le champ au milieu, et on empêche le focus de refaire le voyage.
+ */
+function amenerAuChamp(champ) {
+    champ.scrollIntoView({behavior: 'smooth', block: 'center'});
+    try {
+        champ.focus({preventScroll: true});
+    } catch (erreur) {
+        champ.focus();
+    }
+}
+
+// Une fois le formulaire refusé, chaque frappe remet le champ à jour : c'est ce qui fait
+// passer au vert sans attendre un second envoi.
+$(document).on('input change blur', '#prefa-form :input[required]', function () {
+    const form = $(this).closest('form');
+    if (!form.data('verifie')) return;
+    colorerChamp(this);
+});
+
+// Choisir dans une liste filtrable la fait changer d'avis : c'est son champ caché qui
+// annonce le choix, pas celui où l'on tape.
+$(document).on('change', '#prefa-form .liste-filtrable[data-obligatoire="1"] input[type="hidden"]', function () {
+    const form = $(this).closest('form');
+    if (!form.data('verifie')) return;
+    marquerListesObligatoires(form);
+});
+
+// Le dépôt d'un plan efface son propre reproche.
+$(document).on('change', '#prefa-form #plan-documents', function () {
+    if (this.files && this.files.length) {
+        $(this).closest('form').find('label.prefa-dropzone[for="plan-documents"]').removeClass('champ-invalide');
+    }
+});
+
 $(document).on('submit', '#prefa-form, .prefa-review', function (event) {
     event.preventDefault();
     const form = $(this);
@@ -355,20 +464,30 @@ $(document).on('submit', '#prefa-form, .prefa-review', function (event) {
         return;
     }
     if (!review) {
+        // Tout ce qui manque est relevé d'un coup. En s'arrêtant au premier défaut, on
+        // renvoyait la personne au formulaire autant de fois qu'il manquait de champs,
+        // sans jamais lui dire combien il en restait.
+        const manquants = [];
+
         if (!form.find('[name="id"]').length) {
             const planInput = form.find('#plan-documents')[0];
             const planFiles = planInput?.files?.length || 0;
             const savedPlans = form.find('#plan-saved-files .prefa-file-row').length;
-            if (planFiles === 0 && savedPlans === 0) {
-                message.addClass('error').text('Ajoutez au moins un document du plan BPE / ISO.');
-                form.find('label.prefa-dropzone[for="plan-documents"]').trigger('focus');
-                return;
-            }
+            const zone = form.find('label.prefa-dropzone[for="plan-documents"]');
+            const sansPlan = planFiles === 0 && savedPlans === 0;
+            zone.toggleClass('champ-invalide', sansPlan);
+            if (sansPlan && zone.length) manquants.push(zone[0]);
         }
-        const invalidField = form.find(':input[required]:visible').filter(function () { return !this.checkValidity(); }).first();
-        if (invalidField.length) {
-            message.addClass('error').text('Veuillez remplir les champs obligatoires.');
-            invalidField.trigger('focus');
+        marquerChampsObligatoires(form).forEach(champ => manquants.push(champ));
+        marquerListesObligatoires(form).forEach(champ => manquants.push(champ));
+
+        if (manquants.length) {
+            manquants.sort(ordreDePage);
+            const nom = nomDuChamp(manquants[0]);
+            message.addClass('error').text(manquants.length === 1
+                ? 'Il manque : ' + nom + '.'
+                : 'Il manque ' + manquants.length + ' éléments, à commencer par : ' + nom + '.');
+            amenerAuChamp(manquants[0]);
             return;
         }
     }

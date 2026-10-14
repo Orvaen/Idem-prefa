@@ -60,8 +60,12 @@ function listeFiltrableRendu(string $prefixe, string $libelle, array $options, i
         . (($reglages['obligatoire'] ?? false) ? ' <span class="required-mark" aria-hidden="true">*</span>' : '')
         . '</label>';
 
+    // L'astérisque de l'intitulé se lit, mais ne se vérifie pas : la valeur choisie vit
+    // dans un champ caché, qu'aucun « required » ne couvre. Le marqueur le dit au script
+    // qui contrôle le formulaire avant de l'envoyer.
     $html .= '<div class="liste-filtrable' . ($tableau ? ' liste-filtrable-tableau' : '')
-        . '" data-liste-filtrable="' . $prefixe . '">'
+        . '" data-liste-filtrable="' . $prefixe . '"'
+        . (($reglages['obligatoire'] ?? false) ? ' data-obligatoire="1"' : '') . '>'
         . '<input id="' . $prefixe . '-search" class="liste-filtrable-champ" type="text"'
         . ' value="' . prefaEscape($texte) . '" placeholder="' . prefaEscape($chercher) . '"'
         . ($tableau ? ' aria-label="' . prefaEscape($libelle) . '"' : '')
