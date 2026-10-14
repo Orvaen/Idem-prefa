@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/prefa_visibilite.php';
+require_once __DIR__ . '/avancement.php';
 
 /**
  * Ce que l'accueil montre : quelques chiffres, et ce qui a bougé aujourd'hui.
@@ -41,7 +42,6 @@ function accueilJour(): array
  */
 function accueilTuiles(PDO $db, Utilisateur $utilisateur): array
 {
-    [, , $dateJour] = accueilJour();
     $visible = prefaDemandesVisibles($utilisateur);
 
     /** Compte les demandes visibles qui remplissent en plus cette condition. */
@@ -73,11 +73,14 @@ function accueilTuiles(PDO $db, Utilisateur $utilisateur): array
         // n'a encore commencé — mais lu sur le travail réel plutôt que sur une case cochée.
         $sansPlan = $demandes(' AND d.id_statut = 2 AND NOT EXISTS
             (SELECT 1 FROM element_atelier e WHERE e.id_demande = d.id)');
+        // L'avancement déclaré par l'atelier n'avance à rien tant qu'il n'est pas tranché,
+        // et il se trouve au fond d'un plan : c'est ici qu'on apprend qu'il y en a.
+        $aValider = avancementAValider($db);
         return [
+            $tuile($aValider, 'Avancements à valider', 'déclarés par l’atelier', 'btn-plans-iso', $aValider > 0),
             $tuile($sansPlan, 'Sans plan', 'demandes validées où rien n’est préparé', 'btn-plans-iso', $sansPlan > 0),
             $tuile($demandes(' AND d.id_statut = 2'), 'En atelier', 'demandes validées, ouvertes au travail', 'btn-plans-iso'),
             $tuile(accueilPvAFaire($db), 'PV à renseigner', 'sur les demandes validées', 'btn-pv'),
-            $tuile(accueilHeuresDuJour($db, null, $dateJour), 'Heures pointées', 'par l’atelier aujourd’hui', 'btn-planning'),
         ];
     }
 
@@ -86,11 +89,15 @@ function accueilTuiles(PDO $db, Utilisateur $utilisateur): array
         $actives->execute([$utilisateur->id]);
         $aFinir = $db->prepare('SELECT COUNT(*) FROM affectation_atelier WHERE id_utilisateur = ? AND actif = 1 AND COALESCE(avancement, 0) < 100');
         $aFinir->execute([$utilisateur->id]);
+        // Les cordons qu'il a déclarés : c'est son travail, et c'est ce qui fait avancer
+        // ses plans. Les heures ne sont plus comptées — le soudeur renseigne des soudures.
+        $cordons = $db->prepare("SELECT COUNT(*) FROM plan_soudure
+            WHERE id_soudeur = ? AND (TRIM(type_soudure) <> '' OR date_soudure IS NOT NULL)");
+        $cordons->execute([$utilisateur->id]);
         return [
             $tuile((int) $actives->fetchColumn(), 'Mes affectations', 'plans qui me sont confiés', 'btn-list-prefa'),
             $tuile((int) $aFinir->fetchColumn(), 'À terminer', 'affectations sous les 100 %', 'btn-list-prefa'),
-            $tuile(accueilHeuresDuJour($db, $utilisateur->id, $dateJour), 'Mes heures', 'pointées aujourd’hui', 'btn-pointage'),
-            $tuile(accueilHeuresDeLaSemaine($db, $utilisateur->id), 'Cette semaine', 'heures pointées depuis lundi', 'btn-pointage'),
+            $tuile((int) $cordons->fetchColumn(), 'Mes soudures', 'cordons que j’ai renseignés', 'btn-soudures'),
         ];
     }
 
@@ -112,30 +119,6 @@ function accueilPvAFaire(PDO $db): int
             (SELECT COUNT(*) FROM demande_prefabrication WHERE id_statut = 2) * 4
           - (SELECT COUNT(*) FROM pv_prefabrication p JOIN demande_prefabrication d ON d.id = p.id_demande
              WHERE d.id_statut = 2 AND p.statut <> 'a_faire')")->fetchColumn();
-}
-
-/** Les heures pointées un jour donné, pour une personne ou pour tout l'atelier. */
-function accueilHeuresDuJour(PDO $db, ?int $utilisateur, string $date): int
-{
-    $sql = 'SELECT COALESCE(SUM(duree_minutes), 0) FROM pointage_atelier WHERE date_travail = ?';
-    $parametres = [$date];
-    if ($utilisateur !== null) {
-        $sql .= ' AND id_utilisateur = ?';
-        $parametres[] = $utilisateur;
-    }
-    $lecture = $db->prepare($sql);
-    $lecture->execute($parametres);
-    return (int) round(((int) $lecture->fetchColumn()) / 60);
-}
-
-/** Les heures pointées depuis lundi : la semaine telle que l'atelier la compte. */
-function accueilHeuresDeLaSemaine(PDO $db, int $utilisateur): int
-{
-    $lundi = (new DateTimeImmutable('monday this week', new DateTimeZone('Europe/Paris')))->format('Y-m-d');
-    $lecture = $db->prepare('SELECT COALESCE(SUM(duree_minutes), 0) FROM pointage_atelier
-        WHERE id_utilisateur = ? AND date_travail >= ?');
-    $lecture->execute([$utilisateur, $lundi]);
-    return (int) round(((int) $lecture->fetchColumn()) / 60);
 }
 
 /**

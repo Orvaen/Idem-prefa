@@ -1,23 +1,27 @@
 <?php
 require_once __DIR__ . '/../includes/prefa_context.php';
 require_once __DIR__ . '/../includes/atelier.php';
+require_once __DIR__ . '/../includes/avancement.php';
 prefaPost();
 if (!$isWorkshopPersonnel && !$canManageWorkshop) prefaError(403, 'Action réservée au personnel atelier et au chef d’atelier.');
 $id = filter_var($_POST['affectation'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 $operation = $_POST['operation'] ?? '';
-if (!$id || !in_array($operation, ['progress', 'time', 'steps'], true)) prefaError(400, 'Action invalide.');
-if ($operation === 'time' && !$isWorkshopPersonnel) prefaError(403, 'Le pointage est réservé à la personne affectée.');
-// Le chef d’atelier et l’administrateur suivent tous les plans ; chacun ne pointe que pour lui-même.
-$toutesAffectations = $canManageWorkshop && $operation !== 'time';
+if (!$id || !in_array($operation, ['progress', 'steps', 'valider'], true)) prefaError(400, 'Action invalide.');
+// Trancher une déclaration engage celui qui le fait : le chiffre devient celui de
+// l’affectation, et son nom reste dessus. La personne affectée déclare, elle ne valide pas.
+if ($operation === 'valider' && !$canManageWorkshop) prefaError(403, 'Seul le chef d’atelier valide un avancement déclaré.');
+// Le chef d’atelier et l’administrateur suivent tous les plans ; la personne affectée
+// n’agit que sur les siens.
+$toutesAffectations = $canManageWorkshop;
+$reponse = 'Enregistrement effectué.';
 try {
     $db->beginTransaction();
-    if ($operation === 'time') $db->prepare('SELECT id FROM Utilisateur WHERE id = ? FOR UPDATE')->execute([$actor['id']]);
     $stmt = $db->prepare('SELECT a.* FROM affectation_atelier a JOIN element_atelier e ON e.id = a.id_element JOIN demande_prefabrication d ON d.id = e.id_demande WHERE a.id = ?' . ($toutesAffectations ? '' : ' AND a.id_utilisateur = ?') . ' AND a.actif = 1 AND d.id_statut = 2 FOR UPDATE');
     $stmt->execute($toutesAffectations ? [$id] : [$id, $actor['id']]);
     $assignment = $stmt->fetch();
     if (!$assignment) { $db->rollBack(); prefaError(404, 'Affectation introuvable ou retirée.'); }
     $comment = trim((string) ($_POST['commentaire'] ?? ''));
-    if (mb_strlen($comment) > ($operation === 'time' ? 500 : 2000)) { $db->rollBack(); prefaError(400, 'Commentaire trop long.'); }
+    if (mb_strlen($comment) > 2000) { $db->rollBack(); prefaError(400, 'Commentaire trop long.'); }
     if ($operation === 'steps') {
         $revision = filter_var($_POST['etapes_revision'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
         $values = $_POST['etapes'] ?? null;
@@ -43,53 +47,63 @@ try {
             ->execute([$assignment['id_element'], json_encode($statuses, JSON_UNESCAPED_UNICODE), $actor['id']]);
         $db->prepare('INSERT INTO element_atelier_etapes_historique (id_element, statuts, revision, modifie_par) VALUES (?, ?, ?, ?)')
             ->execute([$assignment['id_element'], json_encode($statuses, JSON_UNESCAPED_UNICODE), $currentRevision + 1, $actor['id']]);
+    } elseif ($operation === 'valider') {
+        $declaration = filter_var($_POST['declaration'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        $decision = $_POST['decision'] ?? '';
+        if (!$declaration || !in_array($decision, ['valider', 'refuser'], true)) { $db->rollBack(); prefaError(400, 'Décision invalide.'); }
+        try {
+            $tranchee = avancementTrancher($db, $id, $declaration, $actor['id'], $decision === 'valider');
+        } catch (DomainException $erreur) {
+            // Quelqu’un d’autre l’a déjà tranchée, ou l’ouvrier l’a remplacée entre-temps.
+            $db->rollBack();
+            prefaError(409, $erreur->getMessage());
+        }
+        $reponse = $decision === 'valider'
+            ? 'Avancement validé : ' . avancementPhrase($tranchee) . '.'
+            : 'Déclaration refusée. L’avancement n’a pas changé.';
     } elseif ($operation === 'progress') {
-        $progress = filter_var($_POST['avancement'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 0, 'max_range' => 100]]);
         $revision = filter_var($_POST['revision'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
-        if ($progress === false || $revision === false) { $db->rollBack(); prefaError(400, 'Avancement invalide (0 à 100 %).'); }
+        if ($revision === false) { $db->rollBack(); prefaError(400, 'Formulaire incomplet. Actualisez avant de réessayer.'); }
         if ((int) $assignment['revision'] !== $revision) { $db->rollBack(); prefaError(409, 'Cet avancement a changé. Actualisez avant de réessayer.'); }
-        $db->prepare('UPDATE affectation_atelier SET avancement = ?, commentaire = ?, revision = revision + 1 WHERE id = ?')->execute([$progress, $comment ?: null, $id]);
-        $db->prepare('INSERT INTO avancement_atelier (id_affectation, id_utilisateur, avancement, commentaire) VALUES (?, ?, ?, ?)')->execute([$id, $actor['id'], $progress, $comment ?: null]);
-    } else {
-        $minutes = filter_var($_POST['minutes'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 1440]]);
-        $day = (string) ($_POST['date'] ?? '');
-        $date = DateTimeImmutable::createFromFormat('!Y-m-d', $day);
-        $key = (string) ($_POST['cle_saisie'] ?? '');
-        if (!$minutes || !$date || $date->format('Y-m-d') !== $day || $day > date('Y-m-d') || !preg_match('/^[a-f0-9]{32}$/', $key)) { $db->rollBack(); prefaError(400, 'Indiquez une date non future et une durée de 1 à 1 440 minutes.'); }
-        $duplicate = $db->prepare('SELECT id FROM pointage_atelier WHERE id_utilisateur = ? AND cle_saisie = ?');
-        $duplicate->execute([$actor['id'], $key]);
-        if (!$duplicate->fetchColumn()) {
-            $sum = $db->prepare('SELECT COALESCE(SUM(duree_minutes), 0) FROM pointage_atelier WHERE id_utilisateur = ? AND date_travail = ?');
-            // Serialize daily totals for a worker, including across different assignments.
-            $sum->execute([$actor['id'], $day]);
-            if ((int) $sum->fetchColumn() + $minutes > 1440) { $db->rollBack(); prefaError(400, 'Le total des pointages dépasse 24 heures pour cette journée.'); }
-            // Type de soudure déclaré sur la journée. Libre et facultatif : il ne concerne que le
-            // soudage, et c'est plan_soudure qui fait foi pour la conformité du cordon.
-            $procede = trim(mb_substr((string) ($_POST['type_soudure'] ?? ''), 0, 30));
-            // La feuille ISO travaillée. Elle doit appartenir à l'élément de l'affectation :
-            // sans ce contrôle, un pointage pourrait se ranger sous le plan d'un autre.
-            // L'isométrique travaillé : « feuille:page », parce que c'est un seul choix
-            // pour le soudeur. La page dira dans quelle liste de soudures ce pointage se
-            // proposera.
-            [$feuilleBrute, $pageBrute] = array_pad(explode(':', (string) ($_POST['document'] ?? ''), 2), 2, '1');
-            $document = filter_var($feuilleBrute, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: null;
-            $page = filter_var($pageBrute, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: 1;
-            if ($document) {
-                $verif = $db->prepare("SELECT pages FROM element_atelier_document
-                    WHERE id = ? AND id_element = ? AND type_document = 'plan'");
-                $verif->execute([$document, $assignment['id_element']]);
-                $pages = $verif->fetchColumn();
-                if ($pages === false) { $db->rollBack(); prefaError(400, 'Ce plan n’appartient pas à cet élément.'); }
-                if ($page > (int) $pages) { $db->rollBack(); prefaError(400, 'Cette page n’existe pas dans ce plan.'); }
-            } else {
-                $page = 1;
-            }
-            $db->prepare('INSERT INTO pointage_atelier (id_affectation, id_document, page, id_utilisateur, date_travail, duree_minutes, type_soudure, commentaire, cle_saisie) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')->execute([$id, $document, $page, $actor['id'], $day, $minutes, $procede, $comment ?: null, $key]);
+
+        // Quand le plan porte une liste de soudures, on compte des cordons et non des
+        // pour cent : c’est ce que l’atelier sait dire — « j’en ai fait sept sur sept ».
+        // Le dénominateur est ce que le bureau d’études a imprimé sur les feuilles, pas ce
+        // que l’atelier a saisi : sinon le rapport serait de soi à soi, toujours 100 %.
+        // Le quotient se calcule ici et nulle part ailleurs ; un pourcentage envoyé par le
+        // formulaire ne serait pas écouté, sans quoi les deux chiffres pourraient se
+        // contredire. Le chef, lui, garde la main sur le pourcentage direct : sa fenêtre
+        // n’envoie pas de soudures, et c’est la branche du dessous qui la sert.
+        $total = avancementSouduresPrevues($db, (int) $assignment['id_element'])['prevues'];
+        $soudures = null;
+        if ($total > 0 && trim((string) ($_POST['soudures'] ?? '')) !== '') {
+            $soudures = filter_var($_POST['soudures'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 0, 'max_range' => $total]]);
+            if ($soudures === false) { $db->rollBack(); prefaError(400, 'Indiquez un nombre de soudures entre 0 et ' . $total . '.'); }
+            $progress = avancementPourcentage($soudures, $total);
+        } elseif (trim((string) ($_POST['soudures'] ?? '')) !== '') {
+            // L’écran comptait des cordons, la liste n’en a plus : elle a été vidée entre
+            // l’affichage et l’envoi. Le dire, plutôt que de parler d’un pourcentage que ce
+            // formulaire-là n’a jamais proposé.
+            $db->rollBack();
+            prefaError(409, 'La liste des soudures de ce plan a été vidée. Actualisez avant de réessayer.');
+        } else {
+            $progress = filter_var($_POST['avancement'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 0, 'max_range' => 100]]);
+            if ($progress === false) { $db->rollBack(); prefaError(400, 'Avancement invalide (0 à 100 %).'); }
+        }
+        // Le total est rangé avec la déclaration, pas relu à l’affichage : la liste des
+        // soudures grandit, et « sept sur sept » doit rester vrai quand le plan en compte douze.
+        $totalRetenu = $soudures === null ? null : $total;
+
+        if ($canManageWorkshop) {
+            avancementPoser($db, $id, $actor['id'], $progress, $soudures, $totalRetenu, $comment ?: null);
+        } else {
+            avancementDeclarer($db, $id, $actor['id'], $progress, $soudures, $totalRetenu, $comment ?: null);
+            $reponse = 'Déclaration envoyée au chef d’atelier. L’avancement changera quand il l’aura validée.';
         }
     }
     $db->commit();
     header('Content-Type: application/json; charset=utf-8');
-    echo json_encode(['success' => true, 'message' => 'Enregistrement effectué.']);
+    echo json_encode(['success' => true, 'message' => $reponse]);
 } catch (PDOException $e) {
     if ($db->inTransaction()) $db->rollBack();
     error_log('Avancement atelier: ' . $e->getMessage());

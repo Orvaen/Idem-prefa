@@ -297,18 +297,18 @@
             .catch(() => { if (!automatique) message(viewer, 'Détection impossible. Réessayez.', true); });
     }
 
-    // Sur la page Pointage, la feuille se choisit dans une liste et s'ouvre d'un bouton :
-    // le lecteur correspondant vit dans la ligne, masqué, et c'est sa fenêtre qu'on ouvre.
-    $(document).on('click', '.pointage-iso-ouvrir', function () {
-        const cellule = this.closest('.pointage-iso-cell');
-        const ligne = this.closest('tr');
-        const choisi = cellule && cellule.querySelector('.pointage-iso');
-        if (!choisi || !ligne) return;
-        // Le choix dit la feuille ET la page : la fenêtre s'ouvre donc sur l'isométrique
-        // qu'on vient de désigner, pas sur la première page de son cahier.
-        const [feuille, page] = String(choisi.value).split(':');
-        const lecteur = ligne.querySelector('.pointage-iso-lecteurs .plan-viewer[data-document="' + feuille + '"]');
+    // Sur « Mes soudures », la feuille se choisit dans une liste et s'ouvre d'un bouton :
+    // le lecteur de l'élément vit plus bas, masqué, et c'est sa fenêtre qu'on ouvre.
+    $(document).on('click', '.soudures-ouvrir-plan', function () {
+        const choisi = document.getElementById('soudures-feuille');
+        if (!choisi) return;
+        // Le choix dit l'élément, la feuille ET la page : la fenêtre s'ouvre donc sur
+        // l'isométrique qu'on vient de désigner, pas sur la première page de son cahier.
+        const [element, feuille, page] = String(choisi.value).split(':');
+        const bloc = document.querySelector('.soudures-lecteur[data-element="' + element + '"]');
+        const lecteur = bloc && bloc.querySelector('.plan-viewer[data-document="' + feuille + '"]');
         if (!lecteur) return;
+        bloc.hidden = false;
         lecteur.querySelector('.plan-viewer-ouvrir').click();
         allerPage(lecteur, Number(page) || 1);
     });
@@ -711,7 +711,7 @@
 
     /** Le volet se redessine depuis le serveur : c'est lui qui connaît la liste des ISO. */
     function rechargerVolet() {
-        const page = document.getElementById('pointage-page') ? 'pages/pointage.php'
+        const page = document.getElementById('soudures-page') ? 'pages/soudures.php'
             : (document.querySelector('.atelier-plan-list') ? 'pages/plans_iso.php' : null);
         if (page) $('#content').load(page);
     }

@@ -80,6 +80,7 @@ foreach ($requests as &$req) {
             JOIN element_atelier e ON e.id = aff.id_element
             JOIN Utilisateur u ON u.id = a.id_utilisateur
             WHERE e.id_demande = ? AND a.commentaire IS NOT NULL AND TRIM(a.commentaire) != ''
+              AND a.etat <> 'refuse'
             ORDER BY a.date_saisie DESC");
         $stmtComm->execute([$rId]);
         while ($c = $stmtComm->fetch(PDO::FETCH_ASSOC)) {

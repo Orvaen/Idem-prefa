@@ -41,6 +41,8 @@ carte.
 | Fichier | Ce qu'il porte |
 |---|---|
 | `atelier.php` | Les éléments d'atelier d'une demande, leurs étapes, et le droit d'ouvrir leurs fichiers. |
+| `avancement.php` | L'avancement d'une affectation : déclaré par l'atelier, validé par le chef, et lui seul l'écrit. Le dénominateur vient des soudures imprimées sur le plan, pas de ce qui est saisi. |
+| `soudure_atelier.php` | La liste soudure vue par le soudeur : la feuille qu'il travaille, et ce qu'il y renseigne. |
 | `planning.php` | D'une durée en heures à des bandes sur un calendrier. |
 | `plan_document.php` · `plan_viewer.php` | Les fichiers ISO d'un élément, et le visualiseur où l'on pose les coulées. |
 | `plan_table.php` · `plan_lignes.php` · `plan_numeros.php` | La lecture d'un plan : son tableau de nomenclature, ses lignes, ses numéros de feuille. |

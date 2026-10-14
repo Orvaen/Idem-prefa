@@ -1,0 +1,555 @@
+/* ===== MES SOUDURES ===== */
+
+/* L'écran du soudeur reprend la forme de la fiche d'une demande : un surtitre qui dit ce
+   qu'on regarde, un grand titre léger, trois chiffres entre deux filets, puis le contenu.
+   Pas d'encadrés : ce sont les filets fins et les blancs qui séparent, et une page faite
+   de boîtes empilées se lit mal sur un écran d'atelier.
+
+   Rappel du socle : html est en 13 px, donc jamais de rem ici — les tailles sont en px. */
+
+/* « page » centre son contenu en flex : la section doit redevenir un bloc, sinon chacune
+   de ses parties se range en colonne à côté des autres. La coque tient la largeur de
+   lecture, comme sur les autres écrans. */
+.page.soudures {
+    display: block;
+    padding: 28px 32px 46px;
+    background: var(--surface);
+}
+
+.soudures-shell {
+    max-width: 1180px;
+}
+
+/* ----------------------------------------------------------------- l'en-tête */
+
+.soudures-entete {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px 28px;
+    margin-bottom: 24px;
+}
+
+.soudures-identite {
+    min-width: 0;
+}
+
+/* Le surtitre dit ce que c'est ; le titre dit quoi. Le second n'a pas besoin d'être gras
+   pour être vu : il est le plus grand de la page, et le seul en léger. */
+.soudures-surtitre,
+.soudures-eyebrow {
+    margin: 0 0 6px;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.soudures-titre {
+    margin: 0;
+    color: var(--text);
+    font-size: 26px;
+    font-weight: 300;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+}
+
+.soudures-sous-titre {
+    margin: 8px 0 0;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+/* Le choix de la feuille tient sa largeur : étiré sur toute la page, il donnait une barre
+   grise sans objet au milieu de l'écran. */
+.soudures-choix {
+    flex: 0 1 460px;
+    min-width: 260px;
+}
+
+.soudures-choix label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.soudures-choix-ligne {
+    display: flex;
+    gap: 8px;
+}
+
+.soudures-choix select {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: var(--ctrl-md);
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 13.5px;
+    cursor: pointer;
+}
+
+.soudures-choix select:focus-visible,
+.soudures-ouvrir-plan:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.soudures-ouvrir-plan {
+    flex: 0 0 auto;
+    height: var(--ctrl-md);
+    padding: 0 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: transparent;
+    color: var(--accent);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background .12s ease;
+}
+
+.soudures-ouvrir-plan:hover {
+    background: var(--hover);
+}
+
+/* ----------------------------------------------------------------- les trois chiffres */
+
+.soudures-chiffres {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px 24px;
+    margin: 0;
+    padding: 20px 0 18px;
+    border-top: 1px solid var(--border);
+}
+
+.soudures-chiffres > div {
+    min-width: 0;
+}
+
+.soudures-chiffres dt {
+    margin-bottom: 6px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.soudures-chiffres dd {
+    margin: 0;
+    color: var(--text);
+    font-size: 30px;
+    font-weight: 300;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.015em;
+    line-height: 1.05;
+}
+
+.soudures-chiffre-note {
+    margin: 6px 0 0;
+    color: var(--text-muted);
+    font-size: 11.5px;
+    line-height: 1.45;
+    min-height: 1.45em;
+}
+
+/* La jauge ferme la bande des chiffres : deux pixels suffisent à montrer la part faite,
+   là où un anneau ou une barre épaisse auraient réclamé l'attention pour rien. */
+.soudures-jauge {
+    height: 3px;
+    margin-bottom: 26px;
+    border-radius: 999px;
+    background: var(--border);
+    overflow: hidden;
+}
+
+.soudures-jauge span {
+    display: block;
+    width: 0;
+    height: 100%;
+    background: var(--succes-texte);
+    transition: width .35s ease;
+}
+
+/* ----------------------------------------------------------------- la liste des cordons */
+
+/* Cinq colonnes, et les mêmes pour l'en-tête et les lignes : le repère, la date, le
+   procédé, qui l'a fait, les contrôles. C'est l'ordre du tableau imprimé sur la feuille,
+   pour qu'on suive du doigt du papier à l'écran. */
+.soudures-liste-entete,
+.soudures-ligne {
+    display: grid;
+    /* Des largeurs fixes, et la ligne se tasse à gauche : une colonne en « 1fr » poussait
+       « Contrôles » au bord de l'écran, à quatre cents pixels du nom du soudeur. */
+    grid-template-columns: 52px 158px 186px 190px 130px;
+    align-items: center;
+    gap: 14px;
+}
+
+.soudures-liste-entete {
+    padding: 0 12px 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.soudures-liste {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.soudures-ligne {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-faint);
+    transition: background .12s ease;
+}
+
+.soudures-ligne:hover {
+    background: var(--hover);
+}
+
+.soudures-attente {
+    padding: 28px 12px;
+    color: var(--text-muted);
+    font-size: 13px;
+    list-style: none;
+}
+
+/* Le repère, en pastille : c'est lui qu'on cherche en venant du dessin, et un chiffre nu
+   au bout d'une ligne se perd. Pleine quand le cordon est fait — la liste se lit alors
+   d'un coup d'œil, sans compter. */
+.soudures-numero {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    color: var(--text-muted);
+    font-size: 12.5px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.soudures-ligne.est-faite .soudures-numero {
+    border-color: var(--succes-bord);
+    background: var(--succes-fond);
+    color: var(--succes-texte);
+}
+
+/* Un repère saisi hors du tableau imprimé : le bureau d'études n'avait pas prévu assez de
+   lignes. Il compte, mais il n'est pas sur la feuille à cet endroit. */
+.soudures-ligne.est-hors-tableau .soudures-numero {
+    border-style: dashed;
+    border-color: var(--attente-texte);
+    color: var(--attente-texte);
+}
+
+.soudures-champ {
+    min-width: 0;
+}
+
+.soudures-champ input {
+    width: 100%;
+    height: var(--ctrl-sm);
+    padding: 0 10px;
+    border: 1px solid transparent;
+    border-radius: var(--r-md);
+    background: var(--frame);
+    color: var(--text);
+    font: inherit;
+    font-size: 13.5px;
+    transition: border-color .12s ease, background .12s ease;
+}
+
+.soudures-champ input::placeholder {
+    color: var(--text-muted);
+}
+
+.soudures-champ input:hover:not(:disabled) {
+    border-color: var(--border);
+}
+
+.soudures-champ input:focus {
+    border-color: var(--accent);
+    background: var(--surface);
+    outline: none;
+}
+
+/* Le cordon de quelqu'un d'autre se lit, ne se reprend pas : son nom part sur le plan
+   final. Le champ s'efface au lieu de se griser — une case barrée dans une liste de seize
+   lignes fait un damier. */
+.soudures-champ input:disabled {
+    background: transparent;
+    color: var(--text-muted);
+    cursor: default;
+}
+
+.soudures-soudeur {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text-muted);
+    font-size: 13px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.soudures-ligne.est-faite .soudures-soudeur {
+    color: var(--text);
+}
+
+/* Les contrôles ne se saisissent pas ici — ils engagent l'encadrement. Ils se montrent
+   donc comme ce qu'ils sont sur le plan : une croix, ou rien. */
+.soudures-controles {
+    display: flex;
+    gap: 5px;
+    color: var(--text-muted);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+}
+
+.soudures-controle {
+    padding: 2px 7px;
+    border: 1px solid var(--succes-bord);
+    border-radius: 999px;
+    background: var(--succes-fond);
+    color: var(--succes-texte);
+}
+
+.soudures-visa {
+    padding: 2px 7px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+}
+
+/* ----------------------------------------------------------------- le pied de la liste */
+
+.soudures-pied {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.soudures-compte {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.soudures-compte strong {
+    color: var(--text);
+}
+
+.soudures-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.soudures-actions .atelier-message,
+.soudures-demande .atelier-message {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+#soudures-form button[type="submit"] {
+    height: var(--ctrl-md);
+    padding: 0 20px;
+    border: 0;
+    border-radius: var(--r-md);
+    background: var(--accent);
+    color: #ffffff;
+    font: inherit;
+    font-size: 13.5px;
+    cursor: pointer;
+    transition: background .12s ease;
+}
+
+#soudures-form button[type="submit"]:hover:not(:disabled) {
+    background: var(--accent-hover);
+}
+
+#soudures-form button[type="submit"]:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+}
+
+#soudures-form button[type="submit"]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* ----------------------------------------------------------------- la validation */
+
+.soudures-validation {
+    margin-top: 34px;
+    padding-top: 22px;
+    border-top: 1px solid var(--border);
+}
+
+.soudures-validation .soudures-sous-titre {
+    margin: 0 0 16px;
+}
+
+.soudures-travail {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 24px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border-faint);
+}
+
+.soudures-travail:last-child {
+    border-bottom: 0;
+}
+
+.soudures-travail-identite {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.soudures-travail-identite strong {
+    font-size: 14px;
+}
+
+.soudures-travail-identite span {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.soudures-demande {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+}
+
+.soudures-travail-compte {
+    margin: 0;
+    font-size: 13px;
+}
+
+.soudures-travail-compte strong {
+    margin-right: 6px;
+    font-size: 17px;
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+}
+
+.soudures-travail-compte span {
+    color: var(--text-muted);
+}
+
+.soudures-demande button {
+    height: var(--ctrl-sm);
+    padding: 0 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: transparent;
+    color: var(--accent);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background .12s ease;
+}
+
+.soudures-demande button:hover:not(:disabled) {
+    background: var(--hover);
+}
+
+.soudures-demande button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.soudures-demande button:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+}
+
+/* Un chiffre annoncé n'est pas un chiffre reconnu : il se tient derrière son filet
+   d'attente, comme sur l'écran du chef, pour qu'on ne les confonde pas. */
+.soudures-en-attente {
+    flex: 1 1 320px;
+    margin: 0;
+    padding: 9px 12px;
+    border-left: 3px solid var(--attente-texte);
+    border-radius: 0 var(--r-md) var(--r-md) 0;
+    background: var(--frame);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.soudures-en-attente span {
+    color: var(--text-muted);
+}
+
+.soudures-rien {
+    padding: 40px 0;
+    color: var(--text-muted);
+    font-size: 13.5px;
+}
+
+.soudures-lecteur {
+    margin-top: 28px;
+}
+
+/* ----------------------------------------------------------------- écrans étroits */
+
+@media (max-width: 900px) {
+    .soudures {
+        padding: 20px 16px 32px;
+    }
+
+    .soudures-choix {
+        flex: 1 1 100%;
+    }
+
+    /* La ligne se replie en deux étages : le repère et les champs d'abord, le reste
+       dessous. Cinq colonnes sur un écran de 360 px donnaient cinq colonnes illisibles. */
+    .soudures-liste-entete {
+        display: none;
+    }
+
+    .soudures-ligne {
+        grid-template-columns: 30px minmax(0, 1fr) minmax(0, 1fr);
+        gap: 8px 10px;
+        padding: 12px;
+    }
+
+    .soudures-soudeur {
+        grid-column: 2 / -1;
+    }
+
+    .soudures-controles {
+        grid-column: 2 / -1;
+    }
+
+    .soudures-chiffres {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .soudures-chiffres > div:last-child {
+        grid-column: 1 / -1;
+    }
+}

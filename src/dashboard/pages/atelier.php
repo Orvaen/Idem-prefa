@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../includes/prefa_context.php';
 require_once __DIR__ . '/../includes/prefa_attachments.php';
 require_once __DIR__ . '/../includes/atelier.php';
+require_once __DIR__ . '/../includes/avancement.php';
 if (!$isWorkshopPersonnel) prefaError(403, 'Cette page est réservée au personnel atelier.');
 $stmt = $db->prepare('SELECT a.*, e.reference, e.libelle, e.id_demande FROM affectation_atelier a JOIN element_atelier e ON e.id = a.id_element JOIN demande_prefabrication d ON d.id = e.id_demande WHERE a.id_utilisateur = ? AND a.actif = 1 AND d.id_statut = 2 ORDER BY e.id_demande DESC, e.reference, a.type_affectation');
 $stmt->execute([$actor['id']]);
@@ -26,12 +27,13 @@ foreach ($assignments as $assignment) {
             . '&file=' . rawurlencode($doc['cle_document'])];
     }
 }
-$stmt = $db->prepare('SELECT p.*, e.reference, e.id_demande, a.type_affectation FROM pointage_atelier p JOIN affectation_atelier a ON a.id = p.id_affectation JOIN element_atelier e ON e.id = a.id_element JOIN demande_prefabrication d ON d.id = e.id_demande WHERE p.id_utilisateur = ? AND NOT (COALESCE(a.actif, 0) = 1 AND d.id_statut = 2) ORDER BY p.date_travail DESC, p.id DESC LIMIT 100');
-$stmt->execute([$actor['id']]);
-$times = $stmt->fetchAll();
-$stmt = $db->prepare('SELECT h.*, e.reference, e.id_demande, a.type_affectation FROM avancement_atelier h
+$stmt = $db->prepare("SELECT h.*, e.reference, e.id_demande, a.type_affectation,
+        TRIM(CONCAT(v.prenom, ' ', v.name)) AS validateur
+    FROM avancement_atelier h
     JOIN affectation_atelier a ON a.id = h.id_affectation JOIN element_atelier e ON e.id = a.id_element
-    JOIN demande_prefabrication d ON d.id = e.id_demande WHERE h.id_utilisateur = ? AND NOT (COALESCE(a.actif, 0) = 1 AND d.id_statut = 2) ORDER BY h.date_saisie DESC, h.id DESC LIMIT 100');
+    JOIN demande_prefabrication d ON d.id = e.id_demande
+    LEFT JOIN Utilisateur v ON v.id = h.valide_par
+    WHERE h.id_utilisateur = ? AND NOT (COALESCE(a.actif, 0) = 1 AND d.id_statut = 2) ORDER BY h.date_saisie DESC, h.id DESC LIMIT 100");
 $stmt->execute([$actor['id']]);
 $recentProgress = $stmt->fetchAll();
 ?>
@@ -52,14 +54,22 @@ $recentProgress = $stmt->fetchAll();
                     $status = $progress === 100 ? 'Terminé' : ($progress ? 'En cours' : 'À commencer');
                     $statusClass = $progress === 100 ? 'status-2' : ($progress ? 'atelier-status-progress' : 'status-1');
                     $docs = $documentsByElement[(int) $assignment['id_element']];
-                    $historyStmt = $db->prepare("SELECT h.*, TRIM(CONCAT(u.prenom, ' ', u.name)) AS auteur
+                    $historyStmt = $db->prepare("SELECT h.*, TRIM(CONCAT(u.prenom, ' ', u.name)) AS auteur,
+                            TRIM(CONCAT(v.prenom, ' ', v.name)) AS validateur
                         FROM avancement_atelier h JOIN Utilisateur u ON u.id = h.id_utilisateur
+                        LEFT JOIN Utilisateur v ON v.id = h.valide_par
                         WHERE h.id_affectation = ? ORDER BY h.date_saisie DESC, h.id DESC");
                     $historyStmt->execute([$id]);
                     $progressHistory = $historyStmt->fetchAll();
-                    $historyStmt = $db->prepare('SELECT * FROM pointage_atelier WHERE id_affectation = ? AND id_utilisateur = ? ORDER BY date_travail DESC, id DESC');
-                    $historyStmt->execute([$id, $actor['id']]);
-                    $timeHistory = $historyStmt->fetchAll();
+                    // Le plan porte-t-il une liste de soudures ? Si oui, l'avancement se
+                    // déclare en cordons — « j'en ai fait sept » — et le pourcentage en
+                    // découle. Sinon il se déclare en pour cent, comme avant.
+                    $prevu = avancementSouduresPrevues($db, (int) $assignment['id_element']);
+                    $soudureTotal = $prevu['prevues'];
+                    $feuillesDuPlan = $prevu['pages'];
+                    $soudureOrigine = avancementDenominateurPhrase($prevu);
+                    $soudureFaites = avancementSouduresFaites($db, (int) $assignment['id_element']);
+                    $attente = avancementEnAttente($db, $id);
                     $historyStmt = $db->prepare("SELECT h.*, TRIM(CONCAT(u.prenom, ' ', u.name)) AS auteur
                         FROM element_atelier_etapes_historique h JOIN Utilisateur u ON u.id = h.modifie_par
                         WHERE h.id_element = ? ORDER BY h.revision DESC");
@@ -72,7 +82,7 @@ $recentProgress = $stmt->fetchAll();
                             <td><strong><?= prefaEscape($assignment['reference']) ?></strong><span class="atelier-row-description"><?= prefaEscape($assignment['libelle']) ?></span></td>
                             <td><?= $types[$assignment['type_affectation']] ?></td>
                             <td><?php if ($docs): ?><?= count($docs) ?> <?= count($docs) === 1 ? 'fichier' : 'fichiers' ?><?php else: ?><span class="atelier-missing-file">Fichier à associer</span><?php endif; ?></td>
-                            <td><?= $progress ?> %</td>
+                            <td><?= $progress ?> %<?php if ($attente): ?><span class="atelier-row-description">déclaré : <?= prefaEscape(avancementPhrase($attente)) ?>, à valider</span><?php endif; ?></td>
                             <td><span class="prefa-status <?= $statusClass ?>"><?= $status ?></span></td>
                             <td><button type="button" class="prefa-toggle" aria-controls="atelier-detail-<?= $id ?>" aria-expanded="false">Mettre à jour</button></td>
                         </tr>
@@ -124,19 +134,51 @@ $recentProgress = $stmt->fetchAll();
                                             </details>
                                         </section>
                                         <section class="atelier-detail-panel" role="tabpanel" id="atelier-pane-avancement-<?= $id ?>" aria-labelledby="atelier-tab-avancement-<?= $id ?>" hidden>
+                                            <?php if ($attente): ?>
+                                                <p class="atelier-attente">
+                                                    <strong><?= prefaEscape(avancementPhrase($attente)) ?></strong>
+                                                    en attente du chef d’atelier
+                                                    <span class="atelier-muted">· déclaré le <?= prefaEscape(atelierLocalDateTime($attente['date_saisie'])) ?></span>
+                                                </p>
+                                            <?php endif; ?>
+                                            <?php if ($soudureTotal > 0): ?>
+                                                <?php // Le plan porte une liste de soudures : l'avancement ne se tape
+                                                      // pas, il se compte sur les cordons renseignés. La saisie est donc
+                                                      // là où l'on renseigne les cordons, et nulle part ailleurs — deux
+                                                      // endroits pour le même chiffre, c'est un chiffre de trop. ?>
+                                                <p class="atelier-compte-soudures">
+                                                    <strong><?= $soudureFaites ?> soudure<?= $soudureFaites > 1 ? 's' : '' ?> sur <?= $soudureTotal ?></strong>
+                                                    <span class="atelier-muted"><?= prefaEscape($soudureOrigine) ?> · soit <?= avancementPourcentage($soudureFaites, $soudureTotal) ?> %</span>
+                                                </p>
+                                                <button type="button" class="atelier-vers-soudures" data-page="pages/soudures.php">Renseigner mes soudures ↗</button>
+                                            <?php else: ?>
                                             <form class="atelier-action prefa-form atelier-grid" data-endpoint="update_atelier.php">
                                                 <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>"><input type="hidden" name="affectation" value="<?= $id ?>"><input type="hidden" name="operation" value="progress"><input type="hidden" name="revision" value="<?= (int) $assignment['revision'] ?>">
-                                                <div><label for="atelier-progress-<?= $id ?>">Avancement (%)</label><input id="atelier-progress-<?= $id ?>" type="number" name="avancement" min="0" max="100" step="1" value="<?= $progress ?>" required></div>
+                                                <div><label for="atelier-progress-<?= $id ?>">Avancement (%)</label><input id="atelier-progress-<?= $id ?>" type="number" name="avancement" min="0" max="100" step="1" value="<?= $progress ?>" required>
+                                                    <?php // Sans liste de soudures reconnue, l'avancement reste en pour cent.
+                                                          // Le dire : autrement on cherche le compte de cordons dont on a
+                                                          // entendu parler, et on ne comprend pas pourquoi il n'est pas là. ?>
+                                                    <span class="atelier-champ-aide">
+                                                        <?php if ($feuillesDuPlan > 0): ?>
+                                                            Aucune liste de soudures n’a encore été lue sur <?= $feuillesDuPlan > 1 ? 'les ' . $feuillesDuPlan . ' feuilles' : 'la feuille' ?> de ce plan : l’avancement se déclare donc en pour cent. Ouvrez une feuille dans « Mes soudures » pour que son tableau soit reconnu.
+                                                        <?php else: ?>
+                                                            Aucun fichier ISO n’est rattaché à ce plan : l’avancement se déclare en pour cent.
+                                                        <?php endif; ?>
+                                                    </span>
+                                                </div>
                                                 <div class="atelier-wide"><label for="atelier-note-<?= $id ?>"><?= $assignment['type_affectation'] === 'soudage' ? 'Compte rendu du suivi soudage' : 'Compte rendu d’avancement' ?></label><textarea id="atelier-note-<?= $id ?>" name="commentaire" maxlength="2000"><?= prefaEscape($assignment['commentaire'] ?? '') ?></textarea></div>
-                                                <div class="atelier-form-actions"><button type="submit">Enregistrer l’avancement</button><span class="atelier-message" role="status" aria-live="polite"></span></div>
+                                                <p class="atelier-wide atelier-muted">Votre déclaration part au chef d’atelier : le pourcentage changera quand il l’aura validée.</p>
+                                                <div class="atelier-form-actions"><button type="submit">Déclarer l’avancement</button><span class="atelier-message" role="status" aria-live="polite"></span></div>
                                             </form>
+                                            <?php endif; ?>
                                             <details class="atelier-saved-history">
                                                 <summary>Historique de l’avancement (<?= count($progressHistory) ?>)</summary>
                                                 <p class="atelier-history-context">Demande <?= prefaEscape(prefaReferenceComplete((int) $assignment['id_demande'])) ?> · <?= prefaEscape($assignment['reference']) ?> · <?= prefaEscape($types[$assignment['type_affectation']]) ?></p>
                                                 <?php if (!$progressHistory): ?><p class="atelier-muted">Aucun avancement enregistré.</p><?php endif; ?>
                                                 <ol class="atelier-saved-history-list">
                                                     <?php foreach ($progressHistory as $entry): ?>
-                                                        <li><strong><?= (int) $entry['avancement'] ?> %</strong> <span class="atelier-muted">· <?= prefaEscape(atelierLocalDateTime($entry['date_saisie'])) ?> · <?= prefaEscape($entry['auteur']) ?></span>
+                                                        <li class="atelier-saisie-<?= prefaEscape($entry['etat']) ?>"><strong><?= prefaEscape(avancementPhrase($entry)) ?></strong> <span class="atelier-muted">· <?= prefaEscape(atelierLocalDateTime($entry['date_saisie'])) ?> · <?= prefaEscape($entry['auteur']) ?></span>
+                                                            <span class="atelier-saisie-etat"><?= prefaEscape(avancementEtatPhrase($entry)) ?></span>
                                                             <?php if ($entry['commentaire']): ?><p class="atelier-note"><?= prefaEscape($entry['commentaire']) ?></p><?php endif; ?>
                                                         </li>
                                                     <?php endforeach; ?>
@@ -151,7 +193,7 @@ $recentProgress = $stmt->fetchAll();
                 <?php endforeach; ?>
             </table>
         </div>
-        <?php if ($recentProgress || $times): ?>
+        <?php if ($recentProgress): ?>
             <details class="atelier-archive-history">
                 <summary>Historique des anciennes affectations</summary>
                 <p class="atelier-muted">Vos dernières saisies sur les travaux qui ne figurent plus dans vos affectations en cours (100 par catégorie).</p>
@@ -161,20 +203,8 @@ $recentProgress = $stmt->fetchAll();
                             <h2>Avancements</h2>
                             <ol class="atelier-saved-history-list">
                                 <?php foreach ($recentProgress as $entry): ?>
-                                    <li><strong><?= (int) $entry['avancement'] ?> %</strong> <span class="atelier-muted">· <?= prefaEscape(atelierLocalDateTime($entry['date_saisie'])) ?></span>
-                                        <p class="atelier-history-context">Demande <?= prefaEscape(prefaReferenceComplete((int) $entry['id_demande'])) ?> · <?= prefaEscape($entry['reference']) ?> · <?= prefaEscape($types[$entry['type_affectation']]) ?></p>
-                                        <?php if ($entry['commentaire']): ?><p class="atelier-note"><?= prefaEscape($entry['commentaire']) ?></p><?php endif; ?>
-                                    </li>
-                                <?php endforeach; ?>
-                            </ol>
-                        </section>
-                    <?php endif; ?>
-                    <?php if ($times): ?>
-                        <section class="atelier-detail-panel">
-                            <h2>Pointages</h2>
-                            <ol class="atelier-saved-history-list">
-                                <?php foreach ($times as $entry): ?>
-                                    <li><strong><?= (int) $entry['duree_minutes'] ?> min</strong> <span class="atelier-muted">· Travail du <?= prefaEscape(date('d/m/Y', strtotime($entry['date_travail']))) ?></span>
+                                    <li class="atelier-saisie-<?= prefaEscape($entry['etat']) ?>"><strong><?= prefaEscape(avancementPhrase($entry)) ?></strong> <span class="atelier-muted">· <?= prefaEscape(atelierLocalDateTime($entry['date_saisie'])) ?></span>
+                                        <span class="atelier-saisie-etat"><?= prefaEscape(avancementEtatPhrase($entry)) ?></span>
                                         <p class="atelier-history-context">Demande <?= prefaEscape(prefaReferenceComplete((int) $entry['id_demande'])) ?> · <?= prefaEscape($entry['reference']) ?> · <?= prefaEscape($types[$entry['type_affectation']]) ?></p>
                                         <?php if ($entry['commentaire']): ?><p class="atelier-note"><?= prefaEscape($entry['commentaire']) ?></p><?php endif; ?>
                                     </li>

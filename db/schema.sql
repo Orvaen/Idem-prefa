@@ -79,13 +79,20 @@ CREATE TABLE `avancement_atelier` (
   `id_affectation` int NOT NULL,
   `id_utilisateur` int NOT NULL,
   `avancement` tinyint unsigned NOT NULL,
+  `soudures` smallint unsigned DEFAULT NULL,
+  `soudures_total` smallint unsigned DEFAULT NULL,
   `commentaire` text,
+  `etat` enum('propose','valide','refuse') NOT NULL DEFAULT 'valide',
+  `valide_par` int DEFAULT NULL,
+  `date_validation` datetime DEFAULT NULL,
   `date_saisie` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  KEY `id_affectation` (`id_affectation`),
   KEY `id_utilisateur` (`id_utilisateur`),
+  KEY `fk_avancement_valide` (`valide_par`),
+  KEY `idx_avancement_attente` (`id_affectation`,`etat`,`id`),
   CONSTRAINT `avancement_atelier_ibfk_1` FOREIGN KEY (`id_affectation`) REFERENCES `affectation_atelier` (`id`) ON DELETE CASCADE,
   CONSTRAINT `avancement_atelier_ibfk_2` FOREIGN KEY (`id_utilisateur`) REFERENCES `Utilisateur` (`id`),
+  CONSTRAINT `fk_avancement_valide` FOREIGN KEY (`valide_par`) REFERENCES `Utilisateur` (`id`) ON DELETE SET NULL,
   CONSTRAINT `avancement_atelier_chk_1` CHECK ((`avancement` <= 100))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;

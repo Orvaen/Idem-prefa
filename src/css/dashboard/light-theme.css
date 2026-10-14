@@ -1526,7 +1526,6 @@ body[data-theme="light"],
     border-color: var(--border-subtle) !important;
 }
 
-
 [data-theme="light"] .planning-legend {
     background: #ffffff !important;
     border-color: var(--border-subtle) !important;
@@ -1552,10 +1551,4 @@ body[data-theme="light"],
 
 [data-theme="light"] .theme-swatch {
     border-color: var(--border-subtle) !important;
-}
-
-[data-theme="light"] .pointage-input {
-    background: #ffffff !important;
-    border-color: #cbd5e1 !important;
-    color: #0f172a !important;
 }

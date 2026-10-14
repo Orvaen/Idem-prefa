@@ -31,7 +31,7 @@ Get-Content scripts\init\add_user.php -Raw | docker exec -i php-app-php-1 php
 ## `migrations/` — pour une base déjà remplie
 
 **Sur une base neuve, il n'y a rien à lancer ici.** `db/schema.sql` contient déjà le
-résultat de toutes ces migrations : 35 tables, 269 colonnes et 53 clés étrangères,
+résultat de toutes ces migrations : 35 tables, 274 colonnes et 54 clés étrangères,
 vérifiées identiques à la base en service. Installez le schéma, c'est tout.
 
 Ces scripts ne servent qu'à **rattraper une base créée avant un changement** — typiquement
@@ -65,7 +65,7 @@ savoir laquelle avant de la lancer sur une base en service.
 | `2026-10-13_evenements` | **Supprime les événements de plus de sept jours** |
 | `2026-10-14_plan_numeros_de_ligne` | Relit les plans qui n'ont aucun numéro de ligne — plusieurs secondes par plan |
 
-Les dix-neuf autres ne font qu'ajouter des tables et des colonnes.
+Les vingt autres ne font qu'ajouter des tables et des colonnes.
 
 Dans le doute, lancez-les tous dans l'ordre alphabétique : la date en tête les range
 chronologiquement, et quelques-uns dépendent d'un précédent — `materiel_lignes` suppose

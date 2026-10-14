@@ -47,8 +47,7 @@ function atelierElements(PDO $db, int $requestId): array
     $stmt->execute([$requestId]);
     $elements = $stmt->fetchAll();
     foreach ($elements as &$element) {
-        $stmt = $db->prepare("SELECT a.*, TRIM(CONCAT(u.prenom, ' ', u.name)) AS utilisateur_nom,
-            (SELECT COALESCE(SUM(p.duree_minutes), 0) FROM pointage_atelier p WHERE p.id_affectation = a.id) AS minutes
+        $stmt = $db->prepare("SELECT a.*, TRIM(CONCAT(u.prenom, ' ', u.name)) AS utilisateur_nom
             FROM affectation_atelier a JOIN Utilisateur u ON u.id = a.id_utilisateur
             WHERE a.id_element = ? ORDER BY a.actif DESC, a.date_affectation DESC, a.id DESC");
         $stmt->execute([$element['id']]);

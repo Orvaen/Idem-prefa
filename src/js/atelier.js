@@ -1,6 +1,7 @@
 (() => {
-    // « Mes affectations » et « Pointage » partagent le même endpoint : on recharge la page ouverte.
-    const pagePersonnel = () => document.getElementById('pointage-page') ? 'pages/pointage.php' : 'pages/atelier.php';
+    // « Mes affectations » et « Mes soudures » partagent le même endpoint : on recharge la
+    // page ouverte.
+    const pagePersonnel = () => document.getElementById('soudures-page') ? 'pages/soudures.php' : 'pages/atelier.php';
 
     function refreshStaff(expanded = []) {
         if (!Array.isArray(expanded)) expanded = [];
@@ -45,6 +46,17 @@
         dialog.showModal();
         form.elements.reference.focus();
     });
+    // Le pourcentage qui part sur le planning, montré pendant la frappe : l’atelier compte
+    // des cordons, et voir « soit 86 % » au moment de taper 6 sur 7 évite de découvrir le
+    // chiffre après coup.
+    function montrerQuotient(champ) {
+        const total = Number(champ.dataset.total || champ.max) || 0;
+        const faites = Math.min(Math.max(Number(champ.value) || 0, 0), total);
+        const sortie = champ.closest('div')?.querySelector('.atelier-quotient');
+        if (sortie) sortie.textContent = total ? 'soit ' + Math.round(faites * 100 / total) + ' %' : '';
+    }
+    $(document).on('input', 'input[name="soudures"]', function () { montrerQuotient(this); });
+
     $(document).on('click', '.atelier-edit-progress', function () {
         const dialog = document.getElementById(this.dataset.dialog);
         if (!dialog) return;
@@ -56,8 +68,30 @@
         form.elements.commentaire.value = this.dataset.commentaire;
         dialog.querySelector('.atelier-progress-target').textContent = this.dataset.label;
         form.querySelector('.atelier-message').textContent = '';
+
+        // Ce plan porte-t-il une liste de soudures ? Elle décide du champ présenté, et
+        // désactive l’autre : laissé actif, il partirait aussi, et le serveur aurait deux
+        // réponses à la même question.
+        const total = Number(this.dataset.soudures) || 0;
+        const soudures = form.elements.soudures;
+        const pourcentage = form.elements.avancement;
+        dialog.querySelector('.atelier-champ-soudures').hidden = !total;
+        dialog.querySelector('.atelier-champ-pourcentage').hidden = total > 0;
+        soudures.disabled = !total;
+        soudures.required = total > 0;
+        pourcentage.disabled = total > 0;
+        pourcentage.required = !total;
+        if (total) {
+            soudures.max = total;
+            soudures.value = Math.round(Number(this.dataset.avancement) * total / 100);
+            // La phrase est écrite côté PHP et voyage sur le bouton : le même texte sert
+            // ici et sur l’écran de l’atelier, sans être composé deux fois.
+            dialog.querySelector('.atelier-soudures-origine').textContent = this.dataset.origine || '';
+            montrerQuotient(soudures);
+        }
+
         dialog.showModal();
-        form.elements.avancement.focus();
+        (total ? soudures : pourcentage).focus();
     });
     $(document).on('click', '.atelier-close-plan-edit', function () {
         this.closest('dialog')?.close();
@@ -115,7 +149,11 @@
             'Supprimer le plan « ' + this.dataset.planName + ' » ? Ses affectations et leur suivi seront supprimés. Les fichiers joints à la demande seront conservés.'
         )) return;
         const data = new URLSearchParams(form.serialize());
-        if (event.originalEvent?.submitter?.value === 'revoke') data.set('operation', 'revoke');
+        // serialize() ignore le bouton qui a envoyé le formulaire : deux boutons dans un
+        // même formulaire ont donc besoin qu’on les relise ici.
+        const submitter = event.originalEvent?.submitter;
+        if (submitter?.value === 'revoke') data.set('operation', 'revoke');
+        if (submitter?.name === 'decision') data.set('decision', submitter.value);
         const message = form.find('.atelier-message');
         const buttons = form.find('button');
         buttons.prop('disabled', true);

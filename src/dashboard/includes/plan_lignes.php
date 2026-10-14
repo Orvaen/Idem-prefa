@@ -28,6 +28,22 @@ function planLignesCache(int $requestId, string $cle, int $page = 1): string
 }
 
 /**
+ * Ce qui est déjà gardé pour cette page, sans jamais relire le PDF.
+ *
+ * La détection coûte quelques secondes par page : un écran qui doit parler de quinze
+ * feuilles ne peut pas la déclencher, il attendrait une demi-minute devant du vide. Il
+ * lit donc ce qui est connu, et dit franchement ce qui ne l'est pas encore.
+ *
+ * @return array{version:int, cases:list<array>, soudures:?array, pages:int}|null
+ */
+function planLignesAnalyseGardee(string $source, string $cache): ?array
+{
+    if (!is_file($cache) || !is_file($source) || filemtime($cache) < filemtime($source)) return null;
+    $analyse = json_decode((string) file_get_contents($cache), true);
+    return is_array($analyse) && ($analyse['version'] ?? 0) === PLAN_LIGNES_VERSION ? $analyse : null;
+}
+
+/**
  * Les deux tableaux du plan, sur la page demandée. La détection est déterministe : son
  * résultat est gardé à côté du plan et refait seulement si le fichier a changé.
  *
@@ -35,10 +51,8 @@ function planLignesCache(int $requestId, string $cle, int $page = 1): string
  */
 function planLignesAnalyse(string $source, string $cache, int $page = 1): array
 {
-    if (is_file($cache) && filemtime($cache) >= filemtime($source)) {
-        $analyse = json_decode((string) file_get_contents($cache), true);
-        if (is_array($analyse) && ($analyse['version'] ?? 0) === PLAN_LIGNES_VERSION) return $analyse;
-    }
+    $garde = planLignesAnalyseGardee($source, $cache);
+    if ($garde !== null) return $garde;
     // Quelques secondes au pire sur un gros plan : la session est rendue avant, sinon les
     // autres pages de la même personne attendraient derrière celle-ci.
     if (session_status() === PHP_SESSION_ACTIVE) session_write_close();

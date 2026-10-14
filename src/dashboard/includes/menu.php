@@ -129,13 +129,15 @@ function dashboardMenu(): array
         [
             // Pour le personnel d'atelier, « Mes affectations » rend en réalité atelier.php :
             // c'est donc par cette entrée-là qu'il reçoit l'outillage du plan ISO.
-            'id' => 'pointage',
+            'id' => 'soudures',
             'rayon' => 'atelier',
-            'libelle' => 'Pointage',
-            'page' => 'pages/pointage.php',
+            'libelle' => 'Mes soudures',
+            'page' => 'pages/soudures.php',
             'pour' => [Role::PersonnelAtelier],
-            'icone' => '<circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />',
-            ...$ressourcesIso,
+            // Un cordon, et son repère.
+            'icone' => '<path d="M4 15c2-3 4-3 6 0s4 3 6 0 2-3 4-1" /><path d="M8 5h8M12 5v4" />',
+            'styles' => [...$ressourcesIso['styles'], 'dashboard/soudures.css'],
+            'scripts' => [...$ressourcesIso['scripts'], 'soudures.js'],
         ],
         [
             'id' => 'plans-iso',

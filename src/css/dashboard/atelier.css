@@ -1010,34 +1010,6 @@
 
 /* Les sections du volet se suivent sur toute la largeur : sans cela, la grille à deux
    colonnes de l'en-tête les rangeait côte à côte, et on lisait le volet en zigzag. */
-/* La cellule « Plan / élément » du pointage : le nom et sa description sur une ligne,
-   le choix de l'isométrique sur la suivante. Trois lignes empilées faisaient chercher
-   où l'on était. */
-.pointage-plan-nom {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.pointage-iso-cell {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 6px;
-}
-
-.pointage-iso-cell .pointage-iso {
-    min-width: 13rem;
-    max-width: 22rem;
-}
-
-.atelier-plan-titre-section,
-.atelier-plan-block > .plan-viewer-plans,
-.atelier-plan-block > .atelier-file-management {
-    grid-column: 1 / -1;
-}
-
 .atelier-plan-titre-section {
     margin: 10px 0 -6px;
     font-size: 11px;
@@ -1192,6 +1164,167 @@
     border-radius: 7px;
     font-size: 12.5px;
     line-height: 1.5;
+}
+
+/* ===== AVANCEMENT DÉCLARÉ, AVANCEMENT RECONNU ===== */
+
+/* Deux chiffres cohabitent sur la ligne d'un travail : celui qui est reconnu — la pastille
+   d'état — et celui que la personne affectée annonce, qui n'a encore rien déplacé. Le
+   second se tient dans sa propre bande sous la ligne, avec son filet d'attente ; côte à
+   côte on les aurait confondus, et c'est précisément ce que la validation sépare.
+
+   « 1 / -1 » tient dans les trois gabarits de cette ligne — cinq colonnes au large, trois
+   dans le volet et sur petit écran : la bande occupe toute la largeur quelle qu'elle soit. */
+.atelier-plan-work .atelier-declaration {
+    grid-column: 1 / -1;
+    display: grid;
+    gap: 2px;
+    margin-top: 4px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--attente-texte);
+    border-radius: var(--r-md);
+    background: var(--surface);
+}
+
+.atelier-declaration p {
+    margin: 0;
+}
+
+.atelier-declaration-titre {
+    color: var(--attente-texte);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+.atelier-declaration-chiffre {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.atelier-declaration .atelier-note {
+    margin-top: 4px;
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+
+.atelier-declaration-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+/* Ce formulaire n'est pas un « prefa-form » : aucune forme de bouton ne lui arrive, il
+   porte donc la sienne. Les deux décisions ne se ressemblent pas — valider déplace le
+   pourcentage du plan, refuser ne déplace rien. */
+.atelier-declaration-actions button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: var(--ctrl-sm);
+    padding: 0 14px;
+    border: 1px solid transparent;
+    border-radius: var(--r-sm);
+    background: var(--accent);
+    color: #ffffff;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.atelier-declaration-actions button:hover:not(:disabled) {
+    background: var(--accent-hover);
+}
+
+.atelier-declaration-actions button.bouton-discret {
+    border-color: var(--border);
+    background: transparent;
+    color: var(--text-muted);
+}
+
+.atelier-declaration-actions button.bouton-discret:hover:not(:disabled) {
+    border-color: var(--danger-bord);
+    background: transparent;
+    color: var(--danger-texte);
+}
+
+.atelier-declaration-actions button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.atelier-declaration-actions button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.atelier-declaration-actions .atelier-message {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+/* Côté atelier : ce qui a été annoncé et qui attend encore. Même filet d'attente que la
+   bande du chef, pour que les deux écrans parlent visiblement du même objet. */
+.atelier-attente {
+    margin: 0 0 12px;
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--attente-texte);
+    border-radius: var(--r-md);
+    background: var(--frame);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* Le nombre de soudures, et ce qu'il vaut en pour cent. Le quotient se recalcule pendant la
+   frappe : c'est lui qui partira sur le planning, et le découvrir après coup surprend. */
+.atelier-champ-aide {
+    display: block;
+    margin-top: 4px;
+    color: var(--text-muted);
+    font-size: 11.5px;
+    line-height: 1.5;
+}
+
+.atelier-quotient {
+    color: var(--text);
+    font-weight: 600;
+}
+
+/* L'historique dit ce qu'est devenue chaque saisie. Sans cela, une déclaration refusée se
+   lisait comme un avancement acquis — elle est barrée, et porte le nom de qui l'a refusée. */
+.atelier-saisie-etat {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 7px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text-muted);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+.atelier-saisie-propose .atelier-saisie-etat {
+    border-color: var(--attente-texte);
+    color: var(--attente-texte);
+}
+
+.atelier-saisie-refuse .atelier-saisie-etat {
+    border-color: var(--alerte-bord);
+    background: var(--alerte-fond);
+    color: var(--alerte-texte);
+}
+
+.atelier-saisie-refuse>strong {
+    color: var(--text-muted);
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
 }
 
 /* ===== ÉDITEUR D'AFFECTATION & PRISE EN CHARGE ===== */
@@ -1698,198 +1831,15 @@
    Les champs vivent dans leurs cellules et sont rattachés au formulaire de la ligne par
    l'attribut form, un <form> ne pouvant pas être enfant direct d'un <tr>. */
 
-.pointage-table {
-    min-width: 980px;
-}
-
-.pointage-table td {
-    vertical-align: middle;
-}
-
 /* Les largeurs sont désignées par la POSITION de la colonne : insérer une colonne décale
    toutes les suivantes. Les numéros ci-dessous suivent l'en-tête — demande, plan, travail,
    date, durée — et sont à reprendre si l'ordre change. */
-.pointage-table th:nth-child(4),
-.pointage-table td:nth-child(4) {
-    width: 160px;
-}
-
-.pointage-table th:nth-child(5),
-.pointage-table td:nth-child(5) {
-    width: 110px;
-}
 
 /* La feuille ISO et son bouton tiennent sur une ligne : la liste se resserre si la place
    manque, le bouton garde la sienne — un bouton à moitié coupé ne se lit plus. */
-.pointage-iso-cell {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-top: 6px;
-    max-width: 230px;
-}
-
-.pointage-iso-cell .pointage-iso {
-    flex: 1 1 auto;
-    min-width: 0;
-}
-
-.pointage-iso-ouvrir {
-    flex: none;
-    height: 34px;
-    padding: 0 12px;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    background: transparent;
-    color: var(--accent);
-    font: inherit;
-    font-size: 12px;
-    white-space: nowrap;
-    cursor: pointer;
-}
-
-.pointage-iso-ouvrir:hover {
-    background: var(--hover);
-}
-
-.pointage-iso-ouvrir:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-}
-
-.pointage-table th:last-child,
-.pointage-table td:last-child {
-    width: 1%;
-    white-space: nowrap;
-}
-
-.pointage-input {
-    width: 100%;
-    min-width: 0;
-    height: 34px;
-    padding: 0 10px;
-    border: 1px solid var(--border);
-    border-radius: 5px;
-    background: var(--surface);
-    color: var(--text);
-    font: inherit;
-    font-size: 13px;
-}
-
-.pointage-input:focus {
-    border-color: var(--accent);
-    outline: none;
-}
-
-/* Le formulaire ne porte que le bouton et le message : il reste sur une ligne. */
-.pointage-row-form {
-    display: inline-flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 10px;
-    margin-right: 8px;
-}
-
-.pointage-row-form .atelier-message:empty {
-    display: none;
-}
 
 /* La cellule reste une cellule : c'est elle qui porte la bordure de la ligne, et une
    cellule en « flex » n'en est plus une — la colonne disparaît de la grille et le trait
    du bas s'arrête avant le bord du tableau. L'alignement se fait donc dans la boîte
    qu'elle contient. */
-.pointage-actions-cell {
-    white-space: nowrap;
-}
 
-.pointage-actions {
-    display: flex;
-    align-items: center;
-    flex-wrap: nowrap;
-    gap: 8px;
-}
-
-@media (pointer: coarse) {
-    .pointage-input {
-        height: 44px;
-        font-size: 16px;
-    }
-}
-
-/* La prise en charge est une action de ligne : son formulaire doit se fondre
-   parmi les boutons voisins de la colonne Actions. */
-.plans-iso-take {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.plans-iso-take .atelier-message:empty {
-    display: none;
-}
-
-/* =========================================================
-   HISTORIQUE DES POINTAGES
-   Une liste à plat ne disait pas ce que chaque valeur représentait : « TIG » flottait
-   sans en-tête, et un commentaire fait de chiffres passait pour un numéro. Un tableau
-   nomme ses colonnes, et le regroupement par jour répond à la question qu'on se pose
-   vraiment en relisant — combien de temps ce jour-là.
-   ========================================================= */
-
-.pointage-histo {
-    width: 100%;
-    margin-top: 4px;
-    border-collapse: collapse;
-    font-size: 13px;
-}
-
-.pointage-histo thead th {
-    padding: 6px 10px;
-    border-bottom: 1px solid var(--border);
-    color: var(--text-muted);
-    font-size: 11.5px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    text-align: left;
-}
-
-.pointage-histo td,
-.pointage-histo tbody th {
-    padding: 7px 10px;
-    border-bottom: 1px solid var(--border);
-    text-align: left;
-    vertical-align: top;
-}
-
-/* La bande du jour : elle sépare les journées et porte leur total. */
-.pointage-histo-jour > th,
-.pointage-histo-jour > td {
-    background: var(--hover);
-    font-weight: 600;
-    white-space: nowrap;
-}
-
-.pointage-histo-jour > th span {
-    margin-left: 10px;
-    color: var(--text-muted);
-    font-weight: 400;
-}
-
-.pointage-histo-total {
-    text-align: right !important;
-    color: var(--accent);
-}
-
-.pointage-histo-duree {
-    white-space: nowrap;
-    font-weight: 600;
-}
-
-.pointage-histo thead th:first-child,
-.pointage-histo-duree {
-    width: 5.5rem;
-}
-
-.pointage-histo thead th:nth-child(2) { width: 14rem; }
-.pointage-histo thead th:nth-child(3) { width: 9rem; }

@@ -10,6 +10,7 @@
 /** @var array<int, array<string, mixed>> $workshopUsers */
 
 require_once __DIR__ . '/../includes/atelier.php';
+require_once __DIR__ . '/../includes/avancement.php';
 require_once __DIR__ . '/../includes/plan_document.php';
 require_once __DIR__ . '/../includes/nomenclature.php';
 require_once __DIR__ . '/../includes/soudure.php';
@@ -27,7 +28,15 @@ foreach (['qmos' => $qmosByRequest[$requestId] ?? [], 'dmos' => $dmosByRequest[$
     foreach ($files as $file) $documentOptions[$kind . ':' . $file['id']] = strtoupper($kind) . ' — ' . $file['nom'];
 }
 $activeCount = 0;
-foreach ($elements as $element) foreach ($element['affectations'] as $assignment) if ($assignment['actif']) $activeCount++;
+$affectationsActives = [];
+foreach ($elements as $element) foreach ($element['affectations'] as $assignment) if ($assignment['actif']) {
+    $activeCount++;
+    $affectationsActives[] = (int) $assignment['id'];
+}
+// Les avancements déclarés par l'atelier et pas encore tranchés, toute la demande en une
+// lecture : un plan porte trois travaux, et les interroger un par un ferait une requête
+// par case.
+$avancementsAValider = avancementEnAttentePlusieurs($db, $affectationsActives);
 ?>
 <section class="atelier-section" aria-label="Travaux à affecter pour la demande <?= prefaEscape(prefaReferenceComplete($requestId)) ?>">
     <?php if ($canManageWorkshop && $taken): ?>
@@ -125,6 +134,18 @@ foreach ($elements as $element) foreach ($element['affectations'] as $assignment
                             <?php endif; ?>
 
                             <h4 class="atelier-plan-titre-section">Affectations</h4>
+                            <?php
+                            // Les soudures enregistrées sur ce plan : le dénominateur de
+                            // l'avancement, quand il y en a. Lu une fois pour les trois
+                            // travaux, qui portent tous sur le même plan.
+                            //
+                            // La phrase qui dit d'où sort ce total voyage avec le bouton : un
+                            // cahier de quinze pages réunit les soudures de ses quinze feuilles,
+                            // et « 105 » sans cette précision ne se comprend pas.
+                            $prevu = avancementSouduresPrevues($db, (int) $element['id']);
+                            $soudureTotal = $prevu['prevues'];
+                            $soudureOrigine = $soudureTotal > 0 ? avancementDenominateurPhrase($prevu) : '';
+                            ?>
                             <div class="atelier-plan-work-grid">
                             <?php foreach ($types as $type => $label): $assignment = $active[$type] ?? null; ?>
                                 <section class="atelier-plan-work"><h4><?= prefaEscape($label) ?></h4>
@@ -138,11 +159,39 @@ foreach ($elements as $element) foreach ($element['affectations'] as $assignment
                                         $pct = (int) $assignment['avancement'];
                                         $state = $pct === 100 ? 'done' : ($pct > 0 ? 'progress' : 'todo');
                                         $stateLabel = ['done' => 'Terminé', 'progress' => 'En cours', 'todo' => 'À commencer'][$state];
+                                        // Ce que la personne affectée annonce, et que personne n'a encore reconnu.
+                                        $declaration = $avancementsAValider[(int) $assignment['id']] ?? null;
                                     ?>
                                         <span class="atelier-work-status is-<?= $state ?>"><?= $stateLabel ?> · <?= $pct ?> %</span>
                                         <?php if ($canManageWorkshop && $taken): ?>
-                                            <button type="button" class="atelier-edit-progress" data-dialog="atelier-progress-dialog-<?= $requestId ?>" data-affectation="<?= (int) $assignment['id'] ?>" data-revision="<?= (int) $assignment['revision'] ?>" data-avancement="<?= $pct ?>" data-commentaire="<?= prefaEscape((string) ($assignment['commentaire'] ?? '')) ?>" data-label="<?= prefaEscape($element['reference'] . ' · ' . $label . ' · ' . $assignment['utilisateur_nom']) ?>">Saisir l’avancement</button>
+                                            <button type="button" class="atelier-edit-progress" data-dialog="atelier-progress-dialog-<?= $requestId ?>" data-affectation="<?= (int) $assignment['id'] ?>" data-revision="<?= (int) $assignment['revision'] ?>" data-avancement="<?= $pct ?>" data-soudures="<?= $soudureTotal ?>" data-origine="<?= prefaEscape($soudureOrigine) ?>" data-commentaire="<?= prefaEscape((string) ($assignment['commentaire'] ?? '')) ?>" data-label="<?= prefaEscape($element['reference'] . ' · ' . $label . ' · ' . $assignment['utilisateur_nom']) ?>">Saisir l’avancement</button>
                                         <?php endif; ?>
+                                        <?php // La bande vient après le bouton : elle occupe toute la largeur, et
+                                              // placée avant elle, elle aurait renvoyé le bouton sur la ligne suivante.
+                                        ?>
+                                        <?php if ($declaration && $canManageWorkshop && $taken): ?>
+                                            <!-- Le chiffre annoncé se tient à part du chiffre reconnu, et ne
+                                                 se confond pas avec lui : c'est tout l'objet de la validation. -->
+                                            <div class="atelier-declaration">
+                                                <p class="atelier-declaration-titre">Avancement déclaré, à valider</p>
+                                                <p class="atelier-declaration-chiffre"><?= prefaEscape(avancementPhrase($declaration)) ?></p>
+                                                <p class="atelier-muted"><?= prefaEscape($declaration['auteur']) ?> · <?= prefaEscape(atelierLocalDateTime($declaration['date_saisie'])) ?></p>
+                                                <?php if ($declaration['commentaire']): ?><p class="atelier-note"><?= prefaEscape($declaration['commentaire']) ?></p><?php endif; ?>
+                                                <form class="atelier-action atelier-declaration-actions" data-endpoint="update_atelier.php">
+                                                    <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
+                                                    <input type="hidden" name="id" value="<?= $requestId ?>">
+                                                    <input type="hidden" name="operation" value="valider">
+                                                    <input type="hidden" name="affectation" value="<?= (int) $assignment['id'] ?>">
+                                                    <input type="hidden" name="declaration" value="<?= (int) $declaration['id'] ?>">
+                                                    <button type="submit" name="decision" value="valider" title="L’avancement du plan prendra ce chiffre.">Valider</button>
+                                                    <button type="submit" name="decision" value="refuser" class="bouton-discret" title="L’avancement ne change pas ; la personne affectée pourra déclarer autre chose.">Refuser</button>
+                                                    <span class="atelier-message" role="status" aria-live="polite"></span>
+                                                </form>
+                                            </div>
+                                        <?php endif; ?>
+                                        <?php // Un chiffre déclaré n'est pas un fait : il ne sort pas d'entre la
+                                              // personne affectée et son chef avant d'être reconnu. Le reste de
+                                              // l'application ne voit donc que l'avancement de l'affectation. ?>
                                     <?php endif; ?>
 
                                     <?php if ($assignment && $assignment['commentaire']): ?><details class="atelier-work-report">
@@ -282,7 +331,16 @@ foreach ($elements as $element) foreach ($element['affectations'] as $assignment
                     <input type="hidden" name="operation" value="progress">
                     <input type="hidden" name="affectation">
                     <input type="hidden" name="revision">
-                    <div class="form-group"><label for="atelier-progress-value-<?= $requestId ?>">Avancement (%)</label><input id="atelier-progress-value-<?= $requestId ?>" name="avancement" type="number" min="0" max="100" step="1" required></div>
+                    <!-- Deux façons de dire la même chose, et une seule sert à la fois : le plan
+                         porte une liste de soudures, on compte des cordons ; sinon des pour cent.
+                         Le champ écarté est désactivé, pas seulement masqué — masqué, il partirait
+                         quand même avec le formulaire. -->
+                    <div class="form-group atelier-champ-soudures" hidden>
+                        <label for="atelier-progress-soudures-<?= $requestId ?>">Soudures faites</label>
+                        <input id="atelier-progress-soudures-<?= $requestId ?>" name="soudures" type="number" min="0" step="1" disabled>
+                        <span class="atelier-champ-aide"><span class="atelier-soudures-origine"></span> · <output class="atelier-quotient"></output></span>
+                    </div>
+                    <div class="form-group atelier-champ-pourcentage"><label for="atelier-progress-value-<?= $requestId ?>">Avancement (%)</label><input id="atelier-progress-value-<?= $requestId ?>" name="avancement" type="number" min="0" max="100" step="1" required></div>
                     <div class="form-group"><label for="atelier-progress-note-<?= $requestId ?>">Compte rendu</label><textarea id="atelier-progress-note-<?= $requestId ?>" name="commentaire" maxlength="2000" rows="3"></textarea></div>
                     <span class="atelier-message" role="status" aria-live="polite"></span>
                     <div class="atelier-plan-dialog-footer">
