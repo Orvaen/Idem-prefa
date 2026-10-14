@@ -38,11 +38,14 @@ $isRequester = $utilisateur->est(Role::ChargeDAffaire);
 // Comptes connectés sur cet appareil, pour le menu de bascule du pied de la barre latérale.
 $comptes = comptesList($db);
 
-// En développement seulement : la liste de tous les comptes, pour que le chargé de
-// production prenne la place de l'un d'eux sans son mot de passe et essaie les quatre
-// profils. En production, APP_ENV vaut « prod » et cette requête n'est même pas faite.
+// En développement seulement : la liste de tous les comptes, pour prendre la place de l'un
+// d'eux sans son mot de passe et essayer les quatre profils. Depuis n'importe quel compte
+// et non plus du seul administrateur — sinon, passé sur un compte d'atelier, la liste
+// disparaissait et il fallait repasser par l'administrateur pour sauter ailleurs.
+//
+// En production, APP_ENV vaut « prod » et cette requête n'est même pas faite.
 $comptesDev = [];
-if (Environnement::estDev() && $isAdmin) {
+if (Environnement::estDev()) {
     $comptesDev = $db->query("SELECT u.identifiant, u.name, u.prenom, u.id_role, r.name AS role_name
         FROM Utilisateur u JOIN role r ON r.id = u.id_role
         ORDER BY u.id_role, u.prenom, u.name")->fetchAll(PDO::FETCH_ASSOC);

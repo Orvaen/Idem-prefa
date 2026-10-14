@@ -1,14 +1,20 @@
 <?php
 // Prendre la place d'un compte sans son mot de passe. Développement uniquement.
 //
-// Trois verrous, et il faut les trois :
+// Deux verrous, et il faut les deux :
 //   1. le serveur tourne en développement — APP_ENV=dev, lu dans son environnement ;
-//   2. quelqu'un est déjà connecté, et c'est un chargé de production ;
-//   3. la requête porte le jeton de sa session.
+//   2. la requête porte le jeton de la session en cours.
 //
 // Le premier passe avant tout le reste, et notamment avant le contexte, qui répondrait 401
 // à un visiteur non connecté. Un 401 dit qu'il y a quelque chose à cette adresse ; en
 // production, cette action ne doit exister pour personne, pas même en creux.
+//
+// Il y avait un troisième verrou : être chargé de production. Il ne protégeait rien —
+// auth/dev_connexion.php, juste à côté, ouvre n'importe quel compte à qui n'est même pas
+// connecté — et il coûtait cher à l'usage : une fois passé sur un compte d'atelier, on ne
+// pouvait plus sauter vers un troisième sans repasser par l'administrateur, et la liste
+// disparaissait sans dire pourquoi. En développement, cette porte est ce qu'on vient
+// chercher ; en production, le fichier répond 404 à tout le monde.
 require_once __DIR__ . '/../../modeles/Environnement.php';
 
 if (!Environnement::estDev()) {
@@ -23,8 +29,6 @@ require_once __DIR__ . '/../includes/comptes.php';
 require_once __DIR__ . '/../../api/User.php';
 
 prefaPost();
-
-if (!$isAdmin) prefaError(403, 'Réservé au chargé de production.');
 
 $compte = trim((string) ($_POST['compte'] ?? ''));
 if ($compte === '') prefaError(400, 'Compte manquant.');
