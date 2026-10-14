@@ -1,4 +1,11 @@
 <?php
+/**
+ * Le personnel d'atelier : qui peut recevoir une affectation.
+ *
+ * Le rôle 3 — « Utilisateur » en base, personnel atelier dans le métier. La seconde
+ * fonction valide un identifiant reçu d'un formulaire : elle refuse aussi bien un nombre
+ * inventé qu'un compte réel qui n'a pas ce rôle, parce qu'un champ caché se modifie.
+ */
 
 function prefaWorkshopPersonnel(PDO $db): array
 {

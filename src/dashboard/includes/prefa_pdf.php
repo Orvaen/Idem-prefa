@@ -1,4 +1,14 @@
 <?php
+/**
+ * Un PDF déposé par un formulaire, vérifié avant d'entrer en base.
+ *
+ * Trois contrôles, et il faut les trois : la taille, le type réel du fichier lu par finfo,
+ * et les cinq premiers octets — « %PDF- ». L'extension et le type annoncé par le navigateur
+ * ne sont pas des preuves : ils viennent de celui qui dépose.
+ *
+ * Le nom est ramené à son dernier segment : un « ../ » dans un nom de fichier ne doit pas
+ * désigner un dossier voisin.
+ */
 
 function prefaPdfUpload(?array $upload): ?array
 {

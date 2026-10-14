@@ -11,9 +11,20 @@ $types = $db->query('SELECT id, libelle FROM type_passivation ORDER BY libelle')
 
 ?>
 
+<?php
+// Le jeton de version est l'heure de dernière modification du fichier servi : le navigateur
+// garde sa copie tant que le fichier n'a pas bougé, et la remplace dès qu'il bouge.
+//
+// Les trois défauts d'avant : time() changeait d'adresse à chaque affichage, donc la
+// feuille de style était retéléchargée en permanence ; settings.js portait l'heure de
+// floating-fields.js, donc le modifier ne renouvelait rien ; et le chemin remontait d'un
+// cran de trop — « pages/../js » au lieu de « pages/../../js » — d'où un avertissement
+// filemtime() à chaque ouverture de l'écran.
+$version = static fn (string $fichier): string => (string) @filemtime(__DIR__ . '/../../' . $fichier);
+?>
 <!-- Lien fichier externes -->
-<link rel="stylesheet" href="../css/dashboard/settings.css?v=<?= time() ?>">
-<script src="../js/settings.js?v=<?= filemtime(__DIR__ . '/../js/floating-fields.js') ?>" defer></script>
+<link rel="stylesheet" href="../css/dashboard/settings.css?v=<?= $version('css/dashboard/settings.css') ?>">
+<script src="../js/settings.js?v=<?= $version('js/settings.js') ?>" defer></script>
 
 <!-- Page de paramétres -->
 <section class="page settings-page">

@@ -1,4 +1,14 @@
 <?php
+/**
+ * Les éléments d'atelier d'une demande : les plans qu'on y a ouverts, et leur avancement.
+ *
+ * Un élément est une feuille de travail — un plan ISO — rattachée à une demande validée.
+ * Il porte des étapes, chacune faite ou non, et des documents.
+ *
+ * atelierDocumentAllowed() est la porte : elle dit si cette personne a le droit d'ouvrir ce
+ * fichier-là. Le personnel atelier ne voit que les éléments qui lui sont affectés, et c'est
+ * ici que la règle est écrite, pas dans chaque action de téléchargement.
+ */
 
 function atelierLocalDateTime(string $value, string $format = 'd/m/Y à H:i'): string
 {

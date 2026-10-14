@@ -1,4 +1,12 @@
 <?php
+/**
+ * Une ligne du tableau des types de passivation, en lecture ou en saisie.
+ *
+ * Le même balisage sert à trois endroits — l'écran des passivations, celui des paramètres,
+ * et la réponse de l'action qui en modifie une — et il doit être identique aux trois, sans
+ * quoi la ligne change d'allure selon le chemin par lequel on l'a obtenue.
+ */
+
 function passivationRow(array $type, bool $editing = false, string $error = ''): void
 {
     $id = (int) $type['id'];

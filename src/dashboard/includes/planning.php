@@ -1,4 +1,14 @@
 <?php
+/**
+ * Le calcul du planning : d'une durée en heures à des bandes sur un calendrier.
+ *
+ * Une demande occupe des jours, et ces jours se posent sur des lignes — des « couloirs » —
+ * de façon que deux demandes qui se chevauchent ne se recouvrent jamais à l'écran. C'est
+ * tout ce que fait ce fichier : il ne dessine rien, il place.
+ *
+ * Les jours ouvrés sont une option et non une règle : l'atelier travaille parfois le samedi,
+ * et un planning qui saute le week-end d'office annoncerait des fins de fabrication fausses.
+ */
 
 function planningDate(mixed $value): ?DateTimeImmutable
 {

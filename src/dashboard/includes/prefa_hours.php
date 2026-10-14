@@ -1,4 +1,15 @@
 <?php
+/**
+ * Le temps de fabrication : du pouce ISO aux heures, puis aux jours.
+ *
+ * Toute la chaîne tient en une multiplication — pouces × heures par pouce — et le taux est
+ * réglé une fois pour toutes dans parametrage_prefabrication. Les deux fonctions de mise en
+ * forme sont ici aussi, parce qu'une durée s'écrit partout de la même façon : « 2,5 j » et
+ * non « 2.50 j », et « 6 h 30 min » plutôt qu'un nombre décimal d'heures.
+ *
+ * La journée vaut 24 h et non 7 ou 8 : c'est une durée de four et d'atelier, pas un horaire
+ * de bureau.
+ */
 
 function prefaFormatDuration(int $hours, int $minutes): string
 {
