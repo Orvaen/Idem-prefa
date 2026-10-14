@@ -97,7 +97,12 @@ function planViewerRendu(int $elementId, array $plans, array $coulees, bool $mod
         <div class="plan-viewer" data-plan="<?= $elementId ?>" data-document="<?= (int) $plan['id'] ?>"
                  data-empreintes="<?= prefaEscape(json_encode((object) ($plan['empreintes'] ?? []))) ?>"
                  data-pages="<?= $pagesPlan ?>" data-page="1"
-                 <?php if ($modifiable): ?>data-csrf="<?= $csrf ?>" data-coulees="<?= $couleesJson ?>"<?php endif; ?>>
+                 <?php if ($modifiable): ?>data-csrf="<?= $csrf ?>" data-coulees="<?= $couleesJson ?>"
+                 <?php else: ?><?php // Lire les tableaux imprimés sans rien pouvoir poser dessus :
+                                     // c'est ce qu'il faut pour que la liste des soudures s'affiche
+                                     // sur le plan de celui qui le travaille. Un jeton distinct, pour
+                                     // qu'aucune commande d'écriture ne se croie permise. ?>
+                 data-lecture="<?= prefaEscape(Session::jeton()) ?>"<?php endif; ?>>
 
             <div class="plan-viewer-ligne">
                 <?php if ($modifiable && count($plans) > 1): ?>

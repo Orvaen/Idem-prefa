@@ -11,10 +11,22 @@ require_once __DIR__ . '/../includes/plan_document.php';
 require_once __DIR__ . '/../includes/plan_lignes.php';
 
 prefaPost();
-if (!$canManageWorkshop) prefaError(403, 'Seul l’encadrement peut détecter les lignes du plan.');
 
 $elementId = filter_var($_POST['plan'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 if (!$elementId) prefaError(400, 'Plan invalide.');
+
+// La détection n'écrit rien : elle dit où sont les tableaux imprimés et ce que la base y
+// met. Le soudeur affecté à ce plan y a donc droit — sans elle, il ouvrait son
+// isométrique et n'y voyait que le dessin nu, sans la liste des soudures qui s'imprime
+// pourtant sur le plan qu'il télécharge.
+//
+// Il reste tenu à SES plans : l'affectation est la porte, et elle est vérifiée ici.
+if (!$canManageWorkshop) {
+    require_once __DIR__ . '/../includes/soudure_atelier.php';
+    if (!$isWorkshopPersonnel || !soudureAtelierAffectation($db, $elementId, (int) $actor['id'])) {
+        prefaError(403, 'Ce plan ne vous est pas affecté.');
+    }
+}
 
 // La demande doit être validée : on ne travaille pas sur un plan qui peut encore bouger.
 $valide = $db->prepare('SELECT 1 FROM element_atelier e JOIN demande_prefabrication d ON d.id = e.id_demande

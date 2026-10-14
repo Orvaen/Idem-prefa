@@ -216,7 +216,11 @@
             // posent qu'une fois, et seulement sur la première page — un plan déjà
             // travaillé les a, et les reposer en ferait des doublons par-dessus celles
             // du chef.
-            if (viewer.dataset.csrf) detecter(viewer, true, pageVue(viewer) === 1 && reperes(viewer).length === 0);
+            // Les cases de coulée ne se posent que si on peut les poser ; la liste des
+            // soudures, elle, se réaffiche pour tout le monde — elle ne fait que montrer.
+            if (viewer.dataset.csrf || viewer.dataset.lecture) {
+                detecter(viewer, true, Boolean(viewer.dataset.csrf) && pageVue(viewer) === 1 && reperes(viewer).length === 0);
+            }
         };
         if (image && image.complete) caler();
         else if (image) image.addEventListener('load', caler, { once: true });
@@ -233,11 +237,13 @@
      */
     function detecter(viewer, automatique, poserCases) {
         const scene = viewer.querySelector('.plan-viewer-scene');
-        if (!scene || !scene.dataset.posable) return;
+        // Poser des cases, ou seulement lire : le second suffit à faire apparaître la liste
+        // des soudures sur le dessin, et c'est tout ce dont l'atelier a besoin.
+        if (!scene || (!scene.dataset.posable && !viewer.dataset.lecture)) return;
         if (!automatique) message(viewer, 'Lecture du tableau…', false);
 
         const donnees = new URLSearchParams();
-        donnees.set('csrf', viewer.dataset.csrf || '');
+        donnees.set('csrf', viewer.dataset.csrf || viewer.dataset.lecture || '');
         donnees.set('plan', viewer.dataset.plan);
         // La feuille ISO et sa page : un élément porte plusieurs feuilles, un cahier
         // plusieurs pages, et chaque page a ses propres tableaux imprimés.
@@ -480,7 +486,9 @@
             appliquerZoom(viewer, Number(viewer.dataset.zoom) || 100);
             // Une page jamais ouverte n'a pas encore ses cases : la lecture du tableau les
             // pose. Une page déjà travaillée garde les siennes — on ne les double pas.
-            if (viewer.dataset.csrf) detecter(viewer, true, reperes(viewer).length === 0);
+            if (viewer.dataset.csrf || viewer.dataset.lecture) {
+                detecter(viewer, true, Boolean(viewer.dataset.csrf) && reperes(viewer).length === 0);
+            }
         }, { once: true });
         image.src = image.dataset.src + '&page=' + demandee;
     }

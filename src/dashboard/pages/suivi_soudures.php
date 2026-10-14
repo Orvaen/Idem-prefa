@@ -186,10 +186,6 @@ $etatDuPlan = static function (array $ligne): array {
                                         <?php if (!$relevees): ?>
                                             <p class="atelier-muted">Aucun cordon n’a encore été relevé. Le soudeur les renseigne depuis « Mes soudures ».</p>
                                         <?php else: ?>
-                                            <?php // Le visa se pose ici : c'est l'écran où l'on regarde le travail
-                                                  // de l'atelier. Il engage celui qui le coche — son nom s'imprime
-                                                  // sur le plan final, et le cordon visé se fige pour le soudeur. ?>
-                                            <form class="soudures-visa-form" data-element="<?= $elementId ?>" data-csrf="<?= prefaEscape(Session::jeton()) ?>">
                                             <table class="atelier-soudures-table">
                                                 <thead><tr>
                                                     <th scope="col">N°</th><th scope="col">Feuille</th>
@@ -214,26 +210,12 @@ $etatDuPlan = static function (array $ligne): array {
                                                             <td class="soudure-controle"><?= trim((string) $cordon['rt']) === '' ? '' : SOUDURE_CROIX ?></td>
                                                             <td class="soudure-controle"><?= trim((string) $cordon['vi']) === '' ? '' : SOUDURE_CROIX ?></td>
                                                             <td class="soudure-controle"><?= trim((string) $cordon['pt']) === '' ? '' : SOUDURE_CROIX ?></td>
-                                                            <td class="soudure-visa">
-                                                                <label class="soudure-visa-case">
-                                                                    <input type="checkbox" name="visas[<?= (int) $cordon['id'] ?>]" value="1"
-                                                                           <?= $cordon['vise_par'] ? 'checked' : '' ?>
-                                                                           aria-label="Viser la soudure <?= prefaEscape((string) $cordon['numero']) ?>">
-                                                                    <span><?= prefaEscape((string) ($cordon['visa_nom'] ?: 'À viser')) ?></span>
-                                                                </label>
-                                                            </td>
+                                                            <td><?= prefaEscape((string) ($cordon['visa_nom'] ?: '—')) ?></td>
                                                         </tr>
                                                     <?php endforeach; ?>
                                                 </tbody>
                                             </table>
-                                            <div class="soudures-visa-pied">
-                                                <p class="atelier-muted atelier-soudures-note">Les contrôles RT, VI et PT se cochent dans la fenêtre du plan, feuille par feuille — c’est là qu’on a le dessin sous les yeux.</p>
-                                                <div class="soudures-visa-actions">
-                                                    <span class="atelier-message" role="status" aria-live="polite"></span>
-                                                    <button type="submit">Enregistrer les visas</button>
-                                                </div>
-                                            </div>
-                                            </form>
+                                            <p class="atelier-muted atelier-soudures-note">Les contrôles RT, VI et PT se cochent dans la fenêtre du plan, feuille par feuille — c’est là qu’on a le dessin sous les yeux.</p>
                                         <?php endif; ?>
                                     </section>
                                 </div>

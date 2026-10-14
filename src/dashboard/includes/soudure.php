@@ -160,52 +160,6 @@ function soudureSuiviPlans(PDO $db): array
 }
 
 /**
- * Pose ou retire le visa sur des cordons désignés par leur identifiant.
- *
- * La liste soudure de la fenêtre du plan travaille par numéro, page par page, parce qu'elle
- * réécrit une page entière. L'écran de suivi, lui, montre les cordons d'un plan toutes
- * feuilles confondues : deux cordons peuvent y porter le même numéro sur deux feuilles
- * différentes, et c'est donc l'identifiant qui désigne la ligne.
- *
- * Le visa garde son auteur d'origine : revalider ce qui l'est déjà n'est pas signer de
- * nouveau. Le retirer efface la signature et sa date — un cordon repris n'est plus celui
- * qu'on avait accepté.
- *
- * L'appartenance au plan est vérifiée ici, et pas seulement par l'appelant : un identifiant
- * se tape à la main.
- *
- * @param array<int, bool> $visas identifiant de cordon => visé ou non
- * @return array{poses:int, retires:int}
- */
-function soudureViser(PDO $db, int $elementId, array $visas, int $auteur): array
-{
-    if (!$visas) return ['poses' => 0, 'retires' => 0];
-
-    $poser = $db->prepare('UPDATE plan_soudure SET vise_par = ?, date_visa = ?
-        WHERE id = ? AND id_element = ? AND vise_par IS NULL');
-    $retirer = $db->prepare('UPDATE plan_soudure SET vise_par = NULL, date_visa = NULL
-        WHERE id = ? AND id_element = ? AND vise_par IS NOT NULL');
-
-    // L'heure en UTC, comme celles que la base pose elle-même : les écrans la ramènent à
-    // l'heure de Paris pour l'afficher.
-    $maintenant = gmdate('Y-m-d H:i:s');
-    $poses = 0;
-    $retires = 0;
-    foreach ($visas as $id => $vise) {
-        $id = (int) $id;
-        if ($id < 1) continue;
-        if ($vise) {
-            $poser->execute([$auteur, $maintenant, $id, $elementId]);
-            $poses += $poser->rowCount();
-        } else {
-            $retirer->execute([$id, $elementId]);
-            $retires += $retirer->rowCount();
-        }
-    }
-    return ['poses' => $poses, 'retires' => $retires];
-}
-
-/**
  * Les soudeurs proposés : ceux qui ont pointé sur ce plan.
  *
  * Un cordon est l'œuvre de quelqu'un qui a déclaré son temps dessus. Proposer tout
@@ -252,9 +206,6 @@ function soudureEmpreinte(PDO $db, int $elementId, int $documentId, int $page = 
         (string) $l['numero'], (string) ($l['id_soudeur'] ?? ''), (string) ($l['id_pointage'] ?? ''),
         (string) ($l['date_soudure'] ?? ''), (string) $l['type_soudure'],
         (string) $l['rt'], (string) $l['vi'], (string) $l['pt'],
-        // Le visa compte dans l'empreinte : sans lui, deux personnes pourraient retirer
-        // la signature l'une de l'autre sans que rien ne s'y oppose.
-        (string) ($l['vise_par'] ?? ''),
     ], soudureLignes($db, $elementId, $documentId, $page));
     return hash('sha256', json_encode($lignes));
 }
@@ -262,13 +213,8 @@ function soudureEmpreinte(PDO $db, int $elementId, int $documentId, int $page = 
 /**
  * Remplace la liste des soudures d'un plan par les lignes reçues.
  *
- * Le visa se pose et se retire ici, à la case cochée, et il engage celui qui le pose : sa
- * ligne porte son nom et l'heure, et c'est ce nom qui s'imprime sur le plan final. Coché
- * alors qu'il l'était déjà, il garde son auteur d'origine — ré-enregistrer la page n'est
- * pas signer de nouveau, et le second nom effacerait le premier.
- *
- * L'heure est prise en UTC, comme celles que la base pose elle-même : les écrans la
- * ramènent à l'heure de Paris pour l'afficher.
+ * Le visa n'est pas touché ici : il engage celui qui l'a posé et se pose par une action
+ * séparée. Réécrire la liste ne doit pas effacer ni déplacer une signature.
  *
  * @param list<array<string, string>> $lignes
  */
@@ -356,16 +302,7 @@ function soudureEnregistrer(PDO $db, int $elementId, int $documentId, int $page,
                 continue;
             }
 
-            // Le visa suit la case : cochée il se pose — ou se maintient, avec son auteur
-            // d'origine —, décochée il se retire. Le retirer est une décision comme une
-            // autre : un cordon repris n'est plus celui qu'on avait accepté.
             [$visePar, $dateVisa] = $visas[$numero] ?? [null, null];
-            if (trim((string) ($ligne['visa'] ?? '')) === '') {
-                [$visePar, $dateVisa] = [null, null];
-            } elseif (!$visePar) {
-                [$visePar, $dateVisa] = [$auteur, gmdate('Y-m-d H:i:s')];
-            }
-
             $inserer->execute([
                 $elementId, $documentId, $page, $numero, $soudeur, $pointage, $date,
                 $type, $rt, $vi, $pt, $visePar, $dateVisa, $auteur,
@@ -506,15 +443,7 @@ function soudureLigneRendu(array $ligne, array $soudeurs, bool $modifiable): str
         . '<td class="soudure-controle">' . $controle('rt', (string) ($ligne['rt'] ?? '')) . '</td>'
         . '<td class="soudure-controle">' . $controle('vi', (string) ($ligne['vi'] ?? '')) . '</td>'
         . '<td class="soudure-controle">' . $controle('pt', (string) ($ligne['pt'] ?? '')) . '</td>'
-        // Le visa est une case comme les contrôles, mais il ne porte pas une croix : il
-        // porte un nom. Celui de qui l'a posé s'affiche à côté — c'est lui qui s'imprimera
-        // sur le plan, et on doit voir ce qu'on engage avant de cocher.
-        . '<td class="soudure-visa">'
-        . '<label class="soudure-visa-case">'
-        . '<input type="checkbox" name="visa" value="1"' . ($visa !== '' ? ' checked' : '')
-        . ' aria-label="Viser la soudure ' . $valeur('numero') . '">'
-        . '<span>' . prefaEscape($visa !== '' ? $visa : 'À viser') . '</span>'
-        . '</label></td>'
+        . '<td class="soudure-visa">' . prefaEscape($visa !== '' ? $visa : '—') . '</td>'
         . '<td><button type="button" class="tableau-retirer" aria-label="Retirer la soudure ' . $valeur('numero') . '">✕</button></td>'
         . '</tr>';
 }
