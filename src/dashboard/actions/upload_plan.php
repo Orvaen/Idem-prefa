@@ -13,6 +13,7 @@
 // prend sa place au lieu de s'ajouter. Tout ce qu'on vérifie du fichier — type, taille,
 // PDF réel — vaut dans les deux cas, et il n'y a qu'un chemin à relire.
 require_once __DIR__ . '/../includes/prefa_context.php';
+require_once __DIR__ . '/../includes/plan_numeros.php';
 require_once __DIR__ . '/../includes/prefa_attachments.php';
 
 prefaPost();
@@ -70,6 +71,10 @@ $pages = 0;
 exec('pdfinfo ' . escapeshellarg($chemin) . ' 2>/dev/null', $infos);
 if (preg_match('/^Pages:\s+(\d+)/m', implode("\n", $infos), $trouve)) $pages = (int) $trouve[1];
 
+// Le numéro de ligne de chaque feuille, au même moment et pour la même raison : c'est
+// sous ce nom que l'atelier reconnaît une feuille, et c'est lui que le sommaire affiche.
+$numeros = planNumerosDeLigne($chemin);
+
 try {
     // Sauf remplacement demandé, le plan déposé S'AJOUTE à ceux de l'élément.
     //
@@ -82,9 +87,9 @@ try {
     // la suivent (ON DELETE CASCADE) : elles ont été relevées sur ce dessin-là, et leurs
     // positions ne veulent rien dire sur le suivant.
     if ($remplace) $db->prepare('DELETE FROM element_atelier_document WHERE id = ?')->execute([$remplace]);
-    $db->prepare("INSERT INTO element_atelier_document (id_element, type_document, cle_document, pages)
-        VALUES (?, 'plan', ?, ?)")
-        ->execute([$elementId, $cle, max(1, $pages)]);
+    $db->prepare("INSERT INTO element_atelier_document (id_element, type_document, cle_document, pages, numeros_ligne)
+        VALUES (?, 'plan', ?, ?, ?)")
+        ->execute([$elementId, $cle, max(1, $pages), $numeros ? json_encode($numeros) : null]);
     $documentId = (int) $db->lastInsertId();
     $db->commit();
 } catch (Throwable $erreur) {

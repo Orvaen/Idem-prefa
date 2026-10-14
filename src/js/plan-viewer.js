@@ -27,11 +27,6 @@
     // soudure : écrire plus petit que l'imprimé à côté se voit.
     const POLICE_PLAN = 1.24;
 
-    // Le numéro de page écrit dans le cartouche n'a pas de cellule : sa boîte est celle du
-    // mot qu'il remplace, mesurée sur l'encre, et non une case en retrait de ses traits.
-    // Même valeur que PLAN_FINAL_POLICE_CARTOUCHE, côté PDF.
-    const POLICE_CARTOUCHE = 1.0;
-
     // Un seul geste à la fois : déplacer une case ou la redimensionner. Un état unique
     // évite que deux gestionnaires se marchent dessus.
     let geste = null;
@@ -87,6 +82,47 @@
             repere.style.fontSize = (taille * utile / texte.scrollWidth).toFixed(2) + 'px';
         }
     }
+
+    // ---------------------------------------------------------------- sommaire
+
+    /**
+     * Ne garde au sommaire que les feuilles dont le numéro contient ce qu'on tape.
+     *
+     * Le numéro de ligne est ce que l'atelier lit sur la feuille qu'il a en main —
+     * « YU-PRE-108A-1 » — et un cahier en porte parfois trente. On accepte aussi « page 7 »
+     * pour qui raisonne encore en rangs. L'espace et le tiret sont ignorés : on tape
+     * rarement « 120-3 » comme il est écrit.
+     */
+    function filtrerSommaire(nav, saisie) {
+        const normaliser = texte => texte.toLowerCase().replace(/[\s-]+/g, '');
+        const cherche = normaliser(saisie);
+        let visibles = 0;
+
+        nav.querySelectorAll('.plan-dialog-sommaire-corps > li').forEach(item => {
+            const trouve = cherche === '' || normaliser(item.dataset.recherche || '').includes(cherche);
+            item.hidden = !trouve;
+            if (trouve) visibles++;
+        });
+
+        const vide = nav.querySelector('.plan-sommaire-vide');
+        if (vide) vide.hidden = visibles > 0;
+    }
+
+    $(document).on('input', '.plan-sommaire-recherche', function () {
+        const nav = this.closest('.plan-dialog-sommaire');
+        if (nav) filtrerSommaire(nav, this.value);
+    });
+
+    // Échap vide le champ plutôt que de fermer la fenêtre : on cherche une feuille, on se
+    // trompe de numéro, on veut revoir la liste entière sans perdre le plan ouvert.
+    $(document).on('keydown', '.plan-sommaire-recherche', function (evenement) {
+        if (evenement.key !== 'Escape' || this.value === '') return;
+        evenement.stopPropagation();
+        evenement.preventDefault();
+        this.value = '';
+        const nav = this.closest('.plan-dialog-sommaire');
+        if (nav) filtrerSommaire(nav, '');
+    });
 
     // ---------------------------------------------------------------- zoom
 
@@ -215,9 +251,6 @@
                     if (!automatique) message(viewer, corps.message || 'Détection impossible.', true);
                     return;
                 }
-                // Posé avant le reste : une feuille dont aucun tableau n'est reconnu porte
-                // quand même son numéro de page sur le plan final, et doit donc le montrer.
-                marquerPageSurPlan(viewer, corps.cartouche);
                 if ((!corps.cases || !corps.cases.length) && !corps.soudures) {
                     if (!automatique) message(viewer, corps.message || 'Détection impossible.', true);
                     return;
@@ -456,43 +489,6 @@
         const viewer = this.closest('.plan-viewer');
         allerPage(viewer, pageVue(viewer) + Number(this.dataset.saut));
     });
-
-    /**
-     * Écrit le numéro de page sur le plan, à la place de l'intitulé « Numéro de ligne » du
-     * cartouche — exactement ce que le plan final écrira. Un cahier ISO ne numérote pas
-     * ses feuilles, et un tirage papier mélangé ne se remet plus dans l'ordre.
-     *
-     * Une feuille seule n'a pas de page à annoncer : on ne lui écrit rien.
-     */
-    function marquerPageSurPlan(viewer, boite) {
-        const scene = viewer.querySelector('.plan-viewer-scene');
-        if (!scene) return;
-        const ancienne = scene.querySelector('.plan-page-cartouche');
-        if (ancienne) ancienne.remove();
-
-        const total = Math.max(1, Number(viewer.dataset.pages) || 1);
-        if (!boite || total < 2) return;
-
-        // Le cache déborde un peu du mot : c'est lui qui occupe la place à l'écran, comme
-        // le rectangle blanc du PDF.
-        const cache = boite.cache || boite;
-        const marque = document.createElement('div');
-        marque.className = 'plan-page-cartouche';
-        marque.style.left = (cache.x * 100).toFixed(4) + '%';
-        marque.style.top = (cache.y * 100).toFixed(4) + '%';
-        marque.style.width = (cache.w * 100).toFixed(4) + '%';
-        marque.style.height = (cache.h * 100).toFixed(4) + '%';
-
-        const valeur = document.createElement('span');
-        valeur.className = 'plan-soudure-valeur';
-        valeur.textContent = 'Page ' + pageVue(viewer) + ' / ' + total;
-        marque.appendChild(valeur);
-        scene.appendChild(marque);
-
-        // La police se mesure sur le mot remplacé et non sur le cache qui le déborde :
-        // c'est la règle du PDF, et l'écran doit montrer la même chose.
-        ajusterPolice(marque, POLICE_CARTOUCHE * boite.h / cache.h);
-    }
 
     /**
      * Marque la page affichée dans le sommaire et la ramène sous les yeux : un cahier de

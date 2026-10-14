@@ -206,16 +206,33 @@ function planViewerRendu(int $elementId, array $plans, array $coulees, bool $mod
                             <span class="plan-dialog-listes-titre">Sommaire</span>
                             <button type="button" class="plan-dialog-sommaire-replier">Replier</button>
                         </div>
+                        <?php if ($pagesPlan > 5): ?>
+                            <!-- Au-delà de cinq feuilles la liste défile, et retrouver un
+                                 numéro demande de la parcourir à l'œil. En deçà elles
+                                 tiennent toutes à l'écran : un champ de plus serait du
+                                 bruit. -->
+                            <input type="search" class="plan-sommaire-recherche"
+                                   placeholder="Chercher un numéro"
+                                   aria-label="Chercher une feuille par son numéro de ligne">
+                            <p class="plan-sommaire-vide" hidden>Aucune feuille à ce numéro.</p>
+                        <?php endif; ?>
                         <ol class="plan-dialog-sommaire-corps">
                             <?php for ($numeroPage = 1; $numeroPage <= $pagesPlan; $numeroPage++): ?>
-                                <li>
+                                <li data-recherche="<?= prefaEscape(mb_strtolower(($plan['numeros_ligne'][$numeroPage] ?? '') . ' page ' . $numeroPage)) ?>">
                                     <!-- La vignette n'est demandée qu'à l'ouverture de la
                                          fenêtre, comme le plan : un volet qui montre vingt
                                          feuilles ne doit pas en rastériser trois cents. -->
                                     <button type="button" class="plan-sommaire-page<?= $numeroPage === 1 ? ' est-vue' : '' ?>"
                                             data-page="<?= $numeroPage ?>" <?= $numeroPage === 1 ? 'aria-current="page"' : '' ?>>
                                         <img alt="" data-src="actions/plan_image.php?plan=<?= $elementId ?>&amp;document=<?= (int) $plan['id'] ?>&amp;page=<?= $numeroPage ?>&amp;vignette=1">
-                                        <span class="plan-sommaire-numero">Page <?= $numeroPage ?></span>
+                                        <?php
+                                        // Le numéro de ligne plutôt que celui de la page : c'est
+                                        // lui qui est imprimé sur la feuille qu'on a en main, et
+                                        // un cahier ne numérote pas ses pages. On retombe sur le
+                                        // rang quand le cartouche n'a rien donné.
+                                        $numeroLigne = $plan['numeros_ligne'][$numeroPage] ?? null;
+                                        ?>
+                                        <span class="plan-sommaire-numero"<?= $numeroLigne ? ' title="Page ' . $numeroPage . ' du cahier"' : '' ?>><?= prefaEscape($numeroLigne ?? 'Page ' . $numeroPage) ?></span>
                                         <?php if (!empty($posees[$numeroPage])): ?>
                                             <span class="plan-sommaire-marque"><?= $posees[$numeroPage] ?> coulée<?= $posees[$numeroPage] > 1 ? 's' : '' ?></span>
                                         <?php endif; ?>

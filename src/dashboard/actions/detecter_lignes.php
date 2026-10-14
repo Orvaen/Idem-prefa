@@ -70,7 +70,6 @@ echo json_encode([
     'valeurs' => $valeurs,
     // La place de l'intitulé « Numéro de ligne » : le lecteur y montre le numéro de page
     // que le plan final écrira, pour que l'écran dise la même chose que le PDF.
-    'cartouche' => $analyse['cartouche'] ?? null,
     // Le volet s'en sert pour prévenir qu'on travaille sur la première page d'un cahier.
     'pages' => (int) ($analyse['pages'] ?? 0),
     'avertissement' => implode(' ', $avertissements),

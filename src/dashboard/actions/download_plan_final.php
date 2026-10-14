@@ -92,29 +92,12 @@ try {
         $textes = array_merge($couleesDeLaPage($db, $elementId, (int) $plan['id'], $numero), $dessin['textes']);
         if ($textes || $dessin['traits']) $contenu++;
 
-        // Le numéro de page prend la place de l'intitulé « Numéro de ligne » du cartouche.
-        // Un cahier ISO ne numérote pas ses feuilles : sans cela, un tirage papier qu'on
-        // mélange ne se remet plus dans l'ordre. La valeur au-dessus continue de dire quel
-        // numéro de ligne porte la feuille — c'est le mot qu'on remplace, pas lui.
-        $caches = [];
-        $cartouche = $analyse['cartouche'] ?? null;
-        if ($cahier && $cartouche) {
-            $caches[] = $cartouche['cache'];
-            $textes[] = [
-                'texte' => 'Page ' . $numero . ' / ' . (int) $plan['pages'],
-                'x' => $cartouche['x'], 'y' => $cartouche['y'],
-                'w' => $cartouche['w'], 'h' => $cartouche['h'],
-                'police' => PLAN_FINAL_POLICE_CARTOUCHE,
-            ];
-        }
-
         if (!$textes && !$dessin['traits']) continue;
         $aEcrire[$numero] = ['textes' => $textes, 'traits' => $dessin['traits'],
-                             'caches' => $caches, 'geometrie' => $geometrie];
+                             'geometrie' => $geometrie];
     }
 
-    // Le numéro de page seul ne fait pas un plan final : c'est un repère, pas le travail
-    // de l'atelier. prefaError s'arrête ici même, avant d'avoir composé quoi que ce soit.
+    // prefaError s'arrête ici même, avant d'avoir composé quoi que ce soit.
     if (!$contenu) {
         prefaError(409, 'Rien à écrire sur ce plan : aucune coulée posée ni soudure numérotée.');
     }
@@ -124,7 +107,7 @@ try {
         // résolution à laquelle les tableaux ont été lus.
         $epaisseur = max(0.3, min($quoi['geometrie']['largeur'], $quoi['geometrie']['hauteur']) / 1169 * 1.0);
         $pdf = planFinalComposer($pdf, planFinalFlux($quoi['textes'], $quoi['traits'],
-            $quoi['geometrie'], $epaisseur, $quoi['caches']), $numero);
+            $quoi['geometrie'], $epaisseur), $numero);
     }
 } catch (Throwable $erreur) {
     // Le message dit ce qui bloque : un PDF d'un autre gabarit n'est pas une panne, c'est

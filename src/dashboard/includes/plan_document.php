@@ -18,7 +18,7 @@ require_once __DIR__ . '/prefa_attachments.php';
  */
 function planDocuments(PDO $db, int $elementId): array
 {
-    $stmt = $db->prepare("SELECT id, cle_document, pages FROM element_atelier_document
+    $stmt = $db->prepare("SELECT id, cle_document, pages, numeros_ligne FROM element_atelier_document
         WHERE id_element = ? AND type_document = 'plan' ORDER BY id");
     $stmt->execute([$elementId]);
 
@@ -35,9 +35,31 @@ function planDocuments(PDO $db, int $elementId): array
             // nombre de pages est retenu au dépôt, pour n'avoir pas à relire le PDF
             // chaque fois qu'on affiche le volet.
             'pages' => max(1, (int) $doc['pages']),
+            // Le numéro de ligne que porte chaque feuille, relevé au dépôt lui aussi.
+            // Les clés sont des numéros de page.
+            'numeros_ligne' => planDocumentNumeros($doc['numeros_ligne'] ?? null),
         ];
     }
     return $documents;
+}
+
+/**
+ * Les numéros de ligne tels qu'ils sortent de la base.
+ *
+ * La colonne est à NULL pour un plan déposé avant qu'on les relève, et pour celui dont le
+ * cartouche n'a rien donné : le sommaire retombe alors sur le numéro de page.
+ *
+ * @return array<int, string>
+ */
+function planDocumentNumeros($brut): array
+{
+    $numeros = is_string($brut) ? json_decode($brut, true) : null;
+    if (!is_array($numeros)) return [];
+    $propres = [];
+    foreach ($numeros as $page => $numero) {
+        if ((int) $page > 0 && is_string($numero) && $numero !== '') $propres[(int) $page] = $numero;
+    }
+    return $propres;
 }
 
 /**

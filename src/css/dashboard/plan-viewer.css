@@ -491,6 +491,37 @@
     display: none;
 }
 
+/* Le champ de recherche du sommaire. Même grammaire que les autres champs : 32 px de
+   haut, filet discret, l'accent à la prise de focus. */
+.plan-sommaire-recherche {
+    flex: none;
+    height: var(--ctrl-sm);
+    margin: 0 10px 8px;
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+}
+
+.plan-sommaire-recherche::placeholder {
+    color: var(--text-muted);
+}
+
+.plan-sommaire-recherche:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+
+.plan-sommaire-vide {
+    flex: none;
+    margin: 0 10px 8px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
 .plan-dialog-sommaire-corps {
     flex: 1;
     min-height: 0;
@@ -847,25 +878,6 @@
    un peu plus haut qu'elle — elle est posée en retrait des traits, lui s'étend jusqu'à
    eux sans les toucher. C'est le texte lui-même qui coupe, et seulement en largeur. */
 .plan-soudure,
-.plan-page-cartouche {
-    position: absolute;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #0f172a;
-    font-weight: 600;
-    line-height: 1;
-    white-space: nowrap;
-    pointer-events: none;
-}
-
-/* Le numéro de page recouvre l'intitulé du cartouche : son fond est opaque, puisqu'il
-   efface. Blanc comme le papier, quel que soit le thème — c'est le plan qu'on regarde,
-   pas l'interface. */
-.plan-page-cartouche {
-    background: #ffffff;
-}
-
 /* Le texte porté par la cellule. Il coupe à droite plutôt que de déborder de part et
    d'autre : un fragment lisible du début vaut mieux qu'un mot rogné aux deux bouts. */
 .plan-soudure-valeur {
