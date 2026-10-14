@@ -1,6 +1,6 @@
 # Affectations atelier par élément
 
-Architecture implémentée par `scripts/init/atelier_elements.sql`. Les migrations `workshop_assignment.sql` et `workshop_taken_by.sql` doivent être appliquées auparavant.
+Les tables concernées — `element_atelier` et `affectation_atelier` — sont dans `db/schema.sql`, qui porte le schéma complet. Les trois fichiers `.sql` que ce paragraphe citait n’ont jamais existé sous ce nom.
 
 ## Rôles
 

@@ -91,6 +91,15 @@ il y revient d'un clic.
 En production, l'action qui le permet répond `404` à tout le monde, y compris à un
 visiteur non connecté — rien n'indique qu'elle existe.
 
+## Les scripts
+
+`scripts/README.md` dit ce que contient chaque dossier et quand s'''en servir, en trois
+familles : `init/` pour les comptes et les jeux d'''essai, `migrations/` pour mettre à jour
+une base déjà en service, et la racine pour les outils de poste.
+
+Sur une base neuve, aucune migration n'''est à lancer : `db/schema.sql` en porte déjà le
+résultat.
+
 ## Créer le premier administrateur
 
 ```bash
