@@ -76,13 +76,14 @@ ksort($affaires);
                         <th scope="col">N° de commande</th>
                         <th scope="col">Date Livraison</th>
                         <th scope="col">Articles</th>
+                        <th scope="col">Reçus</th>
                         <th scope="col">Lecture</th>
                         <th scope="col">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (!$bons): ?>
-                        <tr><td colspan="8" class="prefa-table-empty">
+                        <tr><td colspan="9" class="prefa-table-empty">
                             Aucun bon de commande déposé. Le bon se dépose sur la demande, dans « Commande matériel ».
                         </td></tr>
                     <?php endif; ?>
@@ -134,6 +135,10 @@ ksort($affaires);
                                 <?= $echeances !== '' ? prefaEscape($echeances) : '<span class="materiel-vide">—</span>' ?>
                             </td>
                             <td class="materiel-cellule-articles"><?= count($bon['lignes']) ?: '—' ?></td>
+                            <?php ['recus' => $recus, 'total' => $total] = materielRecus($bon); ?>
+                            <td class="materiel-cellule-recus">
+                                <?= $total ? prefaEscape($recus . '/' . $total) : '<span class="materiel-vide">—</span>' ?>
+                            </td>
                             <td>
                                 <span class="materiel-etat materiel-etat-<?= prefaEscape($etat) ?>"
                                       title="<?= prefaEscape(materielResume($bon)) ?>">
@@ -142,7 +147,8 @@ ksort($affaires);
                             </td>
                             <td class="materiel-actions">
                                 <button type="button" class="prefa-toggle materiel-ouvrir" data-document="<?= $id ?>">
-                                    <?= $etat === 'a_lire' ? 'Lire le bon' : 'Voir et corriger' ?>
+                                    <?php // Une commande validée ne s'ouvre plus que pour être lue. ?>
+                                    <?= materielEstFige($bon) ? 'Voir' : ($etat === 'a_lire' ? 'Lire le bon' : 'Voir et corriger') ?>
                                 </button>
                             </td>
                         </tr>
@@ -169,6 +175,7 @@ ksort($affaires);
                           // l'etat dans sa pastille. Les echeances etaient reprises ici alors
                           // qu'elles ont leur colonne, et la phrase sur la lecture redisait ce que
                           // la pastille annonce. ?>
+                    <p class="materiel-dialog-surtitre">Bon de commande</p>
                     <h2 id="materiel-dialog-titre">Articles du bon</h2>
                     <p class="materiel-dialog-sous-titre"></p>
                     <?php // Elle ne parait que lorsqu'il y a quelque chose a faire, ou que la
@@ -188,6 +195,9 @@ ksort($affaires);
                     <table class="materiel-edition">
                         <thead>
                             <tr>
+                                <?php // L'état de réception se lit en toutes lettres : une case cochée
+                                      // ne disait pas ce qu'elle voulait dire. ?>
+                                <th scope="col" class="materiel-colonne-recu">Réception</th>
                                 <th scope="col">Référence</th>
                                 <th scope="col">Désignation</th>
                                 <th scope="col">Date Livraison</th>
@@ -203,9 +213,12 @@ ksort($affaires);
             </div>
 
             <div class="materiel-dialog-pied">
-                <div class="materiel-dialog-outils">
-                    <button type="button" class="materiel-relire bouton-discret">Lire le bon déposé</button>
-                    <button type="button" class="materiel-ajouter bouton-discret">Ajouter un article</button>
+                <div class="materiel-dialog-pied-gauche">
+                    <div class="materiel-dialog-outils">
+                        <button type="button" class="materiel-relire bouton-discret">Lire le bon déposé</button>
+                        <button type="button" class="materiel-ajouter bouton-discret">Ajouter un article</button>
+                    </div>
+                    <button type="button" class="materiel-tout-recu bouton-discret">Tout marquer reçu</button>
                 </div>
                 <div class="materiel-dialog-boutons">
                     <span class="materiel-message" role="status" aria-live="polite"></span>
@@ -221,11 +234,22 @@ ksort($affaires);
          ferait diverger au premier champ ajouté. -->
     <template id="materiel-gabarit">
         <tr class="materiel-edition-ligne">
-            <td><input class="materiel-champ" data-champ="reference" maxlength="80" aria-label="Référence"></td>
-            <td><input class="materiel-champ" data-champ="designation" maxlength="180" aria-label="Désignation"></td>
-            <td><input class="materiel-champ materiel-champ-date" data-champ="date_livraison" type="date" aria-label="Date de livraison"></td>
-            <td><input class="materiel-champ" data-champ="unite" maxlength="16" aria-label="Unité"></td>
-            <td><input class="materiel-champ materiel-champ-nombre" data-champ="quantite" inputmode="decimal" aria-label="Quantité"></td>
+            <td class="materiel-colonne-recu">
+                <button type="button" class="materiel-recu bouton-discret" aria-pressed="false">
+                    <span class="materiel-recu-point" aria-hidden="true"></span>
+                    <span class="materiel-recu-mot">Pas reçu</span>
+                </button>
+            </td>
+            <?php // readonly par défaut : un clic simple pointe la réception, c'est le
+                  // double-clic qui ouvre la case. Sans cela, viser une case pour corriger
+                  // une quantité cocherait la ligne au passage. ?>
+            <td><input class="materiel-champ" data-champ="reference" maxlength="80" aria-label="Référence" readonly></td>
+            <td><input class="materiel-champ" data-champ="designation" maxlength="180" aria-label="Désignation" readonly></td>
+            <td><input class="materiel-champ materiel-champ-date" data-champ="date_livraison"
+                       inputmode="numeric" maxlength="10" placeholder="jj/mm/aaaa"
+                       aria-label="Date de livraison" readonly></td>
+            <td><input class="materiel-champ" data-champ="unite" maxlength="16" aria-label="Unité" readonly></td>
+            <td><input class="materiel-champ materiel-champ-nombre" data-champ="quantite" inputmode="decimal" aria-label="Quantité" readonly></td>
             <td>
                 <button type="button" class="materiel-retirer bouton-discret" aria-label="Retirer cet article" title="Retirer">
                     <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg>

@@ -75,4 +75,32 @@ CREATE TABLE IF NOT EXISTS demande_materiel_lignes (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 SQL);
 
+// La réception se pointe ligne par ligne. Elle ne modifie pas la commande — une commande
+// validée est figée — elle constate ce qui est arrivé contre ce qui a été commandé.
+$lignes = $db->query('SHOW COLUMNS FROM demande_materiel_lignes')->fetchAll(PDO::FETCH_COLUMN);
+
+$ajouterLigne = static function (string $nom, string $definition) use ($db, $lignes): void {
+    if (in_array($nom, $lignes, true)) {
+        echo "Colonne $nom déjà là.\n";
+        return;
+    }
+    $db->exec('ALTER TABLE demande_materiel_lignes ADD COLUMN ' . $nom . ' ' . $definition);
+    echo "Colonne $nom ajoutée.\n";
+};
+
+$ajouterLigne('recu', 'TINYINT(1) NOT NULL DEFAULT 0');
+$ajouterLigne('date_reception', 'DATETIME DEFAULT NULL');
+$ajouterLigne('receptionne_par', 'INT DEFAULT NULL');
+
+$liens = $db->query("SELECT constraint_name FROM information_schema.referential_constraints
+    WHERE constraint_schema = DATABASE() AND table_name = 'demande_materiel_lignes'")->fetchAll(PDO::FETCH_COLUMN);
+if (!in_array('fk_materiel_lignes_receptionnaire', $liens, true)) {
+    $db->exec('ALTER TABLE demande_materiel_lignes
+        ADD CONSTRAINT fk_materiel_lignes_receptionnaire FOREIGN KEY (receptionne_par)
+            REFERENCES Utilisateur (id) ON DELETE SET NULL');
+    echo "Lien vers le réceptionnaire posé.\n";
+} else {
+    echo "Lien vers le réceptionnaire déjà là.\n";
+}
+
 echo "Articles des bons de commande en place.\n";

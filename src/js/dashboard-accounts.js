@@ -65,7 +65,7 @@
         return controle;
     }
 
-    const menuComptes = popover(trigger, menu, '.account-item:not(.is-current), .account-add');
+    const menuComptes = popover(trigger, menu, '.account-item:not(.is-current), .account-add, .account-devenir');
 
     document.addEventListener('click', event => {
         popovers.forEach(p => {
@@ -81,10 +81,11 @@
 
     const ouvrirMenu = ouvert => menuComptes.ouvrir(ouvert);
 
-    async function envoyer(donnees, bouton) {
+    /** Le menu n'''écrit que par deux actions : celle des comptes, et celle du développement. */
+    async function envoyer(donnees, bouton, action = 'comptes.php') {
         bouton.disabled = true;
         try {
-            const reponse = await fetch('actions/comptes.php', { method: 'POST', body: donnees, credentials: 'same-origin' });
+            const reponse = await fetch('actions/' + action, { method: 'POST', body: donnees, credentials: 'same-origin' });
             const resultat = await reponse.json().catch(() => ({}));
             if (!reponse.ok || !resultat.success) return resultat.message || 'Action impossible. Réessayez.';
             window.location.href = resultat.redirect || 'dashboard.php';
@@ -114,6 +115,18 @@
             gestion.querySelector('.account-manage-label').textContent = actif ? 'Terminer' : 'Gérer les comptes';
             return;
         }
+        // Développement : prendre la place d'un compte sans son mot de passe. Le bouton
+        // n'est rendu que si le serveur tourne avec APP_ENV=dev, et l'action le revérifie.
+        const devenir = event.target.closest('.account-devenir');
+        if (devenir) {
+            const donneesDev = new FormData();
+            donneesDev.set('csrf', menu.dataset.csrf);
+            donneesDev.set('compte', devenir.dataset.compte);
+            const erreurDev = await envoyer(donneesDev, devenir, 'dev_connexion.php');
+            if (erreurDev) window.alert(erreurDev);
+            return;
+        }
+
         const retrait = event.target.closest('.account-remove');
         const bascule = event.target.closest('.account-item');
         if (!retrait && !bascule) return;

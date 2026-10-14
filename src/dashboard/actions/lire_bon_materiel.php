@@ -34,6 +34,8 @@ if ($manquants = ccpuOutilsManquants()) {
 
 try {
     materielLireDocument($db, $idDocument);
+} catch (DomainException $exception) {
+    prefaError(409, $exception->getMessage());
 } catch (Throwable $exception) {
     error_log('Lecture du bon ' . $idDocument . ' : ' . $exception->getMessage());
     prefaError(500, 'Lecture impossible. Réessayez.');

@@ -865,7 +865,9 @@ body:has(.prefa-detail-row:not([hidden]))::before {
     font-size: 12px;
 }
 
-.materiel-livraison {
+/* Le nombre d'''articles en retard, dans le résumé d'''un bon : l'''ambre des « à faire ». */
+.materiel-retard {
+    color: var(--attente-texte);
     white-space: nowrap;
 }
 

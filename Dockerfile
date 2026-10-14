@@ -3,6 +3,14 @@ FROM php:8.3-apache
 # Installer les extensions MySQL nécessaires
 RUN docker-php-ext-install mysqli pdo_mysql
 RUN printf 'upload_max_filesize=50M\npost_max_size=512M\nmax_file_uploads=1000\n' > /usr/local/etc/php/conf.d/prefa-uploads.ini
+# Une session tient la journée de travail. Par défaut PHP la ramasse après 24 minutes
+# d'inactivité : on revenait d'une réunion devant un écran de connexion, et surtout la
+# liste des comptes mémorisés — qui vit dans la session — disparaissait avec elle, obligeant
+# à se reconnecter sur chaque compte un par un.
+#
+# Le cookie, lui, reste un cookie de session : fermer le navigateur déconnecte, ce qui est
+# la bonne règle sur un poste d'atelier partagé.
+RUN printf 'session.gc_maxlifetime=28800\n' > /usr/local/etc/php/conf.d/prefa-session.ini
 # Les pièces jointes sont déposées sous la racine web, mais ne doivent jamais être servies
 # directement : elles passent par les actions download_*.php, qui vérifient la session et
 # l'appartenance de la demande. Sans ce refus, l'adresse d'un fichier suffit à le lire sans

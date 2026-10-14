@@ -484,3 +484,51 @@
     color: var(--text-muted);
     opacity: 0.8;
 }
+
+/* ==========================================================================
+   DÉVELOPPEMENT
+   ==========================================================================
+
+   Ce qui suit n'apparaît que lorsque le serveur tourne avec APP_ENV=dev. En production,
+   le balisage n'est pas rendu du tout — ces règles n'y trouvent donc rien à habiller. */
+
+/* La marque de la barre latérale porte le mot : il faut pouvoir dire d'un coup d'œil, à
+   n'importe quel moment, qu'on n'est pas sur le serveur de l'atelier. */
+.nav-marque-dev {
+    display: inline-flex;
+    align-items: center;
+    height: 18px;
+    margin-left: 8px;
+    padding: 0 7px;
+    border-radius: 9px;
+    background: var(--attente-texte);
+    color: #1b1403;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.account-menu-dev .account-menu-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.account-dev-marque {
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: var(--attente-texte);
+    color: #1b1403;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.account-dev-mot {
+    margin: 0 0 6px;
+    padding: 0 12px;
+    color: var(--text-muted);
+    font-size: 11px;
+}

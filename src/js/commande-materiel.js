@@ -63,13 +63,50 @@
         return [...dialogue().querySelectorAll('.materiel-edition-ligne')].map(ligne => {
             const valeur = champ => ligne.querySelector(`[data-champ="${champ}"]`).value.trim();
             return {
+                id: ligne.dataset.ligne || '',
                 reference: valeur('reference'),
                 designation: valeur('designation'),
-                date_livraison: valeur('date_livraison'),
+                date_livraison: valeur('date_livraison'),   // jj/mm/aaaa, le serveur sait lire les deux
                 unite: valeur('unite'),
                 quantite: valeur('quantite'),
             };
         });
+    }
+
+    /** L'état de réception d'une ligne, posé en tête de celle-ci. */
+    function caseReception(rangee) {
+        const cellule = document.createElement('td');
+        cellule.className = 'materiel-colonne-recu';
+        const bouton = document.createElement('button');
+        bouton.type = 'button';
+        // « bouton-discret » : le marqueur qui sort de la forme de référence des boutons
+        // de formulaire, qui sinon les peint tous en bleu plein — reçu comme pas reçu.
+        bouton.className = 'materiel-recu bouton-discret';
+        bouton.setAttribute('aria-pressed', 'false');
+        bouton.innerHTML = '<span class="materiel-recu-point" aria-hidden="true"></span>'
+            + '<span class="materiel-recu-mot">Pas reçu</span>';
+        cellule.appendChild(bouton);
+        rangee.appendChild(cellule);
+        return cellule;
+    }
+
+    /** Une ligne d'une commande validée : du texte, et rien qui se saisisse — sauf sa case. */
+    function ajouterLigneFigee(ligne) {
+        const rangee = document.createElement('tr');
+        rangee.className = 'materiel-edition-ligne';
+        caseReception(rangee);
+        // La date se lit à la française : le format de la base est celui du champ de
+        // saisie, et une commande validée n'en a pas.
+        for (const champ of ['reference', 'designation', 'date_livraison_lue', 'unite', 'quantite']) {
+            const cellule = document.createElement('td');
+            cellule.textContent = ligne[champ] || '—';
+            if (champ === 'quantite') cellule.className = 'materiel-champ-nombre';
+            rangee.appendChild(cellule);
+        }
+        rangee.appendChild(document.createElement('td'));
+        dialogue().querySelector('.materiel-edition-lignes').appendChild(rangee);
+        marquerRetard(rangee, ligne.en_retard);
+        return rangee;
     }
 
     function ajouterLigne(ligne, douteuse) {
@@ -87,9 +124,41 @@
                 const champSaisie = rangee.querySelector(`[data-champ="${champ}"]`);
                 if (champSaisie) champSaisie.value = valeur ?? '';
             }
+            // La date se lit comme sur le bon : le format de la base n'est bon que pour
+            // la base, et un champ de type date suivait la langue du navigateur.
+            const date = rangee.querySelector('[data-champ="date_livraison"]');
+            if (date) date.value = ligne.date_livraison_lue || '';
+            marquerRetard(rangee, ligne.en_retard);
         }
         corps.appendChild(neuve);
         return rangee;
+    }
+
+    /** Une échéance passée sur un article qui n'est pas arrivé se signale. */
+    function marquerRetard(rangee, enRetard) {
+        const cellule = rangee.querySelector('[data-champ="date_livraison"]')?.closest('td')
+            || rangee.children[3];
+        if (!cellule) return;
+        cellule.classList.toggle('est-en-retard', !!enRetard);
+        if (enRetard) cellule.title = 'Échéance dépassée : cet article n’est pas arrivé.';
+        else cellule.removeAttribute('title');
+    }
+
+    /** Dit l'état de réception d'une ligne, en toutes lettres. */
+    function direReception(rangee, recu, quand) {
+        const bouton = rangee.querySelector('.materiel-recu');
+        if (!bouton) return;
+        bouton.setAttribute('aria-pressed', String(recu));
+        bouton.querySelector('.materiel-recu-mot').textContent = recu ? 'Reçu' : 'Pas reçu';
+        bouton.title = recu && quand ? quand : (recu ? 'Cliquer pour revenir à « Pas reçu »' : 'Cliquer pour marquer reçu');
+        rangee.classList.toggle('est-recue', recu);
+    }
+
+    /** Pose sur une rangée ce qui la rattache à la base : son identifiant et sa réception. */
+    function poserReception(rangee, ligne) {
+        if (!ligne || !ligne.id) return;
+        rangee.dataset.ligne = ligne.id;
+        direReception(rangee, !!ligne.recu, ligne.recu_le);
     }
 
     function compterLignes() {
@@ -106,10 +175,14 @@
 
         // Le numéro est le nom du bon. Sans lui — lecture ratée, en-tête illisible — on
         // retombe sur un intitulé générique plutôt que sur un titre vide.
-        fenetre.querySelector('#materiel-dialog-titre').textContent = bon.numero || 'Articles du bon';
+        fenetre.querySelector('#materiel-dialog-titre').textContent = bon.numero || 'Numéro non reconnu';
         fenetre.querySelector('.materiel-dialog-sous-titre').textContent = [
             ligne ? ligne.dataset.demande : '',
             bon.articles ? bon.articles + ' article' + (bon.articles > 1 ? 's' : '') : '',
+            // Ce qui est arrivé se compte ici, en chiffres : c'est l'information qu'on
+            // vient chercher, pas la phrase qui l'enrobait.
+            bon.recus ? bon.recus + ' reçu' + (bon.recus > 1 ? 's' : '') : '',
+            bon.retards ? bon.retards + ' en retard' : '',
         ].filter(Boolean).join(' · ');
 
         const pastille = fenetre.querySelector('.materiel-dialog-etat');
@@ -120,6 +193,10 @@
         const note = fenetre.querySelector('.materiel-dialog-note');
         note.textContent = noteDeLecture(bon);
         note.hidden = note.textContent === '';
+
+        // Une commande validée ne se modifie plus : la fenêtre s'ouvre en lecture, sans
+        // champ ni bouton d'écriture. La feuille de style se charge de les retirer.
+        fenetre.classList.toggle('est-figee', !!bon.fige);
     }
 
     /** Remplit la fenêtre d'un bon et l'ouvre. */
@@ -134,8 +211,11 @@
         fenetre.querySelector('.materiel-message').textContent = '';
 
         fenetre.querySelector('.materiel-edition-lignes').innerHTML = '';
-        (bon.lignes || []).forEach(l => ajouterLigne(l, l.douteuse));
+        (bon.lignes || []).forEach(l => {
+            poserReception(bon.fige ? ajouterLigneFigee(l) : ajouterLigne(l, l.douteuse), l);
+        });
         compterLignes();
+        majCaseTout();
 
         if (!fenetre.open) fenetre.showModal();
     }
@@ -147,8 +227,145 @@
     function noteDeLecture(bon) {
         if (bon.etat === 'a_lire') return 'Lisez le bon, ou saisissez ses articles à la main.';
         if (bon.etat === 'echec') return bon.resume;
+        // Sur une commande validée, la pastille le dit et les boutons d'écriture ont
+        // disparu : une phrase de plus ne ferait que redire ce qui se voit. Qui l'a
+        // validée et quand restent au survol de la pastille.
         return '';
     }
+
+    // ---------------------------------------------------- LA RÉCEPTION
+    //
+    // Cocher une ligne la déclare reçue. Le pointage part tout seul, groupé : on coche
+    // rarement une ligne isolée, et un bouton « enregistrer » de plus dans une fenêtre
+    // qui en a déjà un pour la commande ferait hésiter sur ce qu'on enregistre.
+
+    let aPointer = {};
+    let minuteur = null;
+
+    const estRecue = rangee => rangee.classList.contains('est-recue');
+
+    /** Le bouton de lot dit ce qu'il va faire, pas ce qui est. */
+    function majCaseTout() {
+        const fenetre = dialogue();
+        const lignes = [...fenetre.querySelectorAll('.materiel-edition-ligne')];
+        const bouton = fenetre.querySelector('.materiel-tout-recu');
+        if (!bouton) return;
+        const toutes = lignes.length > 0 && lignes.every(estRecue);
+        bouton.textContent = toutes ? 'Tout marquer non reçu' : 'Tout marquer reçu';
+        bouton.disabled = lignes.length === 0;
+    }
+
+    function envoyerPointage() {
+        const fenetre = dialogue();
+        const id = fenetre.querySelector('[name="document"]').value;
+        const lot = aPointer;
+        aPointer = {};
+        if (!id || !Object.keys(lot).length) return;
+
+        const mot = fenetre.querySelector('.materiel-message');
+        mot.textContent = 'Pointage…';
+
+        $.ajax({
+            url: 'actions/receptionner_bon_materiel.php',
+            method: 'POST',
+            data: {
+                csrf: fenetre.querySelector('[name="csrf"]').value,
+                document: id,
+                lignes: JSON.stringify(lot),
+            },
+            dataType: 'json',
+        })
+            .done(reponse => {
+                mot.textContent = reponse.message || '';
+                rafraichirRang(reponse.document);
+                // Le haut de la fenêtre compte les reçus : sans cela il gardait le compte
+                // d'avant le pointage, et contredisait les lignes qu'on venait de changer.
+                poserEntete(reponse.document);
+            })
+            .fail(xhr => {
+                mot.textContent = xhr.responseJSON?.message || 'Pointage impossible. Réessayez.';
+            });
+    }
+
+    function pointer(rangee, recu) {
+        const id = rangee.dataset.ligne;
+        if (!id) return;
+        direReception(rangee, recu, '');
+        // Un article arrivé n'est plus en retard, quelle que soit son échéance.
+        if (recu) marquerRetard(rangee, false);
+        aPointer[id] = recu;
+        clearTimeout(minuteur);
+        minuteur = setTimeout(envoyerPointage, 400);
+    }
+
+    $(document).on('click', '.materiel-recu', function () {
+        const rangee = this.closest('.materiel-edition-ligne');
+        pointer(rangee, !estRecue(rangee));
+        majCaseTout();
+    });
+
+    $(document).on('click', '.materiel-tout-recu', function () {
+        const lignes = [...dialogue().querySelectorAll('.materiel-edition-ligne')];
+        const recu = !lignes.every(estRecue);
+        lignes.forEach(r => pointer(r, recu));
+        majCaseTout();
+    });
+
+    // Un clic sur la ligne la coche ; un double-clic ouvre la case qu'on vise. Les deux
+    // gestes partagent le même premier clic, d'où l'attente : sans elle, ouvrir une case
+    // ferait clignoter le pointage au passage.
+    const DELAI_DOUBLE_CLIC = 220;
+    let clicEnAttente = null;
+
+    function ouvrirCase(cellule) {
+        const champ = cellule.querySelector('.materiel-champ[readonly]');
+        if (!champ) return false;
+        champ.readOnly = false;
+        champ.focus();
+        if (champ.type !== 'date') champ.select();
+        return true;
+    }
+
+    function fermerCases(sauf) {
+        dialogue().querySelectorAll('.materiel-champ:not([readonly])').forEach(champ => {
+            if (champ !== sauf) champ.readOnly = true;
+        });
+    }
+
+    $(document).on('click', '.materiel-edition-ligne', function (event) {
+        // La case à cocher et les boutons gardent leur propre geste, et une case déjà
+        // ouverte n'est pas un endroit où l'on pointe.
+        if (event.target.closest('.materiel-colonne-recu, button, label, a')) return;
+        if (event.target.closest('.materiel-champ:not([readonly])')) return;
+
+        const rangee = this;
+        clearTimeout(clicEnAttente);
+        clicEnAttente = setTimeout(() => {
+            fermerCases(null);
+            pointer(rangee, !estRecue(rangee));
+            majCaseTout();
+        }, DELAI_DOUBLE_CLIC);
+    });
+
+    $(document).on('dblclick', '.materiel-edition-ligne td', function (event) {
+        clearTimeout(clicEnAttente);
+        if (event.target.closest('.materiel-colonne-recu, button, label, a')) return;
+        fermerCases(null);
+        ouvrirCase(this);
+    });
+
+    // Une case se referme dès qu'on la quitte, et Entrée ou Échap valent sortie : il n'y a
+    // rien à confirmer ligne par ligne, c'est « Enregistrer » qui écrit.
+    $(document).on('blur', '.materiel-champ', function () {
+        this.readOnly = true;
+    });
+
+    $(document).on('keydown', '.materiel-champ', function (event) {
+        if (event.key !== 'Enter' && event.key !== 'Escape') return;
+        event.preventDefault();
+        this.readOnly = true;
+        this.blur();
+    });
 
     $(document).on('click', '.materiel-ouvrir', function () {
         ouvrir(this.dataset.document);
@@ -185,7 +402,12 @@
     $(document).on('click', '.materiel-ajouter', function () {
         const rangee = ajouterLigne(null, false);
         compterLignes();
-        rangee.querySelector('input').focus();
+        // Elle est vide : inutile de demander un double-clic pour commencer à la remplir.
+        const champ = rangee.querySelector('.materiel-champ');
+        if (champ) {
+            champ.readOnly = false;
+            champ.focus();
+        }
     });
 
     $(document).on('click', '.materiel-retirer', function () {
@@ -225,6 +447,11 @@
             livraison.innerHTML = '<span class="materiel-vide">—</span>';
         }
         ligne.querySelector('.materiel-cellule-articles').textContent = bon.articles || '—';
+        const recus = ligne.querySelector('.materiel-cellule-recus');
+        if (recus) {
+            if (bon.articles) recus.textContent = (bon.recus || 0) + '/' + bon.articles;
+            else recus.innerHTML = '<span class="materiel-vide">—</span>';
+        }
         const etat = ligne.querySelector('.materiel-etat');
         etat.className = 'materiel-etat materiel-etat-' + bon.etat;
         etat.textContent = bon.etat_libelle;

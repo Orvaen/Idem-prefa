@@ -50,17 +50,24 @@
     margin: 0;
 }
 
-/* ===== LA FENÊTRE D'ÉDITION ===== */
+/* ==========================================================================
+   LA FENÊTRE D'UN BON
+   ==========================================================================
 
-/* Quarante lignes de quatre champs : la fenêtre prend ce qu'il faut de l'écran, et c'est
-   le tableau qui défile, pas elle — l'en-tête et les boutons restent sous les yeux. */
+   Même registre que la fiche d'une demande : pleine page, une colonne centrée, un titre
+   léger, et de l'air. Ce qui s'y lit est un document — un bon de commande — pas un
+   formulaire : les champs sont du texte tant qu'on ne les ouvre pas, un clic coche la
+   ligne reçue, un double-clic ouvre la case qu'on veut corriger. */
+
 .materiel-dialog {
-    width: min(960px, 94vw);
+    width: 100vw;
     max-width: none;
-    max-height: 90vh;
+    height: 100vh;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
     padding: 0;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border: 0;
     background: var(--surface);
     color: var(--text);
 }
@@ -76,36 +83,59 @@
 .materiel-dialog form {
     display: flex;
     flex-direction: column;
-    min-height: 0;
-    max-height: 90vh;
     width: 100%;
+    min-height: 0;
+    max-height: 100dvh;
 }
+
+/* ===== L'EN-TÊTE ===== */
 
 .materiel-dialog-entete {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 16px;
-    padding: 20px 20px 14px;
+    gap: 24px;
+    width: 100%;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 32px 32px 18px;
+}
+
+.materiel-dialog-surtitre {
+    margin: 0 0 6px;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
 }
 
 .materiel-dialog-entete h2 {
     margin: 0;
-    font-size: 16px;
+    color: var(--text);
+    font-size: 26px;
+    font-weight: 300;
+    letter-spacing: -.01em;
+    line-height: 1.15;
 }
 
 .materiel-dialog-sous-titre {
-    margin: 4px 0 0;
+    margin: 8px 0 0;
     color: var(--text-muted);
     font-size: 13px;
 }
 
-/* L'état et la fermeture au même coin : ce sont les deux choses qu'on cherche en haut à
-   droite d'une fenêtre. */
+.materiel-dialog-note {
+    margin: 6px 0 0;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
 .materiel-dialog-coin {
     display: flex;
     align-items: center;
     gap: 14px;
+    flex-shrink: 0;
 }
 
 .materiel-dialog-etat {
@@ -135,19 +165,14 @@
     height: 16px;
 }
 
-/* Ce que vaut ce qui est affiché : une lecture par reconnaissance d'image n'est pas une
-   saisie. La phrase compte, le bandeau qui la portait non — elle se range sous le titre,
-   avec le reste de ce qui situe le bon. */
-.materiel-dialog-note {
-    margin: 6px 0 0;
-    color: var(--text-muted);
-    font-size: 12px;
-}
-
+/* ===== LA LISTE ===== */
 
 .materiel-dialog-corps {
+    width: 100%;
+    max-width: 1180px;
     min-height: 0;
-    padding: 0 20px 4px;
+    margin: 0 auto;
+    padding: 0 32px 8px;
     overflow-y: auto;
 }
 
@@ -157,81 +182,56 @@
 
 .materiel-edition {
     width: 100%;
-    min-width: 700px;
+    min-width: 760px;
     table-layout: fixed;
     border-collapse: collapse;
     font-size: 13px;
 }
 
 /* L'en-tête tient en haut pendant qu'on fait défiler quarante lignes. Son fond suffit à
-   le détacher : c'est le seul endroit de la fenêtre où un filet serait utile, et il ne
-   l'est plus dès que le fond est opaque. */
+   le détacher. */
 .materiel-edition th {
     position: sticky;
     top: 0;
     z-index: 1;
     height: var(--ligne-th);
-    padding: 8px 6px;
+    padding: 10px 10px;
     background: var(--surface);
     color: var(--text-muted);
     font-size: 11px;
-    font-weight: 500;
+    font-weight: 600;
+    letter-spacing: .04em;
     text-align: left;
+    text-transform: uppercase;
     white-space: nowrap;
 }
 
+/* De l'air : une ligne d'article se lit, elle ne se décrypte pas. */
 .materiel-edition td {
-    height: 38px;
-    padding: 0 2px;
+    height: 46px;
+    padding: 0 4px;
     vertical-align: middle;
 }
 
-/* La ligne survolée se détache seule : rien à tracer tant qu'on ne la regarde pas. */
-.materiel-edition tbody tr:hover > td,
-.materiel-edition tbody tr:focus-within > td {
+.materiel-edition tbody tr:hover > td {
     background: var(--hover);
 }
 
-.materiel-edition tbody tr > td:first-child {
-    border-radius: var(--r-sm) 0 0 var(--r-sm);
-}
+.materiel-edition th:nth-child(1) { width: 112px; }
+.materiel-edition th:nth-child(2) { width: 170px; }
+.materiel-edition th:nth-child(3) { width: auto; }
+.materiel-edition th:nth-child(4) { width: 150px; }
+.materiel-edition th:nth-child(5) { width: 76px; }
+.materiel-edition th:nth-child(6) { width: 100px; }
+.materiel-edition th:nth-child(7) { width: 40px; }
 
-.materiel-edition tbody tr > td:last-child {
-    border-radius: 0 var(--r-sm) var(--r-sm) 0;
-}
+/* ===== LES CASES ===== */
 
-/* « BPT316PN10DN300 » tient dans ses 160 px : coupée, une référence perd son diamètre,
-   qui est son dernier caractère. La livraison a la sienne : un champ de date porte son
-   bouton de calendrier. */
-.materiel-edition th:nth-child(1) { width: 160px; }
-.materiel-edition th:nth-child(2) { width: auto; }
-.materiel-edition th:nth-child(3) { width: 142px; }
-.materiel-edition th:nth-child(4) { width: 70px; }
-.materiel-edition th:nth-child(5) { width: 96px; }
-.materiel-edition th:nth-child(6) { width: 36px; }
-
-.materiel-champ-date {
-    font-variant-numeric: tabular-nums;
-}
-
-/* Le bouton de calendrier suit la même règle que les cadres : il n'apparaît que sur la
-   ligne qu'on regarde. Seize icônes en permanence, c'''est une colonne de pictogrammes
-   devant une colonne de dates. */
-.materiel-champ-date::-webkit-calendar-picker-indicator {
-    opacity: 0;
-    cursor: pointer;
-}
-
-.materiel-edition tbody tr:hover .materiel-champ-date::-webkit-calendar-picker-indicator,
-.materiel-edition tbody tr:focus-within .materiel-champ-date::-webkit-calendar-picker-indicator {
-    opacity: .55;
-}
-
-/* Les champs sont du texte tant qu'on ne les touche pas : quarante lignes encadrées
-   feraient une grille de boîtes, et c'est la liste qu'on doit lire. */
-.materiel-edition input {
+/* Une case fermée est du texte : la liste se lit comme le bon dont elle sort. Elle ne
+   s'ouvre qu'au double-clic, parce que le clic simple sert à pointer la réception. */
+.materiel-edition input:not([type="checkbox"]) {
     width: 100%;
-    height: var(--ctrl-xs);
+    height: var(--ctrl-sm);
     padding: 0 6px;
     border: 1px solid transparent;
     border-radius: var(--r-sm);
@@ -241,21 +241,73 @@
     font-size: 13px;
 }
 
-.materiel-edition tbody tr:hover input,
-.materiel-edition tbody tr:focus-within input {
-    border-color: var(--border);
+.materiel-edition input[readonly] {
+    cursor: pointer;
+    user-select: none;
+}
+
+/* Ouverte, elle se voit : c'est la seule case de la ligne qui porte un cadre. */
+.materiel-edition input:not([readonly]):not([type="checkbox"]) {
+    border-color: var(--accent);
     background: var(--frame);
+    cursor: text;
+    user-select: auto;
 }
 
 .materiel-edition input:focus {
-    border-color: var(--accent);
-    background: var(--frame);
     outline: none;
 }
 
 .materiel-champ-nombre {
     text-align: right;
     font-variant-numeric: tabular-nums;
+}
+
+.materiel-champ-date {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Une échéance passée sur un article qui n'''est pas arrivé : l'''ambre des « à faire »,
+   doublée du mot au survol. Un article reçu n'''est jamais en retard, quelle que soit sa
+   date : il est là. */
+.materiel-edition td.est-en-retard {
+    color: var(--attente-texte);
+}
+
+.materiel-edition td.est-en-retard input {
+    color: var(--attente-texte);
+    font-weight: 600;
+}
+
+/* Le repère se pose au bord de la cellule, en absolu : à la suite du champ, qui prend
+   toute la largeur, il tombait à la ligne et gonflait le rang de quinze pixels. */
+.materiel-edition td.est-en-retard {
+    position: relative;
+}
+
+.materiel-edition td.est-en-retard input {
+    padding-right: 16px;
+}
+
+.materiel-edition td.est-en-retard::after {
+    content: "!";
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    color: var(--attente-texte);
+    font-weight: 700;
+    pointer-events: none;
+}
+
+/* Le bouton de calendrier n'a de sens que sur une case ouverte. */
+.materiel-champ-date::-webkit-calendar-picker-indicator {
+    opacity: 0;
+    cursor: pointer;
+}
+
+.materiel-champ-date:not([readonly])::-webkit-calendar-picker-indicator {
+    opacity: .55;
 }
 
 .materiel-retirer {
@@ -288,32 +340,126 @@
 }
 
 .materiel-edition-vide {
-    margin: 16px 0;
+    margin: 24px 0;
     color: var(--text-muted);
     font-size: 13px;
     text-align: center;
 }
 
+/* ===== LE POINTAGE DE RÉCEPTION ===== */
+
+/* L'état se lit en toutes lettres : une case cochée ne disait pas ce qu'elle voulait dire.
+   Le bouton porte l'état courant et se retourne au clic ; un clic n'importe où sur la ligne
+   fait la même chose — on pointe un bon le document à la main.
+   C'est la seule chose qui reste possible sur une commande validée : on ne retouche pas ce
+   qui a été commandé, mais la marchandise continue d'arriver. */
+.materiel-edition-ligne {
+    cursor: pointer;
+}
+
+.materiel-colonne-recu {
+    width: 112px;
+}
+
+.materiel-recu {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: var(--ctrl-xs);
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 12px;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: border-color .12s ease, color .12s ease, background .12s ease;
+}
+
+.materiel-recu-point {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.materiel-recu:hover {
+    border-color: var(--text-muted);
+    color: var(--text);
+}
+
+.materiel-recu[aria-pressed="true"] {
+    border-color: var(--succes-bord);
+    background: var(--succes-fond);
+    color: var(--succes-texte);
+}
+
+/* Une ligne reçue se lit sans lire les étiquettes : le vert des « faits », doublé d'un
+   filet d'équerre à gauche pour que la couleur ne porte pas l'information seule. */
+.materiel-edition-ligne.est-recue > td {
+    background: color-mix(in srgb, var(--succes-texte) 9%, transparent);
+}
+
+.materiel-edition-ligne.est-recue > td:first-child {
+    box-shadow: inset 2px 0 0 var(--succes-texte);
+}
+
+/* ===== LE PIED ===== */
+
 .materiel-dialog-pied {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
+    gap: 20px;
     flex-wrap: wrap;
-    padding: 14px 20px 18px;
+    width: 100%;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 16px 32px 24px;
+    border-top: 1px solid var(--border);
+}
+
+.materiel-dialog-pied-gauche {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.materiel-tout-recu {
+    height: var(--ctrl-sm);
+    padding: 0 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.materiel-tout-recu:hover:not(:disabled) {
+    background: var(--hover);
+}
+
+.materiel-tout-recu:disabled {
+    opacity: .5;
+    cursor: default;
 }
 
 .materiel-dialog-outils,
 .materiel-dialog-boutons {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     flex-wrap: wrap;
 }
 
 .materiel-dialog-outils button {
     height: var(--ctrl-sm);
-    padding: 0 12px;
+    padding: 0 14px;
     border: 1px solid var(--border);
     border-radius: var(--r-sm);
     background: transparent;
@@ -337,8 +483,6 @@
     font-size: 12px;
 }
 
-/* « Annuler » n'est pas l'action de la fenêtre : il ne porte pas la couleur d'accent que
-   .prefa-form donne à tous ses boutons. */
 .materiel-dialog-boutons .materiel-fermer {
     height: var(--ctrl-sm);
     padding: 0 14px;
@@ -353,4 +497,19 @@
 
 .materiel-dialog-boutons .materiel-fermer:hover {
     background: var(--hover);
+}
+
+/* Une commande validée s'ouvre en lecture : plus rien qui écrive. Le serveur refuse de
+   toute façon — ceci évite d'avoir à le lui demander. */
+/* Le sélecteur est lourd à dessein : la forme de référence des boutons de formulaire pèse
+   quatre classes, et « display: inline-flex » y revenait masquer ce « display: none ». */
+.materiel-dialog.est-figee .materiel-dialog-outils,
+.materiel-dialog.est-figee form .materiel-dialog-boutons button[type="submit"],
+.materiel-dialog.est-figee .materiel-retirer {
+    display: none;
+}
+
+.materiel-liste .materiel-cellule-recus {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
 }

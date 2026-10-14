@@ -29,6 +29,68 @@ au lieu d'effacer quoi que ce soit.
 Les sauvegardes complètes de la base ne sont pas suivies par git : elles contiennent
 les mots de passe hachés et les documents déposés.
 
+## Développement ou production
+
+L'application tourne dans l'un des deux modes, selon la variable `APP_ENV` lue dans
+l'environnement du serveur. **Le défaut est la production** : `docker-compose.yml` est
+livré avec `APP_ENV: ${APP_ENV:-prod}`, donc une machine qui démarre sans rien de plus
+tourne en production.
+
+### Monter en production
+
+Rien à faire, c'est le défaut. Le serveur de l'atelier n'a pas de fichier `.env` :
+
+```bash
+docker compose up -d --build
+```
+
+### Monter en développement
+
+Poser un fichier `.env` à côté de `docker-compose.yml`. Il est ignoré par git : il ne
+peut donc pas partir en production par mégarde.
+
+```bash
+printf 'APP_ENV=dev\n' > .env
+docker compose up -d --build
+```
+
+### Basculer d'un mode à l'autre
+
+La variable du shell l'emporte sur le fichier `.env`, ce qui permet d'essayer l'autre mode
+sans rien modifier :
+
+```bash
+APP_ENV=prod docker compose up -d php    # ce poste, en production, le temps d'un essai
+docker compose up -d php                 # retour au mode du fichier .env
+```
+
+```powershell
+$env:APP_ENV = 'prod'; docker compose up -d php
+Remove-Item Env:APP_ENV; docker compose up -d php
+```
+
+La variable n'est lue qu'au démarrage du conteneur : changer de mode demande donc de le
+recréer, et les sessions ouvertes tombent.
+
+### Savoir où l'on est
+
+Dans l'application, un repère **DEV** est posé à côté du logo, dans la barre latérale. Il
+n'apparaît qu'en développement. Depuis le terminal :
+
+```bash
+docker compose config | grep APP_ENV
+```
+
+### Ce que le développement ouvre
+
+Le chargé de production peut prendre la place de n'importe quel compte sans son mot de
+passe, depuis la section « Développement » du menu des comptes, pour essayer les quatre
+profils sans se déconnecter. Son propre compte reste dans la liste des comptes connectés :
+il y revient d'un clic.
+
+En production, l'action qui le permet répond `404` à tout le monde, y compris à un
+visiteur non connecté — rien n'indique qu'elle existe.
+
 ## Créer le premier administrateur
 
 ```bash

@@ -380,6 +380,13 @@ body[data-theme="light"],
     background-color: transparent !important;
 }
 
+/* La fenêtre d'un bon ne révèle rien au survol : un clic coche la ligne reçue, un
+   double-clic ouvre la case qu'on vise, et elle est alors la seule à porter un cadre. */
+[data-theme="light"] .materiel-edition input:not([readonly]):not([type="checkbox"]):not([type="radio"]) {
+    border-color: #2563eb !important;
+    background-color: #ffffff !important;
+}
+
 [data-theme="light"] .affaires-table tbody tr:hover input:not([type="checkbox"]),
 [data-theme="light"] .affaires-table tbody tr:hover select,
 [data-theme="light"] .affaires-table tbody tr:focus-within input:not([type="checkbox"]),
@@ -389,9 +396,7 @@ body[data-theme="light"],
 [data-theme="light"] .commandes-editable tbody tr:focus-within input:not([type="checkbox"]),
 [data-theme="light"] .commandes-editable tbody tr:focus-within select,
 [data-theme="light"] .commande-articles-table tbody tr:hover input:not([type="checkbox"]),
-[data-theme="light"] .commande-articles-table tbody tr:focus-within input:not([type="checkbox"]),
-[data-theme="light"] .materiel-edition tbody tr:hover input:not([type="checkbox"]),
-[data-theme="light"] .materiel-edition tbody tr:focus-within input:not([type="checkbox"]) {
+[data-theme="light"] .commande-articles-table tbody tr:focus-within input:not([type="checkbox"]) {
     border-color: #cbd5e1 !important;
     background-color: #ffffff !important;
 }
@@ -400,8 +405,7 @@ body[data-theme="light"],
 [data-theme="light"] .affaires-table tbody tr select:focus,
 [data-theme="light"] .commandes-editable tbody tr input:not([type="checkbox"]):focus,
 [data-theme="light"] .commandes-editable tbody tr select:focus,
-[data-theme="light"] .commande-articles-table tbody tr input:not([type="checkbox"]):focus,
-[data-theme="light"] .materiel-edition tbody tr input:not([type="checkbox"]):focus {
+[data-theme="light"] .commande-articles-table tbody tr input:not([type="checkbox"]):focus {
     border-color: #2563eb !important;
 }
 

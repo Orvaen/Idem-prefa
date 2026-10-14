@@ -38,6 +38,16 @@ $isRequester = $utilisateur->est(Role::ChargeDAffaire);
 // Comptes connectés sur cet appareil, pour le menu de bascule du pied de la barre latérale.
 $comptes = comptesList($db);
 
+// En développement seulement : la liste de tous les comptes, pour que le chargé de
+// production prenne la place de l'un d'eux sans son mot de passe et essaie les quatre
+// profils. En production, APP_ENV vaut « prod » et cette requête n'est même pas faite.
+$comptesDev = [];
+if (Environnement::estDev() && $isAdmin) {
+    $comptesDev = $db->query("SELECT u.identifiant, u.name, u.prenom, u.id_role, r.name AS role_name
+        FROM Utilisateur u JOIN role r ON r.id = u.id_role
+        ORDER BY u.id_role, u.prenom, u.name")->fetchAll(PDO::FETCH_ASSOC);
+}
+
 // Ce que cette personne peut ouvrir, et donc ce qu'il faut lui envoyer.
 $entrees = dashboardMenuRange($utilisateur);
 $ressources = dashboardRessources($utilisateur);
@@ -109,6 +119,11 @@ if ($isAdmin || $isWorkshopChief) {
                     <img src="<?= htmlspecialchars($logo) ?>?v=<?= filemtime(__DIR__ . '/../assets/' . basename($logo)) ?>" alt="IDEM">
                 <?php else: ?>
                     <span class="nav-marque-mot">IDEM</span>
+                <?php endif; ?>
+                <?php // Un repère permanent : on ne doit jamais croire qu'''on est en production
+                      // alors qu'''on ne l'''est pas. Il ne paraît qu'''en développement. ?>
+                <?php if (Environnement::estDev()): ?>
+                    <span class="nav-marque-dev" title="APP_ENV=dev — les commodités de développement sont ouvertes">dev</span>
                 <?php endif; ?>
             </div>
 
@@ -263,6 +278,38 @@ if ($isAdmin || $isWorkshopChief) {
             <span class="account-manage-label">Gérer les comptes</span>
         </button>
         </div>
+
+        <?php if ($comptesDev): ?>
+            <div class="account-menu-separator"></div>
+
+            <div class="account-menu-group account-menu-dev">
+                <p class="account-menu-title">
+                    Développement
+                    <span class="account-dev-marque">dev</span>
+                </p>
+                <p class="account-dev-mot">Prendre la place d’un compte, sans son mot de passe.</p>
+
+                <ul class="account-list">
+                    <?php foreach ($comptesDev as $autre):
+                        if ($autre['identifiant'] === $utilisateur->identifiant) continue;
+                        $nomAutre = trim($autre['prenom'] . ' ' . $autre['name']);
+                    ?>
+                        <li class="account-row">
+                            <button type="button" class="account-item account-devenir" role="menuitem"
+                                    data-compte="<?= htmlspecialchars($autre['identifiant']) ?>">
+                                <span class="account-avatar">
+                                    <span class="user-avatar"><?= htmlspecialchars(mb_strtoupper(mb_substr(trim($autre['name']), 0, 1))) ?></span>
+                                </span>
+                                <span class="account-identity">
+                                    <strong><?= htmlspecialchars($nomAutre) ?></strong>
+                                    <span><?= htmlspecialchars($autre['role_name']) ?><?php if ($metier = roleComplement((int) $autre['id_role'])): ?> · <?= htmlspecialchars($metier) ?><?php endif; ?></span>
+                                </span>
+                            </button>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+        <?php endif; ?>
 
         <div class="account-menu-separator"></div>
 

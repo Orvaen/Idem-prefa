@@ -3,6 +3,16 @@ services:
     build: .
     ports:
       - "8080:80"
+    environment:
+      # Production par défaut, et c'est le point important : ce fichier est aussi celui du
+      # serveur de l'atelier, qui démarre sans rien de plus. Le développement s'active en
+      # posant APP_ENV=dev dans un fichier .env à côté de celui-ci — .gitignore l'écarte,
+      # il ne peut donc pas partir en production par mégarde.
+      #
+      # Ce que cela ouvre en développement : un chargé de production peut prendre la place
+      # de n'importe quel compte sans son mot de passe, pour essayer les quatre profils
+      # sans se déconnecter. Rien de tout cela n'existe en production.
+      APP_ENV: ${APP_ENV:-prod}
     volumes:
       - ./src:/var/www/html
     depends_on:
