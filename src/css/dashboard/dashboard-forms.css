@@ -83,51 +83,6 @@
 
 /* ===== ROLE SELECT ===== */
 
-.role-select {
-    position: relative;
-}
-
-.role-list {
-    display: none;
-
-    position: absolute;
-    z-index: 100;
-
-    top: calc(100% + 2px);
-    left: 0;
-    right: 0;
-
-    max-height: 200px;
-    overflow-y: auto;
-
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-
-    font-size: 13px;
-}
-
-.role-list.active {
-    display: block;
-}
-
-.role-option {
-    padding: 6px 8px;
-    cursor: pointer;
-}
-
-.role-option:hover,
-.role-option.selected {
-    background: var(--hover);
-}
-
-.role-option.hidden {
-    display: none;
-}
-
-
 /* ===== SUBMIT ===== */
 
 /* Le bouton d'envoi, et lui seul : le sélecteur prenait aussi l'œil des mots de passe,

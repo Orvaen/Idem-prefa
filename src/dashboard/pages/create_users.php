@@ -7,6 +7,11 @@
 // d'en-tête — « headers already sent ».
 
 require_once __DIR__ . '/../includes/prefa_context.php';
+// La page arrive seule dans #content : elle demande elle-même le composant du champ
+// filtrable et le libellé métier des rôles, que le squelette du tableau de bord charge
+// de son côté mais qui ne lui sont pas transmis.
+require_once __DIR__ . '/../includes/liste_filtrable.php';
+require_once __DIR__ . '/../includes/user_display.php';
 
 if (!$isAdmin) prefaError(403, 'Seul un administrateur peut créer un compte.');
 
@@ -56,40 +61,30 @@ if (!$isAdmin) prefaError(403, 'Seul un administrateur peut créer un compte.');
                     autocomplete="email">
             </div>
 
-            <div class="form-group role-group">
-                <label for="role-search">Rôle</label>
-
-                <div class="role-select">
-                    <input
-                        type="text"
-                        id="role-search"
-                        placeholder="Rechercher un rôle..."
-                        autocomplete="off"
-                        aria-autocomplete="list"
-                        aria-controls="role-list"
-                        aria-expanded="false">
-
-                    <input type="hidden" id="role" name="role" required>
-
-                    <div class="role-list" id="role-list">
-                        <div class="role-option" data-value="1">
-                            Administrateur
-                        </div>
-
-                        <div class="role-option" data-value="2">
-                            Gestionnaire
-                        </div>
-
-                        <div class="role-option" data-value="3">
-                            Utilisateur
-                        </div>
-
-                        <div class="role-option" data-value="5">
-                            Demandeur
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <?php
+            // Le même champ que la matière et l'affaire du formulaire de demande, rendu par
+            // le même composant. Cette page en avait un seul à elle, avec son balisage, son
+            // script et ses styles — et les quatre rôles écrits en dur dans le HTML, qui ne
+            // suivaient donc pas un renommage en base.
+            //
+            // Le libellé dit le métier à côté du nom en base : « Gestionnaire » ne dit pas
+            // qu'on crée un chef d'atelier.
+            $optionsRole = [];
+            foreach ($db->query('SELECT id, name FROM role ORDER BY id')->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                $metier = roleComplement((int) $r['id']);
+                $optionsRole[] = [
+                    'id' => (int) $r['id'],
+                    'libelle' => $r['name'] . ($metier !== '' ? ' · ' . $metier : ''),
+                ];
+            }
+            echo listeFiltrableRendu('role', 'Rôle', $optionsRole, null, [
+                'obligatoire' => true,
+                'chercher' => 'Rechercher un rôle…',
+                'aucun' => 'Aucun rôle ne correspond.',
+                // L'action lit « role » : c'est elle qui commande, pas le composant.
+                'nom' => 'role',
+            ]);
+            ?>
 
             <div class="form-group">
                 <label for="password">Mot de passe</label>

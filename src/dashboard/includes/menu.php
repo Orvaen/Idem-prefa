@@ -56,7 +56,9 @@ function dashboardMenu(): array
             'pour' => [Role::ChargeDeProduction],
             'icone' => '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M19 8v6M22 11h-6" />',
             'styles' => [],
-            'scripts' => ['create-users.js'],
+            // Plus de script propre à cet écran : son champ « Rôle » est le composant
+            // filtrable commun, et liste-filtrable.js est dans le socle.
+            'scripts' => [],
         ],
         [
             'id' => 'list-users',

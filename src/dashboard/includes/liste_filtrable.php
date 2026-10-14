@@ -31,6 +31,7 @@
  *     obligatoire?: bool,
  *     chercher?: string,        le texte d'invite dans le champ
  *     tableau?: bool,           pour une cellule : ni groupe de formulaire ni étiquette
+ *     nom?: string,             le nom du champ caché ; par défaut id_<préfixe>
  * } $reglages
  */
 function listeFiltrableRendu(string $prefixe, string $libelle, array $options, int|string|null $choisi, array $reglages = []): string
@@ -78,7 +79,11 @@ function listeFiltrableRendu(string $prefixe, string $libelle, array $options, i
         . '<svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"'
         . ' stroke="currentColor" stroke-width="2" stroke-linecap="round">'
         . '<path d="m6 6 12 12M18 6 6 18" /></svg></button>'
-        . '<input type="hidden" name="id_' . $prefixe . '" value="' . prefaEscape($choisi) . '">'
+        // Le nom du champ caché se dérive du préfixe, sauf quand un formulaire déjà en
+        // service en attend un autre : on ne renomme pas un champ reçu par une action pour
+        // le confort du composant.
+        . '<input type="hidden" name="' . prefaEscape($reglages['nom'] ?? ('id_' . $prefixe))
+        . '" value="' . prefaEscape($choisi) . '">'
         // Le volet est caché des deux façons : l'attribut pour les lecteurs d'écran, le
         // style parce qu'une règle de mise en page lui pose un display qui l'emporterait.
         . '<div id="' . $prefixe . '-options" class="liste-filtrable-options" role="listbox" hidden style="display: none;">';
