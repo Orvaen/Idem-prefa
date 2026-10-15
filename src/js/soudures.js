@@ -269,9 +269,17 @@
             section.hidden = element === null || section.dataset.element !== element;
         });
 
-        // La recherche paraît avec les feuilles qu'elle filtre.
+        // La recherche va se poser dans l'en-tête du plan ouvert, devant le bouton du
+        // dessin : elle porte sur ses feuilles, elle doit être avec elles. Elle est écrite
+        // une seule fois dans la page et c'est elle qui se déplace — une par section
+        // ferait des identifiants en double.
         const filtres = racine.querySelector('.soudures-filtres');
-        if (filtres) filtres.hidden = element === null;
+        if (filtres) {
+            filtres.hidden = element === null;
+            const outils = element === null ? null
+                : racine.querySelector('.soudures-feuilles-section[data-element="' + element + '"] .soudures-plan-outils');
+            if (outils && filtres.parentElement !== outils) outils.prepend(filtres);
+        }
 
         fermerSaisie();
         filtrer();

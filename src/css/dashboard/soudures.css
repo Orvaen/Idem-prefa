@@ -115,11 +115,42 @@
     text-align: left;
 }
 
+/* La barre d'outils d'une section : la recherche, l'état, et le dessin. Les trois
+   contrôles font la même hauteur et se suivent sur une ligne — c'est une barre d'outils,
+   pas un formulaire. */
+.soudures-plan-outils {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
 /* La barre de filtres porte le rembourrage de la maison, prévu pour une page qui a des
-   bords à elle ; ici la colonne les donne déjà. Elle respire au-dessus : elle appartient
-   aux feuilles, pas au tableau des plans. */
+   bords à elle ; ici l'en-tête les donne déjà. */
 .soudures-filtres {
-    padding: 26px 0 0;
+    padding: 0;
+    gap: 10px;
+    /* Les deux champs restent sur une ligne : la barre se mesure à la somme de ses champs
+       sans les écarts, et l'écart de dix pixels suffisait à faire passer le second
+       dessous. C'est la barre entière qui se replie, pas ses champs. */
+    flex-wrap: nowrap;
+}
+
+/* Les champs de la maison prennent toute la largeur qu'on leur laisse : dans une barre
+   d'outils, ils tiennent la leur. */
+.soudures-filtres .floating-field {
+    width: 210px;
+    margin: 0;
+}
+
+.soudures-filtres .floating-field.floating-always {
+    width: 180px;
+}
+
+/* Le bouton du dessin s'aligne sur les champs : trois contrôles de hauteurs différentes
+   sur une même ligne, on voit la différence avant de lire les mots. */
+.soudures-plan-outils .soudures-ouvrir-plan {
+    height: 44px;
 }
 
 .soudures-saisie {

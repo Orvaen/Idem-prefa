@@ -128,12 +128,14 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
                 </table>
             </div>
 
-            <?php // Les utilitaires portent sur les feuilles du plan ouvert : une seule barre,
-                  // posée entre les plans et leurs feuilles, et non une par section — il n'y
-                  // en a qu'une de visible à la fois. Un cahier en porte quinze : les
-                  // parcourir à l'œil pour retrouver « YU-PRE-120-3 » est une corvée que les
-                  // autres écrans n'imposent pas. ?>
-            <div class="prefa-filters soudures-filtres" role="search"<?= $planOuvert === null ? ' hidden' : '' ?>>
+            <?php // Les utilitaires portent sur les feuilles du plan ouvert. Ils sont écrits
+                  // une seule fois et le script les pose dans l'en-tête du plan qu'on ouvre :
+                  // une barre par section ferait des identifiants en double, et une barre
+                  // posée entre les deux tableaux n'appartenait ni à l'un ni à l'autre.
+                  //
+                  // Un cahier porte quinze feuilles : les parcourir à l'œil pour retrouver
+                  // « YU-PRE-120-3 » est une corvée que les autres écrans n'imposent pas. ?>
+            <div class="prefa-filters soudures-filtres" role="search" hidden>
                 <div class="floating-field">
                     <label for="soudures-recherche">Rechercher une feuille</label>
                     <input id="soudures-recherche" class="floating-control" type="search"
@@ -167,13 +169,18 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
                             <h2>Feuilles de <span><?= prefaEscape($plan['reference']) ?></span></h2>
                             <p><?= prefaEscape($demande) ?> · <?= $nombre ?> feuille<?= $nombre > 1 ? 's' : '' ?></p>
                         </div>
-                        <?php if ($premiere): ?>
-                            <?php // Le dessin du cahier, ouvert à sa première page : on y va pour
-                                  // reconnaître le plan, pas pour une feuille en particulier. ?>
-                            <button type="button" class="soudures-ouvrir-plan"
-                                    data-repere="<?= $plan['element'] ?>:<?= $premiere['document'] ?>:1"
-                                    title="Voir le dessin de ce plan">Voir le dessin</button>
-                        <?php endif; ?>
+                        <?php // La barre d'outils de la section : la recherche vient s'y poser,
+                              // devant le bouton du dessin. ?>
+                        <div class="soudures-plan-outils">
+                            <?php if ($premiere): ?>
+                                <?php // Le dessin du cahier, ouvert à sa première page : on y va
+                                      // pour reconnaître le plan, pas pour une feuille en
+                                      // particulier. ?>
+                                <button type="button" class="soudures-ouvrir-plan"
+                                        data-repere="<?= $plan['element'] ?>:<?= $premiere['document'] ?>:1"
+                                        title="Voir le dessin de ce plan">Voir le dessin</button>
+                            <?php endif; ?>
+                        </div>
                     </div>
 
                     <?php if (!$plan['feuilles']): ?>
