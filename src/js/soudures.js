@@ -1,45 +1,40 @@
 (() => {
-    // « Mes soudures » : on choisit une feuille, son tableau arrive, on le remplit.
+    // « Mes soudures » : on choisit sa feuille dans le tableau, son tableau de cordons
+    // arrive dessous, on le remplit.
     //
-    // La liste n'est pas rendue avec la page. Elle est reconnue sur le PDF du plan, et la
-    // première lecture d'une page coûte quelques secondes : relire les quinze feuilles d'un
-    // cahier avant d'afficher quoi que ce soit ferait attendre une demi-minute devant du
-    // vide. On ne lit donc que la feuille regardée, au moment où on la regarde.
+    // La liste des cordons n'est pas rendue avec la page. Elle est reconnue sur le PDF du
+    // plan, et la première lecture d'une page coûte quelques secondes : relire les quinze
+    // feuilles d'un cahier avant d'afficher quoi que ce soit ferait attendre une
+    // demi-minute devant du vide. On ne lit donc que la feuille regardée, au moment où on
+    // la regarde — le tableau des feuilles, lui, se contente de ce qui est déjà connu.
     const page = () => document.getElementById('soudures-page');
 
     function vues() {
         const racine = page();
         if (!racine) return null;
-        const choix = racine.querySelector('#soudures-feuille');
         const corps = racine.querySelector('#soudures-corps');
         const form = racine.querySelector('#soudures-form');
-        return choix && corps && form ? { racine, choix, corps, form } : null;
+        return corps && form ? { racine, corps, form } : null;
     }
 
-    /** « élément:feuille:page » — un seul choix, parce que c'est une seule question. */
-    function repere(choix) {
-        const [element, document_, numero] = (choix.value || '').split(':');
+    /** La feuille travaillée : c'est la ligne marquée du tableau, et elle porte tout. */
+    const ligneChoisie = racine => racine.querySelector('.soudures-feuille.est-choisie');
+
+    /** « élément:feuille:page » — un seul repère, parce que c'est une seule question. */
+    function repere(ligne) {
+        const [element, document_, numero] = String((ligne && ligne.dataset.repere) || '').split(':');
         return { element, document: document_, page: numero };
     }
 
-    function chiffre(racine, nom, valeur, note) {
-        const zone = racine.querySelector('[data-chiffre="' + nom + '"]');
-        if (zone) zone.textContent = valeur;
-        const legende = racine.querySelector('[data-note="' + nom + '"]');
-        if (legende && note !== undefined) legende.textContent = note;
-    }
-
-    function jauge(racine, faites, total) {
-        const barre = racine.querySelector('[data-jauge]');
-        if (barre) barre.style.width = total > 0 ? Math.round(faites * 100 / total) + '%' : '0';
-    }
-
+    /** Ce que le tableau dit quand il n'a pas de lignes à montrer : une seule cellule. */
     function attente(corps, texte) {
-        corps.replaceChildren();
-        const li = document.createElement('li');
-        li.className = 'soudures-attente';
-        li.textContent = texte;
-        corps.append(li);
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 5;
+        td.className = 'prefa-table-empty';
+        td.textContent = texte;
+        tr.append(td);
+        corps.replaceChildren(tr);
     }
 
     /** Une pastille par contrôle passé, et le visa s'il est posé. Rien sinon. */
@@ -98,18 +93,47 @@
         });
     }
 
-    /** Les trois chiffres, la jauge et le compte du pied, d'une seule réponse du serveur. */
+    /**
+     * La ligne de la feuille qu'on vient de lire ou d'enregistrer suit : son compte de
+     * cordons, et son état.
+     *
+     * C'est le serveur qui les dit, et non ce script : une feuille jamais ouverte ignorait
+     * son total et vient de l'apprendre, et le libellé de l'état est celui de l'écran du
+     * chef. Deux listes de libellés à tenir d'accord finiraient par ne plus l'être.
+     */
+    function majTableau(racine, reponse) {
+        const ligne = ligneChoisie(racine);
+        const feuille = reponse.feuille;
+        if (!ligne || !feuille) return;
+
+        const compte = ligne.querySelector('[data-cordons]');
+        if (compte && feuille.compte) compte.textContent = feuille.compte;
+        const etat = ligne.querySelector('[data-etat]');
+        if (etat && feuille.etat) {
+            etat.textContent = feuille.etat.libelle;
+            etat.className = 'prefa-status ' + feuille.etat.classe;
+        }
+    }
+
+    /**
+     * Ce que la réponse du serveur déplace à l'écran : le compte dans l'en-tête de la
+     * feuille, celui du pied, et la ligne de la feuille dans le tableau de son plan.
+     *
+     * Un seul compte, dit deux fois au même endroit — en haut à côté du nom, en bas à côté
+     * du bouton qui enregistre. L'écran en portait trois, sur une ligne où ils se
+     * touchaient : on ne savait plus lequel parlait de quoi.
+     */
     function montrer(racine, corps, reponse) {
         const total = reponse.imprimees || corps.querySelectorAll('.soudures-ligne').length;
         const faites = corps.querySelectorAll('.soudures-ligne.est-faite').length;
 
-        chiffre(racine, 'feuille', total ? faites + ' / ' + total : '—',
-            total ? 'cordons renseignés sur cette feuille' : (reponse.message || 'aucune ligne reconnue'));
-        const plan = reponse.plan || {};
-        chiffre(racine, 'plan', plan.prevues ? plan.faites + ' / ' + plan.prevues : '—',
-            plan.prevues ? (plan.feuilles || 'soudures prévues au plan') : 'aucune feuille lue');
-        chiffre(racine, 'valide', (reponse.valide ?? 0) + ' %');
-        jauge(racine, plan.faites || 0, plan.prevues || 0);
+        const entete = racine.querySelector('[data-feuille-compte]');
+        if (entete) {
+            entete.textContent = total
+                ? faites + ' / ' + total + ' cordons renseignés'
+                : (reponse.message || 'aucune ligne reconnue sur cette feuille');
+        }
+        majTableau(racine, reponse);
 
         const compte = racine.querySelector('.soudures-compte');
         if (compte) {
@@ -125,12 +149,13 @@
     async function charger() {
         const v = vues();
         if (!v) return;
-        const { racine, choix, corps, form } = v;
-        const cle = repere(choix);
+        const { racine, corps, form } = v;
+        const cle = repere(ligneChoisie(racine));
         if (!cle.element) return;
 
         attente(corps, 'Lecture de la feuille — quelques secondes à sa première ouverture.');
-        chiffre(racine, 'feuille', '—', 'lecture en cours…');
+        const entete = racine.querySelector('[data-feuille-compte]');
+        if (entete) entete.textContent = 'lecture en cours…';
         form.dataset.element = cle.element;
         form.dataset.document = cle.document;
         form.dataset.page = cle.page;
@@ -163,10 +188,72 @@
         }
     }
 
-    $(document).on('change', '#soudures-feuille', charger);
+    /**
+     * Choisir une feuille : sa ligne se marque, l'en-tête de la saisie prend son nom, et
+     * son tableau se lit. Rien n'est rechargé — la page entière est déjà là.
+     */
+    function choisir(ligne) {
+        const racine = page();
+        if (!racine || !ligne) return;
+        if (ligne.classList.contains('est-choisie')) return;
 
-    // « Ouvrir la feuille » est servi par plan-viewer.js : c'est lui qui sait aller à la
-    // bonne page d'un cahier, et dupliquer ce savoir ici le ferait diverger.
+        racine.querySelectorAll('.soudures-feuille').forEach(autre => {
+            const choisie = autre === ligne;
+            autre.classList.toggle('est-choisie', choisie);
+            if (choisie) autre.setAttribute('aria-current', 'true');
+            else autre.removeAttribute('aria-current');
+        });
+
+        // L'en-tête de la saisie redit la feuille : le tableau fait quinze lignes sur un
+        // cahier, et on ne doit pas remonter pour savoir ce qu'on remplit. Le plan, lui,
+        // est juste au-dessus — la saisie se pose dans son bloc.
+        const titre = racine.querySelector('[data-feuille-titre]');
+        const bouton = racine.querySelector('[data-feuille-plan-bouton]');
+        if (titre) titre.textContent = ligne.dataset.feuille || '';
+        if (bouton) bouton.dataset.repere = ligne.dataset.repere || '';
+
+        // La saisie attendait un choix : elle s'ouvre, et elle va se poser dans le plan
+        // qu'on travaille, sous ses feuilles. Elle est écrite une fois dans la page —
+        // on ne remplit qu'une feuille à la fois — et c'est elle qui se déplace, plutôt
+        // que d'en poser une par plan et de les tenir toutes d'accord.
+        const saisie = racine.querySelector('.soudures-saisie');
+        const bloc = ligne.closest('.soudures-plan');
+        if (saisie) {
+            saisie.removeAttribute('data-vide');
+            if (bloc && saisie.parentElement !== bloc) bloc.append(saisie);
+        }
+
+        charger();
+    }
+
+    // Cliquer la ligne choisit la feuille : c'est le geste qu'on a dans une liste. Les
+    // commandes de la ligne gardent le leur — « Plan » ouvre le dessin sans changer de
+    // feuille travaillée, et on y clique pour vérifier un repère, pas pour se déplacer.
+    $(document).on('click', '.soudures-feuille', function (evenement) {
+        if (evenement.target.closest('button, a, input, label')) return;
+        choisir(this);
+    });
+
+    // Un plan se déplie, et se replie. Chacun est indépendant : en ouvrir un n'a aucune
+    // raison d'en fermer un autre — on compare deux cahiers plus souvent qu'on ne range.
+    $(document).on('click', '.soudures-plan-bascule', function () {
+        // Le pli se marque sur le bloc du plan — c'est lui que la feuille de style cache —
+        // tandis que « aria-controls » désigne ce qui paraît : ses feuilles.
+        const bloc = this.closest('.soudures-plan');
+        if (!bloc) return;
+        this.setAttribute('aria-expanded', String(!bloc.classList.toggle('est-repliee')));
+    });
+
+    $(document).on('click', '.soudures-renseigner', function () {
+        choisir(this.closest('.soudures-feuille'));
+        // Le tableau des cordons est sous celui des feuilles : sans ce déplacement, le
+        // bouton a l'air de ne rien faire quand le cahier en compte quinze.
+        const saisie = document.querySelector('.soudures-saisie');
+        if (saisie) saisie.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    // « Plan » et « Ouvrir la feuille » sont servis par plan-viewer.js : c'est lui qui sait
+    // aller à la bonne page d'un cahier, et dupliquer ce savoir ici le ferait diverger.
 
     $(document).on('submit', '#soudures-form', async function (event) {
         event.preventDefault();
@@ -213,14 +300,7 @@
         }
     });
 
-    // La page arrive par AJAX dans #content : rien ne se « charge » au sens du navigateur,
-    // et il faut donc lancer la première lecture soi-même, une fois, dès qu'elle est posée.
-    function amorcer() {
-        const racine = page();
-        if (!racine || racine.dataset.pret) return;
-        racine.dataset.pret = '1';
-        charger();
-    }
-    $(document).ajaxComplete(amorcer);
-    amorcer();
+    // Rien ne se lit à l'arrivée : aucune feuille n'est choisie, et la première lecture
+    // d'une page coûte quelques secondes — les dépenser pour une feuille que personne n'a
+    // demandée, c'est faire attendre devant un tableau qu'on n'allait pas remplir.
 })();

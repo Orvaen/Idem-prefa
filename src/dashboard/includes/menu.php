@@ -129,9 +129,17 @@ function dashboardMenu(): array
         [
             // Pour le personnel d'atelier, « Mes affectations » rend en réalité atelier.php :
             // c'est donc par cette entrée-là qu'il reçoit l'outillage du plan ISO.
+            //
+            // L'entrée porte le nom de ce qu'on vient y faire. Elle s'est appelée « Mes
+            // affaires » le temps d'un essai : le mot ne dit pas ce qu'il y a derrière, et
+            // un soudeur qui ouvre la barre cherche ses soudures, pas ses affaires.
+            //
+            // Le suivi matériel suit les soudures : c'est le même plan qu'on y travaille,
+            // et la barre le dit plutôt que d'ouvrir une deuxième entrée pour le même
+            // écran.
             'id' => 'soudures',
             'rayon' => 'atelier',
-            'libelle' => 'Mes soudures',
+            'libelle' => 'Mes soudures & Suivi matériel',
             'page' => 'pages/soudures.php',
             'pour' => [Role::PersonnelAtelier],
             // Un cordon, et son repère.

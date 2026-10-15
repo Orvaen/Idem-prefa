@@ -54,6 +54,13 @@ echo json_encode([
     'imprimees' => $feuille['imprimees'],
     'faites' => $feuille['faites'],
     'miennes' => $feuille['miennes'],
+    // De quoi remettre à jour la ligne de cette feuille dans le tableau : son compte et
+    // son état. Ils viennent d'ici parce que l'écran ne les connaît pas encore — une
+    // feuille jamais ouverte ignorait son total, et elle vient de l'apprendre.
+    'feuille' => [
+        'compte' => soudureAtelierCompteFeuille($feuille['faites'], $feuille['imprimees']),
+        'etat' => soudureAtelierEtatFeuille($feuille['faites'], $feuille['imprimees']),
+    ],
     'plan' => [
         'prevues' => $prevu['prevues'],
         'faites' => avancementSouduresFaites($db, $elementId),
