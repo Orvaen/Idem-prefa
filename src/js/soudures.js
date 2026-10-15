@@ -263,6 +263,9 @@
         if (invite) invite.hidden = true;
         const filtres = racine.querySelector('.soudures-filtres');
         if (filtres) filtres.hidden = false;
+        // L'invite de droite n'a de sens qu'une fois qu'il y a une liste où choisir.
+        const inviteFeuille = racine.querySelector('.soudures-invite');
+        if (inviteFeuille) inviteFeuille.hidden = false;
 
         fermerSaisie();
         filtrer();

@@ -39,7 +39,7 @@
        qui les sépare s'arrêtait à la fin du volet — trente pixels de trait à côté d'un
        tableau de quinze lignes. Leur contenu, lui, reste calé en haut. */
     align-items: stretch;
-    gap: 0 24px;
+    gap: 0 36px;
 }
 
 .soudures-plans {
@@ -52,7 +52,7 @@
 /* Le titre d'une partie de la colonne. Même corps que l'en-tête d'un volet : l'écran n'a
    qu'une grammaire — « Plans », « Feuilles de X », « Feuille Y ». */
 .soudures-section-titre {
-    margin: 0 0 10px;
+    margin: 0 0 14px;
     color: var(--text);
     font-size: 16px;
 }
@@ -88,16 +88,17 @@
 
 /* ----------------------------------------------------------------- les feuilles d'un plan */
 
-/* La section des feuilles vient sous les plans, séparée d'un filet : au-dessus on choisit
-   un plan, en dessous une feuille. */
+/* La section des feuilles vient sous les plans, séparée d'un filet et d'un vrai blanc :
+   au-dessus on choisit un plan, en dessous une feuille, et les deux étages ne doivent pas
+   se toucher. */
 .soudures-feuilles-section {
-    margin-top: 22px;
-    padding-top: 20px;
+    margin-top: 34px;
+    padding-top: 28px;
     border-top: 1px solid var(--border);
 }
 
 .soudures-plan-entete {
-    padding: 0 0 12px;
+    padding: 0 0 16px;
 }
 
 .soudures-plan-entete p {
@@ -120,17 +121,18 @@
 /* Tant qu'aucun plan n'est ouvert, la place des feuilles dit quoi faire — une ligne, pas
    un bloc : la colonne doit se voir réservée, pas meublée. */
 .soudures-invite-plan {
-    margin: 22px 0 0;
-    padding-top: 20px;
+    margin: 34px 0 0;
+    padding-top: 28px;
     border-top: 1px solid var(--border);
     color: var(--text-muted);
     font-size: 13px;
 }
 
 /* La barre de filtres porte le rembourrage de la maison, prévu pour une page qui a des
-   bords à elle ; ici la colonne les donne déjà. */
+   bords à elle ; ici la colonne les donne déjà. Elle respire au-dessus : elle appartient
+   aux feuilles, pas au tableau des plans. */
 .soudures-filtres {
-    padding: 18px 0 0;
+    padding: 26px 0 0;
 }
 
 .soudures-saisie {
@@ -153,7 +155,7 @@
    la colonne doit se voir réservée, pas meublée. */
 .soudures-invite {
     margin: 0;
-    padding: 2px 0 0 24px;
+    padding: 2px 0 0 32px;
     color: var(--text-muted);
     font-size: 13px;
 }
@@ -267,7 +269,7 @@
 }
 
 .soudures-saisie-contenu {
-    padding-left: 24px;
+    padding-left: 32px;
 }
 
 /* Le plan, puis le compte, séparés d'un point médian posé par la feuille de style : le
@@ -533,6 +535,10 @@
     }
 
     .soudures-saisie-contenu {
+        padding-left: 0;
+    }
+
+    .soudures-invite {
         padding-left: 0;
     }
 }

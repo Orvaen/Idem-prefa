@@ -59,9 +59,10 @@ if ($page === 'soudures') {
     if (str_contains($html, 'soudures-validation') || str_contains($html, 'soudures-demande')) throw new RuntimeException('Validation form is back on this screen');
     // Rien n'est choisi à l'arrivée : la saisie attend, et aucune lecture de PDF n'est
     // déclenchée pour une feuille que personne n'a demandée.
-    // Un plan peut être ouvert d'office — il n'y en a qu'un, il n'y a pas de choix à
-    // faire —, mais jamais une feuille : l'ouvrir coûte une lecture de PDF.
-    if (preg_match('/<tr class="soudures-feuille[^"]*est-choisie/', $html)) throw new RuntimeException('A sheet is selected by default');
+    // Rien n'est choisi à l'arrivée : ni plan, ni feuille. L'écran attend, il ne devine
+    // pas — c'est à l'atelier de dire où il en est.
+    if (str_contains($html, 'est-choisie')) throw new RuntimeException('Something is selected by default');
+    if (preg_match('/<tr class="soudures-(plan-ligne|feuille)[^>]*aria-current/', $html)) throw new RuntimeException('A row is marked current by default');
     if (!str_contains($html, 'class="soudures-saisie atelier-detail-content" aria-labelledby="soudures-saisie-titre" data-vide>')) throw new RuntimeException('Entry block does not wait for a choice');
 }
 if ($page === 'create_prefa' && !str_contains($html, 'name="nom_affaire"')) throw new RuntimeException('Request name input missing');

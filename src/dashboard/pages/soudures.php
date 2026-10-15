@@ -49,11 +49,11 @@ foreach ($confies->fetchAll() as $confie) {
     ];
 }
 
-// Le plan ouvert à l'arrivée : aucun, sauf s'il n'y en a qu'un — il n'y a alors pas de
-// choix à faire, et laisser l'écran vide derrière une seule ligne serait une politesse
-// inutile. Ouvrir un plan ne coûte rien au serveur : tout est déjà rendu, c'est la feuille
-// qui coûte une lecture de PDF, et celle-là n'est jamais choisie d'office.
-$planOuvert = count($plans) === 1 ? array_key_first($plans) : null;
+// Aucun plan n'est ouvert à l'arrivée, pas même quand il n'y en a qu'un. Un écran qui
+// choisit à la place de l'atelier lui fait croire qu'il sait où il en est, et la marque de
+// la ligne « déjà prise » ne veut alors plus rien dire — c'est elle qui doit répondre à
+// « où en suis-je ? ». L'invite, elle, dit quoi faire en une ligne.
+$planOuvert = null;
 
 // Le premier isométrique d'un plan, pour le bouton qui montre le dessin : on ouvre le
 // cahier à sa première page, c'est de là qu'on se repère.
@@ -252,7 +252,7 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
               // fermer que sur les écrans du chef — et sa liste est un tableau comme celui
               // des feuilles. Deux formes pour tout l'écran : un en-tête, un tableau. ?>
         <section class="soudures-saisie atelier-detail-content" aria-labelledby="soudures-saisie-titre" data-vide>
-            <p class="soudures-invite">Choisissez une feuille dans la liste : ses cordons s’ouvrent ici.</p>
+            <p class="soudures-invite" hidden>Choisissez une feuille dans la liste : ses cordons s’ouvrent ici.</p>
             <div class="soudures-saisie-contenu">
             <div class="prefa-detail-heading">
                 <div>
