@@ -158,29 +158,28 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
                   // chercher coûterait un aller-retour au serveur à chaque changement. ?>
             <?php foreach ($plans as $plan):
                 $demande = prefaReferenceComplete($plan['demande']);
-                $nombre = count($plan['feuilles']);
                 $premiere = $premiereFeuille($plan);
             ?>
                 <section class="soudures-feuilles-section" data-element="<?= (int) $plan['element'] ?>"
                          aria-label="Feuilles de <?= prefaEscape($plan['reference']) ?>"
                          <?= $plan['element'] === $planOuvert ? '' : 'hidden' ?>>
-                    <div class="prefa-detail-heading soudures-plan-entete">
-                        <div>
-                            <h2>Feuilles de <span><?= prefaEscape($plan['reference']) ?></span></h2>
-                            <p><?= prefaEscape($demande) ?> · <?= $nombre ?> feuille<?= $nombre > 1 ? 's' : '' ?></p>
-                        </div>
-                        <?php // La barre d'outils de la section : la recherche vient s'y poser,
-                              // devant le bouton du dessin. ?>
-                        <div class="soudures-plan-outils">
-                            <?php if ($premiere): ?>
-                                <?php // Le dessin du cahier, ouvert à sa première page : on y va
-                                      // pour reconnaître le plan, pas pour une feuille en
-                                      // particulier. ?>
-                                <button type="button" class="soudures-ouvrir-plan"
-                                        data-repere="<?= $plan['element'] ?>:<?= $premiere['document'] ?>:1"
-                                        title="Voir le dessin de ce plan">Voir le dessin</button>
-                            <?php endif; ?>
-                        </div>
+                    <?php // Pas de titre ici : la ligne du plan, juste au-dessus, porte déjà son
+                          // nom, sa demande et son nombre de feuilles — et elle est teintée
+                          // tant qu'il est ouvert. « Feuilles de Plan de test » redisait tout
+                          // cela une seconde fois, et volait une ligne de plus dès que la
+                          // fenêtre se resserrait. Le nom reste pour qui lit l'écran à la
+                          // voix : il est sur l'étiquette de la section.
+                          //
+                          // Ne reste que la barre d'outils : la recherche vient s'y poser,
+                          // devant le bouton du dessin. ?>
+                    <div class="soudures-plan-outils">
+                        <?php if ($premiere): ?>
+                            <?php // Le dessin du cahier, ouvert à sa première page : on y va pour
+                                  // reconnaître le plan, pas pour une feuille en particulier. ?>
+                            <button type="button" class="soudures-ouvrir-plan"
+                                    data-repere="<?= $plan['element'] ?>:<?= $premiere['document'] ?>:1"
+                                    title="Voir le dessin de ce plan">Voir le dessin</button>
+                        <?php endif; ?>
                     </div>
 
                     <?php if (!$plan['feuilles']): ?>

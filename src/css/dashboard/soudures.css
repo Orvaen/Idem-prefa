@@ -94,16 +94,6 @@
     margin-top: 30px;
 }
 
-.soudures-plan-entete {
-    padding: 0 0 16px;
-}
-
-.soudures-plan-entete p {
-    margin: 4px 0 0;
-    color: var(--text-muted);
-    font-size: 12.5px;
-}
-
 .soudures-plan-vide {
     margin: 0;
     padding: 0 0 6px;
@@ -123,6 +113,7 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 10px;
+    margin-bottom: 14px;
 }
 
 /* La barre de filtres porte le rembourrage de la maison, prévu pour une page qui a des
