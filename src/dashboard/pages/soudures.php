@@ -331,13 +331,10 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
         // Le lecteur de plan, une fenêtre par élément : on regarde le dessin pour savoir
         // quel cordon porte le repère 3. Lecture seule — rien ne se pose dessus d'ici.
         //
-        // La liste soudure part avec, remplie : c'est ce qu'on vient vérifier en ouvrant
-        // la feuille — ce qui est déjà renseigné, par qui, et la colonne « Visa », où se
-        // lit le passage du chef d'atelier. Elle manquait : le dessin s'ouvrait seul, et
-        // le travail déclaré restait invisible de ce côté-ci. C'est la même liste que
-        // l'écran du chef, rendue par la même fonction, mais non modifiable : la saisie
-        // se fait dans le volet, et deux endroits pour une même ligne finiraient par ne
-        // plus dire la même chose.
+        // Ce qui est renseigné s'écrit sur le dessin lui-même, dans la liste soudure que le
+        // bureau d'études y a imprimée : c'est detecter_lignes.php qui renvoie les valeurs
+        // avec la géométrie du tableau, et le lecteur les y pose — le même rendu que le
+        // plan final. Un tableau de plus à côté du dessin dirait deux fois la même chose.
         foreach (array_keys($plans) as $elementId):
             $docs = planDocuments($db, $elementId);
             if (!$docs) continue;
@@ -345,14 +342,10 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
             <div class="soudures-lecteur" data-element="<?= (int) $elementId ?>" hidden>
                 <?= planViewerRendu($elementId, array_map(static function (array $doc) use ($db, $elementId): array {
                     $reperes = [];
-                    $listes = [];
                     for ($page = 1; $page <= max(1, (int) $doc['pages']); $page++) {
                         $reperes[$page] = nomenclatureLignes($db, $elementId, $doc['id'], $page);
-                        $listes[$page] = soudureRendu(
-                            soudureLignes($db, $elementId, (int) $doc['id'], $page),
-                            [], $elementId, (int) $doc['id'], false, '', $page);
                     }
-                    return $doc + ['reperes' => $reperes, 'empreintes' => [], 'soudures' => $listes];
+                    return $doc + ['reperes' => $reperes, 'empreintes' => []];
                 }, $docs), [], false, false) ?>
             </div>
         <?php endforeach; ?>

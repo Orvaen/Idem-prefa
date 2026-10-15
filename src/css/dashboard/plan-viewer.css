@@ -877,7 +877,18 @@
 /* La case ne rogne pas en hauteur : le texte est à la taille des lettres imprimées, donc
    un peu plus haut qu'elle — elle est posée en retrait des traits, lui s'étend jusqu'à
    eux sans les toucher. C'est le texte lui-même qui coupe, et seulement en largeur. */
-.plan-soudure,
+.plan-soudure {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #0f172a;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
 /* Le texte porté par la cellule. Il coupe à droite plutôt que de déborder de part et
    d'autre : un fragment lisible du début vaut mieux qu'un mot rogné aux deux bouts. */
 .plan-soudure-valeur {
