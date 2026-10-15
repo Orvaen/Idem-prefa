@@ -189,13 +189,10 @@
             if (total) {
                 const fort = document.createElement('strong');
                 fort.textContent = faites + ' sur ' + total;
-                // Tout ce que la feuille demandait est soudé : le dire, plutôt que de
-                // laisser compter « 4 sur 4 » pour s'en apercevoir.
-                compte.append(fort, close
-                    ? ' — feuille soudée, validée par le chef d’atelier'
-                    : (faites >= total
-                        ? ' — la feuille est complète'
-                        : ' renseignée' + (faites > 1 ? 's' : '') + ' sur cette feuille'));
+                // Le compte, et rien de plus. L'état de la feuille se voit sans qu'on le
+                // raconte : sa pastille le dit dans le tableau, et une feuille close n'a
+                // plus de bouton à côté de ce compte.
+                compte.append(fort, ' renseignée' + (faites > 1 ? 's' : '') + ' sur cette feuille');
             }
         }
 
