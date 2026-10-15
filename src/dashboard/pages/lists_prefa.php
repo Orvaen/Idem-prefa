@@ -6,7 +6,7 @@ if ($isWorkshopPersonnel) {
     exit;
 }
 require_once __DIR__ . '/../partials/prefa_list_data.php';
-require_once __DIR__ . '/../includes/filtres.php';
+require_once __DIR__ . '/../includes/vue/filtres.php';
 
 // Les chefs d'atelier ne changent pas d'une ligne à l'autre : une seule requête,
 // et seulement pour l'administrateur, qui est le seul à désigner quelqu'un d'autre.
@@ -98,7 +98,7 @@ if ($isWorkshopPersonnel) {
             </div>
 
             <!-- Filtres : une pastille par critère, qui ouvre sa liste à cocher. Le
-                 balisage vient de includes/filtres.php ; le rafraîchissement sérialise ce
+                 balisage vient de includes/vue/filtres.php ; le rafraîchissement sérialise ce
                  formulaire, il n'a donc rien de particulier à savoir. -->
             <form
                 id="prefa-filters"

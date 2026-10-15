@@ -18,7 +18,7 @@
 
 require_once __DIR__ . '/soudure.php';
 require_once __DIR__ . '/plan_document.php';
-require_once __DIR__ . '/plan_lignes.php';
+require_once __DIR__ . '/lecture/plan_lignes.php';
 
 /**
  * L'affectation active de cette personne sur cet élément, si elle existe.

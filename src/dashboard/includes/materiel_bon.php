@@ -1,7 +1,7 @@
 <?php
 
 require_once __DIR__ . '/commandes.php';
-require_once __DIR__ . '/commandes_lignes.php';
+require_once __DIR__ . '/lecture/commandes_lignes.php';
 
 /**
  * Les bons de commande déposés sur une demande, et les articles qu'ils portent.

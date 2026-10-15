@@ -8,7 +8,7 @@
 require_once __DIR__ . '/../includes/prefa_context.php';
 require_once __DIR__ . '/../includes/prefa_attachments.php';
 require_once __DIR__ . '/../includes/plan_document.php';
-require_once __DIR__ . '/../includes/plan_lignes.php';
+require_once __DIR__ . '/../includes/lecture/plan_lignes.php';
 
 prefaPost();
 

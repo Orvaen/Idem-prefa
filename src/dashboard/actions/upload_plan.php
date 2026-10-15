@@ -13,7 +13,7 @@
 // prend sa place au lieu de s'ajouter. Tout ce qu'on vérifie du fichier — type, taille,
 // PDF réel — vaut dans les deux cas, et il n'y a qu'un chemin à relire.
 require_once __DIR__ . '/../includes/prefa_context.php';
-require_once __DIR__ . '/../includes/plan_numeros.php';
+require_once __DIR__ . '/../includes/lecture/plan_numeros.php';
 require_once __DIR__ . '/../includes/prefa_attachments.php';
 
 prefaPost();

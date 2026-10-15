@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/ccpu.php';
+require_once __DIR__ . '/lecture/ccpu.php';
 
 /**
  * Les certificats matière (CCPU) d'une demande : chargement groupé, lecture d'un

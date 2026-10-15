@@ -228,7 +228,7 @@ if ($isAdmin || $isWorkshopChief) {
             </div>
 
             <div id="content">
-                <?php require __DIR__ . '/includes/accueil_vue.php'; ?>
+                <?php require __DIR__ . '/includes/vue/accueil_vue.php'; ?>
             </div>
         </div>
     </div>

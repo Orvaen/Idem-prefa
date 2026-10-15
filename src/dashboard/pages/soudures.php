@@ -2,8 +2,8 @@
 require_once __DIR__ . '/../includes/prefa_context.php';
 require_once __DIR__ . '/../includes/soudure_atelier.php';
 require_once __DIR__ . '/../includes/nomenclature.php';
-require_once __DIR__ . '/../includes/plan_viewer.php';
-require_once __DIR__ . '/../includes/filtres.php';
+require_once __DIR__ . '/../includes/vue/plan_viewer.php';
+require_once __DIR__ . '/../includes/vue/filtres.php';
 if (!$isWorkshopPersonnel) prefaError(403, 'Cette page est réservée au personnel atelier.');
 
 // Une entrée par page d'isométrique : c'est la question que se pose le soudeur — sur

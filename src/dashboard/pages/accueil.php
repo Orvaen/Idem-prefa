@@ -14,4 +14,4 @@ $name = $utilisateur->nom;
 $tuiles = accueilTuiles($db, $utilisateur);
 $activite = accueilActivite($db, $utilisateur);
 
-require __DIR__ . '/../includes/accueil_vue.php';
+require __DIR__ . '/../includes/vue/accueil_vue.php';

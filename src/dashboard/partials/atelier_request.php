@@ -14,7 +14,7 @@ require_once __DIR__ . '/../includes/avancement.php';
 require_once __DIR__ . '/../includes/plan_document.php';
 require_once __DIR__ . '/../includes/nomenclature.php';
 require_once __DIR__ . '/../includes/soudure.php';
-require_once __DIR__ . '/../includes/plan_viewer.php';
+require_once __DIR__ . '/../includes/vue/plan_viewer.php';
 $elements = atelierElements($db, $requestId);
 // Les coulées des certificats de la demande : une seule lecture pour tous ses plans.
 $couleesDisponibles = nomenclatureCouleesDisponibles($db, $requestId);
