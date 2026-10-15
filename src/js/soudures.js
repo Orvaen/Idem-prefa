@@ -259,13 +259,13 @@
             section.hidden = section.dataset.element !== element;
         });
 
-        const invite = racine.querySelector('.soudures-invite-plan');
-        if (invite) invite.hidden = true;
+        // La recherche paraît avec les feuilles qu'elle filtre.
         const filtres = racine.querySelector('.soudures-filtres');
         if (filtres) filtres.hidden = false;
-        // L'invite de droite n'a de sens qu'une fois qu'il y a une liste où choisir.
-        const inviteFeuille = racine.querySelector('.soudures-invite');
-        if (inviteFeuille) inviteFeuille.hidden = false;
+
+        // L'invite de droite ne parle plus d'ouvrir un plan : c'est fait.
+        const invite = racine.querySelector('[data-invite]');
+        if (invite) invite.textContent = 'Choisissez une feuille dans la liste : ses cordons s’ouvrent ici.';
 
         fermerSaisie();
         filtrer();

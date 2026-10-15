@@ -238,9 +238,6 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
                     <p class="prefa-table-empty soudures-aucune" data-aucune hidden>Aucune feuille de ce plan ne correspond à cette recherche.</p>
                 </section>
             <?php endforeach; ?>
-
-            <?php // Tant qu'aucun plan n'est ouvert, la place des feuilles dit quoi faire. ?>
-            <p class="soudures-invite-plan"<?= $planOuvert === null ? '' : ' hidden' ?>>Ouvrez un plan pour voir ses feuilles.</p>
         </div>
 
         <?php // La colonne de droite existe dès l'arrivée, et elle attend : sans elle, le
@@ -252,7 +249,7 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
               // fermer que sur les écrans du chef — et sa liste est un tableau comme celui
               // des feuilles. Deux formes pour tout l'écran : un en-tête, un tableau. ?>
         <section class="soudures-saisie atelier-detail-content" aria-labelledby="soudures-saisie-titre" data-vide>
-            <p class="soudures-invite" hidden>Choisissez une feuille dans la liste : ses cordons s’ouvrent ici.</p>
+            <p class="soudures-invite" data-invite>Ouvrez un de vos plans, puis choisissez une feuille : ses cordons s’ouvrent ici.</p>
             <div class="soudures-saisie-contenu">
             <div class="prefa-detail-heading">
                 <div>

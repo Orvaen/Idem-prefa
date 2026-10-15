@@ -118,16 +118,6 @@
     text-align: left;
 }
 
-/* Tant qu'aucun plan n'est ouvert, la place des feuilles dit quoi faire — une ligne, pas
-   un bloc : la colonne doit se voir réservée, pas meublée. */
-.soudures-invite-plan {
-    margin: 34px 0 0;
-    padding-top: 28px;
-    border-top: 1px solid var(--border);
-    color: var(--text-muted);
-    font-size: 13px;
-}
-
 /* La barre de filtres porte le rembourrage de la maison, prévu pour une page qui a des
    bords à elle ; ici la colonne les donne déjà. Elle respire au-dessus : elle appartient
    aux feuilles, pas au tableau des plans. */
@@ -266,6 +256,12 @@
 .soudures-saisie {
     padding: 0;
     border-left: 1px solid var(--border);
+}
+
+/* Tant que la colonne de droite n'a rien à montrer, elle n'a pas de filet : un trait qui
+   coupe la page en deux au-dessus du vide ne sépare rien. Il revient avec la feuille. */
+.soudures-saisie[data-vide] {
+    border-left: 0;
 }
 
 .soudures-saisie-contenu {
