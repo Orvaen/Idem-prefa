@@ -35,7 +35,10 @@
 .soudures-plan-de-travail {
     display: flex;
     flex-wrap: wrap;
-    align-items: flex-start;
+    /* Les deux colonnes font la même hauteur, celle de la plus haute : sans quoi le filet
+       qui les sépare s'arrêtait à la fin du volet — trente pixels de trait à côté d'un
+       tableau de quinze lignes. Leur contenu, lui, reste calé en haut. */
+    align-items: stretch;
     gap: 0 24px;
 }
 
@@ -47,6 +50,9 @@
 .soudures-saisie {
     flex: 1 1 560px;
     min-width: 0;
+    /* Étirée sur toute la hauteur, la colonne garderait son contenu centré : il se cale
+       en haut, en face des premières lignes du tableau. */
+    align-self: stretch;
 }
 
 /* Côte à côte, le tableau cède ses deux colonnes d'identité : la demande et le plan sont
