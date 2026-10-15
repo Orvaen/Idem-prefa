@@ -83,43 +83,53 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
                   // un tableau et rien ne dit ce qu'on est venu y faire. ?>
             <p>Ouvrez un de vos plans pour voir ses feuilles, puis notez sur chaque feuille les cordons que vous avez soudés.</p>
         </div>
+
+            <?php // La recherche est sur la ligne du titre, à droite, où les autres écrans
+                  // mettent leur bouton « Actualiser ». Elle a été un bloc entre les deux
+                  // tableaux, puis dans l'en-tête des feuilles : à chaque fois, un troisième
+                  // bloc se disputait la place avec eux. Ici elle n'en prend aucune.
+                  //
+                  // Les contrôles sont ceux de la maison : un champ à loupe et une pastille qui
+                  // dit ce qu'elle retient. C'étaient deux champs de formulaire à étiquette
+                  // flottante, hauts de 44 px — le gabarit de « Nom » ou « Mot de passe », alors
+                  // qu'on ne saisit rien ici, on choisit.
+                  //
+                  // Elle porte sur toutes les feuilles, tous plans confondus : un soudeur
+                  // connaît son numéro de ligne, pas le plan auquel il appartient. Les plans
+                  // sans feuille retenue se rangent, et s'il n'en reste qu'un, il s'ouvre.
+                  //
+                  // La barre est écrite ici plutôt que par filtresBarre() pour une raison :
+                  // « Tout effacer » n'y paraît que lorsqu'un filtre est posé, ce que le serveur
+                  // ne sait pas — rien n'est filtré au rendu, tout l'est dans la page. ?>
+            <form class="prefa-filters soudures-filtres" role="search">
+                <?php // Les deux contrôles tiennent sur une ligne, le compte passe dessous :
+                      // une barre souple se mesure à la somme de ses éléments sans les
+                      // écarts, et dix pixels suffisaient à faire passer la pastille sous
+                      // le champ. ?>
+                <div class="soudures-filtres-ligne">
+                    <div class="filtres-recherche">
+                    <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+                    <input id="soudures-recherche" type="search" autocomplete="off"
+                           aria-label="Rechercher une feuille" placeholder="N° de ligne, plan, demande…">
+                </div>
+                <div class="filtres-barre">
+                    <?= filtreRendu('etat', 'État', [
+                        ['id' => 'a_faire', 'libelle' => 'À faire'],
+                        ['id' => 'en_cours', 'libelle' => 'En cours'],
+                        ['id' => 'soudee', 'libelle' => 'Soudées'],
+                        ['id' => 'non_lue', 'libelle' => 'Pas encore ouvertes'],
+                    ], []) ?>
+                    <button type="button" class="filtres-tout-effacer" hidden>Tout effacer</button>
+                    </div>
+                </div>
+                <p class="soudures-resultat" role="status" aria-live="polite" hidden></p>
+            </form>
     </header>
 
     <?php if (!$plans): ?>
         <p class="soudures-rien">Aucun plan ne vous est affecté pour le moment.</p>
     <?php else: ?>
-        <?php // La recherche et les filtres de la maison : un champ en tête de barre, et une
-              // pastille par critère, qui dit ce qu'elle retient et porte sa croix. C'était
-              // deux champs de formulaire à étiquette flottante, hauts de 44 px — le gabarit
-              // de « Nom » ou « Mot de passe », alors qu'on ne saisit rien ici, on choisit.
-              // Le reste de l'application en est revenu ; cet écran suit.
-              //
-              // Elle porte sur toutes les feuilles, tous plans confondus : un soudeur
-              // connaît son numéro de ligne, pas le plan auquel il appartient. Les plans
-              // sans feuille retenue se rangent, et s'il n'en reste qu'un, il s'ouvre.
-              //
-              // La barre est écrite ici plutôt que par filtresBarre() pour une raison :
-              // « Tout effacer » n'y paraît que lorsqu'un filtre est posé, ce que le serveur
-              // ne sait pas — rien n'est filtré au rendu, tout l'est dans la page. ?>
-        <form class="prefa-filters soudures-filtres" role="search">
-            <div class="filtres-recherche">
-                <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                     stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
-                <input id="soudures-recherche" type="search" autocomplete="off"
-                       aria-label="Rechercher une feuille" placeholder="N° de ligne, plan, demande…">
-            </div>
-            <div class="filtres-barre">
-                <?= filtreRendu('etat', 'État', [
-                    ['id' => 'a_faire', 'libelle' => 'À faire'],
-                    ['id' => 'en_cours', 'libelle' => 'En cours'],
-                    ['id' => 'soudee', 'libelle' => 'Soudées'],
-                    ['id' => 'non_lue', 'libelle' => 'Pas encore ouvertes'],
-                ], []) ?>
-                <button type="button" class="filtres-tout-effacer" hidden>Tout effacer</button>
-            </div>
-            <p class="soudures-resultat" role="status" aria-live="polite" hidden></p>
-        </form>
-
         <?php // Le plan de travail : à gauche les plans puis les feuilles de celui qu'on a
               // ouvert, à droite la feuille travaillée. Les deux colonnes sont posées dès
               // l'arrivée — sans quoi le tableau passait de pleine largeur à la moitié au

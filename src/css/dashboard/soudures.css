@@ -120,19 +120,42 @@
     margin-bottom: 12px;
 }
 
-/* La barre de recherche, en tête d'écran. Le rembourrage de la maison est prévu pour une
-   page qui a ses propres bords ; ici la coque les donne déjà. */
+/* La recherche, sur la ligne du titre : elle ne prend pas de hauteur à elle, et le
+   rembourrage de la barre de la maison — prévu pour une page qui a ses propres bords — n'a
+   plus lieu d'être. */
 .soudures-filtres {
-    padding: 0 0 18px;
+    flex: 0 1 auto;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    padding: 0;
+    gap: 8px 10px;
+}
+
+/* Le champ, la pastille et « Tout effacer » restent côte à côte ; c'est le compte qui
+   passe dessous. Sans cette ligne, « Tout effacer » paraissait en cours de recherche et
+   poussait la pastille à l'étage du dessus : la barre changeait de forme au moment même
+   où l'on s'en servait. */
+.soudures-filtres-ligne,
+.soudures-filtres .filtres-barre {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
     gap: 10px;
 }
 
-/* Ce que la recherche a trouvé, au bout de la barre : à droite, loin des contrôles, pour
-   qu'on ne le prenne pas pour un filtre de plus. */
+/* « Tout effacer » se coupait en deux mots au bout de la ligne. */
+.soudures-filtres .filtres-tout-effacer {
+    white-space: nowrap;
+}
+
+/* Ce que la recherche a trouvé, sous elle plutôt qu'à côté : la ligne du titre est déjà
+   pleine, et un compte qui s'allonge y pousserait les contrôles. */
 .soudures-resultat {
-    margin: 0 0 0 auto;
+    flex-basis: 100%;
+    margin: 0;
     color: var(--text-muted);
     font-size: 12.5px;
+    text-align: right;
 }
 
 .soudures-saisie {
