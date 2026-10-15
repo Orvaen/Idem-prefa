@@ -381,20 +381,14 @@ body[data-theme="light"],
     background-color: transparent !important;
 }
 
-/* La fiche d'une demande porte l'image de la page de connexion, sous un voile. Il a
-   d'abord été posé à 93 % partout : l'image y passait tout entière, on ne voyait qu'un
-   gris perle. Il descend à 76 % — les courbes se lisent — sauf sur la bande du haut, qu'il
-   garde presque opaque : c'est la seule partie de la fiche dont le texte tombe directement
-   sur le fond. Ailleurs, les cartes sont blanches et opaques, le fond ne leur dispute
-   rien. */
+/* En clair, sa propre image : celle de la connexion est faite pour du sombre, et il
+   fallait la noyer sous un voile de 93 % pour qu'elle ne mange pas le texte — à ce
+   compte-là on ne voyait plus qu'un gris perle. Celle-ci est claire de naissance : aucun
+   voile, elle se montre telle quelle. Mesuré sur ses pixels, le plus sombre d'entre eux
+   laisse 9,7:1 au texte et 5,7:1 à l'en-tête. */
 [data-theme="light"] .prefa-detail-row:has(> td > .prefa-table-detail) {
     background:
-        linear-gradient(180deg,
-            rgb(234 241 248 / 93%) 0,
-            rgb(234 241 248 / 93%) 150px,
-            rgb(234 241 248 / 76%) 320px,
-            rgb(234 241 248 / 86%) 100%),
-        url("../../assets/login-fond.jpg") center / cover no-repeat !important;
+        url("../../assets/fiche-fond-clair.jpg") center / cover no-repeat !important;
 }
 
 /* L'en-tête est le seul texte de la fiche qui ne soit pas sur une carte : il tombe
@@ -407,9 +401,11 @@ body[data-theme="light"],
     color: #334155;
 }
 
-/* Même raison pour l'état : l'ambre du jeton se lit sur blanc, pas sur le fond. */
+/* Même raison pour l'état : l'ambre du jeton se lit sur blanc (4,9:1), pas sur le bleu
+   pâle du fond (2,7:1). Celui-ci tire vers le brun, mais il tient à 4,7:1 sur le plus
+   sombre de l'image, et reste un ambre à côté du rouge d'un refus. */
 [data-theme="light"] .fiche-entete .prefa-status.status-1 {
-    color: #854d0e;
+    color: #713f12;
 }
 
 /* Le cordon de quelqu'un d'autre se lit, ne se reprend pas : son champ est désactivé, et
