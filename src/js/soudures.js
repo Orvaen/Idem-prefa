@@ -37,6 +37,41 @@
         corps.replaceChildren(tr);
     }
 
+    /**
+     * Ce que le tableau porte à cet instant, en une chaîne.
+     *
+     * Sert à savoir s'il y a quelque chose à enregistrer : une feuille entièrement
+     * soudée et déjà envoyée n'a plus rien à dire, et le bouton n'a plus lieu d'être
+     * cliquable. On compare ce qui est à l'écran à ce que le serveur a renvoyé — pas une
+     * liste de lignes « touchées », qui tiendrait une seconde vérité à jour.
+     */
+    function empreinte(corps) {
+        return [...corps.querySelectorAll('.soudures-ligne')].map(li => {
+            const date = li.querySelector('.soudures-date');
+            const type = li.querySelector('.soudures-type');
+            return li.dataset.numero + '' + (date ? date.value : '') + '' + (type ? type.value : '');
+        }).join('');
+    }
+
+    /**
+     * Le bouton d'enregistrement ne s'allume que s'il y a quelque chose à écrire.
+     *
+     * Une feuille complète et enregistrée laissait un bouton actif qui répondait « Rien
+     * à enregistrer » : il faut cliquer pour apprendre qu'il n'y avait rien à faire. Le
+     * bouton le dit maintenant sans qu'on le touche, et se rallume dès qu'on corrige une
+     * ligne.
+     */
+    function majEnregistrer(racine) {
+        const corps = racine.querySelector('#soudures-corps');
+        const form = racine.querySelector('#soudures-form');
+        if (!corps || !form) return;
+        const bouton = form.querySelector('button[type="submit"]');
+        if (!bouton) return;
+        const change = empreinte(corps) !== (form.dataset.empreinte || '');
+        bouton.disabled = !change;
+        bouton.title = change ? '' : 'Rien de nouveau à enregistrer sur cette feuille.';
+    }
+
     function poser(corps, lignes) {
         const modele = document.getElementById('soudures-modele');
         if (!modele) return;
@@ -72,6 +107,11 @@
             }
             corps.append(li);
         });
+
+        // Ce que le serveur vient de dire fait foi : c'est à partir de là qu'on mesure
+        // ce qui a changé.
+        const form = corps.closest('form');
+        if (form) form.dataset.empreinte = empreinte(corps);
     }
 
     /**
@@ -141,9 +181,15 @@
             if (total) {
                 const fort = document.createElement('strong');
                 fort.textContent = faites + ' sur ' + total;
-                compte.append(fort, ' renseignée' + (faites > 1 ? 's' : '') + ' sur cette feuille');
+                // Tout ce que la feuille demandait est soudé : le dire, plutôt que de
+                // laisser compter « 4 sur 4 » pour s'en apercevoir.
+                compte.append(fort, faites >= total
+                    ? ' — la feuille est complète'
+                    : ' renseignée' + (faites > 1 ? 's' : '') + ' sur cette feuille');
             }
         }
+
+        majEnregistrer(racine);
     }
 
     async function charger() {
@@ -363,6 +409,12 @@
 
     // La barre de filtres de la maison prévient son formulaire quand on coche : c'est à
     // l'écran de savoir ce qu'il en fait. Ici, rien ne part au serveur — tout est déjà là.
+    // Corriger une ligne rallume le bouton ; revenir à ce qui était enregistré l'éteint.
+    $(document).on('input change', '#soudures-corps .soudures-date, #soudures-corps .soudures-type', function () {
+        const racine = page();
+        if (racine) majEnregistrer(racine);
+    });
+
     $(document).on('input', '#soudures-recherche', filtrer);
     $(document).on('change', '.soudures-filtres', filtrer);
     $(document).on('submit', '.soudures-filtres', event => event.preventDefault());
@@ -426,6 +478,9 @@
             retour.textContent = 'Le serveur ne répond pas.';
         } finally {
             boutons.forEach(b => { b.disabled = false; });
+            // Les boutons reviennent tous, puis celui d'enregistrement retrouve son sort :
+            // la feuille qu'on vient d'envoyer n'a plus rien à dire.
+            majEnregistrer(racine);
         }
     });
 
