@@ -30,28 +30,38 @@ $repereFeuille = static fn (array $feuille): string =>
 //
 // « DISTINCT » parce qu'une même personne peut tenir le plan, le montage et le suivi
 // soudage du même plan : ici on vient souder, pas consulter la répartition du travail.
-//
-// Un plan ne dit que son nom et ses feuilles. Ni compte de cordons, ni jauge, ni
-// pourcentage : où en est le plan entier se lit dans « Mes affectations », et c'est là
-// aussi que l'avancement se déclare. Le même chiffre à deux endroits oblige à se demander
-// lequel des deux fait foi.
-$confies = $db->prepare('SELECT DISTINCT a.id_element, e.reference, e.id_demande
+$confies = $db->prepare('SELECT DISTINCT a.id_element, e.reference, e.id_demande, d.nom_affaire
     FROM affectation_atelier a
     JOIN element_atelier e ON e.id = a.id_element
     JOIN demande_prefabrication d ON d.id = e.id_demande
     WHERE a.id_utilisateur = ? AND a.actif = 1 AND d.id_statut = 2
     ORDER BY e.id_demande DESC, e.reference');
 $confies->execute([$actor['id']]);
-
 $plans = [];
 foreach ($confies->fetchAll() as $confie) {
     $elementId = (int) $confie['id_element'];
     $plans[$elementId] = [
         'element' => $elementId,
         'reference' => (string) $confie['reference'],
+        'affaire' => (string) $confie['nom_affaire'],
         'demande' => (int) $confie['id_demande'],
         'feuilles' => $parPlan[$elementId] ?? [],
     ];
+}
+
+// Les lignes du tableau, à plat : une par feuille, et une par plan qui n'en a aucune —
+// sinon un plan sans isométrique disparaîtrait de l'écran de celui à qui il est confié.
+//
+// À plat, et non par plan dépliable : un bandeau de plan coûtait soixante-dix pixels avant
+// de montrer la moindre feuille, et il fallait l'ouvrir pour chercher dedans. Un tableau
+// se filtre — c'est la forme qu'ont les autres listes de l'application.
+$lignes = [];
+foreach ($plans as $plan) {
+    if (!$plan['feuilles']) {
+        $lignes[] = ['plan' => $plan, 'feuille' => null];
+        continue;
+    }
+    foreach ($plan['feuilles'] as $feuille) $lignes[] = ['plan' => $plan, 'feuille' => $feuille];
 }
 ?>
 <datalist id="soudure-procedes">
@@ -59,126 +69,158 @@ foreach ($confies->fetchAll() as $confie) {
     <option value="111"></option><option value="135"></option><option value="141"></option>
 </datalist>
 
-<section class="page prefa-page soudures" id="soudures-page" aria-labelledby="soudures-page-title">
-    <?php // « page » est un conteneur flex : sans cette coque, chaque section de l'écran
-          // devenait une colonne posée à côté des autres. C'est la coque maison, celle de
-          // tous les écrans de préfabrication. ?>
-    <div class="prefa-shell soudures-shell">
-    <header class="soudures-entete">
-        <div class="soudures-identite">
-            <p class="soudures-surtitre">Atelier</p>
+<?php // La coque, l'en-tête, la barre de filtres, le compte, le tableau : exactement ceux
+      // des autres listes de l'application — « Demandes de préfabrication », « Soudures »
+      // du chef, « Mes affectations ». Cet écran s'était inventé son propre gabarit, avec
+      // un surtitre et un grand titre léger qu'on ne voit nulle part ailleurs : on
+      // changeait de logiciel en changeant d'onglet. ?>
+<section class="page prefa-page prefa-list atelier-page soudures" id="soudures-page" aria-labelledby="soudures-page-title">
+    <div class="prefa-shell">
+    <header class="prefa-heading prefa-list-heading">
+        <div>
             <?php // Le titre de la page dit exactement ce que dit la barre : un onglet et
                   // son écran qui ne portent pas le même nom, on ne sait plus si on est au
                   // bon endroit. ?>
-            <h1 class="soudures-titre" id="soudures-page-title">Mes soudures &amp; Suivi matériel</h1>
+            <h1 id="soudures-page-title">Mes soudures &amp; Suivi matériel</h1>
             <?php // La phrase dit la chaîne entière — plan, feuille, cordon — parce que
                   // l'écran n'en montre qu'un maillon à la fois. Sans elle, on arrive devant
-                  // une ligne grise et rien ne dit ce qu'on est venu y faire. ?>
-            <p class="soudures-sous-titre">Les plans qui vous sont confiés. Ouvrez-en un pour voir ses feuilles, puis notez sur chaque feuille les cordons que vous avez soudés.</p>
+                  // un tableau et rien ne dit ce qu'on est venu y faire. ?>
+            <p>Les feuilles des plans qui vous sont confiés. Ouvrez-en une et notez les cordons que vous avez soudés.</p>
         </div>
     </header>
 
-    <?php if (!$plans): ?>
+    <?php if (!$lignes): ?>
         <p class="soudures-rien">Aucun plan ne vous est affecté pour le moment.</p>
     <?php else: ?>
-        <?php // Un plan par bloc, replié sur ses feuilles. Les plans arrivent fermés et
-              // aucune feuille n'est choisie : un cahier de quinze pages n'a pas à tenir
-              // l'écran avant qu'on ait dit sur lequel on est, et la première lecture d'une
-              // page coûte quelques secondes — les dépenser pour une feuille que personne
-              // n'a demandée, c'est attendre pour rien. ?>
-        <ol class="soudures-plans">
-            <?php foreach ($plans as $plan):
-                $idFeuilles = 'soudures-plan-' . $plan['element'];
-                $nombre = count($plan['feuilles']);
-            ?>
-                <li class="soudures-plan est-repliee">
-                    <?php // Le plan tout entier est le bouton qui l'ouvre : c'est la ligne qu'on
-                          // vise, pas une poignée au bout. Le chevron dit dans quel état on est
-                          // sans qu'on ait à lire un mot. ?>
-                    <button type="button" class="soudures-plan-bascule"
-                            aria-expanded="false" aria-controls="<?= $idFeuilles ?>">
-                        <span class="soudures-plan-chevron" aria-hidden="true"></span>
-                        <span class="soudures-plan-identite">
-                            <strong><?= prefaEscape($plan['reference']) ?></strong>
-                            <span><?= prefaEscape(prefaReferenceComplete($plan['demande'])) ?> · <?= $nombre ?> feuille<?= $nombre > 1 ? 's' : '' ?></span>
-                        </span>
-                    </button>
+        <?php // Les utilitaires de la maison : un champ de recherche et des listes d'état.
+              // Un cahier porte quinze feuilles, et on en a souvent trois : parcourir
+              // quarante lignes à l'œil pour retrouver « YU-PRE-120-3 » est une corvée que
+              // les autres écrans n'imposent pas. ?>
+        <div class="prefa-filters" role="search">
+            <div class="floating-field">
+                <label for="soudures-recherche">Rechercher</label>
+                <input id="soudures-recherche" class="floating-control" type="search"
+                       placeholder="N° de ligne, plan, demande">
+            </div>
+            <div class="floating-field floating-always">
+                <label for="soudures-filtre-etat">État</label>
+                <select id="soudures-filtre-etat" class="floating-control">
+                    <option value="">Toutes les feuilles</option>
+                    <option value="a_faire">À faire</option>
+                    <option value="en_cours">En cours</option>
+                    <option value="soudee">Soudées</option>
+                    <option value="non_lue">Pas encore ouvertes</option>
+                </select>
+            </div>
+            <?php if (count($plans) > 1): ?>
+                <div class="floating-field floating-always">
+                    <label for="soudures-filtre-plan">Plan</label>
+                    <select id="soudures-filtre-plan" class="floating-control">
+                        <option value="">Tous les plans</option>
+                        <?php foreach ($plans as $plan): ?>
+                            <option value="<?= (int) $plan['element'] ?>"><?= prefaEscape($plan['reference']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            <?php endif; ?>
+        </div>
 
-                    <div class="soudures-plan-feuilles" id="<?= $idFeuilles ?>">
-                        <?php if (!$plan['feuilles']): ?>
-                            <p class="atelier-muted soudures-plan-vide">Aucune feuille ISO n’est rattachée à ce plan : le chef d’atelier les dépose depuis « Plans / ISO ».</p>
-                        <?php else: ?>
-                            <div class="prefa-table-scroll" role="region" aria-label="Feuilles de <?= prefaEscape($plan['reference']) ?>" tabindex="0">
-                                <table class="prefa-table soudures-feuilles">
-                                    <thead><tr>
-                                        <th scope="col">Feuille</th>
-                                        <th scope="col">Cordons</th>
-                                        <th scope="col">État</th>
-                                        <th scope="col">Actions</th>
-                                    </tr></thead>
-                                    <tbody>
-                                        <?php foreach ($plan['feuilles'] as $feuille):
-                                            $etat = soudureAtelierEtatFeuille($feuille['faites'], $feuille['imprimees']);
-                                            $repere = $repereFeuille($feuille);
-                                        ?>
-                                            <?php // La ligne porte son repère et ses noms : le script n'a
-                                                  // rien à recomposer, ni à aller relire des cellules pour
-                                                  // redire au-dessous de quelle feuille on travaille. ?>
-                                            <tr class="soudures-feuille"
-                                                data-repere="<?= prefaEscape($repere) ?>"
-                                                data-feuille="<?= prefaEscape($nomFeuille($feuille)) ?>"
-                                                data-plan="<?= prefaEscape($feuille['reference']) ?>"
-                                                data-demande="<?= prefaEscape(prefaReferenceComplete($feuille['demande'])) ?>">
-                                                <td class="soudures-feuille-nom">
-                                                    <strong><?= prefaEscape($nomFeuille($feuille)) ?></strong>
-                                                    <?php if ($feuille['numero'] !== '' && $feuille['pages'] > 1): ?>
-                                                        <?php // Le numéro de ligne ne dit pas où la feuille se
-                                                              // trouve dans le cahier : la page le dit, à la
-                                                              // suite. Sur deux étages, la ligne se serrait et
-                                                              // quinze feuilles faisaient un mur. ?>
-                                                        <span>p. <?= $feuille['page'] ?> / <?= $feuille['pages'] ?></span>
-                                                    <?php endif; ?>
-                                                </td>
-                                                <td class="soudures-feuille-cordons" data-cordons><?= prefaEscape(soudureAtelierCompteFeuille($feuille['faites'], $feuille['imprimees'])) ?></td>
-                                                <td class="soudures-feuille-etat"><span class="prefa-status <?= $etat['classe'] ?>" data-etat><?= prefaEscape($etat['libelle']) ?></span></td>
-                                                <td class="soudures-feuille-actions">
-                                                    <?php // « Renseigner » amène le tableau de cette feuille
-                                                          // sous les yeux ; « Plan » ouvre le dessin, pour
-                                                          // retrouver le repère d'un cordon. Cliquer la ligne
-                                                          // fait comme « Renseigner » — c'est le geste qu'on a
-                                                          // dans une liste —, mais le bouton reste : il se
-                                                          // voit, et il s'atteint au clavier. ?>
-                                                    <button type="button" class="soudures-renseigner">Renseigner</button>
-                                                    <button type="button" class="soudures-ouvrir-plan" data-repere="<?= prefaEscape($repere) ?>">Plan</button>
-                                                </td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
-                            </div>
+        <p class="prefa-list-summary">
+            <strong id="soudures-compte-feuilles"><?= count($feuilles) ?></strong>
+            <span><?= count($feuilles) === 1 ? 'feuille' : 'feuilles' ?></span>
+            · <strong><?= count($plans) ?></strong>
+            <span><?= count($plans) === 1 ? 'plan' : 'plans' ?></span>
+        </p>
+
+        <div class="prefa-table-scroll" role="region" aria-label="Mes feuilles ISO" tabindex="0">
+            <table class="prefa-table soudures-feuilles">
+                <thead><tr>
+                    <th scope="col">Demande n°</th>
+                    <th scope="col">Plan</th>
+                    <th scope="col">Feuille</th>
+                    <th scope="col">Cordons</th>
+                    <th scope="col">État</th>
+                    <th scope="col">Actions</th>
+                </tr></thead>
+                <tbody>
+                    <?php foreach ($lignes as $ligne):
+                        $plan = $ligne['plan'];
+                        $feuille = $ligne['feuille'];
+                        $demande = prefaReferenceComplete($plan['demande']);
+                    ?>
+                        <?php if ($feuille === null): ?>
+                            <?php // Un plan confié sans isométrique : il reste à l'écran, et il dit
+                                  // pourquoi il n'a rien à ouvrir. ?>
+                            <tr class="soudures-feuille est-sans-feuille" data-etat="non_lue"
+                                data-element="<?= (int) $plan['element'] ?>"
+                                data-cherche="<?= prefaEscape(mb_strtolower($demande . ' ' . $plan['reference'] . ' ' . $plan['affaire'])) ?>">
+                                <td><?= prefaEscape($demande) ?></td>
+                                <td><?= prefaEscape($plan['reference']) ?></td>
+                                <td colspan="4" class="atelier-muted">Aucune feuille ISO n’est rattachée à ce plan : le chef d’atelier les dépose depuis « Plans / ISO ».</td>
+                            </tr>
+                        <?php else:
+                            $etat = soudureAtelierEtatFeuille($feuille['faites'], $feuille['imprimees']);
+                            $repere = $repereFeuille($feuille);
+                            $nom = $nomFeuille($feuille);
+                        ?>
+                            <?php // La ligne porte son repère, son état et de quoi la chercher : le
+                                  // script n'a rien à recomposer, ni à relire des cellules pour
+                                  // filtrer ou pour redire au-dessous quelle feuille on travaille. ?>
+                            <tr class="soudures-feuille"
+                                data-repere="<?= prefaEscape($repere) ?>"
+                                data-feuille="<?= prefaEscape($nom) ?>"
+                                data-plan="<?= prefaEscape($plan['reference']) ?>"
+                                data-demande="<?= prefaEscape($demande) ?>"
+                                data-element="<?= (int) $plan['element'] ?>"
+                                data-etat="<?= $etat['cle'] ?>"
+                                data-cherche="<?= prefaEscape(mb_strtolower($demande . ' ' . $plan['reference'] . ' ' . $plan['affaire'] . ' ' . $nom)) ?>">
+                                <td><?= prefaEscape($demande) ?></td>
+                                <td><?= prefaEscape($plan['reference']) ?></td>
+                                <td class="soudures-feuille-nom">
+                                    <strong><?= prefaEscape($nom) ?></strong>
+                                    <?php if ($feuille['numero'] !== '' && $feuille['pages'] > 1): ?>
+                                        <?php // Le numéro de ligne ne dit pas où la feuille se trouve
+                                              // dans le cahier : la page le dit, à la suite. ?>
+                                        <span>p. <?= $feuille['page'] ?> / <?= $feuille['pages'] ?></span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="soudures-feuille-cordons" data-cordons><?= prefaEscape(soudureAtelierCompteFeuille($feuille['faites'], $feuille['imprimees'])) ?></td>
+                                <td class="soudures-feuille-etat"><span class="prefa-status <?= $etat['classe'] ?>" data-etat><?= prefaEscape($etat['libelle']) ?></span></td>
+                                <td class="soudures-feuille-actions">
+                                    <?php // « Renseigner » amène le tableau de cette feuille sous les
+                                          // yeux ; « Plan » ouvre le dessin, pour retrouver le repère
+                                          // d'un cordon. Cliquer la ligne fait comme « Renseigner » —
+                                          // c'est le geste qu'on a dans une liste —, mais le bouton
+                                          // reste : il se voit, et il s'atteint au clavier. ?>
+                                    <button type="button" class="soudures-renseigner">Renseigner</button>
+                                    <button type="button" class="soudures-ouvrir-plan" data-repere="<?= prefaEscape($repere) ?>">Plan</button>
+                                </td>
+                            </tr>
                         <?php endif; ?>
-                    </div>
-                </li>
-            <?php endforeach; ?>
-        </ol>
+                    <?php endforeach; ?>
+                    <?php // Le filtre peut tout cacher : la ligne le dit, plutôt que de laisser un
+                          // tableau vide sous ses en-têtes. ?>
+                    <tr id="soudures-aucune" hidden><td colspan="6" class="prefa-table-empty">Aucune feuille ne correspond à cette recherche.</td></tr>
+                </tbody>
+            </table>
+        </div>
 
         <?php // La saisie n'existe qu'une fois une feuille choisie : « data-vide » la tient
-              // repliée, et le premier clic sur une ligne la pose avec son nom. Le script la
-              // déplace alors dans le plan travaillé, sous ses feuilles : elle est écrite
-              // ici, une fois, parce qu'on ne remplit qu'une feuille à la fois.
-              //
-              // Son en-tête a la forme de celui d'un plan — un nom, une ligne grise, un
-              // bouton à droite — et sa liste a la forme du tableau des feuilles. Deux
-              // formes pour tout l'écran : un en-tête, un tableau. On en comptait quatre,
-              // et chacune demandait d'apprendre où regarder. ?>
-        <section class="soudures-saisie" aria-labelledby="soudures-saisie-titre" data-vide>
-            <div class="soudures-saisie-entete">
-                <h2 class="soudures-saisie-titre" id="soudures-saisie-titre">
-                    <strong data-feuille-titre></strong>
-                    <span data-feuille-compte></span>
-                </h2>
-                <button type="button" class="soudures-ouvrir-plan" data-feuille-plan-bouton data-repere=""
-                        title="Voir le dessin pour retrouver le repère d’un cordon">Ouvrir la feuille</button>
+              // repliée, et le premier clic sur une ligne la pose avec son nom. C'est le
+              // volet de détail de la maison — même en-tête, même croix pour le fermer que
+              // sur les écrans du chef — et sa liste est un tableau comme celui des
+              // feuilles. Deux formes pour tout l'écran : un en-tête, un tableau. ?>
+        <section class="soudures-saisie atelier-detail-content" aria-labelledby="soudures-saisie-titre" data-vide>
+            <div class="prefa-detail-heading">
+                <div>
+                    <h2 id="soudures-saisie-titre">Feuille <span data-feuille-titre></span></h2>
+                    <p data-feuille-compte></p>
+                </div>
+                <div class="soudures-saisie-actions">
+                    <button type="button" class="soudures-ouvrir-plan" data-feuille-plan-bouton data-repere=""
+                            title="Voir le dessin pour retrouver le repère d’un cordon">Ouvrir la feuille</button>
+                    <button type="button" class="prefa-detail-close" data-fermer-saisie aria-label="Fermer la feuille">✕</button>
+                </div>
             </div>
 
             <form id="soudures-form" data-csrf="<?= prefaEscape(Session::jeton()) ?>">

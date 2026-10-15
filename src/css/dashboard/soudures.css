@@ -1,24 +1,19 @@
-/* ===== MES SOUDURES ===== */
+/* ===== MES SOUDURES & SUIVI MATÉRIEL ===== */
 
-/* L'écran du soudeur reprend la forme de la fiche d'une demande : un surtitre qui dit ce
-   qu'on regarde, un grand titre léger, puis le contenu — ici le tableau de ses feuilles,
-   et sous un filet la feuille travaillée avec ses cordons. Pas d'encadrés : ce sont les
-   filets fins et les blancs qui séparent, et une page faite de boîtes empilées se lit mal
-   sur un écran d'atelier.
+/* L'écran du soudeur est une liste comme les autres : la coque, l'en-tête, la barre de
+   filtres, le compte et le tableau viennent de « prefa-list » et d'« atelier-page », sans
+   une ligne de plus. Il s'était inventé son propre gabarit — surtitre, grand titre léger,
+   blocs dépliables, listes en grille — et on changeait de logiciel en changeant d'onglet.
+
+   Ce fichier ne garde donc que ce qu'aucun autre écran ne porte : la ligne qu'on choisit,
+   les deux boutons d'une ligne, et le tableau des cordons.
 
    Rappel du socle : html est en 13 px, donc jamais de rem ici — les tailles sont en px. */
 
-/* « page » centre son contenu en flex : la section doit redevenir un bloc, sinon chacune
-   de ses parties se range en colonne à côté des autres. La coque tient la largeur de
-   lecture, comme sur les autres écrans. */
-.page.soudures {
-    display: block;
-    padding: 28px 32px 46px;
-    background: var(--surface);
-
-    /* L'atelier lit debout, parfois avec des gants, sur un écran qui prend la poussière :
-       ses lignes sont plus hautes et son texte plus grand qu'ailleurs. Les jetons de la
-       maison, posés ici seulement — les écrans de bureau gardent leur densité. */
+/* L'atelier lit debout, parfois avec des gants, sur un écran qui prend la poussière : ses
+   lignes sont plus hautes et son texte plus grand qu'ailleurs. Ce sont les jetons de la
+   maison, posés ici seulement — les écrans de bureau gardent leur densité. */
+.soudures {
     --ligne-th: 38px;
     --ligne-td: 48px;
 }
@@ -27,176 +22,33 @@
     font-size: 14px;
 }
 
-.soudures-shell {
-    max-width: 1180px;
-}
+/* ----------------------------------------------------------------- le tableau des feuilles */
 
-/* ----------------------------------------------------------------- l'en-tête */
-
-.soudures-entete {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 20px 28px;
-    margin-bottom: 24px;
-}
-
-.soudures-identite {
-    min-width: 0;
-}
-
-/* Le surtitre dit ce que c'est ; le titre dit quoi. Le second n'a pas besoin d'être gras
-   pour être vu : il est le plus grand de la page, et le seul en léger. */
-.soudures-surtitre,
-.soudures-eyebrow {
-    margin: 0 0 6px;
-    color: var(--text-muted);
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-}
-
-.soudures-titre {
-    margin: 0;
-    color: var(--text);
-    font-size: 26px;
-    font-weight: 300;
-    letter-spacing: -0.01em;
-    line-height: 1.15;
-}
-
-.soudures-sous-titre {
-    margin: 8px 0 0;
-    color: var(--text-muted);
-    font-size: 13px;
-}
-
-/* ----------------------------------------------------------------- la liste des plans */
-
-/* L'écran est une liste de plans, et chaque plan est un bloc entier : son nom, où il en
-   est, ce qu'il demande à faire valider, et ses feuilles quand on le déplie. Ses morceaux
-   étaient répartis entre un tableau en haut et une section en bas qui redisait le nom du
-   plan et son compte : on lisait deux fois la même chose, loin l'une de l'autre.
-
-   Des filets, pas d'encadrés : c'est la règle de la maison, et quatre cartes empilées sur
-   un écran d'atelier font un mur. */
-.soudures-plans {
-    margin: 0;
-    padding: 0;
-    border-top: 1px solid var(--border);
-    list-style: none;
-}
-
-.soudures-plan {
-    border-bottom: 1px solid var(--border);
-}
-
-/* Toute la largeur de la ligne répond au clic, pas seulement les mots : on vise un plan
-   comme on vise un dossier, d'un geste large. */
-.soudures-plan-bascule {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    width: 100%;
-    min-width: 0;
-    padding: 18px 4px;
-    border: 0;
-    background: transparent;
-    color: var(--text);
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
-}
-
-.soudures-plan-bascule:hover .soudures-plan-identite strong {
-    color: var(--accent-texte);
-}
-
-.soudures-plan-bascule:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: -2px;
-}
-
-.soudures-plan-identite {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    min-width: 0;
-}
-
-.soudures-plan-identite strong {
-    font-size: 15px;
-    font-weight: 500;
-    transition: color .12s ease;
-}
-
-.soudures-plan-identite > span {
-    color: var(--text-muted);
-    font-size: 12px;
-}
-
-/* Le chevron plutôt qu'un mot : « Ouvrir » et « Replier » obligent à lire le bouton avant
-   de savoir dans quel état on est, alors que la pointe le montre. */
-.soudures-plan-chevron {
-    flex: 0 0 auto;
-    width: 7px;
-    height: 7px;
-    margin-left: 2px;
-    border-right: 1.5px solid var(--text-muted);
-    border-bottom: 1.5px solid var(--text-muted);
-    transform: rotate(-45deg);
-    transition: transform .15s ease;
-}
-
-.soudures-plan-bascule[aria-expanded="true"] .soudures-plan-chevron {
-    transform: rotate(45deg);
-}
-
-/* ----------------------------------------------------------------- les feuilles d'un plan */
-
-.soudures-plan-feuilles {
-    padding-bottom: 20px;
-}
-
-/* Replié, le plan n'est plus que son en-tête et ses travaux. Ses feuilles ne sont pas
-   retirées de la page : elles sont cachées, et la ligne choisie — si elle est dedans — le
-   reste. La saisie se replie avec elles : une liste de cordons sous un plan fermé aurait
-   l'air d'un morceau oublié. */
-.soudures-plan.est-repliee .soudures-plan-feuilles,
-.soudures-plan.est-repliee .soudures-saisie {
-    display: none;
-}
-
-.soudures-plan-vide {
-    margin: 0;
-    padding: 0 4px 6px;
-}
-
-/* Le rembourrage du bas d'un tableau dégage sa barre de défilement horizontale ; celui-ci
-   n'en a une que sur un écran étroit, et trente pixels ouvraient un trou sous chaque
-   plan. */
-.soudures .prefa-table-scroll {
-    padding-bottom: 8px;
-}
-
-/* Quatre colonnes étalées sur 1 200 px mettaient quarante centimètres entre le nom d'une
-   feuille et son état, et on suivait la ligne du doigt pour les relier. */
+/* Le tableau ne prend pas toute la largeur de l'écran : six colonnes étalées sur 1 200 px
+   mettraient quarante centimètres entre le nom d'une feuille et son état, et on suivrait
+   la ligne du doigt pour les relier. */
 .soudures-feuilles {
-    min-width: 620px;
-    max-width: 900px;
+    min-width: 760px;
+    max-width: 1060px;
 }
 
 .soudures-feuille {
     cursor: pointer;
 }
 
-/* Le « !important » et la classe du tableau en tête ne sont pas des caprices : le thème
-   clair repeint « .prefa-table td » en blanc, lui aussi en !important, et une règle de
-   même poids écrite après l'emporte. La ligne choisie n'avait donc pas de teinte chez lui.
-   Le survol y pèse plus lourd encore : la ligne prise le redit sous le pointeur, sinon
-   elle perd sa marque au moment même où on la vise. */
+/* Un plan confié sans isométrique : sa ligne n'a rien à ouvrir, donc rien à choisir. */
+.soudures-feuille.est-sans-feuille {
+    cursor: default;
+}
+
+/* La feuille travaillée se teinte et porte un filet à gauche : ce sont les jetons de la
+   sélection de lignes, repris tels quels — c'est le même geste, il doit se voir de la même
+   façon.
+
+   Le « !important » et la classe du tableau en tête ne sont pas des caprices : le thème
+   clair repeint « .prefa-table td » en blanc, lui aussi en !important, et une règle de même
+   poids écrite après l'emporte. Le survol y pèse plus lourd encore : la ligne prise le
+   redit sous le pointeur, sinon elle perd sa marque au moment où on la vise. */
 .prefa-table .soudures-feuille.est-choisie > td,
 .prefa-table .soudures-feuille.est-choisie:hover > td {
     background: var(--selection-fond) !important;
@@ -216,16 +68,6 @@
     white-space: nowrap;
 }
 
-/* Le nom de la feuille prend la place qui reste ; les trois autres colonnes se tiennent à
-   leur largeur, pour que les comptes et les états s'alignent d'une ligne à l'autre. */
-.soudures-feuille-cordons {
-    width: 110px;
-}
-
-.soudures-feuille-etat {
-    width: 150px;
-}
-
 /* La page du cahier suit le numéro de ligne, à la suite et non dessous : sur deux étages,
    quinze feuilles faisaient un mur de texte. */
 .soudures-feuille-nom span {
@@ -234,13 +76,22 @@
     font-size: 12.5px;
 }
 
+.soudures-feuille-cordons {
+    width: 110px;
+}
+
+.soudures-feuille-etat {
+    width: 150px;
+}
+
 .soudures-feuille-actions {
     width: 1%;
     white-space: nowrap;
 }
 
-/* Deux commandes par ligne, et elles se tiennent dans la hauteur d'une ligne : la taille
-   moyenne des contrôles ferait grandir le tableau de quatre pixels par feuille. */
+/* Deux commandes par ligne, et elles se tiennent dans la hauteur d'une ligne. « Plan » ne
+   fait que montrer le dessin : il s'efface derrière « Renseigner », qui est ce qu'on vient
+   faire. */
 .soudures-feuille-actions button {
     height: var(--ctrl-sm);
     padding: 0 12px;
@@ -258,8 +109,6 @@
     margin-left: 6px;
 }
 
-/* « Plan » ne fait que montrer le dessin : il s'efface derrière « Renseigner », qui est ce
-   qu'on vient faire. */
 .soudures-feuille-actions .soudures-ouvrir-plan {
     color: var(--text-muted);
 }
@@ -270,55 +119,25 @@
 
 /* ----------------------------------------------------------------- la feuille travaillée */
 
-/* Le tableau des cordons, sous celui des feuilles, dans le bloc du plan. Un filet les
-   sépare : au-dessus on choisit, en dessous on écrit. */
+/* Le volet de détail de la maison, posé sous le tableau plutôt que dans une ligne dépliée :
+   la feuille qu'on remplit ne se referme pas quand on filtre. */
 .soudures-saisie {
-    margin-top: 10px;
-    padding-top: 18px;
+    margin-top: 26px;
+    padding-top: 22px;
     border-top: 1px solid var(--border);
 }
 
-/* Tant qu'aucune feuille n'est choisie, la saisie n'est pas là. Pas même son en-tête :
-   un titre « Aucune feuille choisie » au-dessus d'un vide ne fait que meubler, et la
-   consigne est déjà sous le titre de la page. Le premier clic sur une feuille la pose. */
+/* Tant qu'aucune feuille n'est choisie, la saisie n'est pas là. Pas même son en-tête : un
+   titre au-dessus d'un vide ne fait que meubler, et la consigne est déjà sous le titre de
+   la page. Le premier clic sur une feuille la pose. */
 .soudures-saisie[data-vide] {
     display: none;
 }
 
-/* Même forme que l'en-tête d'un plan : un nom, une ligne grise à la suite, un bouton à
-   droite. L'écran n'a plus que deux formes — un en-tête, un tableau — là où il en comptait
-   quatre, et chacune demandait d'apprendre où regarder. */
-.soudures-saisie-entete {
+.soudures-saisie-actions {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
-    justify-content: space-between;
-    gap: 10px 24px;
-    padding: 0 4px 14px;
-}
-
-.soudures-saisie-titre {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 12px;
-    margin: 0;
-    min-width: 0;
-    font-size: 15px;
-    font-weight: 400;
-}
-
-.soudures-saisie-titre strong {
-    color: var(--text);
-    font-size: 15px;
-    font-weight: 500;
-    font-variant-numeric: tabular-nums;
-}
-
-.soudures-saisie-titre span {
-    color: var(--text-muted);
-    font-size: 12.5px;
-    font-variant-numeric: tabular-nums;
+    gap: 10px;
 }
 
 .soudures-ouvrir-plan {
@@ -348,9 +167,9 @@
 /* ----------------------------------------------------------------- le tableau des cordons */
 
 /* Les mêmes colonnes que le tableau imprimé sur la feuille — le repère, la date, le
-   procédé, qui l'a fait, les contrôles — pour qu'on suive du doigt du papier à l'écran.
-   Et la même langue que le tableau des feuilles au-dessus : c'est un tableau, pas une
-   grille à part avec ses propres largeurs et son propre en-tête. */
+   procédé, qui l'a fait, les contrôles — pour qu'on suive du doigt du papier à l'écran. Et
+   la même langue que le tableau des feuilles au-dessus : c'est un tableau, pas une grille à
+   part avec ses propres largeurs et son propre en-tête. */
 .soudures-cordons {
     min-width: 640px;
     max-width: 900px;
@@ -369,9 +188,9 @@
     width: 200px;
 }
 
-/* Le repère, en pastille : c'est lui qu'on cherche en venant du dessin, et un chiffre nu
-   au bout d'une ligne se perd. Pleine quand le cordon est fait — la liste se lit alors
-   d'un coup d'œil, sans compter. */
+/* Le repère, en pastille : c'est lui qu'on cherche en venant du dessin, et un chiffre nu au
+   bout d'une ligne se perd. Pleine quand le cordon est fait — la liste se lit alors d'un
+   coup d'œil, sans compter. */
 .soudures-numero {
     display: grid;
     place-items: center;
@@ -446,8 +265,8 @@
     color: var(--text);
 }
 
-/* Les contrôles ne se saisissent pas ici — ils engagent l'encadrement. Ils se montrent
-   donc comme ce qu'ils sont sur le plan : une croix, ou rien. */
+/* Les contrôles ne se saisissent pas ici — ils engagent l'encadrement. Ils se montrent donc
+   comme ce qu'ils sont sur le plan : une croix, ou rien. */
 .soudures-controles {
     white-space: nowrap;
     color: var(--text-muted);
@@ -473,7 +292,7 @@
     border-radius: 999px;
 }
 
-/* ----------------------------------------------------------------- le pied de la liste */
+/* ----------------------------------------------------------------- le pied de la saisie */
 
 .soudures-pied {
     display: flex;
@@ -481,7 +300,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin-top: 18px;
+    margin-top: 16px;
 }
 
 .soudures-compte {
@@ -505,8 +324,10 @@
     font-size: 12px;
 }
 
+/* La seule commande qui écrit sur cet écran : elle est pleine, les autres ne sont que du
+   trait. */
 #soudures-form button[type="submit"] {
-    height: var(--ctrl-md);
+    height: var(--ctrl-sm);
     padding: 0 20px;
     border: 0;
     border-radius: var(--r-md);
@@ -533,23 +354,11 @@
 }
 
 .soudures-rien {
-    padding: 40px 0;
+    padding: 40px 16px;
     color: var(--text-muted);
     font-size: 13.5px;
 }
 
 .soudures-lecteur {
     margin-top: 28px;
-}
-
-/* ----------------------------------------------------------------- écrans étroits */
-
-@media (max-width: 900px) {
-    .soudures {
-        padding: 20px 16px 32px;
-    }
-
-    .soudures-saisie-entete {
-        align-items: flex-start;
-    }
 }

@@ -42,15 +42,19 @@ if ($page === 'soudures') {
     // Un bloc par plan, replié sur ses feuilles ; la feuille se choisit dans un tableau et
     // non plus dans une liste déroulante.
     if (str_contains($html, 'id="soudures-feuille"')) throw new RuntimeException('Old sheet dropdown still present');
-    if (!str_contains($html, '<li class="soudures-plan est-repliee">')) throw new RuntimeException('Plan blocks are not folded on arrival');
-    if (!str_contains($html, 'class="soudures-plan-bascule"')) throw new RuntimeException('Plan fold button missing');
+    // La page porte la coque des autres listes, et ses utilitaires : on ne doit pas
+    // pouvoir lui réinventer un gabarit à elle sans que ce contrôle le dise.
+    if (!str_contains($html, '<section class="page prefa-page prefa-list atelier-page soudures"')) throw new RuntimeException('Screen is not on the house list shell');
+    if (!str_contains($html, '<header class="prefa-heading prefa-list-heading">')) throw new RuntimeException('House heading missing');
+    if (!str_contains($html, 'id="soudures-recherche"')) throw new RuntimeException('Search field missing');
+    if (!str_contains($html, 'id="soudures-filtre-etat"')) throw new RuntimeException('State filter missing');
     if (!preg_match('/class="soudures-feuille"[^>]*data-repere="\d+:\d+:\d+"/', $html)) throw new RuntimeException('Sheet table missing');
     // L'avancement ne se déclare pas d'ici : il se déclare dans « Mes affectations ».
     if (str_contains($html, 'soudures-validation') || str_contains($html, 'soudures-demande')) throw new RuntimeException('Validation form is back on this screen');
     // Rien n'est choisi à l'arrivée : la saisie attend, et aucune lecture de PDF n'est
     // déclenchée pour une feuille que personne n'a demandée.
     if (str_contains($html, 'est-choisie')) throw new RuntimeException('A sheet is selected by default');
-    if (!str_contains($html, '<section class="soudures-saisie" aria-labelledby="soudures-saisie-titre" data-vide>')) throw new RuntimeException('Entry block does not wait for a choice');
+    if (!str_contains($html, 'class="soudures-saisie atelier-detail-content" aria-labelledby="soudures-saisie-titre" data-vide>')) throw new RuntimeException('Entry block does not wait for a choice');
 }
 if ($page === 'create_prefa' && !str_contains($html, 'name="nom_affaire"')) throw new RuntimeException('Request name input missing');
 echo $page . ": OK\n";

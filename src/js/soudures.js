@@ -212,16 +212,9 @@
         if (titre) titre.textContent = ligne.dataset.feuille || '';
         if (bouton) bouton.dataset.repere = ligne.dataset.repere || '';
 
-        // La saisie attendait un choix : elle s'ouvre, et elle va se poser dans le plan
-        // qu'on travaille, sous ses feuilles. Elle est écrite une fois dans la page —
-        // on ne remplit qu'une feuille à la fois — et c'est elle qui se déplace, plutôt
-        // que d'en poser une par plan et de les tenir toutes d'accord.
+        // La saisie attendait un choix : elle s'ouvre, sous le tableau, et pour de bon.
         const saisie = racine.querySelector('.soudures-saisie');
-        const bloc = ligne.closest('.soudures-plan');
-        if (saisie) {
-            saisie.removeAttribute('data-vide');
-            if (bloc && saisie.parentElement !== bloc) bloc.append(saisie);
-        }
+        if (saisie) saisie.removeAttribute('data-vide');
 
         charger();
     }
@@ -234,14 +227,48 @@
         choisir(this);
     });
 
-    // Un plan se déplie, et se replie. Chacun est indépendant : en ouvrir un n'a aucune
-    // raison d'en fermer un autre — on compare deux cahiers plus souvent qu'on ne range.
-    $(document).on('click', '.soudures-plan-bascule', function () {
-        // Le pli se marque sur le bloc du plan — c'est lui que la feuille de style cache —
-        // tandis que « aria-controls » désigne ce qui paraît : ses feuilles.
-        const bloc = this.closest('.soudures-plan');
-        if (!bloc) return;
-        this.setAttribute('aria-expanded', String(!bloc.classList.toggle('est-repliee')));
+    // Le filtrage : tout est déjà rendu, on se contente de cacher ce qui ne correspond
+    // pas. Un cahier porte quinze feuilles et on en a souvent trois : quarante lignes se
+    // parcourent mal à l'œil, et un rechargement serveur à chaque frappe coûterait plus
+    // qu'il ne rapporte. C'est la mécanique de l'écran « Soudures » du chef.
+    function filtrer() {
+        const racine = page();
+        if (!racine) return;
+        const texte = (racine.querySelector('#soudures-recherche')?.value || '').trim().toLowerCase();
+        const etat = racine.querySelector('#soudures-filtre-etat')?.value || '';
+        const plan = racine.querySelector('#soudures-filtre-plan')?.value || '';
+
+        let visibles = 0;
+        racine.querySelectorAll('.soudures-feuille').forEach(ligne => {
+            const garde = (!texte || (ligne.dataset.cherche || '').includes(texte))
+                && (!etat || ligne.dataset.etat === etat)
+                && (!plan || ligne.dataset.element === plan);
+            ligne.hidden = !garde;
+            if (garde) visibles++;
+        });
+
+        // Un filtre peut tout cacher : le tableau le dit plutôt que de laisser ses
+        // en-têtes au-dessus du vide.
+        const aucune = racine.querySelector('#soudures-aucune');
+        if (aucune) aucune.hidden = visibles > 0;
+        const compte = racine.querySelector('#soudures-compte-feuilles');
+        if (compte) compte.textContent = String(visibles);
+    }
+
+    $(document).on('input', '#soudures-recherche', filtrer);
+    $(document).on('change', '#soudures-filtre-etat, #soudures-filtre-plan', filtrer);
+
+    // Fermer la feuille : le volet se range et la ligne n'est plus choisie. Sans ce
+    // geste, le seul moyen de quitter une feuille est d'en ouvrir une autre.
+    $(document).on('click', '[data-fermer-saisie]', function () {
+        const racine = page();
+        if (!racine) return;
+        const saisie = racine.querySelector('.soudures-saisie');
+        if (saisie) saisie.setAttribute('data-vide', '');
+        racine.querySelectorAll('.soudures-feuille.est-choisie').forEach(ligne => {
+            ligne.classList.remove('est-choisie');
+            ligne.removeAttribute('aria-current');
+        });
     });
 
     $(document).on('click', '.soudures-renseigner', function () {
