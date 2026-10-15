@@ -11,8 +11,14 @@
     --text-muted: #a2adbd;
     --hover: #2a3342;
     --active: #354155;
-    --accent: #2563eb;
-    --accent-hover: #1d4ed8;
+    /* L'azur d'IDEM PROCESS, relevé sur le logo. Deux intensités, parce qu'une seule ne
+       peut pas faire les deux métiers : « accent » est le plein, qui doit porter du texte
+       blanc ; « accent-texte » est le trait, qui doit se lire sur le fond de la page.
+       L'ancien bleu #2563eb tenait les boutons mais ne faisait que 3:1 en lien sur fond
+       sombre — sous le minimum lisible. */
+    --accent: #0D79A8;
+    --accent-hover: #0A6890;
+    --accent-texte: #4FB9E8;
     --radius: 8px;
 
     /* ---------- L'échelle des contrôles ----------
@@ -46,13 +52,13 @@
 
     /* La ligne retenue dans une sélection. Plus franche que le survol : on doit distinguer
        « je la pointe » de « je l'ai prise ». */
-    --selection-fond: #1e3050;
-    --selection-filet: #2a4470;
+    --selection-fond: #15303f;
+    --selection-filet: #1f4a60;
 
     /* La pastille d'un filtre posé : assez teintée pour se distinguer des filtres vides
        de la même barre, assez sobre pour ne pas crier à côté du tableau. */
-    --filtre-fond: #1b2639;
-    --filtre-bord: #35496e;
+    --filtre-fond: #152835;
+    --filtre-bord: #2b5467;
 
     /* Le rouge des suppressions, nommé une fois. */
     --danger-texte: #f6a4a4;

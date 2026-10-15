@@ -44,7 +44,7 @@
     border: 1px solid var(--border);
     border-radius: 999px;
     background: transparent;
-    color: var(--accent);
+    color: var(--accent-texte);
     font: inherit;
     font-size: 12px;
     cursor: pointer;
@@ -580,7 +580,7 @@
 .plan-sommaire-marque {
     display: block;
     font-size: 10px;
-    color: var(--accent);
+    color: var(--accent-texte);
 }
 
 .plan-dialog-liste h5 {
@@ -808,7 +808,7 @@
 .plan-coulee-choix li:hover,
 .plan-coulee-choix li.est-active {
     background: var(--hover);
-    color: var(--accent);
+    color: var(--accent-texte);
 }
 
 .plan-coulee-choix-note {
@@ -973,7 +973,7 @@
     width: 15px;
     height: 15px;
     margin: 0;
-    accent-color: var(--accent);
+    accent-color: var(--accent-texte);
     cursor: pointer;
 }
 
@@ -1029,7 +1029,7 @@
 .plan-soudures-feuille > summary {
     padding: 0.4rem 0;
     font-size: 0.85rem;
-    color: var(--accent);
+    color: var(--accent-texte);
     cursor: pointer;
 }
 

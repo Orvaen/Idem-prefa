@@ -32,7 +32,7 @@ body.selection-en-cours {
     pointer-events: none;
     border: 1px solid var(--accent);
     border-radius: 2px;
-    background: rgb(37 99 235 / 12%);
+    background: rgb(14 127 176 / 14%);
 }
 
 /* ===== LA BARRE D'ACTION ===== */

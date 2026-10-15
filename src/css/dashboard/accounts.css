@@ -183,7 +183,7 @@
 .account-check {
     flex-shrink: 0;
     width: 16px;
-    color: var(--accent);
+    color: var(--accent-texte);
 }
 
 /* La suppression n'apparaît que dans le mode « Gérer les comptes ». */
@@ -221,7 +221,7 @@
 
 .account-menu.is-managing .account-manage {
     background: var(--hover);
-    color: var(--accent);
+    color: var(--accent-texte);
 }
 
 /* La ligne qu'on vient de cliquer garde le focus : elle portait un contour et rien

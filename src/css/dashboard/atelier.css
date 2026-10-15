@@ -119,7 +119,7 @@
 }
 
 .atelier-progress progress {
-    accent-color: var(--accent);
+    accent-color: var(--accent-texte);
     max-width: 100%;
 }
 
@@ -1625,7 +1625,7 @@
     min-height: 0;
     margin: 2px 0 0;
     padding: 0;
-    accent-color: var(--accent);
+    accent-color: var(--accent-texte);
 }
 
 .atelier-plan-dialog .atelier-checkbox span {
@@ -1772,8 +1772,8 @@
 }
 
 .atelier-tab[aria-selected="true"] {
-    color: var(--accent);
-    border-bottom-color: var(--accent);
+    color: var(--accent-texte);
+    border-bottom-color: var(--accent-texte);
     font-weight: 600;
 }
 
@@ -1792,7 +1792,7 @@
     border: 1px solid var(--border);
     border-radius: 999px;
     background: transparent;
-    color: var(--accent);
+    color: var(--accent-texte);
     font: inherit;
     font-size: 12px;
     cursor: pointer;
@@ -1983,7 +1983,7 @@
     border: 1px solid var(--border);
     border-radius: 999px;
     background: transparent;
-    color: var(--accent);
+    color: var(--accent-texte);
     font: inherit;
     font-size: 12px;
     cursor: pointer;

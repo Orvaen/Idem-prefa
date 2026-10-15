@@ -241,7 +241,7 @@
     align-items: center;
     opacity: 1;
     border-color: var(--accent);
-    color: var(--accent);
+    color: var(--accent-texte);
 }
 
 .affaires-table tbody tr.est-modifiee .affaire-enregistrer:hover {

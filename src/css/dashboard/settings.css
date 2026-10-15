@@ -74,8 +74,8 @@
 }
 
 .settings-tab-btn.is-active {
-    color: var(--accent);
-    border-bottom-color: var(--accent);
+    color: var(--accent-texte);
+    border-bottom-color: var(--accent-texte);
     font-weight: 600;
 }
 
@@ -305,7 +305,7 @@
 
 .settings-preview-text {
     font-weight: 600;
-    color: var(--accent);
+    color: var(--accent-texte);
 }
 
 /* Tableaux de paramètres */

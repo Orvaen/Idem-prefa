@@ -329,7 +329,7 @@ body:has(.prefa-detail-row:not([hidden]))::before {
 }
 
 .prefa-detail-heading h2 span {
-    color: var(--accent);
+    color: var(--accent-texte);
 }
 
 .prefa-detail-heading p {
@@ -345,7 +345,7 @@ body:has(.prefa-detail-row:not([hidden]))::before {
     padding: 6px 14px;
     font-size: 13px;
     font-weight: 500;
-    color: var(--accent);
+    color: var(--accent-texte);
     background: var(--surface);
     border: 1px solid var(--accent);
     border-radius: var(--radius);
@@ -517,7 +517,7 @@ body:has(.prefa-detail-row:not([hidden]))::before {
 .fiche-info:hover,
 .fiche-info:focus-visible {
     border-color: var(--accent);
-    color: var(--accent);
+    color: var(--accent-texte);
 }
 
 .fiche-chiffres dd {
@@ -638,7 +638,7 @@ body:has(.prefa-detail-row:not([hidden]))::before {
 
 .fiche-famille-titre:hover,
 .fiche-famille-titre:focus-visible {
-    color: var(--accent);
+    color: var(--accent-texte);
 }
 
 .fiche-famille-nom {
@@ -707,7 +707,7 @@ body:has(.prefa-detail-row:not([hidden]))::before {
 }
 
 .prefa-document-arrow {
-    color: var(--accent);
+    color: var(--accent-texte);
     font-size: 18px;
 }
 
@@ -814,7 +814,7 @@ body:has(.prefa-detail-row:not([hidden]))::before {
     padding: 0;
     border: 0;
     background: none;
-    color: var(--accent);
+    color: var(--accent-texte);
     font: inherit;
     cursor: pointer;
     text-decoration: underline;
@@ -1126,9 +1126,9 @@ body.prefa-viewer-open {
 }
 
 .prefa-pdf-download {
-    background: #2563eb;
+    background: #0D79A8;
     color: #ffffff;
-    border: 1px solid #2563eb;
+    border: 1px solid #0D79A8;
 }
 
 .prefa-pdf-close {
@@ -1216,7 +1216,7 @@ td {
  * Il reste collé en haut quand on fait défiler, et doit donc masquer les lignes qui
  * passent dessous : il prend la surface de la page, pas une teinte à lui. */
 th {
-    height: 34px;
+    height: var(--ligne-th);
     border-bottom: 1px solid var(--border);
     color: var(--text-muted);
     font-size: 12px;
@@ -1225,7 +1225,7 @@ th {
 }
 
 td {
-    height: 40px;
+    height: var(--ligne-td);
     border-bottom: 1px solid var(--border-faint);
     color: var(--text);
     font-weight: 450;
@@ -1406,7 +1406,7 @@ tbody tr:last-child > td {
 /* Navigation active et accueil */
 .nav-btn.is-active {
     background: var(--hover);
-    color: var(--accent);
+    color: var(--accent-texte);
 }
 
 .nav-btn.is-active:hover {
@@ -1414,7 +1414,7 @@ tbody tr:last-child > td {
 }
 
 .nav-btn.is-active .icon {
-    color: var(--accent);
+    color: var(--accent-texte);
 }
 
 /* ---------- L'accueil ----------
@@ -1493,7 +1493,7 @@ tbody tr:last-child > td {
 /* Un chiffre qui attend quelque chose de vous se voit : rien d'autre ne change de couleur
    sur cet écran, c'est ce qui le rend lisible d'un coup d'œil. */
 .accueil-tuile.est-en-alerte .accueil-tuile-valeur {
-    color: var(--accent);
+    color: var(--accent-texte);
 }
 
 .accueil-tuile-libelle {
@@ -1554,7 +1554,7 @@ tbody tr:last-child > td {
     padding-left: 10px;
 }
 
-.accueil-evenement.est-depot .accueil-texte { border-left-color: var(--accent); }
+.accueil-evenement.est-depot .accueil-texte { border-left-color: var(--accent-texte); }
 .accueil-evenement.est-validation .accueil-texte { border-left-color: #16a34a; }
 .accueil-evenement.est-refus .accueil-texte { border-left-color: #dc2626; }
 
@@ -2113,7 +2113,7 @@ summary {
 .liste-filtrable-options [role="option"]:hover,
 .liste-filtrable-options [aria-selected="true"] {
     background: var(--hover);
-    color: var(--accent);
+    color: var(--accent-texte);
 }
 
 /* « Autre » se détache du catalogue : ce n'est pas un choix de plus, c'est une sortie. */
@@ -2227,7 +2227,7 @@ summary {
 }
 
 .prefa-dropzone strong {
-    color: var(--accent);
+    color: var(--accent-texte);
     font-size: 13px;
 }
 
@@ -2285,7 +2285,7 @@ summary {
     padding: 4px 5px;
     border-radius: 4px;
     background: var(--active);
-    color: var(--accent);
+    color: var(--accent-texte);
     font-size: 9px;
     font-weight: 700;
     letter-spacing: .4px;
@@ -2305,7 +2305,7 @@ summary {
     border: 1px solid var(--border);
     border-radius: 4px;
     background: var(--surface);
-    color: var(--accent);
+    color: var(--accent-texte);
     font-size: 11px;
 }
 
@@ -2342,7 +2342,7 @@ summary {
     width: 100%;
     height: 28px;
     padding: 0;
-    accent-color: var(--accent);
+    accent-color: var(--accent-texte);
     cursor: pointer;
 }
 

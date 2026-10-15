@@ -16,8 +16,8 @@ body[data-theme="light"],
     --hover: #f1f5f9;
     --active: #e2e8f0;
     --ligne-survol: #e9edf3;
-    --selection-fond: #dbe7fb;
-    --selection-filet: #bcd3f6;
+    --selection-fond: #d9eef8;
+    --selection-filet: #b2dcef;
     --filtre-fond: #eef4fe;
     --filtre-bord: #bcd3f6;
     --danger-texte: #b42318;
@@ -30,8 +30,9 @@ body[data-theme="light"],
     --alerte-fond: #fef2f2;
     --alerte-bord: #fca5a5;
     --attente-texte: #a16207;
-    --accent: #2563eb;
-    --accent-hover: #1d4ed8;
+    --accent: #0D79A8;
+    --accent-hover: #0A6890;
+    --accent-texte: #0A6B93;
     --radius: 8px;
     --scrollbar-thumb: #cbd5e1;
     --scrollbar-thumb-hover: #94a3b8;
@@ -103,12 +104,12 @@ body[data-theme="light"],
 
 [data-theme="light"] #left-panel .nav-btn.is-active {
     background: #eff6ff !important;
-    color: #2563eb !important;
+    color: #0A6B93 !important;
     font-weight: 600;
 }
 
 [data-theme="light"] #left-panel .nav-btn.is-active .icon {
-    color: #2563eb !important;
+    color: #0A6B93 !important;
 }
 
 [data-theme="light"] #left-panel .nav-footer:hover,
@@ -274,8 +275,8 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .settings-tab-btn.is-active {
-    color: #2563eb !important;
-    border-bottom-color: #2563eb !important;
+    color: #0A6B93 !important;
+    border-bottom-color: #0D79A8 !important;
     background: #eff6ff !important;
     font-weight: 700;
 }
@@ -289,7 +290,7 @@ body[data-theme="light"],
 [data-theme="light"] button.planning-btn-primary,
 [data-theme="light"] .btn-apply-theme[data-theme="light"],
 [data-theme="light"] input[type="submit"] {
-    background: #2563eb !important;
+    background: #0D79A8 !important;
     color: #ffffff !important;
     font-weight: 600 !important;
     border: none !important;
@@ -302,7 +303,7 @@ body[data-theme="light"],
 [data-theme="light"] button.atelier-btn-primary:hover,
 [data-theme="light"] button.planning-btn-primary:hover,
 [data-theme="light"] input[type="submit"]:hover {
-    background: #1d4ed8 !important;
+    background: #0A6890 !important;
 }
 
 [data-theme="light"] button.settings-btn-secondary,
@@ -328,7 +329,7 @@ body[data-theme="light"],
 [data-theme="light"] .atelier-person-button {
     background: #ffffff !important;
     border: 1px dashed var(--border) !important;
-    color: #2563eb !important;
+    color: #0A6B93 !important;
 }
 
 [data-theme="light"] .atelier-person-button:hover {
@@ -339,7 +340,7 @@ body[data-theme="light"],
 [data-theme="light"] .atelier-person-button.is-assigned {
     background: #eff6ff !important;
     border: 1px solid #93c5fd !important;
-    color: #1d4ed8 !important;
+    color: #075877 !important;
 }
 
 /* ===== FORMULAIRES & INPUTS ===== */
@@ -349,7 +350,7 @@ body[data-theme="light"],
     --field-text: #0f172a;
     --field-muted: #64748b;
     --field-border: #cbd5e1;
-    --field-focus: #2563eb;
+    --field-focus: #0D79A8;
 }
 
 /* « background » et non « background-color » effaçait aussi background-image : les
@@ -380,10 +381,19 @@ body[data-theme="light"],
     background-color: transparent !important;
 }
 
+/* Le cordon de quelqu'un d'autre se lit, ne se reprend pas : son champ est désactivé, et
+   il doit en avoir l'air. La règle générale l'encadrait comme un champ à remplir — on
+   reprend sa forme, la classe de la ligne en plus, comme pour les tableaux ci-dessus. */
+[data-theme="light"] .soudures-champ input:not([type="checkbox"]):not([type="radio"]):disabled {
+    border-color: transparent !important;
+    background-color: transparent !important;
+    color: #64748b !important;
+}
+
 /* La fenêtre d'un bon ne révèle rien au survol : un clic coche la ligne reçue, un
    double-clic ouvre la case qu'on vise, et elle est alors la seule à porter un cadre. */
 [data-theme="light"] .materiel-edition input:not([readonly]):not([type="checkbox"]):not([type="radio"]) {
-    border-color: #2563eb !important;
+    border-color: #0D79A8 !important;
     background-color: #ffffff !important;
 }
 
@@ -406,13 +416,13 @@ body[data-theme="light"],
 [data-theme="light"] .commandes-editable tbody tr input:not([type="checkbox"]):focus,
 [data-theme="light"] .commandes-editable tbody tr select:focus,
 [data-theme="light"] .commande-articles-table tbody tr input:not([type="checkbox"]):focus {
-    border-color: #2563eb !important;
+    border-color: #0D79A8 !important;
 }
 
 [data-theme="light"] input:focus,
 [data-theme="light"] select:focus,
 [data-theme="light"] textarea:focus {
-    border-color: #2563eb !important;
+    border-color: #0D79A8 !important;
     outline: none !important;
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
 }
@@ -441,7 +451,7 @@ body[data-theme="light"],
 [data-theme="light"] input[type="checkbox"],
 [data-theme="light"] input[type="radio"],
 [data-theme="light"] progress {
-    accent-color: #2563eb;
+    accent-color: #0A6B93;
 }
 
 [data-theme="light"] input:autofill {
@@ -515,7 +525,7 @@ body[data-theme="light"],
 [data-theme="light"] .prefa-document-link {
     background: #f8fafc !important;
     border: 1px solid #e2e8f0 !important;
-    color: #2563eb !important;
+    color: #0A6B93 !important;
 }
 
 [data-theme="light"] .prefa-document-link:hover {
@@ -639,13 +649,13 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .planning-page .planning-primary {
-    background: #2563eb !important;
-    border-color: #2563eb !important;
+    background: #0D79A8 !important;
+    border-color: #0D79A8 !important;
     color: #ffffff !important;
 }
 
 [data-theme="light"] .planning-page .planning-primary:hover {
-    background: #1d4ed8 !important;
+    background: #0A6890 !important;
 }
 
 /* ===== GANTT - EN-TÊTE ===== */
@@ -685,7 +695,7 @@ body[data-theme="light"],
 
 [data-theme="light"] .gantt-day-number.is-today {
     background: #eff6ff !important;
-    color: #2563eb !important;
+    color: #0A6B93 !important;
     font-weight: 800;
 }
 
@@ -726,8 +736,8 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .gantt-row.is-selected .gantt-affaire-badge {
-    background: #dbeafe !important;
-    border-color: #3b82f6 !important;
+    background: #d9eef8 !important;
+    border-color: #2E9FD4 !important;
     color: #1e40af !important;
 }
 
@@ -777,7 +787,7 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .planning-info-item dd a {
-    color: #2563eb !important;
+    color: #0A6B93 !important;
 }
 
 /* ===== MATRICE AVANCEMENT (carte 2) ===== */
@@ -801,14 +811,14 @@ body[data-theme="light"],
 /* ===== COMMENTAIRES (carte 3) ===== */
 [data-theme="light"] .comment-item {
     background: #f8fafc !important;
-    border-left-color: #3b82f6 !important;
+    border-left-color: #2E9FD4 !important;
     border-top-color: var(--border) !important;
     border-right-color: var(--border) !important;
     border-bottom-color: var(--border) !important;
 }
 
 [data-theme="light"] .comment-meta {
-    color: #2563eb !important;
+    color: #0A6B93 !important;
 }
 
 [data-theme="light"] .comment-text {
@@ -862,7 +872,7 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .planning-dialog-badge {
-    color: #2563eb !important;
+    color: #0A6B93 !important;
     background: rgba(37, 99, 235, 0.08) !important;
     border-color: rgba(37, 99, 235, 0.25) !important;
 }
@@ -906,7 +916,7 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .planning-date-input:focus {
-    border-color: #2563eb !important;
+    border-color: #0D79A8 !important;
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
 }
 
@@ -957,11 +967,11 @@ body[data-theme="light"],
 
 /* ===== ATELIER - ÉLÉMENTS HARDCODÉS ===== */
 [data-theme="light"] .atelier-documents a {
-    color: #2563eb !important;
+    color: #0A6B93 !important;
 }
 
 [data-theme="light"] .atelier-status-progress {
-    color: #2563eb !important;
+    color: #0A6B93 !important;
 }
 
 [data-theme="light"] .atelier-state.is-taken {
@@ -971,20 +981,20 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .atelier-new-element > summary {
-    color: #2563eb !important;
+    color: #0A6B93 !important;
 }
 
 [data-theme="light"] .atelier-plan-heading {
     background: #eff6ff !important;
-    border-left-color: #3b82f6 !important;
+    border-left-color: #2E9FD4 !important;
 }
 
 [data-theme="light"] .atelier-plan-label {
-    color: #2563eb !important;
+    color: #0A6B93 !important;
 }
 
 [data-theme="light"] .atelier-edit-assignment {
-    color: #2563eb !important;
+    color: #0A6B93 !important;
     border-color: var(--border) !important;
     background: #ffffff !important;
 }
@@ -1007,7 +1017,7 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .atelier-history-kind {
-    color: #2563eb !important;
+    color: #0A6B93 !important;
 }
 
 [data-theme="light"] .plans-iso-card.is-urgent {
@@ -1139,7 +1149,7 @@ body[data-theme="light"],
     --field-text: #0f172a;
     --field-muted: #64748b;
     --field-border: #cbd5e1;
-    --field-focus: #2563eb;
+    --field-focus: #0D79A8;
 }
 
 [data-theme="light"] .floating-field label {
@@ -1150,12 +1160,12 @@ body[data-theme="light"],
 [data-theme="light"] .floating-field select:not([value=""]) ~ label,
 [data-theme="light"] .floating-field input:focus ~ label,
 [data-theme="light"] .floating-field select:focus ~ label {
-    color: #2563eb !important;
+    color: #0A6B93 !important;
 }
 
 /* ===== BADGES / COMPTEURS ===== */
 [data-theme="light"] .planning-badge-count {
-    background: #2563eb !important;
+    background: #0D79A8 !important;
     color: #ffffff !important;
 }
 
@@ -1197,11 +1207,11 @@ body[data-theme="light"],
 [data-theme="light"] .plans-iso-page .plans-iso-toggle[aria-expanded="true"] {
     background: #eff6ff !important;
     border-color: #bfdbfe !important;
-    color: #1d4ed8 !important;
+    color: #075877 !important;
 }
 
 [data-theme="light"] .plans-iso-page .plans-iso-toggle[aria-expanded="true"]:hover {
-    background: #dbeafe !important;
+    background: #d9eef8 !important;
 }
 
 [data-theme="light"] .plans-iso-page .atelier-section summary {
@@ -1209,7 +1219,7 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .plans-iso-page .atelier-section summary:hover {
-    color: #2563eb;
+    color: #0A6B93;
 }
 
 /* ===== CARTE D'UN PLAN ===== */
@@ -1229,7 +1239,7 @@ body[data-theme="light"],
 [data-theme="light"] .plans-iso-page .atelier-plan-files-inline .prefa-document-link:hover {
     background: #eff6ff !important;
     border-color: #bfdbfe !important;
-    color: #1d4ed8 !important;
+    color: #075877 !important;
 }
 
 [data-theme="light"] .plans-iso-page .atelier-document-edit {
@@ -1259,7 +1269,7 @@ body[data-theme="light"],
 [data-theme="light"] .plans-iso-page .atelier-plan-work .atelier-person-button {
     background: transparent !important;
     border: 1px dashed var(--border) !important;
-    color: #2563eb !important;
+    color: #0A6B93 !important;
     transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -1280,7 +1290,7 @@ body[data-theme="light"],
     flex: 0 0 24px;
     height: 24px;
     border-radius: 50%;
-    background: #dbeafe url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E") center / 14px 14px no-repeat;
+    background: #d9eef8 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230A6B93' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E") center / 14px 14px no-repeat;
 }
 
 [data-theme="light"] .plans-iso-page .atelier-plan-work .atelier-person-button.is-assigned:hover {
@@ -1289,7 +1299,7 @@ body[data-theme="light"],
 
 [data-theme="light"] .plans-iso-page .atelier-plan-work .atelier-person-button[aria-expanded="true"],
 [data-theme="light"] .plans-iso-page .atelier-plan-work .atelier-person-button[aria-expanded="true"]:hover {
-    border: 1px solid #2563eb !important;
+    border: 1px solid #0D79A8 !important;
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
@@ -1299,8 +1309,8 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .plans-iso-page .atelier-plan-work .atelier-work-status.is-progress {
-    background: #dbeafe;
-    color: #1d4ed8;
+    background: #d9eef8;
+    color: #075877;
 }
 
 [data-theme="light"] .plans-iso-page .atelier-plan-work .atelier-work-status.is-done {
@@ -1316,7 +1326,7 @@ body[data-theme="light"],
 
 [data-theme="light"] .plans-iso-page .atelier-edit-progress {
     border-color: var(--border-subtle) !important;
-    color: #2563eb !important;
+    color: #0A6B93 !important;
 }
 
 [data-theme="light"] .plans-iso-page .atelier-edit-progress:hover {
@@ -1328,7 +1338,7 @@ body[data-theme="light"],
 
 [data-theme="light"] .plans-iso-page .atelier-plan-block .atelier-manage-panel {
     background: #f8fafc !important;
-    border: 1px solid #dbeafe !important;
+    border: 1px solid #d9eef8 !important;
 }
 
 [data-theme="light"] .plans-iso-page .atelier-plan-block .prefa-form button,
@@ -1430,7 +1440,7 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .account-check {
-    color: #2563eb !important;
+    color: #0A6B93 !important;
 }
 
 [data-theme="light"] .account-action-icon {
@@ -1460,7 +1470,7 @@ body[data-theme="light"],
 
 [data-theme="light"] .account-menu.is-managing .account-manage {
     background: #eff6ff !important;
-    color: #1d4ed8 !important;
+    color: #075877 !important;
 }
 
 [data-theme="light"] .account-menu-separator {
@@ -1491,13 +1501,13 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .account-dialog-footer .account-submit {
-    background: #2563eb !important;
+    background: #0D79A8 !important;
     color: #ffffff !important;
     font-weight: 600;
 }
 
 [data-theme="light"] .account-dialog-footer .account-submit:hover:not(:disabled) {
-    background: #1d4ed8 !important;
+    background: #0A6890 !important;
 }
 
 /* ==========================================================================
@@ -1517,8 +1527,8 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .atelier-tab[aria-selected="true"] {
-    color: #2563eb !important;
-    border-bottom-color: #2563eb !important;
+    color: #0A6B93 !important;
+    border-bottom-color: #0D79A8 !important;
 }
 
 [data-theme="light"] .atelier-page .atelier-detail-panel {

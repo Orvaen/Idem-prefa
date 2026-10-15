@@ -156,7 +156,7 @@
     width: 16px;
     height: 16px;
     margin-top: 2px;
-    accent-color: var(--accent);
+    accent-color: var(--accent-texte);
     flex-shrink: 0;
 }
 
@@ -416,7 +416,7 @@
 
 .prefa-details summary {
     padding: 13px 0;
-    color: var(--accent);
+    color: var(--accent-texte);
     font-size: 12px;
     cursor: pointer;
 }

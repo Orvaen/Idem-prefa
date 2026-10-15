@@ -433,13 +433,13 @@ body.is-panning-gantt .gantt-bar:hover {
 }
 
 .gantt-affaire-badge:hover {
-    border-color: #3b82f6;
+    border-color: #2E9FD4;
     background: #253347;
     color: #93c5fd;
 }
 
 .gantt-row.is-selected .gantt-affaire-badge {
-    border-color: #3b82f6;
+    border-color: #2E9FD4;
     background: #1e3a5f;
     color: #93c5fd;
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.35);
@@ -700,7 +700,7 @@ body.is-panning-gantt .gantt-bar:hover {
 .comment-item {
     padding: 8px 10px;
     background: #1a212d;
-    border-left: 3px solid #3b82f6;
+    border-left: 3px solid #2E9FD4;
     border-radius: 3px;
     border-top: 1px solid rgba(52, 61, 76, 0.4);
     border-right: 1px solid rgba(52, 61, 76, 0.4);
@@ -977,7 +977,7 @@ dialog.planning-dialog::backdrop {
 }
 
 .planning-date-input:focus {
-    border-color: #3b82f6;
+    border-color: #2E9FD4;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
 }
 
@@ -1104,7 +1104,7 @@ dialog.planning-dialog::backdrop {
 }
 
 .planning-btn-submit {
-    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    background: linear-gradient(135deg, #0D79A8, #0A6890);
     color: #ffffff;
     border: none;
     padding: 9px 20px;
@@ -1120,7 +1120,7 @@ dialog.planning-dialog::backdrop {
 }
 
 .planning-btn-submit:hover {
-    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    background: linear-gradient(135deg, #2E9FD4, #0D79A8);
     box-shadow: 0 6px 18px rgba(37, 99, 235, 0.55);
     transform: translateY(-1px);
 }

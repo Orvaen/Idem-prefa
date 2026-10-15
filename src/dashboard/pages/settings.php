@@ -161,7 +161,7 @@ $version = static fn (string $fichier): string => (string) @filemtime(__DIR__ . 
                             <div style="display: flex; gap: 8px; margin-bottom: 16px;">
                                 <div style="width: 28px; height: 28px; border-radius: 4px; background: #141820; border: 1px solid #343d4c;" title="Fond"></div>
                                 <div style="width: 28px; height: 28px; border-radius: 4px; background: #1c222d; border: 1px solid #343d4c;" title="Surface"></div>
-                                <div style="width: 28px; height: 28px; border-radius: 4px; background: #2563eb;" title="Accent Bleu"></div>
+                                <div style="width: 28px; height: 28px; border-radius: 4px; background: #0D79A8;" title="Accent Azur"></div>
                                 <div style="width: 28px; height: 28px; border-radius: 4px; background: #e2e7ef;" title="Texte"></div>
                             </div>
                             <button type="button" class="settings-btn-secondary btn-apply-theme" data-theme="dark" style="width: 100%;">Activer le thème Sombre</button>
@@ -171,16 +171,16 @@ $version = static fn (string $fichier): string => (string) @filemtime(__DIR__ . 
                         <div class="theme-card" data-theme-val="light" style="border: 2px solid #cbd5e1; border-radius: 8px; padding: 20px; cursor: pointer; transition: all 0.2s; background: #ffffff;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                                 <strong style="font-size: 15px; color: #0f172a;">Thème Clair Épuré ☀️</strong>
-                                <span class="theme-check" style="font-size: 18px; color: #2563eb; font-weight: 700;"></span>
+                                <span class="theme-check" style="font-size: 18px; color: #0A6B93; font-weight: 700;"></span>
                             </div>
                             <p style="font-size: 12px; color: #64748b; margin-bottom: 14px;">Une interface lumineuse, moderne et reposante avec fond clair.</p>
                             <div style="display: flex; gap: 8px; margin-bottom: 16px;">
                                 <div style="width: 28px; height: 28px; border-radius: 4px; background: #f1f5f9; border: 1px solid #cbd5e1;" title="Fond Gris Perle"></div>
                                 <div style="width: 28px; height: 28px; border-radius: 4px; background: #ffffff; border: 1px solid #cbd5e1;" title="Surface Blanche"></div>
-                                <div style="width: 28px; height: 28px; border-radius: 4px; background: #2563eb;" title="Accent Bleu"></div>
+                                <div style="width: 28px; height: 28px; border-radius: 4px; background: #0D79A8;" title="Accent Azur"></div>
                                 <div style="width: 28px; height: 28px; border-radius: 4px; background: #0f172a;" title="Texte Foncé"></div>
                             </div>
-                            <button type="button" class="settings-btn-primary btn-apply-theme" data-theme="light" style="width: 100%; background: #2563eb !important; border: none !important; font-weight: 700;">Activer le thème Clair</button>
+                            <button type="button" class="settings-btn-primary btn-apply-theme" data-theme="light" style="width: 100%; background: #0D79A8 !important; border: none !important; font-weight: 700;">Activer le thème Clair</button>
                         </div>
 
                     </div>
