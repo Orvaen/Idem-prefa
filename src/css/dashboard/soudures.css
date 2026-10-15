@@ -434,33 +434,6 @@
     color: var(--text);
 }
 
-/* Les contrôles ne se saisissent pas ici — ils engagent l'encadrement. Ils se montrent donc
-   comme ce qu'ils sont sur le plan : une croix, ou rien. */
-.soudures-controles {
-    white-space: nowrap;
-    color: var(--text-muted);
-    font-size: 10.5px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-}
-
-.soudures-controle {
-    display: inline-block;
-    margin-right: 5px;
-    padding: 2px 7px;
-    border: 1px solid var(--succes-bord);
-    border-radius: 999px;
-    background: var(--succes-fond);
-    color: var(--succes-texte);
-}
-
-.soudures-visa {
-    display: inline-block;
-    padding: 2px 7px;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-}
-
 /* ----------------------------------------------------------------- le pied de la saisie */
 
 .soudures-pied {

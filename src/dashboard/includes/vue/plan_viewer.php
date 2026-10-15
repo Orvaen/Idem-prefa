@@ -178,10 +178,13 @@ function planViewerRendu(int $elementId, array $plans, array $coulees, bool $mod
                         <?php endif; ?>
 
                         <?php if (!empty($plan['soudures'])): ?>
-                            <!-- La liste est repliée à l'ouverture : on vient d'abord voir le
-                                 plan, en grand. C'est d'ici qu'on la déplie, et c'est ici
-                                 qu'elle se range. -->
-                            <button type="button" class="plan-dialog-liste-ouvrir">Liste des soudures</button>
+                            <!-- Sur un plan qu'on peut remplir, la liste est repliée à
+                                 l'ouverture : on vient d'abord voir le dessin, en grand, et
+                                 c'est d'ici qu'on la déplie. En lecture seule, c'est
+                                 l'inverse — on n'a rien à poser sur le dessin, on vient
+                                 relire une ligne déjà écrite : elle est là d'emblée, et ce
+                                 bouton ne sert qu'à la rappeler après l'avoir rangée. -->
+                            <button type="button" class="plan-dialog-liste-ouvrir"<?= $modifiable ? '' : ' hidden' ?>>Liste des soudures</button>
                         <?php endif; ?>
 
                         <?php if ($modifiable): ?>
@@ -283,7 +286,7 @@ function planViewerRendu(int $elementId, array $plans, array $coulees, bool $mod
                          qui lui manque, pas la largeur. Le partage reste réglable — la poignée
                          se glisse, et le bouton replie la liste quand c'est le dessin qu'on
                          veut en entier. -->
-                    <div class="plan-dialog-listes" hidden>
+                    <div class="plan-dialog-listes"<?= $modifiable ? ' hidden' : '' ?>>
                         <div class="plan-dialog-glissiere" role="separator" aria-orientation="vertical"
                              title="Glisser pour partager la fenêtre entre le plan et la liste"></div>
                         <div class="plan-dialog-listes-barre">

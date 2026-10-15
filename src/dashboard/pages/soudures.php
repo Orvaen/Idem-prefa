@@ -293,10 +293,9 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
                             <th scope="col">Date</th>
                             <th scope="col">Type de soudure</th>
                             <th scope="col">Soudeur</th>
-                            <th scope="col">Contrôles</th>
                         </tr></thead>
                         <tbody id="soudures-corps">
-                            <tr><td colspan="5" class="prefa-table-empty">Lecture de la feuille…</td></tr>
+                            <tr><td colspan="4" class="prefa-table-empty">Lecture de la feuille…</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -325,13 +324,20 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
                     <input type="text" class="soudures-type" maxlength="30" list="soudure-procedes" placeholder="TIG…" aria-label="Type de soudure">
                 </td>
                 <td class="soudures-soudeur"></td>
-                <td class="soudures-controles"></td>
             </tr>
         </template>
 
         <?php
         // Le lecteur de plan, une fenêtre par élément : on regarde le dessin pour savoir
         // quel cordon porte le repère 3. Lecture seule — rien ne se pose dessus d'ici.
+        //
+        // La liste soudure part avec, remplie : c'est ce qu'on vient vérifier en ouvrant
+        // la feuille — ce qui est déjà renseigné, par qui, et la colonne « Visa », où se
+        // lit le passage du chef d'atelier. Elle manquait : le dessin s'ouvrait seul, et
+        // le travail déclaré restait invisible de ce côté-ci. C'est la même liste que
+        // l'écran du chef, rendue par la même fonction, mais non modifiable : la saisie
+        // se fait dans le volet, et deux endroits pour une même ligne finiraient par ne
+        // plus dire la même chose.
         foreach (array_keys($plans) as $elementId):
             $docs = planDocuments($db, $elementId);
             if (!$docs) continue;
@@ -339,10 +345,14 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
             <div class="soudures-lecteur" data-element="<?= (int) $elementId ?>" hidden>
                 <?= planViewerRendu($elementId, array_map(static function (array $doc) use ($db, $elementId): array {
                     $reperes = [];
+                    $listes = [];
                     for ($page = 1; $page <= max(1, (int) $doc['pages']); $page++) {
                         $reperes[$page] = nomenclatureLignes($db, $elementId, $doc['id'], $page);
+                        $listes[$page] = soudureRendu(
+                            soudureLignes($db, $elementId, (int) $doc['id'], $page),
+                            [], $elementId, (int) $doc['id'], false, '', $page);
                     }
-                    return $doc + ['reperes' => $reperes, 'empreintes' => []];
+                    return $doc + ['reperes' => $reperes, 'empreintes' => [], 'soudures' => $listes];
                 }, $docs), [], false, false) ?>
             </div>
         <?php endforeach; ?>

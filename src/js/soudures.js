@@ -37,27 +37,6 @@
         corps.replaceChildren(tr);
     }
 
-    /** Une pastille par contrôle passé, et le visa s'il est posé. Rien sinon. */
-    function controles(ligne) {
-        const zone = document.createDocumentFragment();
-        ['rt', 'vi', 'pt'].forEach(nom => {
-            if (!ligne[nom]) return;
-            const marque = document.createElement('span');
-            marque.className = 'soudures-controle';
-            marque.textContent = nom.toUpperCase();
-            marque.title = 'Contrôle ' + nom.toUpperCase() + ' porté sur le plan.';
-            zone.append(marque);
-        });
-        if (ligne.visa) {
-            const visa = document.createElement('span');
-            visa.className = 'soudures-visa';
-            visa.textContent = 'visa';
-            visa.title = 'Visé par ' + ligne.visa + '.';
-            zone.append(visa);
-        }
-        return zone;
-    }
-
     function poser(corps, lignes) {
         const modele = document.getElementById('soudures-modele');
         if (!modele) return;
@@ -75,7 +54,6 @@
                     'Ce repère n’a pas de ligne imprimée sur la feuille : il a été ajouté.';
             }
             li.querySelector('.soudures-soudeur').textContent = ligne.soudeur || '';
-            li.querySelector('.soudures-controles').append(controles(ligne));
 
             const date = li.querySelector('.soudures-date');
             const type = li.querySelector('.soudures-type');
