@@ -271,21 +271,27 @@ body:has(.prefa-detail-row:not([hidden]))::before {
     background: var(--surface) !important;
 }
 
-/* La fiche se pose sur un fond en retrait, et ses parties deviennent des cartes. Sur du
-   blanc nu, elle avait l'air d'une page en cours d'écriture : rien ne disait où une partie
-   finissait ni où la suivante commençait. C'est le couple de la maison — « frame » en
-   dessous, « surface » au-dessus — celui des cartes de demande, un étage plus bas. */
+/* La fiche se pose sur un fond, et ses parties deviennent des cartes. Sur du blanc nu,
+   elle avait l'air d'une page en cours d'écriture : rien ne disait où une partie finissait
+   ni où la suivante commençait.
+
+   L'image est celle de la page de connexion, déjà dans l'application : reprendre la sienne
+   vaut mieux qu'en importer une d'ailleurs, et elle ne coûte rien de plus à charger. Un
+   voile la couvre presque entièrement — on vient lire une demande, pas regarder un fond :
+   il n'en reste que la teinte et le mouvement des courbes autour des cartes. */
 .prefa-table-detail {
     max-width: none;
     padding: 24px 20px 40px;
-    background: var(--frame);
+    background:
+        linear-gradient(180deg, rgb(12 18 28 / 86%), rgb(12 18 28 / 94%)),
+        url("../../assets/login-fond.jpg") center / cover no-repeat;
     white-space: normal;
 }
 
 /* La ligne survolée teinte ses cellules ; la fiche, elle, n'est pas une ligne qu'on
-   pointe. Elle garde son fond. */
+   pointe. Elle garde son fond — le raccourci « background » le réécrirait en entier. */
 .prefa-table-detail:hover {
-    background: var(--frame) !important;
+    background-color: transparent !important;
 }
 
 .prefa-detail-actions {

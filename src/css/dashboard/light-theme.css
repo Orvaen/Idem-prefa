@@ -381,6 +381,15 @@ body[data-theme="light"],
     background-color: transparent !important;
 }
 
+/* La fiche d'une demande porte l'image de la page de connexion, sous un voile. En clair,
+   le voile est presque opaque : il n'en reste qu'un gris perle légèrement bleuté et le
+   mouvement des courbes, assez pour que les cartes blanches se détachent. */
+[data-theme="light"] .prefa-table-detail {
+    background:
+        linear-gradient(180deg, rgb(238 243 249 / 93%), rgb(238 243 249 / 97%)),
+        url("../../assets/login-fond.jpg") center / cover no-repeat !important;
+}
+
 /* Le cordon de quelqu'un d'autre se lit, ne se reprend pas : son champ est désactivé, et
    il doit en avoir l'air. La règle générale l'encadrait comme un champ à remplir — on
    reprend sa forme, la classe de la ligne en plus, comme pour les tableaux ci-dessus. */
