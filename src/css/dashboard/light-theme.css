@@ -69,14 +69,22 @@ body[data-theme="light"],
 
 /* Les écrans ne peignent rien : le fond du panneau se voit au travers, et chaque tableau,
    carte ou volet garde le sien par-dessus. C'est ce qui fait que l'image est là partout
-   sans qu'un seul texte change de fond. */
+   sans qu'un seul texte change de fond.
+
+   Trois étaient restés en dehors de cette liste et se peignaient en blanc sur toute leur
+   hauteur — l'accueil, son journal et les affaires. L'accueil surtout : c'est le premier
+   écran qu'on voit, et il n'avait pas de fond. Ils se repèrent à leur « height: 100% »
+   posé avec une couleur ; les suivants devront y penser. */
 [data-theme="light"] .page,
 [data-theme="light"] .page.prefa-list,
 [data-theme="light"] .page.prefa-simple,
 [data-theme="light"] .settings-page,
 [data-theme="light"] .atelier-page,
 [data-theme="light"] .planning-page,
-[data-theme="light"] .plans-iso-page {
+[data-theme="light"] .plans-iso-page,
+[data-theme="light"] .affaires-page,
+[data-theme="light"] .accueil,
+[data-theme="light"] .accueil-journal {
     background: transparent !important;
 }
 
