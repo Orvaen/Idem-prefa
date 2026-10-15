@@ -260,8 +260,18 @@
     display: none;
 }
 
+/* Le volet suit la descente : la liste fait quinze lignes, et une feuille choisie en bas
+   ouvrait ses cordons tout en haut, hors de vue. C'est le contenu qui colle, pas la
+   colonne — elle, reste étirée pour que son filet descende jusqu'au bas du tableau.
+
+   Au-delà de la hauteur de l'écran, le volet défile pour lui-même : une liste de trente
+   cordons ne doit pas emporter la page avec elle. */
 .soudures-saisie-contenu {
+    position: sticky;
+    top: 16px;
+    max-height: calc(100vh - 110px);
     padding-left: 32px;
+    overflow-y: auto;
 }
 
 /* Le plan, puis le compte, séparés d'un point médian posé par la feuille de style : le
@@ -526,8 +536,13 @@
         border-top: 1px solid var(--border);
     }
 
+    /* Repliées l'une sous l'autre, il n'y a plus de liste à côté de quoi rester : le
+       volet reprend sa place dans le fil de la page. */
     .soudures-saisie-contenu {
+        position: static;
+        max-height: none;
         padding-left: 0;
+        overflow-y: visible;
     }
 
     .soudures-invite {
