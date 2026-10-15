@@ -212,14 +212,11 @@
         if (titre) titre.textContent = ligne.dataset.feuille || '';
         if (bouton) bouton.dataset.repere = ligne.dataset.repere || '';
 
-        // La saisie attendait un choix : elle s'ouvre, et le plan de travail se coupe en
-        // deux — les feuilles à gauche, la feuille travaillée à droite. C'est le script qui
-        // pose la coupe parce que lui seul sait qu'une ligne est prise ; la feuille de
-        // style, elle, décide à partir de quelle largeur les deux colonnes tiennent.
+        // La colonne de droite attendait : elle se remplit. Rien ne se redimensionne —
+        // les deux colonnes sont posées depuis l'arrivée, et c'est la feuille de style qui
+        // décide à partir de quelle largeur elles tiennent côte à côte.
         const saisie = racine.querySelector('.soudures-saisie');
         if (saisie) saisie.removeAttribute('data-vide');
-        const zone = racine.querySelector('.soudures-plan-de-travail');
-        if (zone) zone.classList.add('est-coupe-en-deux');
 
         // Le plan de la feuille, dans l'en-tête du volet : à droite du tableau, celui-ci a
         // cédé ses colonnes d'identité.
@@ -277,8 +274,6 @@
         if (!racine) return;
         const saisie = racine.querySelector('.soudures-saisie');
         if (saisie) saisie.setAttribute('data-vide', '');
-        const zone = racine.querySelector('.soudures-plan-de-travail');
-        if (zone) zone.classList.remove('est-coupe-en-deux');
         racine.querySelectorAll('.soudures-feuille.est-choisie').forEach(ligne => {
             ligne.classList.remove('est-choisie');
             ligne.removeAttribute('aria-current');

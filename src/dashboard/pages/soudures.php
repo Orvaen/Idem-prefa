@@ -209,12 +209,17 @@ foreach ($plans as $plan) {
             </table>
         </div>
 
-        <?php // La saisie n'existe qu'une fois une feuille choisie : « data-vide » la tient
-              // repliée, et le premier clic sur une ligne la pose avec son nom. C'est le
-              // volet de détail de la maison — même en-tête, même croix pour le fermer que
-              // sur les écrans du chef — et sa liste est un tableau comme celui des
-              // feuilles. Deux formes pour tout l'écran : un en-tête, un tableau. ?>
+        <?php // La colonne de droite existe dès l'arrivée, et elle attend : sans elle, le
+              // tableau passait de pleine largeur à la moitié au moment du clic, et l'écran
+              // se tordait sous la main. « data-vide » ne cache donc plus la colonne, mais
+              // son contenu — l'invite prend sa place tant qu'on n'a rien choisi.
+              //
+              // C'est le volet de détail de la maison — même en-tête, même croix pour le
+              // fermer que sur les écrans du chef — et sa liste est un tableau comme celui
+              // des feuilles. Deux formes pour tout l'écran : un en-tête, un tableau. ?>
         <section class="soudures-saisie atelier-detail-content" aria-labelledby="soudures-saisie-titre" data-vide>
+            <p class="soudures-invite">Choisissez une feuille dans la liste : ses cordons s’ouvrent ici.</p>
+            <div class="soudures-saisie-contenu">
             <div class="prefa-detail-heading">
                 <div>
                     <h2 id="soudures-saisie-titre">Feuille <span data-feuille-titre></span></h2>
@@ -254,6 +259,7 @@ foreach ($plans as $plan) {
                     </div>
                 </div>
             </form>
+            </div>
         </section>
         </div>
 

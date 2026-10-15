@@ -24,12 +24,14 @@
 
 /* ----------------------------------------------------------------- le plan de travail */
 
-/* Les feuilles à gauche, la feuille travaillée à droite. Tant qu'on n'a rien choisi, le
-   tableau tient toute la largeur ; dès qu'une ligne est prise, le script coupe en deux.
+/* Les feuilles à gauche, la feuille travaillée à droite — et les deux colonnes sont
+   posées dès l'arrivée, même quand la droite n'a encore rien à montrer. Le tableau passait
+   sinon de pleine largeur à la moitié au moment du clic : l'écran se tordait sous la main,
+   et deux colonnes disparaissaient en même temps.
 
-   Les deux colonnes sont souples et wrappent d'elles-mêmes : sur un écran qui ne peut pas
-   les tenir côte à côte — un portable de 1 366, la barre latérale déduite — le volet
-   repasse sous le tableau, sans qu'on ait à le prévoir. */
+   Elles sont souples et wrappent d'elles-mêmes : sur un écran qui ne peut pas les tenir
+   côte à côte — un portable de 1 366, la barre latérale déduite — le volet repasse sous le
+   tableau, sans qu'on ait à le prévoir. */
 .soudures-plan-de-travail {
     display: flex;
     flex-wrap: wrap;
@@ -42,32 +44,44 @@
     min-width: 0;
 }
 
-.soudures-plan-de-travail.est-coupe-en-deux .soudures-saisie {
+.soudures-saisie {
     flex: 1 1 560px;
     min-width: 0;
 }
 
-/* Coupé en deux, le tableau cède ses deux colonnes d'identité : la demande et le plan sont
-   les mêmes sur toutes les lignes d'un plan, et le volet les redit dans son en-tête. Ils
+/* Côte à côte, le tableau cède ses deux colonnes d'identité : la demande et le plan sont
+   les mêmes sur toutes les lignes d'un plan, et le volet les redit dans son en-tête. Elles
    reviennent dès que le volet repasse dessous — voir la fin du fichier. */
-.soudures-plan-de-travail.est-coupe-en-deux .soudures-feuilles {
+/* Quatre colonnes dans une demi-page : le tableau n'a pas besoin de plus, et il reprend
+   ses 760 px — avec ses colonnes d'identité — quand le volet repasse dessous. */
+.soudures-feuilles {
     min-width: 440px;
+    max-width: 1060px;
 }
 
-.soudures-plan-de-travail.est-coupe-en-deux .soudures-feuilles th:nth-child(-n+2),
-.soudures-plan-de-travail.est-coupe-en-deux .soudures-feuilles td:nth-child(-n+2):not([colspan]) {
+.soudures-plan-de-travail .soudures-feuilles th:nth-child(-n+2),
+.soudures-plan-de-travail .soudures-feuilles td:nth-child(-n+2):not([colspan]) {
+    display: none;
+}
+
+/* L'invite tient la place du volet tant qu'on n'a rien choisi : une ligne, pas un bloc —
+   la colonne doit se voir réservée, pas meublée. */
+.soudures-invite {
+    margin: 0;
+    padding: 2px 0 0 24px;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.soudures-saisie:not([data-vide]) .soudures-invite {
+    display: none;
+}
+
+.soudures-saisie[data-vide] .soudures-saisie-contenu {
     display: none;
 }
 
 /* ----------------------------------------------------------------- le tableau des feuilles */
-
-/* Le tableau ne prend pas toute la largeur de l'écran : six colonnes étalées sur 1 200 px
-   mettraient quarante centimètres entre le nom d'une feuille et son état, et on suivrait
-   la ligne du doigt pour les relier. */
-.soudures-feuilles {
-    min-width: 760px;
-    max-width: 1060px;
-}
 
 .soudures-feuille {
     cursor: pointer;
@@ -163,15 +177,12 @@
    Un filet le sépare du tableau, du côté où il le touche : à droite c'est à gauche, et
    dessous c'est au-dessus. */
 .soudures-saisie {
-    padding: 0 0 0 24px;
+    padding: 0;
     border-left: 1px solid var(--border);
 }
 
-/* Tant qu'aucune feuille n'est choisie, la saisie n'est pas là. Pas même son en-tête : un
-   titre au-dessus d'un vide ne fait que meubler, et la consigne est déjà sous le titre de
-   la page. Le premier clic sur une feuille la pose. */
-.soudures-saisie[data-vide] {
-    display: none;
+.soudures-saisie-contenu {
+    padding-left: 24px;
 }
 
 /* Le plan, puis le compte, séparés d'un point médian posé par la feuille de style : le
@@ -423,13 +434,19 @@
         flex-basis: 100%;
     }
 
-    .soudures-plan-de-travail.est-coupe-en-deux .soudures-feuilles {
+    .soudures-feuilles {
         min-width: 760px;
     }
 
-    .soudures-plan-de-travail.est-coupe-en-deux .soudures-feuilles th:nth-child(-n+2),
-    .soudures-plan-de-travail.est-coupe-en-deux .soudures-feuilles td:nth-child(-n+2):not([colspan]) {
+    .soudures-plan-de-travail .soudures-feuilles th:nth-child(-n+2),
+    .soudures-plan-de-travail .soudures-feuilles td:nth-child(-n+2):not([colspan]) {
         display: table-cell;
+    }
+
+    /* Sous le tableau, une invite n'a plus de colonne à tenir : elle ne ferait que meubler
+       le bas de la page. Le volet n'existe alors qu'une fois une feuille choisie. */
+    .soudures-saisie[data-vide] {
+        display: none;
     }
 
     .soudures-saisie {
@@ -437,5 +454,9 @@
         padding: 22px 0 0;
         border-left: 0;
         border-top: 1px solid var(--border);
+    }
+
+    .soudures-saisie-contenu {
+        padding-left: 0;
     }
 }
