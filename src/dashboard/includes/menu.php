@@ -114,10 +114,14 @@ function dashboardMenu(): array
             'libelle' => static fn (Utilisateur $utilisateur): string => match (true) {
                 $utilisateur->est(Role::ChargeDeProduction) => 'Valider les demandes',
                 $utilisateur->est(Role::ChefDAtelier) => 'Suivi des demandes',
-                $utilisateur->est(Role::PersonnelAtelier) => 'Mes affectations',
-                // « Mes affaires » depuis qu'une affaire est une entité à part : ce que le
-                // chargé d'affaire ouvre ici, ce sont ses demandes, rangées sous le nom du
-                // chantier. Deux choses différentes ne peuvent pas porter le même mot.
+                // « Mes affaires » pour l'atelier : ce qu'il ouvre ici, ce sont les plans
+                // qu'on lui a confiés, et c'est le mot qu'il emploie. Le chargé d'affaire
+                // a le même sur sa tuile d'accueil, pour ses chantiers — les deux ne se
+                // croisent jamais, chacun ne voit que son propre menu.
+                $utilisateur->est(Role::PersonnelAtelier) => 'Mes affaires',
+                // Et pour lui, ici, ce sont ses demandes, rangées sous le nom du chantier :
+                // une affaire est une entité à part depuis, et deux choses différentes ne
+                // peuvent pas porter le même mot.
                 default => 'Mes demandes',
             },
             'page' => 'pages/lists_prefa.php',
@@ -127,7 +131,7 @@ function dashboardMenu(): array
             'scripts' => [],
         ],
         [
-            // Pour le personnel d'atelier, « Mes affectations » rend en réalité atelier.php :
+            // Pour le personnel d'atelier, « Mes affaires » rend en réalité atelier.php :
             // c'est donc par cette entrée-là qu'il reçoit l'outillage du plan ISO.
             //
             // L'entrée porte le nom de ce qu'on vient y faire. Elle s'est appelée « Mes

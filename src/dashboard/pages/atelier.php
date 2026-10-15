@@ -40,11 +40,11 @@ $recentProgress = $stmt->fetchAll();
 <section class="page prefa-page prefa-list atelier-page" aria-labelledby="atelier-page-title">
     <div class="">
         <header class="prefa-heading prefa-list-heading">
-            <div><h1 id="atelier-page-title">Mes affectations</h1><p>Consultez vos plans et mettez à jour l’avancement de vos travaux.</p></div>
+            <div><h1 id="atelier-page-title">Mes affaires</h1><p>Consultez vos plans et mettez à jour l’avancement de vos travaux.</p></div>
             <button type="button" class="atelier-refresh prefa-toggle">Actualiser</button>
         </header>
         <p class="prefa-list-summary"><strong><?= count($assignments) ?></strong> <?= count($assignments) === 1 ? 'affectation' : 'affectations' ?></p>
-        <div class="prefa-table-scroll" role="region" aria-label="Mes affectations" tabindex="0">
+        <div class="prefa-table-scroll" role="region" aria-label="Mes affaires" tabindex="0">
             <table class="prefa-table atelier-table">
                 <thead><tr><th scope="col">Demande n°</th><th scope="col">Plan / élément</th><th scope="col">Travail</th><th scope="col">Documents</th><th scope="col">Avancement</th><th scope="col">Statut</th><th scope="col">Actions</th></tr></thead>
                 <?php if (!$assignments): ?><tbody><tr><td colspan="7" class="prefa-table-empty">Aucun élément ne vous est actuellement affecté.</td></tr></tbody><?php endif; ?>

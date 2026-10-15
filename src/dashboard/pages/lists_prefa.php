@@ -57,7 +57,7 @@ if ($isWorkshopChief) {
     $pageDescription = 'Suivez les demandes et préparez les plans de celles qui sont validées.';
 }
 if ($isWorkshopPersonnel) {
-    $pageTitle = 'Mes affectations';
+    $pageTitle = 'Mes affaires';
     $pageDescription = 'Consultez les demandes validées qui vous sont affectées.';
 }
 
