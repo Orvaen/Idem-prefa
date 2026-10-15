@@ -46,8 +46,13 @@ $recentProgress = $stmt->fetchAll();
         <p class="prefa-list-summary"><strong><?= count($assignments) ?></strong> <?= count($assignments) === 1 ? 'affectation' : 'affectations' ?></p>
         <div class="prefa-table-scroll" role="region" aria-label="Mes plans" tabindex="0">
             <table class="prefa-table atelier-table">
-                <thead><tr><th scope="col">Demande n°</th><th scope="col">Plan / élément</th><th scope="col">Travail</th><th scope="col">Documents</th><th scope="col">Avancement</th><th scope="col">Statut</th><th scope="col">Actions</th></tr></thead>
-                <?php if (!$assignments): ?><tbody><tr><td colspan="7" class="prefa-table-empty">Aucun élément ne vous est actuellement affecté.</td></tr></tbody><?php endif; ?>
+                <?php // Le plan d'abord : c'est l'écran de ses plans, pas celui des demandes. Le
+                      // statut a rejoint l'avancement — « 0 % » et « À commencer » disaient la même
+                      // chose dans deux colonnes — et les documents ne se comptent plus, ils
+                      // s'ouvrent : on lisait « 1 fichier » et il fallait déplier pour savoir
+                      // lequel. ?>
+                <thead><tr><th scope="col">Plan</th><th scope="col">Demande</th><th scope="col">Travail</th><th scope="col">Documents</th><th scope="col">Avancement</th><th scope="col">Actions</th></tr></thead>
+                <?php if (!$assignments): ?><tbody><tr><td colspan="6" class="prefa-table-empty">Aucun élément ne vous est actuellement affecté.</td></tr></tbody><?php endif; ?>
                 <?php foreach ($assignments as $assignment):
                     $id = (int) $assignment['id'];
                     $progress = (int) $assignment['avancement'];
@@ -78,16 +83,26 @@ $recentProgress = $stmt->fetchAll();
                 ?>
                     <tbody class="atelier-assignment-group">
                         <tr>
-                            <td><?= prefaEscape(prefaReferenceComplete((int) $assignment['id_demande'])) ?></td>
                             <td><strong><?= prefaEscape($assignment['reference']) ?></strong><span class="atelier-row-description"><?= prefaEscape($assignment['libelle']) ?></span></td>
+                            <td><?= prefaEscape(prefaReferenceComplete((int) $assignment['id_demande'])) ?></td>
                             <td><?= $types[$assignment['type_affectation']] ?></td>
-                            <td><?php if ($docs): ?><?= count($docs) ?> <?= count($docs) === 1 ? 'fichier' : 'fichiers' ?><?php else: ?><span class="atelier-missing-file">Fichier à associer</span><?php endif; ?></td>
-                            <td><?= $progress ?> %<?php if ($attente): ?><span class="atelier-row-description">déclaré : <?= prefaEscape(avancementPhrase($attente)) ?>, à valider</span><?php endif; ?></td>
-                            <td><span class="prefa-status <?= $statusClass ?>"><?= $status ?></span></td>
+                            <td>
+                                <?php if ($docs): ?>
+                                    <span class="atelier-row-documents">
+                                        <?php foreach ($docs as $doc): ?>
+                                            <a class="atelier-row-document<?= strtolower(pathinfo($doc['name'], PATHINFO_EXTENSION)) === 'pdf' ? ' prefa-pdf-link' : '' ?>"
+                                               data-name="<?= prefaEscape($doc['name']) ?>" href="<?= prefaEscape($doc['url']) ?>"><?= prefaEscape($doc['name']) ?></a>
+                                        <?php endforeach; ?>
+                                    </span>
+                                <?php else: ?>
+                                    <span class="atelier-missing-file">Fichier à associer</span>
+                                <?php endif; ?>
+                            </td>
+                            <td><span class="prefa-status <?= $statusClass ?>"><?= $progress ?> % · <?= $status ?></span><?php if ($attente): ?><span class="atelier-row-description">déclaré : <?= prefaEscape(avancementPhrase($attente)) ?>, à valider</span><?php endif; ?></td>
                             <td><button type="button" class="prefa-toggle" aria-controls="atelier-detail-<?= $id ?>" aria-expanded="false">Mettre à jour</button></td>
                         </tr>
                         <tr id="atelier-detail-<?= $id ?>" class="prefa-detail-row" hidden>
-                            <td colspan="7">
+                            <td colspan="6">
                                 <div class="atelier-detail-content">
                                     <?php if ($docs): ?>
                                         <section class="atelier-files"><h2>Documents du plan</h2><div class="atelier-file-links">

@@ -167,6 +167,26 @@
     font-size: 12px;
 }
 
+/* Les fichiers du plan s'ouvrent depuis la ligne. Le lien de la maison est fait pour une
+   liste de documents — une boîte de 9 px de rembourrage par fichier ; dans une cellule,
+   c'est le nom qui porte le lien, rien de plus. */
+.atelier-row-documents {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 12px;
+}
+
+.atelier-row-document {
+    color: var(--accent-texte);
+    text-decoration: none;
+    overflow-wrap: anywhere;
+}
+
+.atelier-row-document:hover,
+.atelier-row-document:focus-visible {
+    text-decoration: underline;
+}
+
 .atelier-page .prefa-table td {
     max-width: 300px;
 }
