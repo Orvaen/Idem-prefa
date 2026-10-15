@@ -328,8 +328,10 @@
     color: var(--alerte-texte);
 }
 
+/* Le jeton, pas un or écrit en dur : celui-ci venait du thème sombre et restait tel quel
+   en clair, où il donnait 1,7:1 sur blanc — un libellé qu'on devine plus qu'on ne le lit. */
 .status-1 {
-    color: #e6c078;
+    color: var(--attente-texte);
 }
 
 .prefa-list {

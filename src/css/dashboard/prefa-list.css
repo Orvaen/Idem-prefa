@@ -277,21 +277,41 @@ body:has(.prefa-detail-row:not([hidden]))::before {
 
    L'image est celle de la page de connexion, déjà dans l'application : reprendre la sienne
    vaut mieux qu'en importer une d'ailleurs, et elle ne coûte rien de plus à charger. Un
-   voile la couvre presque entièrement — on vient lire une demande, pas regarder un fond :
-   il n'en reste que la teinte et le mouvement des courbes autour des cartes. */
+   voile la retient — on vient lire une demande, pas regarder un fond — mais assez léger
+   pour qu'on voie les courbes passer derrière les cartes.
+
+   Le fond est porté par le volet et non par la fiche, et c'est ce qui le fait tenir tout
+   l'écran : le volet est en « fixed inset: 0 », il fait exactement un écran, et c'est lui
+   qui défile. Posée sur la fiche, l'image s'arrêtait à la dernière carte, et sur une fiche
+   de deux ou trois hauteurs d'écran « cover » l'agrandissait d'autant — on n'en voyait
+   plus qu'un coin délavé. (« background-attachment: fixed » n'y pouvait rien : le volet
+   s'ouvre par une animation qui laisse un transform, et un transform au-dessus ramène
+   « fixed » à « scroll ».)
+
+   Le « :has » vise les volets qui portent une fiche de demande — ceux des demandes et ceux
+   des plans ISO — et laisse les autres volets au fond uni. */
+.prefa-detail-row:has(> td > .prefa-table-detail) {
+    background:
+        linear-gradient(180deg, rgb(10 22 38 / 74%), rgb(10 22 38 / 86%)),
+        url("../../assets/login-fond.jpg") center / cover no-repeat !important;
+}
+
+.prefa-detail-row:has(> td > .prefa-table-detail) > td,
+.prefa-detail-row:has(> td > .prefa-table-detail):hover > td {
+    background: transparent !important;
+}
+
 .prefa-table-detail {
     max-width: none;
     padding: 24px 20px 40px;
-    background:
-        linear-gradient(180deg, rgb(12 18 28 / 86%), rgb(12 18 28 / 94%)),
-        url("../../assets/login-fond.jpg") center / cover no-repeat;
     white-space: normal;
 }
 
 /* La ligne survolée teinte ses cellules ; la fiche, elle, n'est pas une ligne qu'on
-   pointe. Elle garde son fond — le raccourci « background » le réécrirait en entier. */
+   pointe. Elle ne prend pas de fond du tout : celui du volet se voit au travers. */
+.prefa-table-detail,
 .prefa-table-detail:hover {
-    background-color: transparent !important;
+    background: transparent !important;
 }
 
 .prefa-detail-actions {
