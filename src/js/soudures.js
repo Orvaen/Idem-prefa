@@ -212,11 +212,13 @@
         if (titre) titre.textContent = ligne.dataset.feuille || '';
         if (bouton) bouton.dataset.repere = ligne.dataset.repere || '';
 
-        // La colonne de droite attendait : elle se remplit. Rien ne se redimensionne —
-        // les deux colonnes sont posées depuis l'arrivée, et c'est la feuille de style qui
-        // décide à partir de quelle largeur elles tiennent côte à côte.
+        // La feuille s'ouvre à droite, et l'écran se coupe en deux. Les listes rendent
+        // alors la moitié de leur largeur — c'est le seul moment où elles la cèdent, et
+        // la feuille de style la leur reprend dès qu'on referme le volet.
         const saisie = racine.querySelector('.soudures-saisie');
         if (saisie) saisie.removeAttribute('data-vide');
+        const zone = racine.querySelector('.soudures-plan-de-travail');
+        if (zone) zone.classList.add('est-coupe-en-deux');
 
         // Le plan de la feuille, dans l'en-tête du volet : à droite du tableau, celui-ci a
         // cédé ses colonnes d'identité.
@@ -263,9 +265,9 @@
         const filtres = racine.querySelector('.soudures-filtres');
         if (filtres) filtres.hidden = false;
 
-        // L'invite de droite ne parle plus d'ouvrir un plan : c'est fait.
+        // L'invite a fait son office : le plan est ouvert, ses feuilles sont là.
         const invite = racine.querySelector('[data-invite]');
-        if (invite) invite.textContent = 'Choisissez une feuille dans la liste : ses cordons s’ouvrent ici.';
+        if (invite) invite.hidden = true;
 
         fermerSaisie();
         filtrer();
@@ -277,6 +279,8 @@
         if (!racine) return;
         const saisie = racine.querySelector('.soudures-saisie');
         if (saisie) saisie.setAttribute('data-vide', '');
+        const zone = racine.querySelector('.soudures-plan-de-travail');
+        if (zone) zone.classList.remove('est-coupe-en-deux');
         racine.querySelectorAll('.soudures-feuille.est-choisie').forEach(ligne => {
             ligne.classList.remove('est-choisie');
             ligne.removeAttribute('aria-current');

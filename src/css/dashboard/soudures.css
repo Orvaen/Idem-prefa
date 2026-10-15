@@ -42,9 +42,17 @@
     gap: 0 36px;
 }
 
+/* Les listes prennent toute la largeur, et n'en cèdent la moitié qu'au moment où une
+   feuille s'ouvre à droite. Le glissement est amorti : c'est le seul mouvement de l'écran,
+   et il doit se voir arriver plutôt que de sauter sous la main. */
 .soudures-plans {
-    flex: 1 1 480px;
+    flex: 1 1 100%;
     min-width: 0;
+    transition: flex-basis .18s ease;
+}
+
+.soudures-plan-de-travail.est-coupe-en-deux .soudures-plans {
+    flex-basis: 480px;
 }
 
 /* ----------------------------------------------------------------- les plans */
@@ -61,7 +69,6 @@
    entre : une ligne s'ouvre d'un clic, et ses feuilles paraissent dessous. */
 .soudures-plans-table {
     min-width: 420px;
-    max-width: 1060px;
 }
 
 .soudures-plan-ligne {
@@ -142,24 +149,16 @@
    section, et c'est son en-tête qui les dit. */
 .soudures-feuilles {
     min-width: 440px;
-    max-width: 1060px;
 }
 
-/* L'invite tient la place du volet tant qu'on n'a rien choisi : une ligne, pas un bloc —
-   la colonne doit se voir réservée, pas meublée. */
+/* Tant qu'aucun plan n'est ouvert, une ligne dit quoi faire — une ligne, pas un bloc :
+   la place des feuilles doit se voir réservée, pas meublée. */
 .soudures-invite {
-    margin: 0;
-    padding: 2px 0 0 32px;
+    margin: 24px 0 0;
+    padding-top: 22px;
+    border-top: 1px solid var(--border);
     color: var(--text-muted);
     font-size: 13px;
-}
-
-.soudures-saisie:not([data-vide]) .soudures-invite {
-    display: none;
-}
-
-.soudures-saisie[data-vide] .soudures-saisie-contenu {
-    display: none;
 }
 
 /* ----------------------------------------------------------------- le tableau des feuilles */
@@ -262,10 +261,11 @@
     border-left: 1px solid var(--border);
 }
 
-/* Tant que la colonne de droite n'a rien à montrer, elle n'a pas de filet : un trait qui
-   coupe la page en deux au-dessus du vide ne sépare rien. Il revient avec la feuille. */
+/* Sans feuille choisie, il n'y a pas de seconde colonne du tout : une colonne réservée
+   pour une phrase prenait 580 px sur le tableau, et son filet coupait la page en deux
+   au-dessus du vide. */
 .soudures-saisie[data-vide] {
-    border-left: 0;
+    display: none;
 }
 
 .soudures-saisie-contenu {
