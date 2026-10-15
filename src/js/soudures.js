@@ -281,6 +281,17 @@
             section.hidden = element === null || section.dataset.element !== element;
         });
 
+        // La recherche va dans la barre d'outils du plan ouvert, devant le bouton du
+        // dessin : elle porte sur ses feuilles, elle doit être avec elles. Écrite une
+        // seule fois dans la page, c'est elle qui se déplace.
+        const filtres = racine.querySelector('.soudures-filtres');
+        if (filtres) {
+            filtres.hidden = element === null;
+            const outils = element === null ? null
+                : racine.querySelector('.soudures-feuilles-section[data-element="' + element + '"] .soudures-plan-outils');
+            if (outils && filtres.parentElement !== outils) outils.prepend(filtres);
+        }
+
         fermerSaisie();
     }
 
@@ -316,54 +327,35 @@
             .map(choix => choix.value);
         const cherche = texte !== '' || etats.length > 0;
 
-        // Les feuilles retenues, comptées par plan : c'est ce compte qui décide ensuite
-        // quels plans restent au tableau du dessus.
-        const retenues = new Map();
-        racine.querySelectorAll('.soudures-feuille').forEach(ligne => {
+        // La recherche vit dans la barre d'outils du plan ouvert : elle ne porte que sur
+        // ses feuilles. Filtrer aussi les autres plans rangerait la section qui la
+        // contient, et elle disparaîtrait en même temps que ce qu'elle filtre.
+        const section = racine.querySelector('.soudures-feuilles-section:not([hidden])');
+        if (!section) return;
+
+        let trouvees = 0;
+        let total = 0;
+        section.querySelectorAll('.soudures-feuille').forEach(ligne => {
+            total++;
             const garde = (!texte || (ligne.dataset.cherche || '').includes(texte))
                 && (!etats.length || etats.includes(ligne.dataset.etat));
             ligne.hidden = !garde;
-            if (garde) retenues.set(ligne.dataset.element, (retenues.get(ligne.dataset.element) || 0) + 1);
+            if (garde) trouvees++;
         });
 
-        // La recherche porte sur toutes les feuilles, pas seulement celles du plan ouvert :
-        // un soudeur connaît son numéro de ligne, pas le plan auquel il appartient. Les
-        // plans sans feuille retenue se rangent donc.
-        let seul = null;
-        let plans = 0;
-        racine.querySelectorAll('.soudures-plan-ligne').forEach(ligne => {
-            const garde = !cherche || (retenues.get(ligne.dataset.element) || 0) > 0;
-            ligne.hidden = !garde;
-            if (garde) { plans++; seul = ligne; }
-        });
-
-        const aucunPlan = racine.querySelector('#soudures-aucun-plan');
-        if (aucunPlan) aucunPlan.hidden = plans > 0;
-
-        // Un seul plan retenu : il s'ouvre. Ce n'est pas deviner à la place de quelqu'un,
-        // c'est répondre à ce qu'il vient de taper.
-        if (cherche && plans === 1 && !seul.classList.contains('est-choisie')) {
-            poserPlan(seul.dataset.element);
-        }
-
-        racine.querySelectorAll('.soudures-feuilles-section').forEach(section => {
-            // Un filtre peut tout cacher dans ce plan : un mot le dit plutôt que de
-            // laisser un tableau sans lignes sous ses en-têtes.
-            const aucune = section.querySelector('[data-aucune]');
-            if (aucune) aucune.hidden = (retenues.get(section.dataset.element) || 0) > 0;
-        });
+        // Un filtre peut tout cacher : un mot le dit plutôt que de laisser un tableau sans
+        // lignes sous ses en-têtes.
+        const aucune = section.querySelector('[data-aucune]');
+        if (aucune) aucune.hidden = trouvees > 0;
 
         // Ce que la recherche a trouvé, et de quoi tout défaire. Muets tant qu'on n'a rien
         // demandé : un compte qui ne bouge jamais n'apprend rien.
-        const total = racine.querySelectorAll('.soudures-feuille').length;
-        const trouvees = [...retenues.values()].reduce((somme, n) => somme + n, 0);
         const resultat = racine.querySelector('.soudures-resultat');
         if (resultat) {
             resultat.hidden = !cherche;
             resultat.textContent = trouvees === 0
                 ? 'Aucune feuille ne correspond'
-                : trouvees + (trouvees > 1 ? ' feuilles' : ' feuille') + ' sur ' + total
-                    + (plans > 1 ? ' · ' + plans + ' plans' : '');
+                : trouvees + (trouvees > 1 ? ' feuilles' : ' feuille') + ' sur ' + total;
         }
         const effacer = racine.querySelector('.filtres-tout-effacer');
         if (effacer) effacer.hidden = !cherche;

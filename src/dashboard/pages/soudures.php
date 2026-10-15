@@ -83,7 +83,11 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
                   // un tableau et rien ne dit ce qu'on est venu y faire. ?>
             <p>Ouvrez un de vos plans pour voir ses feuilles, puis notez sur chaque feuille les cordons que vous avez soudés.</p>
         </div>
+    </header>
 
+    <?php if (!$plans): ?>
+        <p class="soudures-rien">Aucun plan ne vous est affecté pour le moment.</p>
+    <?php else: ?>
             <?php // La recherche est sur la ligne du titre, à droite, où les autres écrans
                   // mettent leur bouton « Actualiser ». Elle a été un bloc entre les deux
                   // tableaux, puis dans l'en-tête des feuilles : à chaque fois, un troisième
@@ -101,7 +105,7 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
                   // La barre est écrite ici plutôt que par filtresBarre() pour une raison :
                   // « Tout effacer » n'y paraît que lorsqu'un filtre est posé, ce que le serveur
                   // ne sait pas — rien n'est filtré au rendu, tout l'est dans la page. ?>
-            <form class="prefa-filters soudures-filtres" role="search">
+            <form class="prefa-filters soudures-filtres" role="search" hidden>
                 <?php // Les deux contrôles tiennent sur une ligne, le compte passe dessous :
                       // une barre souple se mesure à la somme de ses éléments sans les
                       // écarts, et dix pixels suffisaient à faire passer la pastille sous
@@ -125,11 +129,7 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
                 </div>
                 <p class="soudures-resultat" role="status" aria-live="polite" hidden></p>
             </form>
-    </header>
 
-    <?php if (!$plans): ?>
-        <p class="soudures-rien">Aucun plan ne vous est affecté pour le moment.</p>
-    <?php else: ?>
         <?php // Le plan de travail : à gauche les plans puis les feuilles de celui qu'on a
               // ouvert, à droite la feuille travaillée. Les deux colonnes sont posées dès
               // l'arrivée — sans quoi le tableau passait de pleine largeur à la moitié au
@@ -167,9 +167,6 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
                                 </td>
                             </tr>
                         <?php endforeach; ?>
-                        <?php // Une recherche peut ne laisser aucun plan : la ligne le dit,
-                              // plutôt que de laisser des en-têtes au-dessus du vide. ?>
-                        <tr id="soudures-aucun-plan" hidden><td colspan="4" class="prefa-table-empty">Aucun plan ne porte de feuille correspondant à cette recherche.</td></tr>
                     </tbody>
                 </table>
             </div>

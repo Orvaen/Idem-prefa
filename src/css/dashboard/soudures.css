@@ -120,9 +120,8 @@
     margin-bottom: 12px;
 }
 
-/* La recherche, sur la ligne du titre : elle ne prend pas de hauteur à elle, et le
-   rembourrage de la barre de la maison — prévu pour une page qui a ses propres bords — n'a
-   plus lieu d'être. */
+/* La recherche, dans la barre d'outils du plan ouvert : le rembourrage de la barre de la
+   maison — prévu pour une page qui a ses propres bords — n'a pas lieu d'être ici. */
 .soudures-filtres {
     flex: 0 1 auto;
     flex-wrap: wrap;
@@ -148,8 +147,8 @@
     white-space: nowrap;
 }
 
-/* Ce que la recherche a trouvé, sous elle plutôt qu'à côté : la ligne du titre est déjà
-   pleine, et un compte qui s'allonge y pousserait les contrôles. */
+/* Ce que la recherche a trouvé, sous elle plutôt qu'à côté : un compte qui s'allonge
+   pousserait les contrôles de la barre. */
 .soudures-resultat {
     flex-basis: 100%;
     margin: 0;

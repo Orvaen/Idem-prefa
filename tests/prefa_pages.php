@@ -49,6 +49,7 @@ if ($page === 'soudures') {
     if (!str_contains($html, 'id="soudures-recherche"')) throw new RuntimeException('Search field missing');
     if (!str_contains($html, 'data-filtre="etat"')) throw new RuntimeException('State filter missing');
     if (!str_contains($html, 'class="filtres-recherche"')) throw new RuntimeException('Search field is not the house one');
+    if (!str_contains($html, 'class="prefa-filters soudures-filtres" role="search" hidden')) throw new RuntimeException('Search bar should wait for a plan to be opened');
     if (!preg_match('/class="soudures-feuille"[^>]*data-repere="\d+:\d+:\d+"/', $html)) throw new RuntimeException('Sheet table missing');
     // On entre par le tableau des plans, et les feuilles de celui qu'on ouvre paraissent
     // dans leur propre section : à plat, on ne savait plus laquelle était à quel plan.
