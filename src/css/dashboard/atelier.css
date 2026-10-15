@@ -1899,22 +1899,6 @@
     margin: 0;
 }
 
-.atelier-soudures-compte {
-    margin: 0;
-    font-size: 13px;
-}
-
-.atelier-soudures-compte strong {
-    margin-right: 6px;
-    font-size: 17px;
-    font-weight: 400;
-    font-variant-numeric: tabular-nums;
-}
-
-.atelier-soudures-compte span {
-    color: var(--text-muted);
-}
-
 .atelier-soudures-table {
     width: 100%;
     border-collapse: collapse;

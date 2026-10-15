@@ -187,12 +187,11 @@ $etatDuPlan = static function (array $ligne): array {
                                     <?php endforeach; ?>
 
                                     <section class="atelier-soudures">
+                                        <?php // Le compte des cordons était redit ici, au-dessus du tableau qui
+                                              // les montre — et la ligne du plan, trois lignes plus haut, le
+                                              // porte déjà dans sa colonne. ?>
                                         <div class="atelier-soudures-entete">
                                             <h4 class="atelier-plan-titre-section">Cordons relevés</h4>
-                                            <p class="atelier-soudures-compte">
-                                                <strong><?= $ligne['faites'] ?><?= $ligne['prevues'] ? ' / ' . $ligne['prevues'] : '' ?></strong>
-                                                <span>renseignés<?= $ligne['prevues'] ? ' sur ' . $ligne['prevues'] . ' prévus au plan' : '' ?><?= $ligne['lues'] ? ' · ' . prefaEscape($ligne['lues']) : '' ?></span>
-                                            </p>
                                         </div>
 
                                         <?php if (!$relevees): ?>
