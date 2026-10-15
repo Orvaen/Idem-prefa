@@ -126,7 +126,11 @@
 }
 
 .soudures-saisie {
-    flex: 1 1 560px;
+    /* Le volet ne grandit pas : sa largeur est celle de son tableau de cordons, et tout
+       ce qui reste va aux listes. Les deux colonnes se partageaient la place à parts
+       égales, et le tableau des plans s'arrêtait au milieu de la page pendant que le
+       volet s'étirait sur une phrase. */
+    flex: 0 1 580px;
     min-width: 0;
     /* Étirée sur toute la hauteur, la colonne garderait son contenu centré : il se cale
        en haut, en face des premières lignes du tableau. */
