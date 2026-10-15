@@ -19,6 +19,9 @@
     --accent: #0D79A8;
     --accent-hover: #0A6890;
     --accent-texte: #4FB9E8;
+    /* La surface de l'accent, comme « succes-fond » l'est du vert : le bandeau d'un plan,
+       le fond d'un bloc qu'on veut rattacher à l'azur sans le peindre en plein. */
+    --accent-fond: #1c293b;
     --radius: 8px;
 
     /* ---------- L'échelle des contrôles ----------

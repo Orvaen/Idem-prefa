@@ -33,6 +33,7 @@ body[data-theme="light"],
     --accent: #0D79A8;
     --accent-hover: #0A6890;
     --accent-texte: #0A6B93;
+    --accent-fond: #eff6ff;
     --radius: 8px;
     --scrollbar-thumb: #cbd5e1;
     --scrollbar-thumb-hover: #94a3b8;
@@ -361,16 +362,6 @@ body[data-theme="light"],
     background: #eff6ff !important;
     border: 1px solid #93c5fd !important;
     color: #075877 !important;
-}
-
-/* ===== FORMULAIRES & INPUTS ===== */
-
-[data-theme="light"] .floating-field {
-    --field-surface: #ffffff;
-    --field-text: #0f172a;
-    --field-muted: #64748b;
-    --field-border: #cbd5e1;
-    --field-focus: #0D79A8;
 }
 
 /* « background » et non « background-color » effaçait aussi background-image : les
@@ -1011,61 +1002,6 @@ body[data-theme="light"],
     color: #0f172a !important;
 }
 
-/* ===== ATELIER - ÉLÉMENTS HARDCODÉS ===== */
-[data-theme="light"] .atelier-documents a {
-    color: #0A6B93 !important;
-}
-
-[data-theme="light"] .atelier-status-progress {
-    color: #0A6B93 !important;
-}
-
-[data-theme="light"] .atelier-state.is-taken {
-    color: #166534 !important;
-    border-color: #86efac !important;
-    background: #f0fdf4 !important;
-}
-
-[data-theme="light"] .atelier-new-element > summary {
-    color: #0A6B93 !important;
-}
-
-[data-theme="light"] .atelier-plan-heading {
-    background: #eff6ff !important;
-    border-left-color: #2E9FD4 !important;
-}
-
-[data-theme="light"] .atelier-plan-label {
-    color: #0A6B93 !important;
-}
-
-[data-theme="light"] .atelier-edit-assignment {
-    color: #0A6B93 !important;
-    border-color: var(--border) !important;
-    background: #ffffff !important;
-}
-
-[data-theme="light"] .atelier-edit-assignment:hover {
-    background: #eff6ff !important;
-    border-color: #93c5fd !important;
-}
-
-[data-theme="light"] .atelier-manage-form .atelier-remove-assignment {
-    color: #dc2626 !important;
-}
-
-[data-theme="light"] .atelier-missing-file {
-    color: #b45309 !important;
-}
-
-[data-theme="light"] .atelier-assignment-count.is-complete {
-    color: #16a34a !important;
-}
-
-[data-theme="light"] .atelier-history-kind {
-    color: #0A6B93 !important;
-}
-
 [data-theme="light"] .plans-iso-card.is-urgent {
     border-left-color: #f59e0b !important;
 }
@@ -1149,12 +1085,6 @@ body[data-theme="light"],
     background: #f1f5f9 !important;
 }
 
-[data-theme="light"] .prefa-list tbody .delete-prefa:hover:not(:disabled) {
-    background: #fff1f0 !important;
-    border-color: #dc8178 !important;
-    color: #b42318 !important;
-}
-
 /* ===== DROPDOWN / SELECT GÉNÉRAL ===== */
 [data-theme="light"] select option {
     background: #ffffff !important;
@@ -1189,19 +1119,6 @@ body[data-theme="light"],
     background: #f8fafc !important;
 }
 
-/* ===== ÉLÉMENTS DE FILTRES ===== */
-[data-theme="light"] .floating-field {
-    --field-surface: #ffffff;
-    --field-text: #0f172a;
-    --field-muted: #64748b;
-    --field-border: #cbd5e1;
-    --field-focus: #0D79A8;
-}
-
-[data-theme="light"] .floating-field label {
-    color: #64748b !important;
-}
-
 [data-theme="light"] .floating-field input:not(:placeholder-shown) ~ label,
 [data-theme="light"] .floating-field select:not([value=""]) ~ label,
 [data-theme="light"] .floating-field input:focus ~ label,
@@ -1224,12 +1141,6 @@ body[data-theme="light"],
     color: #b42318;
     background: #fff;
     border-color: #f0b4ae;
-}
-
-[data-theme="light"] .delete-prefa:hover:not(:disabled) {
-    color: #912018;
-    background: #fff1f0;
-    border-color: #dc8178;
 }
 
 [data-theme="light"] .delete-prefa:focus-visible {
@@ -1493,21 +1404,8 @@ body[data-theme="light"],
     color: #64748b !important;
 }
 
-[data-theme="light"] .account-add .account-action-icon {
-    color: #15803d !important;
-}
-
 [data-theme="light"] .account-menu .account-logout .icon {
     color: #64748b !important;
-}
-
-[data-theme="light"] .account-remove {
-    color: #b91c1c !important;
-}
-
-[data-theme="light"] .account-remove:hover {
-    background: #fef2f2 !important;
-    color: #991b1b !important;
 }
 
 [data-theme="light"] .account-menu.is-managing .account-item:hover {
@@ -1526,10 +1424,6 @@ body[data-theme="light"],
 [data-theme="light"] .account-dialog-intro,
 [data-theme="light"] .account-message {
     color: #64748b !important;
-}
-
-[data-theme="light"] .account-message.is-error {
-    color: #b91c1c !important;
 }
 
 [data-theme="light"] .account-dialog-footer {

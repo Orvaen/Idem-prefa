@@ -1,10 +1,10 @@
 /* Shared outlined fields with floating labels, including AJAX forms. */
 .floating-field {
-    --field-surface: #1c222d;
-    --field-text: #e2e7ef;
-    --field-muted: #a2adbd;
-    --field-border: #536074;
-    --field-focus: #8ab4f8;
+    --field-surface: var(--surface);
+    --field-text: var(--text);
+    --field-muted: var(--text-muted);
+    --field-border: var(--border);
+    --field-focus: var(--accent-texte);
     position: relative;
     width: 100%;
     min-width: 0;

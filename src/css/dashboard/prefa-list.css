@@ -2003,9 +2003,9 @@ summary {
 }
 
 .delete-prefa:hover:not(:disabled) {
-    border-color: #694047;
-    background: #382326;
-    color: #f6a4a4;
+    border-color: var(--alerte-bord);
+    background: var(--alerte-fond);
+    color: var(--alerte-texte);
 }
 
 .prefa-actions .cancel-prefa-edit {

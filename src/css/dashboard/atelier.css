@@ -107,7 +107,7 @@
 }
 
 .atelier-documents a {
-    color: #8ab4f8;
+    color: var(--accent-texte);
 }
 
 .atelier-progress {
@@ -209,7 +209,7 @@
 }
 
 .atelier-status-progress {
-    color: #8ab4f8;
+    color: var(--accent-texte);
 }
 
 .atelier-detail-content {
@@ -349,9 +349,9 @@
 }
 
 .atelier-state.is-taken {
-    color: #a7d7ba;
-    border-color: #355b47;
-    background: #1c3025;
+    color: var(--succes-texte);
+    border-color: var(--succes-bord);
+    background: var(--succes-fond);
 }
 
 .atelier-start {
@@ -377,7 +377,7 @@
 
 .atelier-new-element>summary {
     font-weight: 600;
-    color: #8ab4f8;
+    color: var(--accent-texte);
 }
 
 .atelier-plan-card {
@@ -389,15 +389,15 @@
 
 .atelier-plan-heading {
     padding: 20px;
-    background: #1c293b;
-    border-left: 3px solid #8ab4f8;
+    background: var(--accent-fond);
+    border-left: 3px solid var(--accent-texte);
     margin-bottom: 16px;
 }
 
 .atelier-plan-label {
     display: block;
     margin-bottom: 8px;
-    color: #8ab4f8;
+    color: var(--accent-texte);
     font-size: 11px;
     font-weight: 600;
     letter-spacing: .4px;
@@ -487,8 +487,10 @@
     padding: 6px 10px;
     border: 1px solid var(--border);
     border-radius: 5px;
-    background: transparent;
-    color: #8ab4f8;
+    /* Une surface, comme les autres boutons bordés de l'écran : transparent, il laissait
+       voir le fond de la page au travers, et le thème clair le repeignait en blanc. */
+    background: var(--surface);
+    color: var(--accent-texte);
     cursor: pointer;
 }
 
@@ -525,7 +527,7 @@
 }
 
 .atelier-manage-form .atelier-remove-assignment {
-    color: #f6a4a4;
+    color: var(--danger-texte);
 }
 
 .atelier-plan-secondary {
@@ -634,7 +636,7 @@
 }
 
 .atelier-assignment-count.is-complete {
-    color: #a7d7ba;
+    color: var(--succes-texte);
 }
 
 .atelier-plans-table>tbody>tr.atelier-plan-detail>td {
@@ -771,7 +773,7 @@
 .atelier-missing-file {
     display: block;
     margin-top: 6px;
-    color: #e5b568;
+    color: var(--attente-texte);
     font-size: 12px;
 }
 
@@ -831,7 +833,7 @@
 }
 
 .atelier-history-kind {
-    color: #8ab4f8;
+    color: var(--accent-texte);
 }
 
 .atelier-history-period,
