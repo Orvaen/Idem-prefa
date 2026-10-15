@@ -183,19 +183,6 @@
         const close = total > 0 && faites >= total
             && !(reponse.attente && reponse.attente.cordons);
 
-        const compte = racine.querySelector('.soudures-compte');
-        if (compte) {
-            compte.replaceChildren();
-            if (total) {
-                const fort = document.createElement('strong');
-                fort.textContent = faites + ' sur ' + total;
-                // Le compte, et rien de plus. L'état de la feuille se voit sans qu'on le
-                // raconte : sa pastille le dit dans le tableau, et une feuille close n'a
-                // plus de bouton à côté de ce compte.
-                compte.append(fort, ' renseignée' + (faites > 1 ? 's' : '') + ' sur cette feuille');
-            }
-        }
-
         const form = racine.querySelector('#soudures-form');
         if (form) {
             form.classList.toggle('est-close', close);

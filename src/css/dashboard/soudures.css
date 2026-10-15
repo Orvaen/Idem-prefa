@@ -483,16 +483,6 @@
     margin-top: 16px;
 }
 
-.soudures-compte {
-    margin: 0;
-    color: var(--text-muted);
-    font-size: 13px;
-}
-
-.soudures-compte strong {
-    color: var(--text);
-}
-
 .soudures-actions {
     display: flex;
     align-items: center;

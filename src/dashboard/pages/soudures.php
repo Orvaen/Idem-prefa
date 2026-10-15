@@ -305,8 +305,9 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
                     </table>
                 </div>
 
+                <?php // Le compte était redit ici, sous le tableau, alors que l'en-tête de la
+                      // feuille le porte déjà trois lignes plus haut. ?>
                 <div class="soudures-pied">
-                    <p class="soudures-compte" role="status" aria-live="polite"></p>
                     <div class="soudures-actions">
                         <span class="atelier-message" role="status" aria-live="polite"></span>
                         <button type="submit">Enregistrer</button>
