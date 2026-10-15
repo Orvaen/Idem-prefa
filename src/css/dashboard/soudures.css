@@ -466,6 +466,12 @@
     vertical-align: middle;
 }
 
+/* Une feuille close n'a plus de bouton : ses cases non plus ne se reprennent, et elles
+   le montrent comme partout ailleurs — sans cadre, en gris. */
+#soudures-form.est-close .soudures-champ input:disabled {
+    cursor: default;
+}
+
 /* ----------------------------------------------------------------- le pied de la saisie */
 
 .soudures-pied {

@@ -66,7 +66,8 @@
         const form = racine.querySelector('#soudures-form');
         if (!corps || !form) return;
         const bouton = form.querySelector('button[type="submit"]');
-        if (!bouton) return;
+        // Rangé sur une feuille close : il n'y a plus de sort à lui donner.
+        if (!bouton || bouton.hidden) return;
         const change = empreinte(corps) !== (form.dataset.empreinte || '');
         bouton.disabled = !change;
         bouton.title = change ? '' : 'Rien de nouveau à enregistrer sur cette feuille.';
@@ -175,6 +176,13 @@
             }
         }
 
+        // Une feuille entièrement soudée dont le chef a tout validé est close : ce qu'elle
+        // porte est signé et le plan l'écrit. Il n'y a plus rien à y enregistrer — le
+        // bouton s'en va, et les cases avec lui. Tant qu'un cordon attend, en revanche,
+        // elle reste ouverte : le chef peut refuser, et il faut pouvoir reprendre.
+        const close = total > 0 && faites >= total
+            && !(reponse.attente && reponse.attente.cordons);
+
         const compte = racine.querySelector('.soudures-compte');
         if (compte) {
             compte.replaceChildren();
@@ -183,9 +191,22 @@
                 fort.textContent = faites + ' sur ' + total;
                 // Tout ce que la feuille demandait est soudé : le dire, plutôt que de
                 // laisser compter « 4 sur 4 » pour s'en apercevoir.
-                compte.append(fort, faites >= total
-                    ? ' — la feuille est complète'
-                    : ' renseignée' + (faites > 1 ? 's' : '') + ' sur cette feuille');
+                compte.append(fort, close
+                    ? ' — feuille soudée, validée par le chef d’atelier'
+                    : (faites >= total
+                        ? ' — la feuille est complète'
+                        : ' renseignée' + (faites > 1 ? 's' : '') + ' sur cette feuille'));
+            }
+        }
+
+        const form = racine.querySelector('#soudures-form');
+        if (form) {
+            form.classList.toggle('est-close', close);
+            const envoyer = form.querySelector('button[type="submit"]');
+            if (envoyer) envoyer.hidden = close;
+            if (close) {
+                corps.querySelectorAll('.soudures-date, .soudures-type')
+                    .forEach(champ => { champ.disabled = true; });
             }
         }
 
