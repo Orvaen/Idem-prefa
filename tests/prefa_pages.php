@@ -49,14 +49,19 @@ if ($page === 'soudures') {
     if (!str_contains($html, 'id="soudures-recherche"')) throw new RuntimeException('Search field missing');
     if (!str_contains($html, 'id="soudures-filtre-etat"')) throw new RuntimeException('State filter missing');
     if (!preg_match('/class="soudures-feuille"[^>]*data-repere="\d+:\d+:\d+"/', $html)) throw new RuntimeException('Sheet table missing');
-    // Une section par plan : sans elle, on ne sait plus à quel plan appartient une feuille.
-    if (!preg_match('/<section class="soudures-plan" data-element="\d+"/', $html)) throw new RuntimeException('Plan sections missing');
+    // On entre par le tableau des plans, et les feuilles de celui qu'on ouvre paraissent
+    // dans leur propre section : à plat, on ne savait plus laquelle était à quel plan.
+    if (!str_contains($html, 'class="prefa-table soudures-plans-table"')) throw new RuntimeException('Plan table missing');
+    if (!preg_match('/<tr class="soudures-plan-ligne[^"]*"\s+data-element="\d+"/', $html)) throw new RuntimeException('Plan rows missing');
+    if (!preg_match('/<section class="soudures-feuilles-section" data-element="\d+"/', $html)) throw new RuntimeException('Sheet sections missing');
     if (!str_contains($html, 'class="prefa-detail-heading soudures-plan-entete"')) throw new RuntimeException('Plan heading missing');
     // L'avancement ne se déclare pas d'ici : il se déclare dans « Mes affectations ».
     if (str_contains($html, 'soudures-validation') || str_contains($html, 'soudures-demande')) throw new RuntimeException('Validation form is back on this screen');
     // Rien n'est choisi à l'arrivée : la saisie attend, et aucune lecture de PDF n'est
     // déclenchée pour une feuille que personne n'a demandée.
-    if (str_contains($html, 'est-choisie')) throw new RuntimeException('A sheet is selected by default');
+    // Un plan peut être ouvert d'office — il n'y en a qu'un, il n'y a pas de choix à
+    // faire —, mais jamais une feuille : l'ouvrir coûte une lecture de PDF.
+    if (preg_match('/<tr class="soudures-feuille[^"]*est-choisie/', $html)) throw new RuntimeException('A sheet is selected by default');
     if (!str_contains($html, 'class="soudures-saisie atelier-detail-content" aria-labelledby="soudures-saisie-titre" data-vide>')) throw new RuntimeException('Entry block does not wait for a choice');
 }
 if ($page === 'create_prefa' && !str_contains($html, 'name="nom_affaire"')) throw new RuntimeException('Request name input missing');

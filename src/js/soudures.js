@@ -236,6 +236,56 @@
         choisir(this);
     });
 
+    /**
+     * Ouvrir un plan : ses feuilles paraissent, celles des autres se rangent.
+     *
+     * Rien n'est demandé au serveur — toutes les sections sont rendues avec la page. Ce
+     * qui coûte, c'est la feuille : sa liste de cordons est reconnue sur le PDF. On ferme
+     * donc la saisie en changeant de plan, plutôt que de laisser à droite une feuille qui
+     * n'appartient plus à ce qu'on regarde à gauche.
+     */
+    function ouvrirPlan(ligne) {
+        const racine = page();
+        if (!racine || !ligne) return;
+        const element = ligne.dataset.element;
+
+        racine.querySelectorAll('.soudures-plan-ligne').forEach(autre => {
+            const ouvert = autre === ligne;
+            autre.classList.toggle('est-choisie', ouvert);
+            if (ouvert) autre.setAttribute('aria-current', 'true');
+            else autre.removeAttribute('aria-current');
+        });
+        racine.querySelectorAll('.soudures-feuilles-section').forEach(section => {
+            section.hidden = section.dataset.element !== element;
+        });
+
+        const invite = racine.querySelector('.soudures-invite-plan');
+        if (invite) invite.hidden = true;
+        const filtres = racine.querySelector('.soudures-filtres');
+        if (filtres) filtres.hidden = false;
+
+        fermerSaisie();
+        filtrer();
+    }
+
+    /** Refermer la feuille travaillée : le volet se range, la ligne n'est plus choisie. */
+    function fermerSaisie() {
+        const racine = page();
+        if (!racine) return;
+        const saisie = racine.querySelector('.soudures-saisie');
+        if (saisie) saisie.setAttribute('data-vide', '');
+        racine.querySelectorAll('.soudures-feuille.est-choisie').forEach(ligne => {
+            ligne.classList.remove('est-choisie');
+            ligne.removeAttribute('aria-current');
+        });
+    }
+
+    // Cliquer la ligne d'un plan l'ouvre, comme son bouton : c'est le geste qu'on a dans
+    // une liste.
+    $(document).on('click', '.soudures-plan-ligne', function () {
+        ouvrirPlan(this);
+    });
+
     // Le filtrage : tout est déjà rendu, on se contente de cacher ce qui ne correspond
     // pas. Un cahier porte quinze feuilles et on en a souvent trois : quarante lignes se
     // parcourent mal à l'œil, et un rechargement serveur à chaque frappe coûterait plus
@@ -245,48 +295,29 @@
         if (!racine) return;
         const texte = (racine.querySelector('#soudures-recherche')?.value || '').trim().toLowerCase();
         const etat = racine.querySelector('#soudures-filtre-etat')?.value || '';
-        const plan = racine.querySelector('#soudures-filtre-plan')?.value || '';
 
-        let visibles = 0;
-        racine.querySelectorAll('.soudures-feuille').forEach(ligne => {
-            const garde = (!texte || (ligne.dataset.cherche || '').includes(texte))
-                && (!etat || ligne.dataset.etat === etat)
-                && (!plan || ligne.dataset.element === plan);
-            ligne.hidden = !garde;
-            if (garde) visibles++;
+        racine.querySelectorAll('.soudures-feuilles-section').forEach(section => {
+            let visibles = 0;
+            section.querySelectorAll('.soudures-feuille').forEach(ligne => {
+                const garde = (!texte || (ligne.dataset.cherche || '').includes(texte))
+                    && (!etat || ligne.dataset.etat === etat);
+                ligne.hidden = !garde;
+                if (garde) visibles++;
+            });
+
+            // Un filtre peut tout cacher dans ce plan : un mot le dit plutôt que de
+            // laisser un tableau sans lignes sous ses en-têtes.
+            const aucune = section.querySelector('[data-aucune]');
+            if (aucune) aucune.hidden = visibles > 0;
         });
-
-        // Une section de plan dont toutes les feuilles sont cachées se cache aussi :
-        // laisser son en-tête au-dessus d'un tableau vide ferait croire que le plan n'a
-        // plus rien, alors que c'est le filtre qui parle.
-        racine.querySelectorAll('.soudures-plan').forEach(section => {
-            const lignes = section.querySelectorAll('.soudures-feuille');
-            section.hidden = lignes.length > 0 && ![...lignes].some(ligne => !ligne.hidden);
-        });
-
-        // Un filtre peut tout cacher : un mot le dit plutôt que de laisser la colonne
-        // muette.
-        const aucune = racine.querySelector('#soudures-aucune');
-        if (aucune) aucune.hidden = visibles > 0;
-        const compte = racine.querySelector('#soudures-compte-feuilles');
-        if (compte) compte.textContent = String(visibles);
     }
 
     $(document).on('input', '#soudures-recherche', filtrer);
-    $(document).on('change', '#soudures-filtre-etat, #soudures-filtre-plan', filtrer);
+    $(document).on('change', '#soudures-filtre-etat', filtrer);
 
     // Fermer la feuille : le volet se range et la ligne n'est plus choisie. Sans ce
     // geste, le seul moyen de quitter une feuille est d'en ouvrir une autre.
-    $(document).on('click', '[data-fermer-saisie]', function () {
-        const racine = page();
-        if (!racine) return;
-        const saisie = racine.querySelector('.soudures-saisie');
-        if (saisie) saisie.setAttribute('data-vide', '');
-        racine.querySelectorAll('.soudures-feuille.est-choisie').forEach(ligne => {
-            ligne.classList.remove('est-choisie');
-            ligne.removeAttribute('aria-current');
-        });
-    });
+    $(document).on('click', '[data-fermer-saisie]', fermerSaisie);
 
     $(document).on('click', '.soudures-renseigner', function () {
         choisir(this.closest('.soudures-feuille'));

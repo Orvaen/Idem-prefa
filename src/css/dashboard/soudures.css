@@ -42,9 +42,95 @@
     gap: 0 24px;
 }
 
-.soudures-plan-de-travail > .prefa-table-scroll {
+.soudures-plans {
     flex: 1 1 480px;
     min-width: 0;
+}
+
+/* ----------------------------------------------------------------- les plans */
+
+/* Le titre d'une partie de la colonne. Même corps que l'en-tête d'un volet : l'écran n'a
+   qu'une grammaire — « Plans », « Feuilles de X », « Feuille Y ». */
+.soudures-section-titre {
+    margin: 0 0 10px;
+    color: var(--text);
+    font-size: 16px;
+}
+
+/* Le tableau des plans est court — on en tient deux ou trois — et c'est par lui qu'on
+   entre : une ligne s'ouvre d'un clic, et ses feuilles paraissent dessous. */
+.soudures-plans-table {
+    min-width: 420px;
+    max-width: 1060px;
+}
+
+.soudures-plan-ligne {
+    cursor: pointer;
+}
+
+.soudures-plan-nombre {
+    width: 90px;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Le plan ouvert porte la même marque que la feuille travaillée : teinte et filet à
+   gauche. Deux niveaux de choix, un seul signe à reconnaître. */
+.prefa-table .soudures-plan-ligne.est-choisie > td,
+.prefa-table .soudures-plan-ligne.est-choisie:hover > td {
+    background: var(--selection-fond) !important;
+    box-shadow: inset 0 -1px 0 var(--selection-filet);
+}
+
+.prefa-table .soudures-plan-ligne.est-choisie > td:first-child,
+.prefa-table .soudures-plan-ligne.est-choisie:hover > td:first-child {
+    box-shadow: inset 3px 0 0 var(--accent), inset 0 -1px 0 var(--selection-filet);
+}
+
+/* ----------------------------------------------------------------- les feuilles d'un plan */
+
+/* La section des feuilles vient sous les plans, séparée d'un filet : au-dessus on choisit
+   un plan, en dessous une feuille. */
+.soudures-feuilles-section {
+    margin-top: 22px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+}
+
+.soudures-plan-entete {
+    padding: 0 0 12px;
+}
+
+.soudures-plan-entete p {
+    margin: 4px 0 0;
+    color: var(--text-muted);
+    font-size: 12.5px;
+}
+
+.soudures-plan-vide {
+    margin: 0;
+    padding: 0 0 6px;
+}
+
+/* Un filtre peut ne rien laisser dans ce plan : le mot prend la place du tableau. */
+.soudures-aucune {
+    padding: 24px 0 4px;
+    text-align: left;
+}
+
+/* Tant qu'aucun plan n'est ouvert, la place des feuilles dit quoi faire — une ligne, pas
+   un bloc : la colonne doit se voir réservée, pas meublée. */
+.soudures-invite-plan {
+    margin: 22px 0 0;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+/* La barre de filtres porte le rembourrage de la maison, prévu pour une page qui a des
+   bords à elle ; ici la colonne les donne déjà. */
+.soudures-filtres {
+    padding: 18px 0 0;
 }
 
 .soudures-saisie {

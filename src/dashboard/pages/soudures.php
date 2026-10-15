@@ -49,6 +49,12 @@ foreach ($confies->fetchAll() as $confie) {
     ];
 }
 
+// Le plan ouvert à l'arrivée : aucun, sauf s'il n'y en a qu'un — il n'y a alors pas de
+// choix à faire, et laisser l'écran vide derrière une seule ligne serait une politesse
+// inutile. Ouvrir un plan ne coûte rien au serveur : tout est déjà rendu, c'est la feuille
+// qui coûte une lecture de PDF, et celle-là n'est jamais choisie d'office.
+$planOuvert = count($plans) === 1 ? array_key_first($plans) : null;
+
 // Le premier isométrique d'un plan, pour le bouton qui montre le dessin : on ouvre le
 // cahier à sa première page, c'est de là qu'on se repère.
 $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? null;
@@ -58,11 +64,11 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
     <option value="111"></option><option value="135"></option><option value="141"></option>
 </datalist>
 
-<?php // La coque, l'en-tête, la barre de filtres, le compte, le tableau : exactement ceux
+<?php // La coque, l'en-tête, la barre de filtres, le compte, les tableaux : exactement ceux
       // des autres listes de l'application — « Demandes de préfabrication », « Soudures »
-      // du chef, « Mes affaires ». Cet écran s'était inventé son propre gabarit, avec
-      // un surtitre et un grand titre léger qu'on ne voit nulle part ailleurs : on
-      // changeait de logiciel en changeant d'onglet. ?>
+      // du chef, « Mes affaires ». Cet écran s'était inventé son propre gabarit, avec un
+      // surtitre et un grand titre léger qu'on ne voit nulle part ailleurs : on changeait
+      // de logiciel en changeant d'onglet. ?>
 <section class="page prefa-page prefa-list atelier-page soudures" id="soudures-page" aria-labelledby="soudures-page-title">
     <div class="prefa-shell">
     <header class="prefa-heading prefa-list-heading">
@@ -74,72 +80,92 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
             <?php // La phrase dit la chaîne entière — plan, feuille, cordon — parce que
                   // l'écran n'en montre qu'un maillon à la fois. Sans elle, on arrive devant
                   // un tableau et rien ne dit ce qu'on est venu y faire. ?>
-            <p>Les feuilles des plans qui vous sont confiés. Ouvrez-en une et notez les cordons que vous avez soudés.</p>
+            <p>Ouvrez un de vos plans pour voir ses feuilles, puis notez sur chaque feuille les cordons que vous avez soudés.</p>
         </div>
     </header>
 
     <?php if (!$plans): ?>
         <p class="soudures-rien">Aucun plan ne vous est affecté pour le moment.</p>
     <?php else: ?>
-        <?php // Les utilitaires de la maison : un champ de recherche et des listes d'état.
-              // Un cahier porte quinze feuilles, et on en a souvent trois : parcourir
-              // quarante lignes à l'œil pour retrouver « YU-PRE-120-3 » est une corvée que
-              // les autres écrans n'imposent pas. ?>
-        <div class="prefa-filters" role="search">
-            <div class="floating-field">
-                <label for="soudures-recherche">Rechercher</label>
-                <input id="soudures-recherche" class="floating-control" type="search"
-                       placeholder="N° de ligne, plan, demande">
-            </div>
-            <div class="floating-field floating-always">
-                <label for="soudures-filtre-etat">État</label>
-                <select id="soudures-filtre-etat" class="floating-control">
-                    <option value="">Toutes les feuilles</option>
-                    <option value="a_faire">À faire</option>
-                    <option value="en_cours">En cours</option>
-                    <option value="soudee">Soudées</option>
-                    <option value="non_lue">Pas encore ouvertes</option>
-                </select>
-            </div>
-            <?php if (count($plans) > 1): ?>
-                <div class="floating-field floating-always">
-                    <label for="soudures-filtre-plan">Plan</label>
-                    <select id="soudures-filtre-plan" class="floating-control">
-                        <option value="">Tous les plans</option>
-                        <?php foreach ($plans as $plan): ?>
-                            <option value="<?= (int) $plan['element'] ?>"><?= prefaEscape($plan['reference']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-            <?php endif; ?>
-        </div>
-
-        <p class="prefa-list-summary">
-            <strong id="soudures-compte-feuilles"><?= count($feuilles) ?></strong>
-            <span><?= count($feuilles) === 1 ? 'feuille' : 'feuilles' ?></span>
-            · <strong><?= count($plans) ?></strong>
-            <span><?= count($plans) === 1 ? 'plan' : 'plans' ?></span>
-        </p>
-
-        <?php // Le plan de travail : les plans et leurs feuilles à gauche, la feuille
-              // travaillée à droite. Les deux colonnes sont posées dès l'arrivée — sans
-              // quoi le tableau passait de pleine largeur à la moitié au moment du clic. ?>
+        <?php // Le plan de travail : à gauche les plans puis les feuilles de celui qu'on a
+              // ouvert, à droite la feuille travaillée. Les deux colonnes sont posées dès
+              // l'arrivée — sans quoi le tableau passait de pleine largeur à la moitié au
+              // moment du clic, et l'écran se tordait sous la main. ?>
         <div class="soudures-plan-de-travail">
         <div class="soudures-plans">
-            <?php // Une section par plan : son nom, d'où il vient, et ses feuilles dessous.
-                  // À plat, toutes les feuilles mélangées, on ne savait plus laquelle
-                  // appartenait à quel plan — les colonnes qui le disaient avaient cédé
-                  // leur place au volet de saisie. ?>
+            <?php // Les plans d'abord : un tableau court, une ligne par plan. On en ouvre un,
+                  // et ses feuilles paraissent dessous. Toutes les feuilles ensemble, sans
+                  // leur plan, on ne savait plus lesquelles étaient à qui. ?>
+            <h2 class="soudures-section-titre">Plans</h2>
+            <div class="prefa-table-scroll" role="region" aria-label="Mes plans" tabindex="0">
+                <table class="prefa-table soudures-plans-table">
+                    <thead><tr>
+                        <th scope="col">Plan</th>
+                        <th scope="col">Demande n°</th>
+                        <th scope="col">Feuilles</th>
+                        <th scope="col">Actions</th>
+                    </tr></thead>
+                    <tbody>
+                        <?php foreach ($plans as $plan):
+                            $demande = prefaReferenceComplete($plan['demande']);
+                            $nombre = count($plan['feuilles']);
+                            $ouvert = $plan['element'] === $planOuvert;
+                        ?>
+                            <tr class="soudures-plan-ligne<?= $ouvert ? ' est-choisie' : '' ?>"
+                                data-element="<?= (int) $plan['element'] ?>"
+                                <?= $ouvert ? 'aria-current="true"' : '' ?>>
+                                <td><strong><?= prefaEscape($plan['reference']) ?></strong></td>
+                                <td><?= prefaEscape($demande) ?></td>
+                                <td class="soudures-plan-nombre"><?= $nombre ?></td>
+                                <td class="soudures-feuille-actions">
+                                    <?php // « Ouvrir » montre les feuilles du plan — c'est le geste de
+                                          // cet écran. Le dessin, lui, s'ouvre depuis l'en-tête des
+                                          // feuilles, une fois le plan ouvert. ?>
+                                    <button type="button" class="soudures-ouvrir-plan-feuilles">Ouvrir</button>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <?php // Les utilitaires portent sur les feuilles du plan ouvert : une seule barre,
+                  // posée entre les plans et leurs feuilles, et non une par section — il n'y
+                  // en a qu'une de visible à la fois. Un cahier en porte quinze : les
+                  // parcourir à l'œil pour retrouver « YU-PRE-120-3 » est une corvée que les
+                  // autres écrans n'imposent pas. ?>
+            <div class="prefa-filters soudures-filtres" role="search"<?= $planOuvert === null ? ' hidden' : '' ?>>
+                <div class="floating-field">
+                    <label for="soudures-recherche">Rechercher une feuille</label>
+                    <input id="soudures-recherche" class="floating-control" type="search"
+                           placeholder="N° de ligne">
+                </div>
+                <div class="floating-field floating-always">
+                    <label for="soudures-filtre-etat">État</label>
+                    <select id="soudures-filtre-etat" class="floating-control">
+                        <option value="">Toutes les feuilles</option>
+                        <option value="a_faire">À faire</option>
+                        <option value="en_cours">En cours</option>
+                        <option value="soudee">Soudées</option>
+                        <option value="non_lue">Pas encore ouvertes</option>
+                    </select>
+                </div>
+            </div>
+
+            <?php // Une section de feuilles par plan, masquée jusqu'à ce qu'on l'ouvre. Elles
+                  // sont toutes rendues : les montrer coûte un attribut, et aller les
+                  // chercher coûterait un aller-retour au serveur à chaque changement. ?>
             <?php foreach ($plans as $plan):
                 $demande = prefaReferenceComplete($plan['demande']);
                 $nombre = count($plan['feuilles']);
                 $premiere = $premiereFeuille($plan);
             ?>
-                <section class="soudures-plan" data-element="<?= (int) $plan['element'] ?>"
-                         aria-labelledby="soudures-plan-<?= (int) $plan['element'] ?>">
+                <section class="soudures-feuilles-section" data-element="<?= (int) $plan['element'] ?>"
+                         aria-label="Feuilles de <?= prefaEscape($plan['reference']) ?>"
+                         <?= $plan['element'] === $planOuvert ? '' : 'hidden' ?>>
                     <div class="prefa-detail-heading soudures-plan-entete">
                         <div>
-                            <h2 id="soudures-plan-<?= (int) $plan['element'] ?>">Plan <span><?= prefaEscape($plan['reference']) ?></span></h2>
+                            <h2>Feuilles de <span><?= prefaEscape($plan['reference']) ?></span></h2>
                             <p><?= prefaEscape($demande) ?> · <?= $nombre ?> feuille<?= $nombre > 1 ? 's' : '' ?></p>
                         </div>
                         <?php if ($premiere): ?>
@@ -147,7 +173,7 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
                                   // reconnaître le plan, pas pour une feuille en particulier. ?>
                             <button type="button" class="soudures-ouvrir-plan"
                                     data-repere="<?= $plan['element'] ?>:<?= $premiere['document'] ?>:1"
-                                    title="Voir le dessin de ce plan">Ouvrir</button>
+                                    title="Voir le dessin de ce plan">Voir le dessin</button>
                         <?php endif; ?>
                     </div>
 
@@ -206,12 +232,15 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
                             </table>
                         </div>
                     <?php endif; ?>
+
+                    <?php // Le filtre peut tout cacher dans ce plan : le mot le dit, plutôt que
+                          // de laisser un tableau sans lignes sous ses en-têtes. ?>
+                    <p class="prefa-table-empty soudures-aucune" data-aucune hidden>Aucune feuille de ce plan ne correspond à cette recherche.</p>
                 </section>
             <?php endforeach; ?>
 
-            <?php // Le filtre peut tout cacher : la ligne le dit, plutôt que de laisser la
-                  // colonne vide sans un mot. ?>
-            <p id="soudures-aucune" class="prefa-table-empty soudures-aucune" hidden>Aucune feuille ne correspond à cette recherche.</p>
+            <?php // Tant qu'aucun plan n'est ouvert, la place des feuilles dit quoi faire. ?>
+            <p class="soudures-invite-plan"<?= $planOuvert === null ? '' : ' hidden' ?>>Ouvrez un plan pour voir ses feuilles.</p>
         </div>
 
         <?php // La colonne de droite existe dès l'arrivée, et elle attend : sans elle, le
@@ -228,9 +257,6 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
             <div class="prefa-detail-heading">
                 <div>
                     <h2 id="soudures-saisie-titre">Feuille <span data-feuille-titre></span></h2>
-                    <?php // Le plan et la demande sont dits ici : côte à côte, le tableau
-                          // cède ses deux colonnes d'identité pour tenir dans la moitié
-                          // gauche, et il faut bien que la feuille dise d'où elle vient. ?>
                     <p><span data-feuille-plan></span><span data-feuille-compte></span></p>
                 </div>
                 <div class="soudures-saisie-actions">
