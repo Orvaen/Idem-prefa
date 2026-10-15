@@ -12,7 +12,7 @@ body[data-theme="light"],
     --border-subtle: #e2e8f0;
     --border-faint: #eef2f6;
     --text: #0f172a;
-    --text-muted: #64748b;
+    --text-muted: #475569;
     --hover: #f1f5f9;
     --active: #e2e8f0;
     --ligne-survol: #e9edf3;
@@ -50,17 +50,29 @@ body[data-theme="light"],
 }
 
 /* Plus d'ombre portée : le panneau ne flotte plus, il est à plat contre la barre, et une
-   ombre sous un bord collé ne fait qu'un trait flou de plus. */
+   ombre sous un bord collé ne fait qu'un trait flou de plus.
+
+   Il porte le fond de l'application : les écrans sont déjà transparents en clair (voir
+   plus bas), et c'est lui qu'on voit entre et sous leurs tableaux. Un voile blanc d'un
+   tiers tient les coins bleus de l'image : sans lui, le plus sombre de ses pixels ne
+   laisse que 2,8:1 au texte en retrait. Le panneau ne défile pas — ce sont les écrans
+   dedans qui défilent — donc l'image reste en place. */
 [data-theme="light"] #right-panel {
-    background: var(--surface) !important;
+    background:
+        linear-gradient(rgb(255 255 255 / 35%), rgb(255 255 255 / 35%)),
+        url("../../assets/fond-clair.jpg") center / cover no-repeat !important;
 }
 
 [data-theme="light"] #content {
     background: transparent !important;
 }
 
+/* Les écrans ne peignent rien : le fond du panneau se voit au travers, et chaque tableau,
+   carte ou volet garde le sien par-dessus. C'est ce qui fait que l'image est là partout
+   sans qu'un seul texte change de fond. */
 [data-theme="light"] .page,
 [data-theme="light"] .page.prefa-list,
+[data-theme="light"] .page.prefa-simple,
 [data-theme="light"] .settings-page,
 [data-theme="light"] .atelier-page,
 [data-theme="light"] .planning-page,
@@ -381,14 +393,13 @@ body[data-theme="light"],
     background-color: transparent !important;
 }
 
-/* En clair, sa propre image : celle de la connexion est faite pour du sombre, et il
-   fallait la noyer sous un voile de 93 % pour qu'elle ne mange pas le texte — à ce
-   compte-là on ne voyait plus qu'un gris perle. Celle-ci est claire de naissance : aucun
-   voile, elle se montre telle quelle. Mesuré sur ses pixels, le plus sombre d'entre eux
-   laisse 9,7:1 au texte et 5,7:1 à l'en-tête. */
+/* La fiche reprend le fond de l'application. Elle ne peut pas se contenter de laisser
+   voir celui du panneau : son volet est en « fixed inset: 0 », il couvre aussi la barre
+   latérale. Même image, même voile, donc même fond d'un écran à l'autre. */
 [data-theme="light"] .prefa-detail-row:has(> td > .prefa-table-detail) {
     background:
-        url("../../assets/fiche-fond-clair.jpg") center / cover no-repeat !important;
+        linear-gradient(rgb(255 255 255 / 35%), rgb(255 255 255 / 35%)),
+        url("../../assets/fond-clair.jpg") center / cover no-repeat !important;
 }
 
 /* L'en-tête est le seul texte de la fiche qui ne soit pas sur une carte : il tombe
