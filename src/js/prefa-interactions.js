@@ -428,11 +428,17 @@ $(document).on('click', '.btn-goto-plans-iso', function () {
 
 /** Le nom du champ tel que son intitulé l'écrit, sans l'astérisque. */
 function nomDuChamp(champ) {
-    // La zone de dépôt est elle-même un intitulé : son propre texte annonce le fichier
-    // attendu, et remonter au groupe donnerait le titre de toute la section.
-    if (champ.matches('label.prefa-dropzone')) return 'un document du plan BPE / ISO';
+    // Une zone de dépôt n'a pas d'intitulé à elle : c'est l'étiquette de son groupe qui
+    // nomme ce qu'on attend — « Documents QMOS », « Plans BPE / ISO ». Elle portait un nom
+    // écrit en dur, du temps où un seul dépôt était obligatoire.
     const groupe = champ.closest('.form-group, .liste-filtrable, .prefa-dropzone-groupe');
-    const intitule = groupe && groupe.querySelector('label');
+    let intitule = groupe && groupe.querySelector('label:not(.prefa-dropzone)');
+    // Une liste filtrable n'a pas d'étiquette à elle : elle est posée dans le groupe qui
+    // la porte. Sans ce second regard, « Affaire » s'annonçait « un champ obligatoire ».
+    if (!intitule && groupe && groupe.parentElement) {
+        const parent = groupe.parentElement.closest('.form-group');
+        intitule = parent && parent.querySelector('label:not(.prefa-dropzone)');
+    }
     const texte = intitule ? intitule.textContent.replace('*', '').trim() : '';
     return texte || champ.name || 'un champ obligatoire';
 }
@@ -517,10 +523,10 @@ $(document).on('change', '#prefa-form .liste-filtrable[data-obligatoire="1"] inp
     marquerListesObligatoires(form);
 });
 
-// Le dépôt d'un plan efface son propre reproche.
-$(document).on('change', '#prefa-form #plan-documents', function () {
+// Un dépôt efface son propre reproche.
+$(document).on('change', '#prefa-form #plan-documents, #prefa-form #qmos, #prefa-form #dmos', function () {
     if (this.files && this.files.length) {
-        $(this).closest('form').find('label.prefa-dropzone[for="plan-documents"]').removeClass('champ-invalide');
+        $(this).closest('form').find('label.prefa-dropzone[for="' + this.id + '"]').removeClass('champ-invalide');
     }
 });
 
@@ -547,15 +553,27 @@ $(document).on('submit', '#prefa-form, .prefa-review', function (event) {
         // sans jamais lui dire combien il en restait.
         const manquants = [];
 
-        if (!form.find('[name="id"]').length) {
-            const planInput = form.find('#plan-documents')[0];
-            const planFiles = planInput?.files?.length || 0;
-            const savedPlans = form.find('#plan-saved-files .prefa-file-row').length;
-            const zone = form.find('label.prefa-dropzone[for="plan-documents"]');
-            const sansPlan = planFiles === 0 && savedPlans === 0;
-            zone.toggleClass('champ-invalide', sansPlan);
-            if (sansPlan && zone.length) manquants.push(zone[0]);
-        }
+        // Les dépôts obligatoires. Le plan ne l'est qu'à la création — on ne le redépose
+        // pas pour corriger une date —, tandis que le QMOS et le DMOS le sont toujours :
+        // on ne soude pas sans le mode opératoire ni sa qualification, et les retirer
+        // après coup reviendrait à s'en passer.
+        //
+        // Un document retiré ne compte plus : sa ligne reste à l'écran, barrée, le temps
+        // qu'on se ravise, et c'est la croix qui dit s'il part ou non.
+        const creation = !form.find('[name="id"]').length;
+        [
+            { champ: 'plan-documents', gardes: '#plan-saved-files', aLaCreation: true },
+            { champ: 'qmos', gardes: '#qmos-saved-files' },
+            { champ: 'dmos', gardes: '#dmos-saved-files' },
+        ].forEach(depot => {
+            if (depot.aLaCreation && !creation) return;
+            const deposes = form.find('#' + depot.champ)[0]?.files?.length || 0;
+            const restants = form.find(depot.gardes + ' .prefa-file-row').not('.is-removed').length;
+            const zone = form.find('label.prefa-dropzone[for="' + depot.champ + '"]');
+            const manque = deposes === 0 && restants === 0;
+            zone.toggleClass('champ-invalide', manque);
+            if (manque && zone.length) manquants.push(zone[0]);
+        });
         marquerChampsObligatoires(form).forEach(champ => manquants.push(champ));
         marquerListesObligatoires(form).forEach(champ => manquants.push(champ));
 

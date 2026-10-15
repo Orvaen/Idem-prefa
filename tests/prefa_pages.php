@@ -67,5 +67,14 @@ if ($page === 'soudures') {
     if (preg_match('/<tr class="soudures-(plan-ligne|feuille)[^>]*aria-current/', $html)) throw new RuntimeException('A row is marked current by default');
     if (!str_contains($html, 'class="soudures-saisie atelier-detail-content" aria-labelledby="soudures-saisie-titre" data-vide>')) throw new RuntimeException('Entry block does not wait for a choice');
 }
-if ($page === 'create_prefa' && !str_contains($html, 'name="nom_affaire"')) throw new RuntimeException('Request name input missing');
+if ($page === 'create_prefa') {
+    if (!str_contains($html, 'name="id_affaire"')) throw new RuntimeException('Affair selector missing');
+    // QMOS et DMOS sont obligatoires : leur étiquette porte la marque, et plus la mention
+    // « facultatif ».
+    foreach (['qmos' => 'QMOS', 'dmos' => 'DMOS'] as $cle => $titre) {
+        if (!str_contains($html, 'Documents ' . $titre . ' <span class="required-mark"')) {
+            throw new RuntimeException($titre . ' documents are not marked as required');
+        }
+    }
+}
 echo $page . ": OK\n";

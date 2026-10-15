@@ -120,18 +120,18 @@ if ($editing && !empty($request['revetement'])) {
                         <?php if ($attachments): ?><div id="plan-saved-files" class="prefa-file-list"><?php foreach ($attachments as $attachment): ?><div class="prefa-file-row"><a href="actions/download_prefa_attachment.php?ref=<?= rawurlencode(prefaReference((int) $request['id'])) ?>&amp;file=<?= rawurlencode($attachment['key']) ?>"><?= prefaEscape($attachment['name']) ?></a><button type="button" class="prefa-remove-saved" data-key="<?= prefaEscape($attachment['key']) ?>" aria-label="Retirer <?= prefaEscape($attachment['name']) ?>">Retirer</button></div><?php endforeach; ?></div><?php endif; ?>
                     </div>
                     <div class="form-group prefa-full">
-                        <label for="qmos">Documents QMOS <small>(facultatif)</small></label>
+                        <label for="qmos">Documents QMOS <span class="required-mark" aria-hidden="true">*</span></label>
                         <label class="prefa-dropzone" for="qmos" tabindex="0"><strong>Déposer vos PDF QMOS</strong><span>Nombre de fichiers illimité · 50 Mo maximum par fichier</span></label>
                         <input id="qmos" name="qmos_pdf[]" type="file" accept=".pdf,application/pdf" aria-describedby="qmos-help" multiple hidden>
                         <div id="qmos-selected-files" class="prefa-file-list"></div>
                         <?php if ($qmosFiles): ?><div id="qmos-saved-files" class="prefa-file-list"><?php foreach ($qmosFiles as $qmosFile): ?><div class="prefa-file-row"><a href="actions/download_qmos.php?ref=<?= rawurlencode(prefaReference((int) $request['id'])) ?>&amp;file=<?= (int) $qmosFile['id'] ?>"><?= prefaEscape($qmosFile['nom']) ?></a><button type="button" class="prefa-remove-qmos-saved" data-id="<?= (int) $qmosFile['id'] ?>">Retirer</button></div><?php endforeach; ?></div><?php elseif (!empty($request[' QMOS'])): ?><small>Ancienne référence : <?= $field(' QMOS') ?></small><?php endif; ?>
                     </div>
                     <div class="form-group prefa-full">
-                        <label for="dmos">Documents DMOS <small>(facultatif)</small></label>
+                        <label for="dmos">Documents DMOS <span class="required-mark" aria-hidden="true">*</span></label>
                         <label class="prefa-dropzone" for="dmos" tabindex="0"><strong>Déposer vos PDF DMOS</strong><span>Nombre de fichiers illimité · 50 Mo maximum par fichier</span></label>
                         <input id="dmos" name="dmos_pdf[]" type="file" accept=".pdf,application/pdf" aria-describedby="dmos-help" multiple hidden>
                         <div id="dmos-selected-files" class="prefa-file-list"></div>
-                        <?php if ($dmosFiles): ?><div class="prefa-file-list"><?php foreach ($dmosFiles as $dmosFile): ?><div class="prefa-file-row"><a href="actions/download_dmos.php?ref=<?= rawurlencode(prefaReference((int) $request['id'])) ?>&amp;file=<?= (int) $dmosFile['id'] ?>"><?= prefaEscape($dmosFile['nom']) ?></a><button type="button" class="prefa-remove-dmos-saved" data-id="<?= (int) $dmosFile['id'] ?>">Retirer</button></div><?php endforeach; ?></div><?php endif; ?>
+                        <?php if ($dmosFiles): ?><div id="dmos-saved-files" class="prefa-file-list"><?php foreach ($dmosFiles as $dmosFile): ?><div class="prefa-file-row"><a href="actions/download_dmos.php?ref=<?= rawurlencode(prefaReference((int) $request['id'])) ?>&amp;file=<?= (int) $dmosFile['id'] ?>"><?= prefaEscape($dmosFile['nom']) ?></a><button type="button" class="prefa-remove-dmos-saved" data-id="<?= (int) $dmosFile['id'] ?>">Retirer</button></div><?php endforeach; ?></div><?php endif; ?>
                     </div>
                     <div class="form-group prefa-full">
                         <label for="materiel">Matériel <small>(facultatif)</small></label>
