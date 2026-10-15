@@ -239,9 +239,10 @@ ksort($affaires);
                     <span class="materiel-recu-mot">Pas reçu</span>
                 </button>
             </td>
-            <?php // readonly par défaut : un clic simple pointe la réception, c'est le
-                  // double-clic qui ouvre la case. Sans cela, viser une case pour corriger
-                  // une quantité cocherait la ligne au passage. ?>
+            <?php // readonly par défaut : la case s'ouvre au clic, et se referme dès qu'on
+                  // la quitte. La réception, elle, ne se pointe que par son bouton — un
+                  // clic sur la ligne la cochait, et il suffisait de viser une case pour
+                  // déclarer un article arrivé. ?>
             <td><input class="materiel-champ" data-champ="reference" maxlength="80" aria-label="Référence" readonly></td>
             <td><input class="materiel-champ" data-champ="designation" maxlength="180" aria-label="Désignation" readonly></td>
             <td><input class="materiel-champ materiel-champ-date" data-champ="date_livraison"
