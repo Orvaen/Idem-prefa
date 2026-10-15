@@ -22,6 +22,43 @@
     font-size: 14px;
 }
 
+/* ----------------------------------------------------------------- le plan de travail */
+
+/* Les feuilles à gauche, la feuille travaillée à droite. Tant qu'on n'a rien choisi, le
+   tableau tient toute la largeur ; dès qu'une ligne est prise, le script coupe en deux.
+
+   Les deux colonnes sont souples et wrappent d'elles-mêmes : sur un écran qui ne peut pas
+   les tenir côte à côte — un portable de 1 366, la barre latérale déduite — le volet
+   repasse sous le tableau, sans qu'on ait à le prévoir. */
+.soudures-plan-de-travail {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0 24px;
+}
+
+.soudures-plan-de-travail > .prefa-table-scroll {
+    flex: 1 1 480px;
+    min-width: 0;
+}
+
+.soudures-plan-de-travail.est-coupe-en-deux .soudures-saisie {
+    flex: 1 1 560px;
+    min-width: 0;
+}
+
+/* Coupé en deux, le tableau cède ses deux colonnes d'identité : la demande et le plan sont
+   les mêmes sur toutes les lignes d'un plan, et le volet les redit dans son en-tête. Ils
+   reviennent dès que le volet repasse dessous — voir la fin du fichier. */
+.soudures-plan-de-travail.est-coupe-en-deux .soudures-feuilles {
+    min-width: 440px;
+}
+
+.soudures-plan-de-travail.est-coupe-en-deux .soudures-feuilles th:nth-child(-n+2),
+.soudures-plan-de-travail.est-coupe-en-deux .soudures-feuilles td:nth-child(-n+2):not([colspan]) {
+    display: none;
+}
+
 /* ----------------------------------------------------------------- le tableau des feuilles */
 
 /* Le tableau ne prend pas toute la largeur de l'écran : six colonnes étalées sur 1 200 px
@@ -119,12 +156,15 @@
 
 /* ----------------------------------------------------------------- la feuille travaillée */
 
-/* Le volet de détail de la maison, posé sous le tableau plutôt que dans une ligne dépliée :
-   la feuille qu'on remplit ne se referme pas quand on filtre. */
+/* Le volet de détail de la maison, en colonne à droite du tableau plutôt que dans une
+   ligne dépliée : la feuille qu'on remplit ne se referme pas quand on filtre, et on n'a
+   pas à faire défiler pour passer du choix à la saisie.
+
+   Un filet le sépare du tableau, du côté où il le touche : à droite c'est à gauche, et
+   dessous c'est au-dessus. */
 .soudures-saisie {
-    margin-top: 26px;
-    padding-top: 22px;
-    border-top: 1px solid var(--border);
+    padding: 0 0 0 24px;
+    border-left: 1px solid var(--border);
 }
 
 /* Tant qu'aucune feuille n'est choisie, la saisie n'est pas là. Pas même son en-tête : un
@@ -132,6 +172,12 @@
    la page. Le premier clic sur une feuille la pose. */
 .soudures-saisie[data-vide] {
     display: none;
+}
+
+/* Le plan, puis le compte, séparés d'un point médian posé par la feuille de style : le
+   script remplit deux cases sans avoir à se soucier de ce qu'il y a entre. */
+.soudures-saisie .prefa-detail-heading p [data-feuille-plan]:not(:empty) + [data-feuille-compte]:not(:empty)::before {
+    content: ' · ';
 }
 
 .soudures-saisie-actions {
@@ -171,21 +217,21 @@
    la même langue que le tableau des feuilles au-dessus : c'est un tableau, pas une grille à
    part avec ses propres largeurs et son propre en-tête. */
 .soudures-cordons {
-    min-width: 640px;
-    max-width: 900px;
+    min-width: 500px;
+    max-width: 760px;
 }
 
 .soudures-cordons th:first-child,
 .soudures-numero-cellule {
-    width: 56px;
+    width: 52px;
 }
 
 .soudures-champ {
-    width: 190px;
+    width: 150px;
 }
 
 .soudures-cordons .soudures-soudeur {
-    width: 200px;
+    width: 140px;
 }
 
 /* Le repère, en pastille : c'est lui qu'on cherche en venant du dessin, et un chiffre nu au
@@ -361,4 +407,35 @@
 
 .soudures-lecteur {
     margin-top: 28px;
+}
+
+/* ----------------------------------------------------------------- quand les deux colonnes ne tiennent pas */
+
+/* Sous cette largeur, le volet est repassé sous le tableau — les colonnes souples l'ont
+   fait d'elles-mêmes. Le tableau reprend alors toute sa largeur, ses colonnes d'identité
+   comprises, et le filet du volet repasse au-dessus. */
+@media (max-width: 1260px) {
+    /* Les deux colonnes repassent l'une sous l'autre. Sans cette ligne elles tenaient
+       encore côte à côte, chacune trop étroite : le tableau se tassait en trois lignes par
+       cellule et sa barre de défilement faisait le reste. */
+    .soudures-plan-de-travail > .prefa-table-scroll,
+    .soudures-plan-de-travail.est-coupe-en-deux .soudures-saisie {
+        flex-basis: 100%;
+    }
+
+    .soudures-plan-de-travail.est-coupe-en-deux .soudures-feuilles {
+        min-width: 760px;
+    }
+
+    .soudures-plan-de-travail.est-coupe-en-deux .soudures-feuilles th:nth-child(-n+2),
+    .soudures-plan-de-travail.est-coupe-en-deux .soudures-feuilles td:nth-child(-n+2):not([colspan]) {
+        display: table-cell;
+    }
+
+    .soudures-saisie {
+        margin-top: 26px;
+        padding: 22px 0 0;
+        border-left: 0;
+        border-top: 1px solid var(--border);
+    }
 }

@@ -132,6 +132,10 @@ foreach ($plans as $plan) {
             <span><?= count($plans) === 1 ? 'plan' : 'plans' ?></span>
         </p>
 
+        <?php // Le plan de travail : les feuilles à gauche, la feuille travaillée à droite.
+              // Tant qu'on n'a rien choisi, le tableau tient toute la largeur ; c'est le
+              // script qui coupe en deux, parce que lui seul sait qu'une ligne est prise. ?>
+        <div class="soudures-plan-de-travail">
         <div class="prefa-table-scroll" role="region" aria-label="Mes feuilles ISO" tabindex="0">
             <table class="prefa-table soudures-feuilles">
                 <thead><tr>
@@ -214,7 +218,10 @@ foreach ($plans as $plan) {
             <div class="prefa-detail-heading">
                 <div>
                     <h2 id="soudures-saisie-titre">Feuille <span data-feuille-titre></span></h2>
-                    <p data-feuille-compte></p>
+                    <?php // Le plan et la demande sont dits ici : côte à côte, le tableau
+                          // cède ses deux colonnes d'identité pour tenir dans la moitié
+                          // gauche, et il faut bien que la feuille dise d'où elle vient. ?>
+                    <p><span data-feuille-plan></span><span data-feuille-compte></span></p>
                 </div>
                 <div class="soudures-saisie-actions">
                     <button type="button" class="soudures-ouvrir-plan" data-feuille-plan-bouton data-repere=""
@@ -248,6 +255,7 @@ foreach ($plans as $plan) {
                 </div>
             </form>
         </section>
+        </div>
 
         <?php // Le moule d'une ligne : le script le clone plutôt que d'assembler du HTML dans
               // des chaînes, où une apostrophe de nom suffit à tout casser. ?>

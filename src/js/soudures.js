@@ -212,9 +212,21 @@
         if (titre) titre.textContent = ligne.dataset.feuille || '';
         if (bouton) bouton.dataset.repere = ligne.dataset.repere || '';
 
-        // La saisie attendait un choix : elle s'ouvre, sous le tableau, et pour de bon.
+        // La saisie attendait un choix : elle s'ouvre, et le plan de travail se coupe en
+        // deux — les feuilles à gauche, la feuille travaillée à droite. C'est le script qui
+        // pose la coupe parce que lui seul sait qu'une ligne est prise ; la feuille de
+        // style, elle, décide à partir de quelle largeur les deux colonnes tiennent.
         const saisie = racine.querySelector('.soudures-saisie');
         if (saisie) saisie.removeAttribute('data-vide');
+        const zone = racine.querySelector('.soudures-plan-de-travail');
+        if (zone) zone.classList.add('est-coupe-en-deux');
+
+        // Le plan de la feuille, dans l'en-tête du volet : à droite du tableau, celui-ci a
+        // cédé ses colonnes d'identité.
+        const plan = racine.querySelector('[data-feuille-plan]');
+        if (plan) {
+            plan.textContent = [ligne.dataset.plan, ligne.dataset.demande].filter(Boolean).join(' · ');
+        }
 
         charger();
     }
@@ -265,6 +277,8 @@
         if (!racine) return;
         const saisie = racine.querySelector('.soudures-saisie');
         if (saisie) saisie.setAttribute('data-vide', '');
+        const zone = racine.querySelector('.soudures-plan-de-travail');
+        if (zone) zone.classList.remove('est-coupe-en-deux');
         racine.querySelectorAll('.soudures-feuille.est-choisie').forEach(ligne => {
             ligne.classList.remove('est-choisie');
             ligne.removeAttribute('aria-current');
@@ -273,10 +287,12 @@
 
     $(document).on('click', '.soudures-renseigner', function () {
         choisir(this.closest('.soudures-feuille'));
-        // Le tableau des cordons est sous celui des feuilles : sans ce déplacement, le
-        // bouton a l'air de ne rien faire quand le cahier en compte quinze.
+        // Le volet est à droite quand l'écran est large, dessous quand il ne l'est pas :
+        // on ne se déplace que dans le second cas, et seulement s'il tombe hors de vue.
         const saisie = document.querySelector('.soudures-saisie');
-        if (saisie) saisie.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (saisie && saisie.getBoundingClientRect().top > window.innerHeight - 120) {
+            saisie.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     });
 
     // « Plan » et « Ouvrir la feuille » sont servis par plan-viewer.js : c'est lui qui sait
