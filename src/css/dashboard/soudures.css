@@ -55,19 +55,12 @@
     align-self: stretch;
 }
 
-/* Côte à côte, le tableau cède ses deux colonnes d'identité : la demande et le plan sont
-   les mêmes sur toutes les lignes d'un plan, et le volet les redit dans son en-tête. Elles
-   reviennent dès que le volet repasse dessous — voir la fin du fichier. */
-/* Quatre colonnes dans une demi-page : le tableau n'a pas besoin de plus, et il reprend
-   ses 760 px — avec ses colonnes d'identité — quand le volet repasse dessous. */
+/* Quatre colonnes : la feuille, où elle en est, et ce qu'on peut en faire. La demande et
+   le plan ne sont pas des colonnes — ils seraient les mêmes sur toutes les lignes d'une
+   section, et c'est son en-tête qui les dit. */
 .soudures-feuilles {
     min-width: 440px;
     max-width: 1060px;
-}
-
-.soudures-plan-de-travail .soudures-feuilles th:nth-child(-n+2),
-.soudures-plan-de-travail .soudures-feuilles td:nth-child(-n+2):not([colspan]) {
-    display: none;
 }
 
 /* L'invite tient la place du volet tant qu'on n'a rien choisi : une ligne, pas un bloc —
@@ -438,15 +431,6 @@
     .soudures-plan-de-travail > .prefa-table-scroll,
     .soudures-plan-de-travail.est-coupe-en-deux .soudures-saisie {
         flex-basis: 100%;
-    }
-
-    .soudures-feuilles {
-        min-width: 760px;
-    }
-
-    .soudures-plan-de-travail .soudures-feuilles th:nth-child(-n+2),
-    .soudures-plan-de-travail .soudures-feuilles td:nth-child(-n+2):not([colspan]) {
-        display: table-cell;
     }
 
     /* Sous le tableau, une invite n'a plus de colonne à tenir : elle ne ferait que meubler

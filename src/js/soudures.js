@@ -256,8 +256,16 @@
             if (garde) visibles++;
         });
 
-        // Un filtre peut tout cacher : le tableau le dit plutôt que de laisser ses
-        // en-têtes au-dessus du vide.
+        // Une section de plan dont toutes les feuilles sont cachées se cache aussi :
+        // laisser son en-tête au-dessus d'un tableau vide ferait croire que le plan n'a
+        // plus rien, alors que c'est le filtre qui parle.
+        racine.querySelectorAll('.soudures-plan').forEach(section => {
+            const lignes = section.querySelectorAll('.soudures-feuille');
+            section.hidden = lignes.length > 0 && ![...lignes].some(ligne => !ligne.hidden);
+        });
+
+        // Un filtre peut tout cacher : un mot le dit plutôt que de laisser la colonne
+        // muette.
         const aucune = racine.querySelector('#soudures-aucune');
         if (aucune) aucune.hidden = visibles > 0;
         const compte = racine.querySelector('#soudures-compte-feuilles');

@@ -49,6 +49,9 @@ if ($page === 'soudures') {
     if (!str_contains($html, 'id="soudures-recherche"')) throw new RuntimeException('Search field missing');
     if (!str_contains($html, 'id="soudures-filtre-etat"')) throw new RuntimeException('State filter missing');
     if (!preg_match('/class="soudures-feuille"[^>]*data-repere="\d+:\d+:\d+"/', $html)) throw new RuntimeException('Sheet table missing');
+    // Une section par plan : sans elle, on ne sait plus à quel plan appartient une feuille.
+    if (!preg_match('/<section class="soudures-plan" data-element="\d+"/', $html)) throw new RuntimeException('Plan sections missing');
+    if (!str_contains($html, 'class="prefa-detail-heading soudures-plan-entete"')) throw new RuntimeException('Plan heading missing');
     // L'avancement ne se déclare pas d'ici : il se déclare dans « Mes affectations ».
     if (str_contains($html, 'soudures-validation') || str_contains($html, 'soudures-demande')) throw new RuntimeException('Validation form is back on this screen');
     // Rien n'est choisi à l'arrivée : la saisie attend, et aucune lecture de PDF n'est
