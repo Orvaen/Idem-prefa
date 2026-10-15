@@ -251,10 +251,22 @@
         if (!racine || !ligne) return;
         // Cliquer le plan ouvert le referme : on revient à la liste des plans, sans avoir
         // à chercher par où sortir. C'est la croix du volet, un étage plus haut.
-        const element = ligne.classList.contains('est-choisie') ? null : ligne.dataset.element;
+        poserPlan(ligne.classList.contains('est-choisie') ? null : ligne.dataset.element);
+        filtrer();
+    }
+
+    /**
+     * Pose l'ouverture d'un plan, sans rien filtrer.
+     *
+     * À part, parce que la recherche s'en sert aussi : quand elle ne laisse qu'un plan,
+     * elle l'ouvre — et elle ne peut pas se rappeler elle-même pour autant.
+     */
+    function poserPlan(element) {
+        const racine = page();
+        if (!racine) return;
 
         racine.querySelectorAll('.soudures-plan-ligne').forEach(autre => {
-            const ouvert = element !== null && autre === ligne;
+            const ouvert = element !== null && autre.dataset.element === element;
             autre.classList.toggle('est-choisie', ouvert);
             if (ouvert) autre.setAttribute('aria-current', 'true');
             else autre.removeAttribute('aria-current');
@@ -269,20 +281,7 @@
             section.hidden = element === null || section.dataset.element !== element;
         });
 
-        // La recherche va se poser dans l'en-tête du plan ouvert, devant le bouton du
-        // dessin : elle porte sur ses feuilles, elle doit être avec elles. Elle est écrite
-        // une seule fois dans la page et c'est elle qui se déplace — une par section
-        // ferait des identifiants en double.
-        const filtres = racine.querySelector('.soudures-filtres');
-        if (filtres) {
-            filtres.hidden = element === null;
-            const outils = element === null ? null
-                : racine.querySelector('.soudures-feuilles-section[data-element="' + element + '"] .soudures-plan-outils');
-            if (outils && filtres.parentElement !== outils) outils.prepend(filtres);
-        }
-
         fermerSaisie();
-        filtrer();
     }
 
     /** Refermer la feuille travaillée : le volet se range, la ligne n'est plus choisie. */
@@ -313,26 +312,68 @@
         const racine = page();
         if (!racine) return;
         const texte = (racine.querySelector('#soudures-recherche')?.value || '').trim().toLowerCase();
-        const etat = racine.querySelector('#soudures-filtre-etat')?.value || '';
+        const etats = [...racine.querySelectorAll('.soudures-filtres input[name="etat[]"]:checked')]
+            .map(choix => choix.value);
+        const cherche = texte !== '' || etats.length > 0;
+
+        // Les feuilles retenues, comptées par plan : c'est ce compte qui décide ensuite
+        // quels plans restent au tableau du dessus.
+        const retenues = new Map();
+        racine.querySelectorAll('.soudures-feuille').forEach(ligne => {
+            const garde = (!texte || (ligne.dataset.cherche || '').includes(texte))
+                && (!etats.length || etats.includes(ligne.dataset.etat));
+            ligne.hidden = !garde;
+            if (garde) retenues.set(ligne.dataset.element, (retenues.get(ligne.dataset.element) || 0) + 1);
+        });
+
+        // La recherche porte sur toutes les feuilles, pas seulement celles du plan ouvert :
+        // un soudeur connaît son numéro de ligne, pas le plan auquel il appartient. Les
+        // plans sans feuille retenue se rangent donc.
+        let seul = null;
+        let plans = 0;
+        racine.querySelectorAll('.soudures-plan-ligne').forEach(ligne => {
+            const garde = !cherche || (retenues.get(ligne.dataset.element) || 0) > 0;
+            ligne.hidden = !garde;
+            if (garde) { plans++; seul = ligne; }
+        });
+
+        const aucunPlan = racine.querySelector('#soudures-aucun-plan');
+        if (aucunPlan) aucunPlan.hidden = plans > 0;
+
+        // Un seul plan retenu : il s'ouvre. Ce n'est pas deviner à la place de quelqu'un,
+        // c'est répondre à ce qu'il vient de taper.
+        if (cherche && plans === 1 && !seul.classList.contains('est-choisie')) {
+            poserPlan(seul.dataset.element);
+        }
 
         racine.querySelectorAll('.soudures-feuilles-section').forEach(section => {
-            let visibles = 0;
-            section.querySelectorAll('.soudures-feuille').forEach(ligne => {
-                const garde = (!texte || (ligne.dataset.cherche || '').includes(texte))
-                    && (!etat || ligne.dataset.etat === etat);
-                ligne.hidden = !garde;
-                if (garde) visibles++;
-            });
-
             // Un filtre peut tout cacher dans ce plan : un mot le dit plutôt que de
             // laisser un tableau sans lignes sous ses en-têtes.
             const aucune = section.querySelector('[data-aucune]');
-            if (aucune) aucune.hidden = visibles > 0;
+            if (aucune) aucune.hidden = (retenues.get(section.dataset.element) || 0) > 0;
         });
+
+        // Ce que la recherche a trouvé, et de quoi tout défaire. Muets tant qu'on n'a rien
+        // demandé : un compte qui ne bouge jamais n'apprend rien.
+        const total = racine.querySelectorAll('.soudures-feuille').length;
+        const trouvees = [...retenues.values()].reduce((somme, n) => somme + n, 0);
+        const resultat = racine.querySelector('.soudures-resultat');
+        if (resultat) {
+            resultat.hidden = !cherche;
+            resultat.textContent = trouvees === 0
+                ? 'Aucune feuille ne correspond'
+                : trouvees + (trouvees > 1 ? ' feuilles' : ' feuille') + ' sur ' + total
+                    + (plans > 1 ? ' · ' + plans + ' plans' : '');
+        }
+        const effacer = racine.querySelector('.filtres-tout-effacer');
+        if (effacer) effacer.hidden = !cherche;
     }
 
+    // La barre de filtres de la maison prévient son formulaire quand on coche : c'est à
+    // l'écran de savoir ce qu'il en fait. Ici, rien ne part au serveur — tout est déjà là.
     $(document).on('input', '#soudures-recherche', filtrer);
-    $(document).on('change', '#soudures-filtre-etat', filtrer);
+    $(document).on('change', '.soudures-filtres', filtrer);
+    $(document).on('submit', '.soudures-filtres', event => event.preventDefault());
 
     // Fermer la feuille : le volet se range et la ligne n'est plus choisie. Sans ce
     // geste, le seul moyen de quitter une feuille est d'en ouvrir une autre.

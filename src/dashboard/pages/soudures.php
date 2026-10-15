@@ -3,6 +3,7 @@ require_once __DIR__ . '/../includes/prefa_context.php';
 require_once __DIR__ . '/../includes/soudure_atelier.php';
 require_once __DIR__ . '/../includes/nomenclature.php';
 require_once __DIR__ . '/../includes/plan_viewer.php';
+require_once __DIR__ . '/../includes/filtres.php';
 if (!$isWorkshopPersonnel) prefaError(403, 'Cette page est réservée au personnel atelier.');
 
 // Une entrée par page d'isométrique : c'est la question que se pose le soudeur — sur
@@ -87,6 +88,38 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
     <?php if (!$plans): ?>
         <p class="soudures-rien">Aucun plan ne vous est affecté pour le moment.</p>
     <?php else: ?>
+        <?php // La recherche et les filtres de la maison : un champ en tête de barre, et une
+              // pastille par critère, qui dit ce qu'elle retient et porte sa croix. C'était
+              // deux champs de formulaire à étiquette flottante, hauts de 44 px — le gabarit
+              // de « Nom » ou « Mot de passe », alors qu'on ne saisit rien ici, on choisit.
+              // Le reste de l'application en est revenu ; cet écran suit.
+              //
+              // Elle porte sur toutes les feuilles, tous plans confondus : un soudeur
+              // connaît son numéro de ligne, pas le plan auquel il appartient. Les plans
+              // sans feuille retenue se rangent, et s'il n'en reste qu'un, il s'ouvre.
+              //
+              // La barre est écrite ici plutôt que par filtresBarre() pour une raison :
+              // « Tout effacer » n'y paraît que lorsqu'un filtre est posé, ce que le serveur
+              // ne sait pas — rien n'est filtré au rendu, tout l'est dans la page. ?>
+        <form class="prefa-filters soudures-filtres" role="search">
+            <div class="filtres-recherche">
+                <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+                <input id="soudures-recherche" type="search" autocomplete="off"
+                       aria-label="Rechercher une feuille" placeholder="N° de ligne, plan, demande…">
+            </div>
+            <div class="filtres-barre">
+                <?= filtreRendu('etat', 'État', [
+                    ['id' => 'a_faire', 'libelle' => 'À faire'],
+                    ['id' => 'en_cours', 'libelle' => 'En cours'],
+                    ['id' => 'soudee', 'libelle' => 'Soudées'],
+                    ['id' => 'non_lue', 'libelle' => 'Pas encore ouvertes'],
+                ], []) ?>
+                <button type="button" class="filtres-tout-effacer" hidden>Tout effacer</button>
+            </div>
+            <p class="soudures-resultat" role="status" aria-live="polite" hidden></p>
+        </form>
+
         <?php // Le plan de travail : à gauche les plans puis les feuilles de celui qu'on a
               // ouvert, à droite la feuille travaillée. Les deux colonnes sont posées dès
               // l'arrivée — sans quoi le tableau passait de pleine largeur à la moitié au
@@ -124,33 +157,11 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
                                 </td>
                             </tr>
                         <?php endforeach; ?>
+                        <?php // Une recherche peut ne laisser aucun plan : la ligne le dit,
+                              // plutôt que de laisser des en-têtes au-dessus du vide. ?>
+                        <tr id="soudures-aucun-plan" hidden><td colspan="4" class="prefa-table-empty">Aucun plan ne porte de feuille correspondant à cette recherche.</td></tr>
                     </tbody>
                 </table>
-            </div>
-
-            <?php // Les utilitaires portent sur les feuilles du plan ouvert. Ils sont écrits
-                  // une seule fois et le script les pose dans l'en-tête du plan qu'on ouvre :
-                  // une barre par section ferait des identifiants en double, et une barre
-                  // posée entre les deux tableaux n'appartenait ni à l'un ni à l'autre.
-                  //
-                  // Un cahier porte quinze feuilles : les parcourir à l'œil pour retrouver
-                  // « YU-PRE-120-3 » est une corvée que les autres écrans n'imposent pas. ?>
-            <div class="prefa-filters soudures-filtres" role="search" hidden>
-                <div class="floating-field">
-                    <label for="soudures-recherche">Rechercher une feuille</label>
-                    <input id="soudures-recherche" class="floating-control" type="search"
-                           placeholder="N° de ligne">
-                </div>
-                <div class="floating-field floating-always">
-                    <label for="soudures-filtre-etat">État</label>
-                    <select id="soudures-filtre-etat" class="floating-control">
-                        <option value="">Toutes les feuilles</option>
-                        <option value="a_faire">À faire</option>
-                        <option value="en_cours">En cours</option>
-                        <option value="soudee">Soudées</option>
-                        <option value="non_lue">Pas encore ouvertes</option>
-                    </select>
-                </div>
             </div>
 
             <?php // Une section de feuilles par plan, masquée jusqu'à ce qu'on l'ouvre. Elles

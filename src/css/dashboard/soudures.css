@@ -108,40 +108,31 @@
 /* La barre d'outils d'une section : la recherche, l'état, et le dessin. Les trois
    contrôles font la même hauteur et se suivent sur une ligne — c'est une barre d'outils,
    pas un formulaire. */
+/* La barre d'outils d'une section ne porte plus que le dessin, depuis que la recherche
+   est passée en tête d'écran : il se range à droite, au-dessus de la colonne des actions
+   plutôt que seul dans le blanc de gauche. */
 .soudures-plan-outils {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
+    justify-content: flex-end;
     gap: 10px;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
 }
 
-/* La barre de filtres porte le rembourrage de la maison, prévu pour une page qui a des
-   bords à elle ; ici l'en-tête les donne déjà. */
+/* La barre de recherche, en tête d'écran. Le rembourrage de la maison est prévu pour une
+   page qui a ses propres bords ; ici la coque les donne déjà. */
 .soudures-filtres {
-    padding: 0;
+    padding: 0 0 18px;
     gap: 10px;
-    /* Les deux champs restent sur une ligne : la barre se mesure à la somme de ses champs
-       sans les écarts, et l'écart de dix pixels suffisait à faire passer le second
-       dessous. C'est la barre entière qui se replie, pas ses champs. */
-    flex-wrap: nowrap;
 }
 
-/* Les champs de la maison prennent toute la largeur qu'on leur laisse : dans une barre
-   d'outils, ils tiennent la leur. */
-.soudures-filtres .floating-field {
-    width: 210px;
-    margin: 0;
-}
-
-.soudures-filtres .floating-field.floating-always {
-    width: 180px;
-}
-
-/* Le bouton du dessin s'aligne sur les champs : trois contrôles de hauteurs différentes
-   sur une même ligne, on voit la différence avant de lire les mots. */
-.soudures-plan-outils .soudures-ouvrir-plan {
-    height: 44px;
+/* Ce que la recherche a trouvé, au bout de la barre : à droite, loin des contrôles, pour
+   qu'on ne le prenne pas pour un filtre de plus. */
+.soudures-resultat {
+    margin: 0 0 0 auto;
+    color: var(--text-muted);
+    font-size: 12.5px;
 }
 
 .soudures-saisie {
