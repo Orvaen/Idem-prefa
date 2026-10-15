@@ -271,14 +271,21 @@ body:has(.prefa-detail-row:not([hidden]))::before {
     background: var(--surface) !important;
 }
 
+/* La fiche se pose sur un fond en retrait, et ses parties deviennent des cartes. Sur du
+   blanc nu, elle avait l'air d'une page en cours d'écriture : rien ne disait où une partie
+   finissait ni où la suivante commençait. C'est le couple de la maison — « frame » en
+   dessous, « surface » au-dessus — celui des cartes de demande, un étage plus bas. */
 .prefa-table-detail {
     max-width: none;
     padding: 24px 20px 40px;
+    background: var(--frame);
     white-space: normal;
 }
 
+/* La ligne survolée teinte ses cellules ; la fiche, elle, n'est pas une ligne qu'on
+   pointe. Elle garde son fond. */
 .prefa-table-detail:hover {
-    background: transparent !important;
+    background: var(--frame) !important;
 }
 
 .prefa-detail-actions {
@@ -385,12 +392,19 @@ body:has(.prefa-detail-row:not([hidden]))::before {
 .fiche-corps {
     display: grid;
     grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
-    gap: 8px 44px;
+    gap: 20px;
     align-items: start;
 }
 
+/* Chaque partie est une carte : ce que la demande dit d'elle-même d'un côté, ses pièces de
+   l'autre. Le blanc entre elles ne séparait rien — on lisait une colonne de texte qui
+   s'arrêtait au milieu de la page. */
 .fiche-colonne {
     min-width: 0;
+    padding: 4px 22px 22px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
 }
 
 /* La colonne des pièces n'a pas de filet au-dessus de sa première rubrique : elle
@@ -477,7 +491,6 @@ body:has(.prefa-detail-row:not([hidden]))::before {
     gap: 16px;
     margin: 0 0 8px;
     padding: 18px 0;
-    border-top: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
 }
 
@@ -971,9 +984,10 @@ body:has(.prefa-detail-row:not([hidden]))::before {
     position: sticky;
     bottom: 0;
     z-index: 2;
-    margin: 32px 0 0;
-    padding: 14px 0 4px;
-    border-top: 1px solid var(--border);
+    margin: 20px 0 0;
+    padding: 16px 22px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
     background: var(--surface);
 }
 
