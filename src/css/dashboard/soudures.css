@@ -57,14 +57,6 @@
 
 /* ----------------------------------------------------------------- les plans */
 
-/* Le titre d'une partie de la colonne. Même corps que l'en-tête d'un volet : l'écran n'a
-   qu'une grammaire — « Plans », « Feuilles de X », « Feuille Y ». */
-.soudures-section-titre {
-    margin: 0 0 14px;
-    color: var(--text);
-    font-size: 16px;
-}
-
 /* Le tableau des plans est court — on en tient deux ou trois — et c'est par lui qu'on
    entre : une ligne s'ouvre d'un clic, et ses feuilles paraissent dessous. */
 .soudures-plans-table {

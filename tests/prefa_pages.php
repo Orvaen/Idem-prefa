@@ -55,6 +55,8 @@ if ($page === 'soudures') {
     if (!preg_match('/<tr class="soudures-plan-ligne[^"]*"\s+data-element="\d+"/', $html)) throw new RuntimeException('Plan rows missing');
     if (!preg_match('/<section class="soudures-feuilles-section" data-element="\d+"/', $html)) throw new RuntimeException('Sheet sections missing');
     if (!str_contains($html, 'class="prefa-detail-heading soudures-plan-entete"')) throw new RuntimeException('Plan heading missing');
+    // Un plan ouvert doit pouvoir se refermer : le bouton porte son état.
+    if (!str_contains($html, 'class="soudures-ouvrir-plan-feuilles" aria-expanded="false"')) throw new RuntimeException('Plan toggle does not carry its state');
     // L'avancement ne se déclare pas d'ici : il se déclare dans « Mes affectations ».
     if (str_contains($html, 'soudures-validation') || str_contains($html, 'soudures-demande')) throw new RuntimeException('Validation form is back on this screen');
     // Rien n'est choisi à l'arrivée : la saisie attend, et aucune lecture de PDF n'est

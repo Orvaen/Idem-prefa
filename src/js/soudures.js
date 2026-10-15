@@ -249,25 +249,32 @@
     function ouvrirPlan(ligne) {
         const racine = page();
         if (!racine || !ligne) return;
-        const element = ligne.dataset.element;
+        // Cliquer le plan ouvert le referme : on revient à la liste des plans, sans avoir
+        // à chercher par où sortir. C'est la croix du volet, un étage plus haut.
+        const element = ligne.classList.contains('est-choisie') ? null : ligne.dataset.element;
 
         racine.querySelectorAll('.soudures-plan-ligne').forEach(autre => {
-            const ouvert = autre === ligne;
+            const ouvert = element !== null && autre === ligne;
             autre.classList.toggle('est-choisie', ouvert);
             if (ouvert) autre.setAttribute('aria-current', 'true');
             else autre.removeAttribute('aria-current');
+            // Le bouton dit dans quel état on est : il n'y a pas d'autre marque à lire.
+            const bouton = autre.querySelector('.soudures-ouvrir-plan-feuilles');
+            if (bouton) {
+                bouton.textContent = ouvert ? 'Fermer' : 'Ouvrir';
+                bouton.setAttribute('aria-expanded', String(ouvert));
+            }
         });
         racine.querySelectorAll('.soudures-feuilles-section').forEach(section => {
-            section.hidden = section.dataset.element !== element;
+            section.hidden = element === null || section.dataset.element !== element;
         });
 
-        // La recherche paraît avec les feuilles qu'elle filtre.
+        // La recherche paraît avec les feuilles qu'elle filtre, et l'invite reprend sa
+        // place quand il n'y a plus de plan ouvert.
         const filtres = racine.querySelector('.soudures-filtres');
-        if (filtres) filtres.hidden = false;
-
-        // L'invite a fait son office : le plan est ouvert, ses feuilles sont là.
+        if (filtres) filtres.hidden = element === null;
         const invite = racine.querySelector('[data-invite]');
-        if (invite) invite.hidden = true;
+        if (invite) invite.hidden = element !== null;
 
         fermerSaisie();
         filtrer();

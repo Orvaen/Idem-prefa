@@ -96,7 +96,6 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
             <?php // Les plans d'abord : un tableau court, une ligne par plan. On en ouvre un,
                   // et ses feuilles paraissent dessous. Toutes les feuilles ensemble, sans
                   // leur plan, on ne savait plus lesquelles étaient à qui. ?>
-            <h2 class="soudures-section-titre">Plans</h2>
             <div class="prefa-table-scroll" role="region" aria-label="Mes plans" tabindex="0">
                 <table class="prefa-table soudures-plans-table">
                     <thead><tr>
@@ -121,7 +120,7 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
                                     <?php // « Ouvrir » montre les feuilles du plan — c'est le geste de
                                           // cet écran. Le dessin, lui, s'ouvre depuis l'en-tête des
                                           // feuilles, une fois le plan ouvert. ?>
-                                    <button type="button" class="soudures-ouvrir-plan-feuilles">Ouvrir</button>
+                                    <button type="button" class="soudures-ouvrir-plan-feuilles" aria-expanded="false">Ouvrir</button>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
