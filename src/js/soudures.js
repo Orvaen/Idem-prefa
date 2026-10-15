@@ -269,12 +269,9 @@
             section.hidden = element === null || section.dataset.element !== element;
         });
 
-        // La recherche paraît avec les feuilles qu'elle filtre, et l'invite reprend sa
-        // place quand il n'y a plus de plan ouvert.
+        // La recherche paraît avec les feuilles qu'elle filtre.
         const filtres = racine.querySelector('.soudures-filtres');
         if (filtres) filtres.hidden = element === null;
-        const invite = racine.querySelector('[data-invite]');
-        if (invite) invite.hidden = element !== null;
 
         fermerSaisie();
         filtrer();

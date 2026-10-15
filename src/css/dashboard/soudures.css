@@ -87,13 +87,11 @@
 
 /* ----------------------------------------------------------------- les feuilles d'un plan */
 
-/* La section des feuilles vient sous les plans, séparée d'un filet et d'un vrai blanc :
-   au-dessus on choisit un plan, en dessous une feuille, et les deux étages ne doivent pas
-   se toucher. */
+/* La section des feuilles vient sous les plans, séparée par un blanc et rien d'autre :
+   au-dessus on choisit un plan, en dessous une feuille. Un filet de plus sous un tableau
+   qui porte déjà le sien ne séparait rien — il doublait le trait. */
 .soudures-feuilles-section {
-    margin-top: 34px;
-    padding-top: 28px;
-    border-top: 1px solid var(--border);
+    margin-top: 30px;
 }
 
 .soudures-plan-entete {
@@ -141,16 +139,6 @@
    section, et c'est son en-tête qui les dit. */
 .soudures-feuilles {
     min-width: 440px;
-}
-
-/* Tant qu'aucun plan n'est ouvert, une ligne dit quoi faire — une ligne, pas un bloc :
-   la place des feuilles doit se voir réservée, pas meublée. */
-.soudures-invite {
-    margin: 24px 0 0;
-    padding-top: 22px;
-    border-top: 1px solid var(--border);
-    color: var(--text-muted);
-    font-size: 13px;
 }
 
 /* ----------------------------------------------------------------- le tableau des feuilles */
@@ -543,9 +531,5 @@
         max-height: none;
         padding-left: 0;
         overflow-y: visible;
-    }
-
-    .soudures-invite {
-        padding-left: 0;
     }
 }

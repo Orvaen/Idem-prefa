@@ -151,11 +151,6 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
                 </div>
             </div>
 
-            <?php // Tant qu'aucun plan n'est ouvert, une ligne dit quoi faire. Elle vit à
-                  // gauche, sous les plans : à droite, elle réservait une colonne entière
-                  // pour une phrase, et le tableau s'arrêtait au milieu de la page. ?>
-            <p class="soudures-invite" data-invite>Ouvrez un de vos plans pour voir ses feuilles.</p>
-
             <?php // Une section de feuilles par plan, masquée jusqu'à ce qu'on l'ouvre. Elles
                   // sont toutes rendues : les montrer coûte un attribut, et aller les
                   // chercher coûterait un aller-retour au serveur à chaque changement. ?>
