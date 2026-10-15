@@ -75,6 +75,13 @@ echo json_encode([
     'imprimees' => $feuille['imprimees'],
     'faites' => $feuille['faites'],
     'miennes' => $feuille['miennes'],
+    // Ce qui attend le chef sur cette feuille, et depuis quand il l'a sous les yeux :
+    // l'écran le dit au-dessus du tableau, et ligne par ligne.
+    'attente' => [
+        'cordons' => $feuille['enAttente'],
+        'depuis' => ($declaration = avancementEnAttente($db, (int) $affectation['id']))
+            ? prefaFormatDate($declaration['date_saisie'], true) : '',
+    ],
     // De quoi remettre à jour la ligne de cette feuille dans le tableau : son compte et
     // son état. Ils viennent d'ici parce que l'écran ne les connaît pas encore — une
     // feuille jamais ouverte ignorait son total, et elle vient de l'apprendre.

@@ -18,6 +18,7 @@
 
 require_once __DIR__ . '/soudure.php';
 require_once __DIR__ . '/plan_document.php';
+require_once __DIR__ . '/avancement.php';
 require_once __DIR__ . '/../lecture/plan_lignes.php';
 
 /**
@@ -88,14 +89,22 @@ function soudureAtelierFeuille(PDO $db, int $elementId, array $plan, int $page, 
         $saisies[(string) $ligne['numero']] = $ligne;
     }
 
+    // Ce que le chef a déjà validé : une ligne saisie après sa dernière validation
+    // attend la prochaine. Le soudeur voyait « 1 soudure enregistrée », en vert, et rien
+    // ne lui disait ensuite qu'elle attendait encore.
+    $jusqua = avancementValideJusqua($db, $elementId);
+
     $lignes = [];
     $faites = 0;
     $miennes = 0;
-    $voir = static function (string $numero, ?array $saisie, bool $imprimee) use ($soudeurId, &$faites, &$miennes): array {
+    $enAttente = 0;
+    $voir = static function (string $numero, ?array $saisie, bool $imprimee) use ($soudeurId, $jusqua, &$faites, &$miennes, &$enAttente): array {
         $aMoi = $saisie !== null && (int) ($saisie['id_soudeur'] ?? 0) === $soudeurId;
         $remplie = $saisie !== null && (trim((string) $saisie['type_soudure']) !== '' || !empty($saisie['date_soudure']));
+        $validee = !$remplie || avancementCordonValide($saisie ?? [], $jusqua);
         if ($remplie) $faites++;
         if ($remplie && $aMoi) $miennes++;
+        if ($remplie && !$validee) $enAttente++;
         return [
             'numero' => $numero,
             'imprimee' => $imprimee,
@@ -107,6 +116,9 @@ function soudureAtelierFeuille(PDO $db, int $elementId, array $plan, int $page, 
             'pt' => (string) ($saisie['pt'] ?? ''),
             'visa' => (string) ($saisie['visa_nom'] ?? ''),
             'remplie' => $remplie,
+            // Validée, donc écrite sur le plan. Sinon elle attend le chef, et la feuille le
+            // dit — ligne par ligne et en un mot au-dessus du tableau.
+            'validee' => $validee,
             // Une soudure posée par quelqu'un d'autre se lit, ne se reprend pas : son nom
             // est sur le plan final, et ce n'est pas au voisin de le changer.
             'a_moi' => $aMoi,
@@ -125,7 +137,8 @@ function soudureAtelierFeuille(PDO $db, int $elementId, array $plan, int $page, 
         $lignes[] = $voir((string) $numero, $saisie, false);
     }
 
-    return ['lignes' => $lignes, 'imprimees' => $imprimees, 'faites' => $faites, 'miennes' => $miennes];
+    return ['lignes' => $lignes, 'imprimees' => $imprimees, 'faites' => $faites,
+        'miennes' => $miennes, 'enAttente' => $enAttente];
 }
 
 /**

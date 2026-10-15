@@ -45,6 +45,9 @@
             const li = modele.content.firstElementChild.cloneNode(true);
             li.dataset.numero = ligne.numero;
             li.classList.toggle('est-faite', Boolean(ligne.remplie));
+            // Renseignée mais pas encore validée par le chef : elle ne s'écrit pas sur le
+            // plan tant qu'il ne l'a pas tranchée, et la ligne le dit.
+            li.classList.toggle('est-en-attente', Boolean(ligne.remplie) && !ligne.validee);
             li.classList.toggle('est-verrouillee', Boolean(ligne.verrouillee));
             li.classList.toggle('est-hors-tableau', !ligne.imprimee);
 
@@ -112,6 +115,25 @@
                 : (reponse.message || 'aucune ligne reconnue sur cette feuille');
         }
         majTableau(racine, reponse);
+
+        // Ce qui attend le chef, dit une fois pour toute la feuille. Deux choses peuvent
+        // attendre, et pas toujours ensemble : des cordons renseignés qui ne s'écrivent
+        // pas encore sur le plan, et la déclaration partie au chef. On peut avoir la
+        // seconde sans les premiers — une validation d'hier couvre déjà ces lignes.
+        const attente = racine.querySelector('[data-feuille-attente]');
+        if (attente) {
+            const combien = reponse.attente ? reponse.attente.cordons : 0;
+            const depuis = reponse.attente ? reponse.attente.depuis : '';
+            attente.hidden = !combien && !depuis;
+            if (combien) {
+                attente.textContent = (combien > 1
+                    ? combien + ' cordons attendent la validation du chef d’atelier'
+                    : 'Un cordon attend la validation du chef d’atelier')
+                    + (depuis ? ' · déclarés le ' + depuis : '');
+            } else if (depuis) {
+                attente.textContent = 'Votre déclaration est chez le chef d’atelier, envoyée le ' + depuis;
+            }
+        }
 
         const compte = racine.querySelector('.soudures-compte');
         if (compte) {

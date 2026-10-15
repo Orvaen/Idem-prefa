@@ -434,6 +434,38 @@
     color: var(--text);
 }
 
+/* Ce qui attend le chef : un mot sous le compte de la feuille, à l'ambre des états en
+   attente de la maison. Il ne paraît que lorsqu'il y a quelque chose à attendre. */
+.soudures-attente {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 4px 0 0;
+    color: var(--attente-texte);
+    font-size: 12.5px;
+}
+
+.soudures-attente::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+/* Et ligne par ligne : la même pastille, dans la colonne du numéro. Sans elle on sait
+   qu'il reste des cordons à valider, sans savoir lesquels. */
+.soudures-ligne.est-en-attente .soudures-numero::after {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    margin-left: 6px;
+    border-radius: 50%;
+    background: var(--attente-texte);
+    vertical-align: middle;
+}
+
 /* ----------------------------------------------------------------- le pied de la saisie */
 
 .soudures-pied {

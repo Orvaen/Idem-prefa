@@ -277,6 +277,11 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
                 <div>
                     <h2 id="soudures-saisie-titre">Feuille <span data-feuille-titre></span></h2>
                     <p><span data-feuille-plan></span><span data-feuille-compte></span></p>
+                    <?php // Où en est la feuille auprès du chef. Le message d'enregistrement le
+                          // disait une fois puis s'effaçait : on lisait « 1 soudure enregistrée »,
+                          // en vert, et plus rien ensuite ne distinguait une ligne validée d'une
+                          // ligne qui attend encore. ?>
+                    <p class="soudures-attente" data-feuille-attente hidden></p>
                 </div>
                 <div class="soudures-saisie-actions">
                     <button type="button" class="soudures-ouvrir-plan" data-feuille-plan-bouton data-repere=""

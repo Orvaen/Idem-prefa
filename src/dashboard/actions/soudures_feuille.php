@@ -7,6 +7,7 @@
 // au lieu de relire les quinze d'un cahier avant d'afficher quoi que ce soit.
 require_once __DIR__ . '/../includes/prefa_context.php';
 require_once __DIR__ . '/../includes/atelier/soudure_atelier.php';
+require_once __DIR__ . '/../includes/atelier/avancement.php';
 
 prefaPost();
 if (!$isWorkshopPersonnel) prefaError(403, 'Cette page est réservée au personnel atelier.');
@@ -16,9 +17,8 @@ if (!$elementId) prefaError(400, 'Plan invalide.');
 
 // Le plan doit vous être confié : c'est la seule porte, et elle est ici plutôt que dans
 // l'écran — une adresse se tape à la main.
-if (!soudureAtelierAffectation($db, $elementId, (int) $actor['id'])) {
-    prefaError(403, 'Ce plan ne vous est pas affecté.');
-}
+$affectation = soudureAtelierAffectation($db, $elementId, (int) $actor['id']);
+if (!$affectation) prefaError(403, 'Ce plan ne vous est pas affecté.');
 
 $plan = planDocumentChoisi($db, $elementId, planDocumentDemande($_POST));
 if (!$plan) prefaError(404, 'Aucune feuille ISO rattachée à ce plan.');
@@ -44,6 +44,13 @@ echo json_encode([
     'imprimees' => $feuille['imprimees'],
     'faites' => $feuille['faites'],
     'miennes' => $feuille['miennes'],
+    // Ce qui attend le chef sur cette feuille, et depuis quand il l'a sous les yeux :
+    // l'écran le dit au-dessus du tableau, et ligne par ligne.
+    'attente' => [
+        'cordons' => $feuille['enAttente'],
+        'depuis' => ($declaration = avancementEnAttente($db, (int) $affectation['id']))
+            ? prefaFormatDate($declaration['date_saisie'], true) : '',
+    ],
     // De quoi remettre à jour la ligne de cette feuille dans le tableau : son compte et
     // son état. Ils viennent d'ici parce que l'écran ne les connaît pas encore — une
     // feuille jamais ouverte ignorait son total, et elle vient de l'apprendre.
