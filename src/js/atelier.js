@@ -1,13 +1,22 @@
 (() => {
-    // « Mes plans » et « Mes soudures » partagent le même endpoint : on recharge la
-    // page ouverte.
-    const pagePersonnel = () => document.getElementById('soudures-page') ? 'pages/soudures.php' : 'pages/atelier.php';
+    // Plusieurs écrans partagent le même endpoint d'écriture : après une validation, on
+    // recharge celui où l'on se trouve, et lui seul.
+    //
+    // « Mes plans » était le cas par défaut, et c'en était un de trop : le chef qui
+    // validait une déclaration depuis « Suivi des soudures » se faisait recharger une page
+    // réservée au personnel atelier. Le serveur répondait 403 et l'écran se vidait sur
+    // « Impossible de charger vos affectations » — un message qui ne le concernait même pas.
+    const pageOuverte = () => {
+        if (document.getElementById('soudures-page')) return 'pages/soudures.php';
+        if (document.getElementById('suivi-soudures-page')) return 'pages/suivi_soudures.php';
+        return 'pages/atelier.php';
+    };
 
     function refreshStaff(expanded = []) {
         if (!Array.isArray(expanded)) expanded = [];
-        $('#content').load(pagePersonnel(), function (_, status) {
+        $('#content').load(pageOuverte(), function (_, status) {
             if (status === 'error') {
-                $(this).text('Impossible de charger vos affectations. Actualisez la page.');
+                $(this).text('Impossible de recharger cet écran. Actualisez la page.');
                 return;
             }
             expanded.forEach(id => {
@@ -182,6 +191,8 @@
                 if (endpoint === 'update_atelier.php'
                     && !document.getElementById('plans-iso-page')
                     && !document.getElementById('prefa-filters')) { refreshStaff(expanded); return; }
+                // Les deux écrans ci-dessus ont leur propre façon de se remettre à jour,
+                // juste en dessous.
                 const prefaFilters = document.getElementById('prefa-filters');
                 if (prefaFilters) {
                     const params = new URLSearchParams(new FormData(prefaFilters));
