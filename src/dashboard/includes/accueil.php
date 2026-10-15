@@ -95,7 +95,7 @@ function accueilTuiles(PDO $db, Utilisateur $utilisateur): array
             WHERE id_soudeur = ? AND (TRIM(type_soudure) <> '' OR date_soudure IS NOT NULL)");
         $cordons->execute([$utilisateur->id]);
         return [
-            $tuile((int) $actives->fetchColumn(), 'Mes affaires', 'plans qui me sont confiés', 'btn-list-prefa'),
+            $tuile((int) $actives->fetchColumn(), 'Mes plans', 'plans qui me sont confiés', 'btn-list-prefa'),
             $tuile((int) $aFinir->fetchColumn(), 'À terminer', 'affectations sous les 100 %', 'btn-list-prefa'),
             $tuile((int) $cordons->fetchColumn(), 'Mes soudures', 'cordons que j’ai renseignés', 'btn-soudures'),
         ];

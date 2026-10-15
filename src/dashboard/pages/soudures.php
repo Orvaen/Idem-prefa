@@ -66,7 +66,7 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
 
 <?php // La coque, l'en-tête, la barre de filtres, le compte, les tableaux : exactement ceux
       // des autres listes de l'application — « Demandes de préfabrication », « Soudures »
-      // du chef, « Mes affaires ». Cet écran s'était inventé son propre gabarit, avec un
+      // du chef, « Mes plans ». Cet écran s'était inventé son propre gabarit, avec un
       // surtitre et un grand titre léger qu'on ne voit nulle part ailleurs : on changeait
       // de logiciel en changeant d'onglet. ?>
 <section class="page prefa-page prefa-list atelier-page soudures" id="soudures-page" aria-labelledby="soudures-page-title">

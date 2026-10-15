@@ -1,5 +1,5 @@
 (() => {
-    // « Mes affaires » et « Mes soudures » partagent le même endpoint : on recharge la
+    // « Mes plans » et « Mes soudures » partagent le même endpoint : on recharge la
     // page ouverte.
     const pagePersonnel = () => document.getElementById('soudures-page') ? 'pages/soudures.php' : 'pages/atelier.php';
 
@@ -174,7 +174,7 @@
         $.ajax({ url: 'actions/' + endpoint, method: 'POST', data: data.toString(), dataType: 'json' })
             .done(function () {
                 form[0].closest('dialog')?.close();
-                // « Mes affaires » et « Mes soudures » se rechargent elles-mêmes. Les
+                // « Mes plans » et « Mes soudures » se rechargent elles-mêmes. Les
                 // écrans de l'encadrement, non : la page Plans / ISO et la liste des demandes
                 // ont chacune leur façon de se remettre à jour, plus bas. Sans cette
                 // exception, valider un avancement depuis la fiche d'une demande emmenait le

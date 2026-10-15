@@ -114,11 +114,11 @@ function dashboardMenu(): array
             'libelle' => static fn (Utilisateur $utilisateur): string => match (true) {
                 $utilisateur->est(Role::ChargeDeProduction) => 'Valider les demandes',
                 $utilisateur->est(Role::ChefDAtelier) => 'Suivi des demandes',
-                // « Mes affaires » pour l'atelier : ce qu'il ouvre ici, ce sont les plans
-                // qu'on lui a confiés, et c'est le mot qu'il emploie. Le chargé d'affaire
-                // a le même sur sa tuile d'accueil, pour ses chantiers — les deux ne se
-                // croisent jamais, chacun ne voit que son propre menu.
-                $utilisateur->est(Role::PersonnelAtelier) => 'Mes affaires',
+                // « Mes plans » pour l'atelier : ce qu'il ouvre ici, ce sont les plans
+                // qu'on lui a confiés. L'entrée s'est appelée « Mes affectations », puis
+                // « Mes affaires » — le premier est le mot du logiciel, le second celui du
+                // chargé d'affaire, qui désigne ses chantiers. Celui-ci est le sien.
+                $utilisateur->est(Role::PersonnelAtelier) => 'Mes plans',
                 // Et pour lui, ici, ce sont ses demandes, rangées sous le nom du chantier :
                 // une affaire est une entité à part depuis, et deux choses différentes ne
                 // peuvent pas porter le même mot.
@@ -131,7 +131,7 @@ function dashboardMenu(): array
             'scripts' => [],
         ],
         [
-            // Pour le personnel d'atelier, « Mes affaires » rend en réalité atelier.php :
+            // Pour le personnel d'atelier, « Mes plans » rend en réalité atelier.php :
             // c'est donc par cette entrée-là qu'il reçoit l'outillage du plan ISO.
             //
             // L'entrée porte le nom de ce qu'on vient y faire. Elle s'est appelée « Mes
