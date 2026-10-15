@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../demande/prefa_attachments.php';
 require_once __DIR__ . '/plan_table.php';
 require_once __DIR__ . '/../atelier/soudure.php';
+require_once __DIR__ . '/../atelier/avancement.php';
 
 /**
  * Ce qui s'écrit sur un plan : les tableaux qu'on y a lus, et la liste soudure rangée
@@ -103,12 +104,19 @@ function planLignesSoudures(PDO $db, int $elementId, int $documentId, ?array $so
     // Les cases que le plan porte déjà et qu'on laisse donc tranquilles : l'atelier doit
     // savoir que ce qu'il a saisi ne s'écrira pas à cet endroit.
     $occupees = 0;
+    // Ce qui est saisi mais pas encore validé : le plan ne le porte pas, et il faut
+    // pouvoir le dire — sinon on croit avoir perdu sa saisie.
+    $enAttente = 0;
+    $jusqua = avancementValideJusqua($db, $elementId);
     foreach (soudureLignes($db, $elementId, $documentId, $page) as $soudure) {
         $numero = (string) $soudure['numero'];
         if ($numero === '') continue;
-        // Une ligne venue d'un pointage porte un numéro proposé : elle figure sur le plan
-        // comme dans le volet, et se compte à part pour être signalée.
+        // Une ligne venue d'un pointage porte un numéro proposé : elle se compte à part
+        // pour être signalée.
         if (!empty($soudure['numero_propose'])) $proposees++;
+        // Le plan ne porte que du validé : un cordon s'y écrit quand le chef a validé la
+        // déclaration qui le couvre, et pas avant.
+        if (!avancementCordonValide($soudure, $jusqua)) { $enAttente++; continue; }
         $rang = ctype_digit($numero) ? (int) $numero - 1 : -1;
         if ($rang < 0 || $rang >= $capacite) { $horsTableau[] = $numero; continue; }
         // Même règle que le dessin : une case déjà écrite sur la feuille n'est pas
@@ -132,7 +140,7 @@ function planLignesSoudures(PDO $db, int $elementId, int $documentId, ?array $so
         ];
     }
     return ['valeurs' => $valeurs, 'horsTableau' => $horsTableau, 'proposees' => $proposees,
-        'imprimees' => $imprimees, 'occupees' => $occupees];
+        'imprimees' => $imprimees, 'occupees' => $occupees, 'enAttente' => $enAttente];
 }
 
 /**

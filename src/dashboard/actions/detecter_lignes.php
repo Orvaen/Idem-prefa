@@ -68,6 +68,14 @@ if (!empty($liste['occupees'])) {
         : $liste['occupees'] . ' cases de la liste soudure portent déjà du texte sur le plan :'
             . ' elles sont laissées telles quelles.';
 }
+// Le plan ne porte que du validé : sans ce mot, le soudeur qui vient de renseigner dix
+// cordons ouvre son dessin, ne les y voit pas, et croit sa saisie perdue.
+if (!empty($liste['enAttente'])) {
+    $avertissements[] = $liste['enAttente'] === 1
+        ? 'Un cordon renseigné attend la validation du chef d’atelier : il ne s’écrit pas encore sur le plan.'
+        : $liste['enAttente'] . ' cordons renseignés attendent la validation du chef d’atelier :'
+            . ' ils ne s’écrivent pas encore sur le plan.';
+}
 if ($soudures && $horsTableau) {
     $avertissements[] = count($horsTableau) === 1
         ? 'La soudure n° ' . $horsTableau[0] . ' n’a pas de ligne sur ce plan : elle n’y figure pas.'

@@ -115,6 +115,52 @@ function avancementPourcentage(int $faites, int $total): int
 }
 
 /**
+ * Jusqu'à quand les cordons de chaque soudeur sont couverts par une validation, sur cet
+ * élément.
+ *
+ * Le chef ne valide pas une ligne, il valide une déclaration : un nombre de cordons,
+ * arrêté à une date. Ce qui avait été saisi avant cette date est donc couvert par elle.
+ * C'est ce qui décide de ce qui s'écrit sur le plan — le dessin à l'écran comme le PDF
+ * qui part au client ne portent que du validé.
+ *
+ * @return array<int, string> identifiant du soudeur => date de sa dernière validation
+ */
+function avancementValideJusqua(PDO $db, int $elementId): array
+{
+    $stmt = $db->prepare("SELECT a.id_utilisateur, MAX(h.date_validation) AS jusqua
+        FROM avancement_atelier h
+        JOIN affectation_atelier a ON a.id = h.id_affectation
+        WHERE a.id_element = ? AND h.etat = 'valide' AND h.date_validation IS NOT NULL
+        GROUP BY a.id_utilisateur");
+    $stmt->execute([$elementId]);
+    $jusqua = [];
+    foreach ($stmt->fetchAll() as $ligne) {
+        $jusqua[(int) $ligne['id_utilisateur']] = (string) $ligne['jusqua'];
+    }
+    return $jusqua;
+}
+
+/**
+ * Ce cordon peut-il s'écrire sur le plan ?
+ *
+ * @param array<string, mixed> $soudure une ligne de soudureLignes()
+ * @param array<int, string> $jusqua ce que rend avancementValideJusqua()
+ */
+function avancementCordonValide(array $soudure, array $jusqua): bool
+{
+    // Un visa est plus fort que tout : quelqu'un a signé cette ligne-là, nommément.
+    if (!empty($soudure['vise_par'])) return true;
+    // Une ligne seulement proposée par un pointage n'a même pas été saisie.
+    if (!empty($soudure['numero_propose'])) return false;
+    // Sans soudeur, la ligne vient de l'encadrement : il n'a personne à attendre.
+    $soudeur = (int) ($soudure['id_soudeur'] ?? 0);
+    if ($soudeur < 1) return true;
+    $saisie = (string) ($soudure['date_saisie'] ?? '');
+    // Les deux dates sont au même format : les comparer comme du texte les range bien.
+    return $saisie !== '' && isset($jusqua[$soudeur]) && $saisie <= $jusqua[$soudeur];
+}
+
+/**
  * La déclaration en attente d'une affectation, s'il y en a une.
  *
  * Une seule à la fois : déclarer de nouveau remplace la précédente — voir
