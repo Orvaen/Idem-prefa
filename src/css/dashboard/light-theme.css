@@ -583,16 +583,6 @@ body[data-theme="light"],
     border-color: var(--border) !important;
 }
 
-[data-theme="light"] .planning-matrix-table td.status-ok {
-    background: #dcfce7 !important;
-    color: #166534 !important;
-}
-
-[data-theme="light"] .planning-matrix-table td.status-non-ok {
-    background: #fee2e2 !important;
-    color: #991b1b !important;
-}
-
 [data-theme="light"] .planning-matrix-table td.status-ras {
     background: #f1f5f9 !important;
     color: #475569 !important;
@@ -609,14 +599,6 @@ body[data-theme="light"],
     background: #f8fafc !important;
     border-color: var(--border) !important;
     color: #334155 !important;
-}
-
-[data-theme="light"] .gantt-bg-col.is-weekend {
-    background: #f8fafc !important;
-}
-
-[data-theme="light"] .gantt-bg-col.is-workday {
-    background: #ffffff !important;
 }
 
 [data-theme="light"] .gantt-label-col {
@@ -656,20 +638,6 @@ body[data-theme="light"],
 /* ===== PAGE DE PLANNING ===== */
 [data-theme="light"] .planning-page {
     color: #0f172a !important;
-}
-
-[data-theme="light"] .planning-feedback.is-success {
-    color: #16a34a !important;
-}
-
-[data-theme="light"] .planning-feedback.is-error {
-    color: #dc2626 !important;
-}
-
-[data-theme="light"] #contenaire #planning-page-message.is-removed {
-    color: #991b1b !important;
-    background: #fef2f2 !important;
-    border-left: 3px solid #ef4444 !important;
 }
 
 /* ===== BOUTONS PLANNING ===== */
@@ -714,25 +682,7 @@ body[data-theme="light"],
     font-weight: 700;
 }
 
-/* ===== GANTT - NUMÉROS DE JOURS ===== */
-[data-theme="light"] .gantt-day-number {
-    color: #334155 !important;
-    border-right-color: var(--border) !important;
-}
-
-[data-theme="light"] .gantt-day-number.is-workday {
-    background: #f0fdf4 !important;
-    color: #166534 !important;
-}
-
-[data-theme="light"] .gantt-day-number.is-weekend {
-    background: #f8fafc !important;
-    color: #94a3b8 !important;
-}
-
 [data-theme="light"] .gantt-day-number.is-today {
-    background: #eff6ff !important;
-    color: #0A6B93 !important;
     font-weight: 800;
 }
 
@@ -741,22 +691,7 @@ body[data-theme="light"],
     border-right-color: rgba(203, 213, 225, 0.5) !important;
 }
 
-[data-theme="light"] .gantt-bg-col.is-workday {
-    background: rgba(240, 253, 244, 0.4) !important;
-}
-
-[data-theme="light"] .gantt-bg-col.is-weekend {
-    background: rgba(241, 245, 249, 0.5) !important;
-}
-
 /* ===== GANTT - LIGNES ===== */
-[data-theme="light"] .gantt-row:hover {
-    background: #f1f5f9 !important;
-}
-
-[data-theme="light"] .gantt-row.is-selected {
-    background: #eff6ff !important;
-}
 
 /* ===== GANTT - BADGE AFFAIRES ===== */
 [data-theme="light"] .gantt-affaire-badge {
@@ -766,16 +701,8 @@ body[data-theme="light"],
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
 }
 
-[data-theme="light"] .gantt-affaire-badge:hover {
-    background: #eff6ff !important;
-    border-color: #93c5fd !important;
-    color: #1e40af !important;
-}
-
 [data-theme="light"] .gantt-row.is-selected .gantt-affaire-badge {
-    background: #d9eef8 !important;
     border-color: #2E9FD4 !important;
-    color: #1e40af !important;
 }
 
 /* ===== GANTT - BARRES ===== */
@@ -823,10 +750,6 @@ body[data-theme="light"],
     color: #0f172a !important;
 }
 
-[data-theme="light"] .planning-info-item dd a {
-    color: #0A6B93 !important;
-}
-
 /* ===== MATRICE AVANCEMENT (carte 2) ===== */
 [data-theme="light"] .planning-matrix-table th {
     background: #f8fafc !important;
@@ -852,10 +775,6 @@ body[data-theme="light"],
     border-top-color: var(--border) !important;
     border-right-color: var(--border) !important;
     border-bottom-color: var(--border) !important;
-}
-
-[data-theme="light"] .comment-meta {
-    color: #0A6B93 !important;
 }
 
 [data-theme="light"] .comment-text {
@@ -888,8 +807,6 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .planning-urgent-badge {
-    background: #fef2f2 !important;
-    color: #dc2626 !important;
     border-color: #fca5a5 !important;
 }
 
@@ -909,24 +826,13 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .planning-dialog-badge {
-    color: #0A6B93 !important;
-    background: rgba(37, 99, 235, 0.08) !important;
     border-color: rgba(37, 99, 235, 0.25) !important;
-}
-
-[data-theme="light"] .planning-dialog-heading h2 {
-    color: #0f172a !important;
 }
 
 [data-theme="light"] .planning-dialog-close {
     background: #f1f5f9 !important;
     border-color: var(--border) !important;
     color: #64748b !important;
-}
-
-[data-theme="light"] .planning-dialog-close:hover {
-    background: #e2e8f0 !important;
-    color: #0f172a !important;
 }
 
 [data-theme="light"] .planning-meta-chip {
@@ -938,14 +844,6 @@ body[data-theme="light"],
     color: #64748b !important;
 }
 
-[data-theme="light"] .planning-meta-chip .meta-val {
-    color: #0f172a !important;
-}
-
-[data-theme="light"] .planning-label {
-    color: #475569 !important;
-}
-
 [data-theme="light"] .planning-date-input {
     background: #f8fafc !important;
     border-color: #cbd5e1 !important;
@@ -953,12 +851,7 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .planning-date-input:focus {
-    border-color: #0D79A8 !important;
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
-}
-
-[data-theme="light"] .planning-help-text {
-    color: #64748b !important;
 }
 
 [data-theme="light"] .planning-preview {
@@ -966,13 +859,7 @@ body[data-theme="light"],
     border-color: #cbd5e1 !important;
 }
 
-[data-theme="light"] .planning-preview-dates {
-    color: #0f172a !important;
-}
-
 [data-theme="light"] .planning-preview-badge {
-    background: rgba(37, 99, 235, 0.1) !important;
-    color: #1e40af !important;
     border-color: rgba(37, 99, 235, 0.3) !important;
 }
 
@@ -981,25 +868,13 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .planning-btn-remove {
-    background: rgba(239, 68, 68, 0.07) !important;
     border-color: rgba(239, 68, 68, 0.25) !important;
-    color: #dc2626 !important;
-}
-
-[data-theme="light"] .planning-btn-remove:hover {
-    background: rgba(239, 68, 68, 0.15) !important;
-    color: #b91c1c !important;
 }
 
 [data-theme="light"] .planning-btn-cancel {
     background: #f8fafc !important;
     border-color: var(--border) !important;
     color: #475569 !important;
-}
-
-[data-theme="light"] .planning-btn-cancel:hover {
-    background: #f1f5f9 !important;
-    color: #0f172a !important;
 }
 
 [data-theme="light"] .plans-iso-card.is-urgent {

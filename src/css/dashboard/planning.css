@@ -1,3 +1,30 @@
+/* Les couleurs qui n'appartiennent qu'au calendrier. Le reste de l'écran puise dans les
+   jetons de la maison : son texte, son azur, son vert et son rouge sont ceux des autres
+   écrans, et le thème clair n'a plus à les forcer un par un.
+
+   « fond » et « case » remplacent dix gris qui tenaient en deux points d'écart — #141a24,
+   #161c26, #181e28, #19202c, #1a212d, #1a222e, #1b222e, #1e2634, #1f2735 — et que
+   personne n'aurait su distinguer à l'œil. */
+:root {
+    --planning-fond: #1a222e;
+    --planning-case: #1b222e;
+    --planning-chome-fond: #141922;
+    --planning-chome-texte: #64748b;
+    --planning-chome-colonne: rgba(15, 23, 42, 0.35);
+    --planning-ouvre-colonne: rgba(34, 197, 94, 0.04);
+    --voile-fenetre: rgba(8, 12, 20, 0.75);
+}
+
+[data-theme="light"] {
+    --planning-fond: #f8fafc;
+    --planning-case: #f1f5f9;
+    --planning-chome-fond: #f8fafc;
+    --planning-chome-texte: #94a3b8;
+    --planning-chome-colonne: rgba(241, 245, 249, 0.5);
+    --planning-ouvre-colonne: rgba(240, 253, 244, 0.4);
+    --voile-fenetre: rgba(15, 23, 42, 0.4);
+}
+
 /* ==========================================================================
    PAGE PLANNING - THEME HARMONISÉ AVEC LE DASHBOARD (Variables globales)
    ========================================================================== */
@@ -77,7 +104,7 @@
 
 .planning-page .planning-button:hover {
     background: var(--hover);
-    border-color: #4b5563;
+    border-color: var(--border);
 }
 
 .planning-page button:focus-visible,
@@ -166,17 +193,17 @@
 }
 
 .planning-feedback.is-success {
-    color: #4ade80;
+    color: var(--succes-texte);
 }
 
 .planning-feedback.is-error {
-    color: #f87171;
+    color: var(--alerte-texte);
 }
 
 #contenaire #planning-page-message.is-removed {
-    color: #fda4af !important;
-    background: #3f202b;
-    border-left: 3px solid #f87171;
+    color: var(--alerte-texte) !important;
+    background: var(--alerte-fond);
+    border-left: 3px solid var(--alerte-texte);
     border-radius: 4px;
     padding: 10px 12px;
 }
@@ -271,7 +298,7 @@ body.is-panning-gantt .gantt-bar:hover {
     font-weight: 600;
     font-size: 12px;
     color: var(--text-muted);
-    background: #181e28;
+    background: var(--planning-fond);
     border-right: 1px solid var(--border);
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -282,7 +309,7 @@ body.is-panning-gantt .gantt-bar:hover {
     display: grid;
     grid-template-columns: repeat(var(--gantt-days), minmax(0, 1fr));
     border-bottom: 1px solid var(--border);
-    background: #181e28;
+    background: var(--planning-fond);
 }
 
 .gantt-week-cell {
@@ -293,7 +320,7 @@ body.is-panning-gantt .gantt-bar:hover {
     font-size: 12px;
     color: var(--text);
     border-right: 1px solid var(--border);
-    background: #1b222e;
+    background: var(--planning-case);
 }
 
 .gantt-week-cell:last-child {
@@ -317,19 +344,19 @@ body.is-panning-gantt .gantt-bar:hover {
 }
 
 .gantt-day-number.is-workday {
-    background: #183325; /* Vert sobre en dark mode */
-    color: #86efac;
+    background: var(--succes-fond);
+    color: var(--succes-texte);
 }
 
 .gantt-day-number.is-weekend {
-    background: #141922; /* Teinte sombre week-end */
-    color: #64748b;
+    background: var(--planning-chome-fond);
+    color: var(--planning-chome-texte);
 }
 
 .gantt-day-number.is-today {
     font-weight: 800;
-    color: #93c5fd;
-    background: #1d364a;
+    color: var(--accent-texte);
+    background: var(--accent-fond);
 }
 
 /* Corps du Gantt */
@@ -358,11 +385,11 @@ body.is-panning-gantt .gantt-bar:hover {
 }
 
 .gantt-bg-col.is-workday {
-    background: rgba(34, 197, 94, 0.04); /* Vert discret */
+    background: var(--planning-ouvre-colonne); /* Vert discret */
 }
 
 .gantt-bg-col.is-weekend {
-    background: rgba(15, 23, 42, 0.35); /* Gris week-end */
+    background: var(--planning-chome-colonne); /* Gris week-end */
 }
 
 /* Ligne rouge verticale Aujourd'hui */
@@ -393,11 +420,11 @@ body.is-panning-gantt .gantt-bar:hover {
 }
 
 .gantt-row:hover {
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--planning-case);
 }
 
 .gantt-row.is-selected {
-    background: rgba(37, 99, 235, 0.12);
+    background: var(--accent-fond);
 }
 
 /* Colonne étiquette d'affaire à gauche */
@@ -417,7 +444,7 @@ body.is-panning-gantt .gantt-bar:hover {
 .gantt-affaire-badge {
     width: 100%;
     padding: 7px 10px;
-    background: #1f2735;
+    background: var(--planning-fond);
     border: 1px solid var(--border);
     border-radius: 4px;
     color: var(--text);
@@ -433,15 +460,15 @@ body.is-panning-gantt .gantt-bar:hover {
 }
 
 .gantt-affaire-badge:hover {
-    border-color: #2E9FD4;
-    background: #253347;
-    color: #93c5fd;
+    border-color: var(--accent-texte);
+    background: var(--accent-fond);
+    color: var(--accent-texte);
 }
 
 .gantt-row.is-selected .gantt-affaire-badge {
     border-color: #2E9FD4;
-    background: #1e3a5f;
-    color: #93c5fd;
+    background: var(--selection-fond);
+    color: var(--accent-texte);
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.35);
 }
 
@@ -568,7 +595,7 @@ body.is-panning-gantt .gantt-bar:hover {
 }
 
 .planning-card-header {
-    background: #1a222e;
+    background: var(--planning-fond);
     color: var(--text);
     font-size: 13px;
     font-weight: 700;
@@ -589,7 +616,7 @@ body.is-panning-gantt .gantt-bar:hover {
 
 .planning-card-footer {
     padding: 8px 12px;
-    background: #161c26;
+    background: var(--planning-fond);
     border-top: 1px solid var(--border);
     display: flex;
     justify-content: flex-end;
@@ -634,7 +661,7 @@ body.is-panning-gantt .gantt-bar:hover {
 }
 
 .planning-info-item dd a {
-    color: #60a5fa;
+    color: var(--accent-texte);
     text-decoration: underline;
 }
 
@@ -659,7 +686,7 @@ body.is-panning-gantt .gantt-bar:hover {
 }
 
 .planning-matrix-table th {
-    background: #19202c;
+    background: var(--planning-fond);
     font-weight: 600;
     color: var(--text);
 }
@@ -667,25 +694,25 @@ body.is-panning-gantt .gantt-bar:hover {
 .planning-matrix-table td.step-label {
     text-align: left;
     font-weight: 600;
-    background: #1a222e;
+    background: var(--planning-fond);
     color: var(--text);
     padding-left: 10px;
 }
 
 .planning-matrix-table td.status-ok {
-    background: #143825;
-    color: #86efac;
+    background: var(--succes-fond);
+    color: var(--succes-texte);
     font-weight: 700;
 }
 
 .planning-matrix-table td.status-non-ok {
-    background: #3f2219;
-    color: #fdba74;
+    background: var(--alerte-fond);
+    color: var(--alerte-texte);
     font-weight: 700;
 }
 
 .planning-matrix-table td.status-ras {
-    background: #1e2634;
+    background: var(--planning-case);
     color: var(--text-muted);
     font-weight: 500;
 }
@@ -699,7 +726,7 @@ body.is-panning-gantt .gantt-bar:hover {
 
 .comment-item {
     padding: 8px 10px;
-    background: #1a212d;
+    background: var(--planning-fond);
     border-left: 3px solid #2E9FD4;
     border-radius: 3px;
     border-top: 1px solid rgba(52, 61, 76, 0.4);
@@ -710,7 +737,7 @@ body.is-panning-gantt .gantt-bar:hover {
 .comment-meta {
     font-size: 11px;
     font-weight: 700;
-    color: #60a5fa;
+    color: var(--accent-texte);
     margin-bottom: 3px;
 }
 
@@ -759,7 +786,7 @@ body.is-panning-gantt .gantt-bar:hover {
 
 .planning-backlog-summary {
     padding: 10px 16px;
-    background: #1a222e;
+    background: var(--planning-fond);
     font-size: 13px;
     font-weight: 600;
     color: var(--text);
@@ -807,8 +834,8 @@ body.is-panning-gantt .gantt-bar:hover {
 }
 
 .planning-urgent-badge {
-    background: #3f2219;
-    color: #fca5a5;
+    background: var(--alerte-fond);
+    color: var(--alerte-texte);
     border: 1px solid #7f1d1d;
     padding: 2px 6px;
     border-radius: 3px;
@@ -837,7 +864,7 @@ dialog#planning-dialog {
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 16px;
     padding: 0;
-    background: #1e2634;
+    background: var(--surface);
     color: var(--text);
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
     overflow: hidden;
@@ -845,7 +872,7 @@ dialog#planning-dialog {
 }
 
 dialog.planning-dialog::backdrop {
-    background: rgba(8, 12, 20, 0.75);
+    background: var(--voile-fenetre);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
 }
@@ -876,8 +903,8 @@ dialog.planning-dialog::backdrop {
     font-weight: 800;
     letter-spacing: 0.8px;
     text-transform: uppercase;
-    color: #60a5fa;
-    background: rgba(59, 130, 246, 0.15);
+    color: var(--accent-texte);
+    background: var(--accent-fond);
     border: 1px solid rgba(59, 130, 246, 0.3);
     padding: 2px 8px;
     border-radius: 6px;
@@ -888,13 +915,13 @@ dialog.planning-dialog::backdrop {
 .planning-dialog-heading h2 {
     font-size: 20px;
     font-weight: 700;
-    color: #ffffff;
+    color: var(--text);
     margin: 0;
     line-height: 1.2;
 }
 
 .planning-dialog-close {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--planning-case);
     border: 1px solid rgba(255, 255, 255, 0.1);
     color: var(--text-muted);
     width: 32px;
@@ -909,8 +936,8 @@ dialog.planning-dialog::backdrop {
 }
 
 .planning-dialog-close:hover {
-    background: rgba(255, 255, 255, 0.15);
-    color: #ffffff;
+    background: var(--hover);
+    color: var(--text);
 }
 
 .planning-request-chips {
@@ -921,7 +948,7 @@ dialog.planning-dialog::backdrop {
 }
 
 .planning-meta-chip {
-    background: #141a24;
+    background: var(--planning-fond);
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 6px 12px;
@@ -937,7 +964,7 @@ dialog.planning-dialog::backdrop {
 }
 
 .planning-meta-chip .meta-val {
-    color: #f1f5f9;
+    color: var(--text);
     font-weight: 600;
 }
 
@@ -956,16 +983,16 @@ dialog.planning-dialog::backdrop {
 .planning-label {
     font-size: 12px;
     font-weight: 600;
-    color: #cbd5e1;
+    color: var(--text-muted);
     display: flex;
     align-items: center;
     gap: 6px;
 }
 
 .planning-date-input {
-    background: #141a24;
+    background: var(--planning-fond);
     border: 1px solid var(--border);
-    color: #f1f5f9;
+    color: var(--text);
     padding: 10px 12px;
     border-radius: 8px;
     font-size: 13px;
@@ -977,19 +1004,19 @@ dialog.planning-dialog::backdrop {
 }
 
 .planning-date-input:focus {
-    border-color: #2E9FD4;
+    border-color: var(--accent);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
 }
 
 .planning-help-text {
     font-size: 11px;
-    color: #94a3b8;
+    color: var(--text-muted);
     line-height: 1.3;
     margin-top: -8px;
 }
 
 .planning-preview {
-    background: #141a24;
+    background: var(--planning-fond);
     border: 1px dashed rgba(255, 255, 255, 0.15);
     border-radius: 10px;
     padding: 10px 14px;
@@ -1011,7 +1038,7 @@ dialog.planning-dialog::backdrop {
     align-items: center;
     gap: 8px;
     font-size: 13px;
-    color: #f1f5f9;
+    color: var(--text);
     font-weight: 600;
 }
 
@@ -1021,8 +1048,8 @@ dialog.planning-dialog::backdrop {
 }
 
 .planning-preview-badge {
-    background: rgba(59, 130, 246, 0.2);
-    color: #93c5fd;
+    background: var(--accent-fond);
+    color: var(--accent-texte);
     border: 1px solid rgba(59, 130, 246, 0.4);
     padding: 4px 10px;
     border-radius: 999px;
@@ -1066,9 +1093,9 @@ dialog.planning-dialog::backdrop {
 }
 
 .planning-btn-remove {
-    background: rgba(239, 68, 68, 0.1);
+    background: var(--alerte-fond);
     border: 1px solid rgba(239, 68, 68, 0.3);
-    color: #f87171;
+    color: var(--alerte-texte);
     padding: 9px 14px;
     border-radius: 8px;
     font-size: 12px;
@@ -1081,15 +1108,15 @@ dialog.planning-dialog::backdrop {
 }
 
 .planning-btn-remove:hover {
-    background: rgba(239, 68, 68, 0.25);
+    background: var(--alerte-fond);
     border-color: rgba(239, 68, 68, 0.5);
-    color: #ffffff;
+    color: var(--alerte-texte);
 }
 
 .planning-btn-cancel {
     background: transparent;
     border: 1px solid var(--border);
-    color: #cbd5e1;
+    color: var(--text-muted);
     padding: 9px 16px;
     border-radius: 8px;
     font-size: 13px;
@@ -1099,8 +1126,8 @@ dialog.planning-dialog::backdrop {
 }
 
 .planning-btn-cancel:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: #ffffff;
+    background: var(--hover);
+    color: var(--text);
 }
 
 .planning-btn-submit {
