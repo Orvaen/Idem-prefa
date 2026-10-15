@@ -48,7 +48,7 @@ function avancementSouduresFaites(PDO $db, int $elementId): int
 function avancementSouduresPrevues(PDO $db, int $elementId): array
 {
     require_once __DIR__ . '/plan_document.php';
-    require_once __DIR__ . '/lecture/plan_lignes.php';
+    require_once __DIR__ . '/../lecture/plan_lignes.php';
 
     $demande = $db->prepare('SELECT id_demande FROM element_atelier WHERE id = ?');
     $demande->execute([$elementId]);

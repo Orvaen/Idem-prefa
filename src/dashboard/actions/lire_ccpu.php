@@ -2,7 +2,7 @@
 // Lit (ou relit) les coulées d'un certificat matière et renvoie le bloc à afficher.
 // Appelé à l'ouverture de la fiche de détail, pour chaque certificat pas encore lu.
 require_once __DIR__ . '/../includes/prefa_context.php';
-require_once __DIR__ . '/../includes/ccpu_demande.php';
+require_once __DIR__ . '/../includes/materiel/ccpu_demande.php';
 prefaPost();
 $csrf = Session::jeton();
 // La lecture d'un scan dure plusieurs secondes. On rend la session avant : PHP la

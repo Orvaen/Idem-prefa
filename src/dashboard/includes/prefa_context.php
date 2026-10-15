@@ -10,7 +10,7 @@
  */
 require_once __DIR__ . '/../../db.php';
 require_once __DIR__ . '/../../modeles/autoload.php';
-require_once __DIR__ . '/prefa_references.php';
+require_once __DIR__ . '/demande/prefa_references.php';
 
 Session::demarrer();
 header('Cache-Control: no-store');

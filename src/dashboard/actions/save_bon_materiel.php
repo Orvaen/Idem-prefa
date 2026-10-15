@@ -4,7 +4,7 @@
 // La lecture propose, elle ne décide pas : c'est ici que la liste devient une liste dont
 // quelqu'un répond. Le nom de qui a corrigé et la date sont retenus avec elle.
 require_once __DIR__ . '/../includes/prefa_context.php';
-require_once __DIR__ . '/../includes/materiel_bon.php';
+require_once __DIR__ . '/../includes/materiel/materiel_bon.php';
 prefaPost();
 
 if (!$canViewAllPrefa) prefaError(403, 'Les bons de commande sont corrigés par le chargé de production ou le chef d’atelier.');

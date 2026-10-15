@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '/prefa_attachments.php';
+require_once __DIR__ . '/../demande/prefa_attachments.php';
 
 /**
  * Les fichiers ISO d'un élément d'atelier, et celui sur lequel on travaille.

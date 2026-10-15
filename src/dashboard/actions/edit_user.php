@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/prefa_context.php';
 require_once __DIR__ . '/../../api/User.php';
-require_once __DIR__ . '/../includes/user_display.php';
+require_once __DIR__ . '/../includes/vue/user_display.php';
 
 prefaPost();
 if (!$isAdmin) prefaError(403, 'Seul un administrateur peut modifier un compte.');

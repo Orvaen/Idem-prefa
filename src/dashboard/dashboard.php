@@ -3,9 +3,9 @@
 require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../modeles/autoload.php';
 require_once __DIR__ . '/includes/comptes.php';
-require_once __DIR__ . '/includes/user_display.php';
+require_once __DIR__ . '/includes/vue/user_display.php';
 require_once __DIR__ . '/includes/menu.php';
-require_once __DIR__ . '/includes/accueil.php';
+require_once __DIR__ . '/includes/demande/accueil.php';
 
 Session::demarrer();
 header('Cache-Control: no-store');

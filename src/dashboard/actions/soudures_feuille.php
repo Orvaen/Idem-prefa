@@ -6,7 +6,7 @@
 // action : l'écran « Mes soudures » ne lit qu'une page à la fois, celle qu'on regarde,
 // au lieu de relire les quinze d'un cahier avant d'afficher quoi que ce soit.
 require_once __DIR__ . '/../includes/prefa_context.php';
-require_once __DIR__ . '/../includes/soudure_atelier.php';
+require_once __DIR__ . '/../includes/atelier/soudure_atelier.php';
 
 prefaPost();
 if (!$isWorkshopPersonnel) prefaError(403, 'Cette page est réservée au personnel atelier.');
@@ -31,7 +31,7 @@ $feuille = soudureAtelierFeuille($db, $elementId, $plan, $page, (int) $actor['id
 
 // L'état du plan entier, pour les deux autres chiffres de l'écran : la feuille ouverte ne
 // dit pas où en est le cahier, et c'est pourtant ce qui part en validation.
-require_once __DIR__ . '/../includes/avancement.php';
+require_once __DIR__ . '/../includes/atelier/avancement.php';
 $prevu = avancementSouduresPrevues($db, $elementId);
 $avancement = $db->prepare('SELECT avancement FROM affectation_atelier
     WHERE id_element = ? AND id_utilisateur = ? AND actif = 1 LIMIT 1');

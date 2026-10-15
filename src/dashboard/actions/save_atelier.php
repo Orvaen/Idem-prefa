@@ -1,8 +1,8 @@
 <?php
 require_once __DIR__ . '/../includes/prefa_context.php';
-require_once __DIR__ . '/../includes/prefa_workshop.php';
-require_once __DIR__ . '/../includes/prefa_attachments.php';
-require_once __DIR__ . '/../includes/atelier.php';
+require_once __DIR__ . '/../includes/atelier/prefa_workshop.php';
+require_once __DIR__ . '/../includes/demande/prefa_attachments.php';
+require_once __DIR__ . '/../includes/atelier/atelier.php';
 prefaPost();
 if (!$canManageWorkshop) prefaError(403, 'Action réservée au chef d’atelier ou à l’administrateur.');
 $requestId = filter_var($_POST['id'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);

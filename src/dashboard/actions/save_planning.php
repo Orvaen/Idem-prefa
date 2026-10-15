@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/prefa_context.php';
-require_once __DIR__ . '/../includes/planning.php';
+require_once __DIR__ . '/../includes/atelier/planning.php';
 prefaPost();
 if (!$isAdmin) prefaError(403, 'Seul un administrateur peut organiser le planning.');
 

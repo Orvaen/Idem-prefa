@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/prefa_context.php';
-require_once __DIR__ . '/../includes/materiel_bon.php';
+require_once __DIR__ . '/../includes/materiel/materiel_bon.php';
 
 // Le bon décrit la demande entière, pas un plan : l'atelier le lit par affectation, pas
 // ici. Cet écran est celui de l'encadrement, qui fait lire et qui corrige.

@@ -1,12 +1,12 @@
 <?php
-require_once __DIR__ . '/../includes/prefa_attachments.php';
-require_once __DIR__ . '/../includes/prefa_hours.php';
-require_once __DIR__ . '/../includes/ccpu_demande.php';
-require_once __DIR__ . '/../includes/prefa_workshop.php';
-require_once __DIR__ . '/../includes/prefa_visibilite.php';
-require_once __DIR__ . '/../includes/commandes.php';
-require_once __DIR__ . '/../includes/materiel_bon.php';
-require_once __DIR__ . '/../includes/prefa_documents.php';
+require_once __DIR__ . '/../includes/demande/prefa_attachments.php';
+require_once __DIR__ . '/../includes/demande/prefa_hours.php';
+require_once __DIR__ . '/../includes/materiel/ccpu_demande.php';
+require_once __DIR__ . '/../includes/atelier/prefa_workshop.php';
+require_once __DIR__ . '/../includes/demande/prefa_visibilite.php';
+require_once __DIR__ . '/../includes/materiel/commandes.php';
+require_once __DIR__ . '/../includes/materiel/materiel_bon.php';
+require_once __DIR__ . '/../includes/demande/prefa_documents.php';
 $workshopUsers = $canManageWorkshop ? prefaWorkshopPersonnel($db) : [];
 
 $q = trim((string) ($_GET['q'] ?? ''));

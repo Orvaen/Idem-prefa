@@ -1,8 +1,8 @@
 <?php
 // Enregistre un PV : état, date, commentaire, et dépôt ou retrait de documents.
 require_once __DIR__ . '/../includes/prefa_context.php';
-require_once __DIR__ . '/../includes/pv.php';
-require_once __DIR__ . '/../includes/commandes.php';
+require_once __DIR__ . '/../includes/demande/pv.php';
+require_once __DIR__ . '/../includes/materiel/commandes.php';
 prefaPost();
 if (!$canFillPv) prefaError(403, 'Les PV sont renseignés par le chef d’atelier.');
 

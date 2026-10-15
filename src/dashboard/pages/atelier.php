@@ -1,8 +1,8 @@
 <?php
 require_once __DIR__ . '/../includes/prefa_context.php';
-require_once __DIR__ . '/../includes/prefa_attachments.php';
-require_once __DIR__ . '/../includes/atelier.php';
-require_once __DIR__ . '/../includes/avancement.php';
+require_once __DIR__ . '/../includes/demande/prefa_attachments.php';
+require_once __DIR__ . '/../includes/atelier/atelier.php';
+require_once __DIR__ . '/../includes/atelier/avancement.php';
 if (!$isWorkshopPersonnel) prefaError(403, 'Cette page est réservée au personnel atelier.');
 $stmt = $db->prepare('SELECT a.*, e.reference, e.libelle, e.id_demande FROM affectation_atelier a JOIN element_atelier e ON e.id = a.id_element JOIN demande_prefabrication d ON d.id = e.id_demande WHERE a.id_utilisateur = ? AND a.actif = 1 AND d.id_statut = 2 ORDER BY e.id_demande DESC, e.reference, a.type_affectation');
 $stmt->execute([$actor['id']]);

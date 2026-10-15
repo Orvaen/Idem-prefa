@@ -6,8 +6,8 @@
 // personne n'a enregistré, et un plan dont le tableau n'est pas reconnu — un scan, un
 // autre gabarit — rend simplement une liste vide, le placement manuel prenant le relais.
 require_once __DIR__ . '/../includes/prefa_context.php';
-require_once __DIR__ . '/../includes/prefa_attachments.php';
-require_once __DIR__ . '/../includes/plan_document.php';
+require_once __DIR__ . '/../includes/demande/prefa_attachments.php';
+require_once __DIR__ . '/../includes/atelier/plan_document.php';
 require_once __DIR__ . '/../includes/lecture/plan_lignes.php';
 
 prefaPost();
@@ -22,7 +22,7 @@ if (!$elementId) prefaError(400, 'Plan invalide.');
 //
 // Il reste tenu à SES plans : l'affectation est la porte, et elle est vérifiée ici.
 if (!$canManageWorkshop) {
-    require_once __DIR__ . '/../includes/soudure_atelier.php';
+    require_once __DIR__ . '/../includes/atelier/soudure_atelier.php';
     if (!$isWorkshopPersonnel || !soudureAtelierAffectation($db, $elementId, (int) $actor['id'])) {
         prefaError(403, 'Ce plan ne vous est pas affecté.');
     }

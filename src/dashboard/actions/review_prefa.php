@@ -10,8 +10,8 @@ if (mb_strlen($comment) > 1000 || ($status === '3' && $comment === '')) prefaErr
 
 try {
     if ($status === '2') {
-        require_once __DIR__ . '/../includes/planning.php';
-        require_once __DIR__ . '/../includes/prefa_hours.php';
+        require_once __DIR__ . '/../includes/atelier/planning.php';
+        require_once __DIR__ . '/../includes/demande/prefa_hours.php';
 
         $reqStmt = $db->prepare('SELECT pouces_total_iso, heures_chiffrees FROM demande_prefabrication WHERE id = ?');
         $reqStmt->execute([$id]);

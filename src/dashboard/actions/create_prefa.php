@@ -1,9 +1,9 @@
 <?php
 require_once __DIR__ . '/../includes/prefa_context.php';
 if (!$canEditPrefa) prefaError(403, 'Création et modification réservées aux demandeurs.');
-require_once __DIR__ . '/../includes/prefa_attachments.php';
-require_once __DIR__ . '/../includes/prefa_hours.php';
-require_once __DIR__ . '/../includes/prefa_pdf.php';
+require_once __DIR__ . '/../includes/demande/prefa_attachments.php';
+require_once __DIR__ . '/../includes/demande/prefa_hours.php';
+require_once __DIR__ . '/../includes/demande/prefa_pdf.php';
 // Vérifier le type de conexion et la méthode POST reçus.
 prefaPost();
 

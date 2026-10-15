@@ -1,7 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../includes/prefa_context.php';
-require_once __DIR__ . '/../includes/atelier.php';
+require_once __DIR__ . '/../includes/atelier/atelier.php';
 
 // L'adresse porte la référence de la demande, pas son identifiant technique.
 $id = prefaIdDepuisReference((string) ($_GET['ref'] ?? ''));

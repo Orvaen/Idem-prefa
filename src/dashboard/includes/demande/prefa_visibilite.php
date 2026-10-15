@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '/../../modeles/autoload.php';
+require_once __DIR__ . '/../../../modeles/autoload.php';
 
 /**
  * Quelles demandes une personne a le droit de voir.

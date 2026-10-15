@@ -1,8 +1,8 @@
 <?php
 
-require_once __DIR__ . '/../prefa_attachments.php';
+require_once __DIR__ . '/../demande/prefa_attachments.php';
 require_once __DIR__ . '/plan_table.php';
-require_once __DIR__ . '/../soudure.php';
+require_once __DIR__ . '/../atelier/soudure.php';
 
 /**
  * Ce qui s'écrit sur un plan : les tableaux qu'on y a lus, et la liste soudure rangée

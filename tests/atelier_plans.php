@@ -2,7 +2,7 @@
 // Run from stdin in the PHP container. All fixture changes are rolled back.
 $root = is_dir('/var/www/html/dashboard') ? '/var/www/html' : __DIR__ . '/../src';
 require_once $root . '/db.php';
-require_once $root . '/dashboard/includes/atelier.php';
+require_once $root . '/dashboard/includes/atelier/atelier.php';
 $db = new MyPDO($root . '/my_setting.ini');
 function checkPlan(bool $condition, string $message): void
 {

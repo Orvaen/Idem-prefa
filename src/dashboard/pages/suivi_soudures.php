@@ -1,8 +1,8 @@
 <?php
 require_once __DIR__ . '/../includes/prefa_context.php';
-require_once __DIR__ . '/../includes/atelier.php';
-require_once __DIR__ . '/../includes/avancement.php';
-require_once __DIR__ . '/../includes/soudure.php';
+require_once __DIR__ . '/../includes/atelier/atelier.php';
+require_once __DIR__ . '/../includes/atelier/avancement.php';
+require_once __DIR__ . '/../includes/atelier/soudure.php';
 
 // L'écran de l'encadrement : il regarde l'atelier entier d'un coup. L'atelier, lui, a
 // « Mes soudures » et n'y voit que ses propres plans.

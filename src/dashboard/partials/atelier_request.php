@@ -9,11 +9,11 @@
 /** @var bool $canManageWorkshop */
 /** @var array<int, array<string, mixed>> $workshopUsers */
 
-require_once __DIR__ . '/../includes/atelier.php';
-require_once __DIR__ . '/../includes/avancement.php';
-require_once __DIR__ . '/../includes/plan_document.php';
-require_once __DIR__ . '/../includes/nomenclature.php';
-require_once __DIR__ . '/../includes/soudure.php';
+require_once __DIR__ . '/../includes/atelier/atelier.php';
+require_once __DIR__ . '/../includes/atelier/avancement.php';
+require_once __DIR__ . '/../includes/atelier/plan_document.php';
+require_once __DIR__ . '/../includes/atelier/nomenclature.php';
+require_once __DIR__ . '/../includes/atelier/soudure.php';
 require_once __DIR__ . '/../includes/vue/plan_viewer.php';
 $elements = atelierElements($db, $requestId);
 // Les coulées des certificats de la demande : une seule lecture pour tous ses plans.

@@ -7,7 +7,7 @@
  * quand on y revient depuis un autre écran. Les deux rendent la même vue.
  */
 require_once __DIR__ . '/../includes/prefa_context.php';
-require_once __DIR__ . '/../includes/accueil.php';
+require_once __DIR__ . '/../includes/demande/accueil.php';
 
 $prenom = $utilisateur->prenom;
 $name = $utilisateur->nom;

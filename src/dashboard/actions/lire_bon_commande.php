@@ -4,7 +4,7 @@
 // La lecture ne décide de rien : elle renvoie ce qu'elle a cru lire, et le chef d'atelier
 // corrige avant d'enregistrer. Rien n'est écrit en base ici.
 require_once __DIR__ . '/../includes/prefa_context.php';
-require_once __DIR__ . '/../includes/pv.php';
+require_once __DIR__ . '/../includes/demande/pv.php';
 require_once __DIR__ . '/../includes/lecture/commandes_lignes.php';
 prefaPost();
 if (!$canFillPv) prefaError(403, 'Les bons de commande sont lus par le chef d’atelier.');

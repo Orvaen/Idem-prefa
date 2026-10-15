@@ -2,11 +2,11 @@
 // Feuille de plan intelligent d'un plan ISO, en PDF. Le personnel atelier y a accès
 // pour les plans qui lui sont affectés : c'est sa feuille de travail.
 require_once __DIR__ . '/../includes/prefa_context.php';
-require_once __DIR__ . '/../includes/plan_document.php';
+require_once __DIR__ . '/../includes/atelier/plan_document.php';
 require_once __DIR__ . '/../includes/lecture/plan_iso_pdf.php';
-require_once __DIR__ . '/../includes/nomenclature.php';
-require_once __DIR__ . '/../includes/soudure.php';
-require_once __DIR__ . '/../includes/atelier.php';
+require_once __DIR__ . '/../includes/atelier/nomenclature.php';
+require_once __DIR__ . '/../includes/atelier/soudure.php';
+require_once __DIR__ . '/../includes/atelier/atelier.php';
 
 $elementId = filter_var($_GET['plan'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 if (!$elementId) prefaError(400, 'Plan invalide.');

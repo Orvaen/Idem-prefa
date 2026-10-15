@@ -1,7 +1,7 @@
 <?php
 
-require_once __DIR__ . '/../../dashboard/includes/prefa_visibilite.php';
-require_once __DIR__ . '/../../dashboard/includes/prefa_references.php';
+require_once __DIR__ . '/../../dashboard/includes/demande/prefa_visibilite.php';
+require_once __DIR__ . '/../../dashboard/includes/demande/prefa_references.php';
 
 /**
  * GET /api/demandes        la liste, filtrée par ce que la personne a le droit de voir

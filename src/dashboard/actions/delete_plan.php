@@ -18,8 +18,8 @@
 // et les sortir une par une est une corvée. Une feuille refusée refuse tout le lot — mieux
 // vaut une liste intacte qu'une moitié retirée sans qu'on sache laquelle.
 require_once __DIR__ . '/../includes/prefa_context.php';
-require_once __DIR__ . '/../includes/prefa_attachments.php';
-require_once __DIR__ . '/../includes/plan_document.php';
+require_once __DIR__ . '/../includes/demande/prefa_attachments.php';
+require_once __DIR__ . '/../includes/atelier/plan_document.php';
 
 prefaPost();
 if (!$canManageWorkshop) prefaError(403, 'Seul l’encadrement peut retirer un plan.');

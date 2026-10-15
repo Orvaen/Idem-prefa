@@ -1,7 +1,7 @@
 <?php
 
 require_once __DIR__ . '/prefa_visibilite.php';
-require_once __DIR__ . '/avancement.php';
+require_once __DIR__ . '/../atelier/avancement.php';
 
 /**
  * Ce que l'accueil montre : quelques chiffres, et ce qui a bougé aujourd'hui.

@@ -5,7 +5,7 @@
 // celui qui enregistre. Les contrôles RT/VI/PT et le visa ne passent pas par ici — ils
 // engagent l'encadrement, et soudureAtelierEnregistrer() les laisse intacts.
 require_once __DIR__ . '/../includes/prefa_context.php';
-require_once __DIR__ . '/../includes/soudure_atelier.php';
+require_once __DIR__ . '/../includes/atelier/soudure_atelier.php';
 
 prefaPost();
 if (!$isWorkshopPersonnel) prefaError(403, 'Cette page est réservée au personnel atelier.');
@@ -41,7 +41,7 @@ $feuille = soudureAtelierFeuille($db, $elementId, $plan, $page, (int) $actor['id
 
 // Les mêmes chiffres qu'à la lecture : l'écran se remet à jour d'un bloc après
 // l'enregistrement, et le total du plan vient de bouger.
-require_once __DIR__ . '/../includes/avancement.php';
+require_once __DIR__ . '/../includes/atelier/avancement.php';
 $prevu = avancementSouduresPrevues($db, $elementId);
 $avancement = $db->prepare('SELECT avancement FROM affectation_atelier
     WHERE id_element = ? AND id_utilisateur = ? AND actif = 1 LIMIT 1');
