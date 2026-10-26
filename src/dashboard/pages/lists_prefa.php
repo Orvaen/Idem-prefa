@@ -1,9 +1,12 @@
 <?php
 
 require_once __DIR__ . '/../includes/prefa_context.php';
+// return et non exit : cette page est aussi incluse par dashboard.php, qui a encore le
+// pied de page à écrire. « return » au premier niveau d'un fichier inclus rend la main à
+// celui qui l'inclut, et termine le script quand c'est le navigateur qui l'appelle.
 if ($isWorkshopPersonnel) {
     require __DIR__ . '/atelier.php';
-    exit;
+    return;
 }
 require_once __DIR__ . '/../partials/prefa_list_data.php';
 require_once __DIR__ . '/../includes/vue/filtres.php';

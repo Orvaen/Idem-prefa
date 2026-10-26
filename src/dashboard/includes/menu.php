@@ -272,6 +272,33 @@ function dashboardRayons(): array
 }
 
 /**
+ * L'écran que l'adresse demande — ?vue=list-prefa — ou l'accueil.
+ *
+ * Le serveur rendait toujours l'accueil et laissait le navigateur recharger l'écran voulu
+ * juste après : on voyait l'accueil clignoter, et la page se construisait deux fois.
+ *
+ * @return array<string, mixed> l'entrée de menu, telle que dashboardMenu() la décrit
+ */
+function dashboardVueDemandee(Utilisateur $utilisateur, ?string $vue): array
+{
+    $entrees = dashboardMenuVisible($utilisateur);
+
+    foreach ($entrees as $entree) {
+        if ($entree['id'] === $vue) return $entree;
+    }
+
+    // Une adresse qui nomme un écran inconnu, ou auquel ce rôle n'a pas droit, ouvre
+    // l'accueil sans rien dire. On ne répond pas 404 : l'adresse reste celle d'un tableau
+    // de bord qui existe, c'est seulement l'onglet demandé qui n'est pas pour cette
+    // personne, et le menu à côté montre ce qu'elle peut ouvrir.
+    foreach ($entrees as $entree) {
+        if ($entree['defaut'] ?? false) return $entree;
+    }
+
+    return $entrees[0];
+}
+
+/**
  * Les entrées visibles, rangées par rayon et dans l'ordre des rayons.
  *
  * @return array{avant: list<array>, rayons: array<string, array{libelle: string, entrees: list<array>}>}

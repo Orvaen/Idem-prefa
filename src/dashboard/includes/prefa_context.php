@@ -13,7 +13,9 @@ require_once __DIR__ . '/../../modeles/autoload.php';
 require_once __DIR__ . '/demande/prefa_references.php';
 
 Session::demarrer();
-header('Cache-Control: no-store');
+// Pas d'en-tête si la réponse est déjà commencée : dashboard.php rend la page demandée
+// chez lui, et il a posé le même en-tête bien avant d'écrire sa première balise.
+if (!headers_sent()) header('Cache-Control: no-store');
 date_default_timezone_set('Europe/Paris');
 
 function prefaError(int $status, string $message): never
