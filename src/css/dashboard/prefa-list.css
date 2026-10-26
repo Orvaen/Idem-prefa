@@ -2623,3 +2623,131 @@ summary {
         min-height: 44px;
     }
 }
+
+/* ===== LA LISTE RANGÉE PAR GROUPES =====
+   Une ligne d'en-tête par groupe — un statut, ou une affaire chez le demandeur — avec son
+   compte et, sous chaque statut, ce qu'il attend. Le titre se lit avant les lignes : il est
+   plus gras qu'elles, mais sans bandeau ni fond, pour ne pas recouper le tableau en tranches. */
+
+.prefa-list .prefa-table .prefa-groupe th {
+    height: auto;
+    padding: 20px 12px 8px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+    text-align: left;
+    white-space: normal;
+}
+
+/* Le premier groupe suit l'en-tête des colonnes : l'écart d'un groupe à l'autre y ferait
+   un trou. */
+.prefa-list .prefa-table thead + .prefa-groupe th {
+    padding-top: 14px;
+}
+
+.prefa-groupe-nom {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* La pastille du statut reprend sa couleur ; le nom, lui, reste dans la couleur du texte :
+   c'est un titre, pas une étiquette. */
+.prefa-groupe-statut::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.prefa-list .prefa-groupe-statut {
+    color: var(--text);
+}
+
+.prefa-groupe-statut.status-1::before { background: var(--attente-texte); }
+.prefa-groupe-statut.status-2::before { background: var(--succes-texte); }
+.prefa-groupe-statut.status-3::before { background: var(--alerte-texte); }
+
+.prefa-groupe-compte {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--hover);
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    vertical-align: 1px;
+}
+
+.prefa-groupe-aide {
+    margin-left: 8px;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 400;
+}
+
+/* Les nombres s'alignent à droite, en chiffres de largeur fixe : on compare des pouces
+   et des durées d'une ligne à l'autre, pas des phrases. */
+.prefa-list .prefa-table .prefa-nombre {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+/* La priorité : une étiquette pour l'urgence, rien qu'un mot gris pour le cas courant. */
+.prefa-list .prefa-urgent {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 1px 8px;
+    border-radius: var(--r-sm);
+    background: var(--alerte-fond);
+    color: var(--alerte-texte);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.prefa-list .prefa-urgent::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.prefa-normale {
+    color: var(--text-muted);
+}
+
+/* L'urgente en attente garde son repère, mais plus son fond brun : sur une liste où les
+   urgentes se suivent, il colorait des blocs entiers. Un filet à gauche suffit, l'étiquette
+   « Urgente » dit le reste. */
+.prefa-list .prefa-table .is-urgent-pending > tr:first-child {
+    background: transparent;
+}
+
+.prefa-list .prefa-table .is-urgent-pending > tr:first-child > td:first-child {
+    border-left: 0;
+    box-shadow: inset 2px 0 0 var(--attente-texte);
+}
+
+.prefa-list-summary-urgent {
+    color: var(--alerte-texte) !important;
+}
+
+.prefa-list-summary-point {
+    margin: 0 4px;
+    opacity: .6;
+}
+
+/* « Examiner » est ce que la ligne attend : il garde son contour au repos. Les autres
+   commandes restent fantômes jusqu'au survol. */
+.prefa-list .prefa-toggle.est-principal {
+    border-color: var(--border);
+    color: var(--text);
+    font-weight: 500;
+}

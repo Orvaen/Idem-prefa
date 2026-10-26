@@ -174,11 +174,14 @@ if ($isWorkshopPersonnel) {
                 <?php // Trois fois le même mot : « 0 en attente au total · 0 urgente(s) en
                       // attente · 0 demande(s) affichée(s) ». Les nombres portent le sens, le
                       // reste les sépare — et le « (s) » d'un pluriel qu'on n'ose pas trancher
-                      // se lit comme un formulaire administratif. ?>
+                      // se lit comme un formulaire administratif.
+                      //
+                      // Le compte des urgentes prend la teinte des alertes : c'est le seul
+                      // des trois sur lequel on agit le jour même. ?>
                 <p class="prefa-list-summary">
                     <strong><?= (int) $pendingTotal ?></strong> en attente
                     <span class="prefa-list-summary-point" aria-hidden="true">·</span>
-                    <strong><?= (int) $urgentPending ?></strong> urgente<?= $urgentPending > 1 ? 's' : '' ?>
+                    <strong class="prefa-list-summary-urgent"><?= (int) $urgentPending ?></strong> urgente<?= $urgentPending > 1 ? 's' : '' ?>
                     <span class="prefa-list-summary-point" aria-hidden="true">·</span>
                     <strong><?= (int) $total ?></strong> affichée<?= $total > 1 ? 's' : '' ?>
                 </p>
@@ -241,9 +244,13 @@ if ($isWorkshopPersonnel) {
                                 Demandeur
                             </th>
 
-                            <th scope="col">
-                                Statut
-                            </th>
+                            <?php if ($vueParAffaire): ?>
+                                <!-- Rangée par statut, la liste l'annonce dans le titre de
+                                     chaque groupe : la colonne ne servirait qu'à le redire. -->
+                                <th scope="col">
+                                    Statut
+                                </th>
+                            <?php endif; ?>
 
                             <th scope="col">
                                 Actions
@@ -254,30 +261,56 @@ if ($isWorkshopPersonnel) {
                     </thead>
 
                     <?php
-                    // Une colonne de moins quand l'affaire coiffe déjà ses demandes. Posé
-                    // avant les deux branches : la ligne « aucune demande » s'en sert aussi,
-                    // et sans valeur son colspan retombait à une seule colonne.
-                    $colonnes = $vueParAffaire ? 9 : 10;
+                    // Neuf colonnes dans les deux rangements : l'affaire disparaît quand elle
+                    // coiffe le groupe, le statut quand c'est lui. Posé avant les deux
+                    // branches : la ligne « aucune demande » et le volet de détail s'en servent.
+                    $colonnes = 9;
                     ?>
 
                     <?php if (!empty($requests)): ?>
 
                         <?php
-                        // Une affaire porte plusieurs demandes : chez le demandeur, elles
-                        // se rangent sous le nom de leur chantier, annoncé une fois. Sans
-                        // ce titre, on lirait une liste à plat où rien ne dit à quel
-                        // chantier chaque demande appartient.
-                        $affaireCourante = null;
-                        $parAffaire = [];
-                        if ($vueParAffaire) {
-                            foreach ($requests as $ligne) {
-                                $nom = trim((string) ($ligne['nom_affaire'] ?? ''));
-                                $parAffaire[$nom] = ($parAffaire[$nom] ?? 0) + 1;
-                            }
+                        // Les demandes arrivent rangées — par affaire chez le demandeur, par
+                        // statut ailleurs — et chaque groupe s'annonce une fois, avec son
+                        // compte. Sans ce titre, on lirait une liste à plat où rien ne dit où
+                        // commence le groupe suivant.
+                        $cleGroupe = static fn (array $ligne): string => $vueParAffaire
+                            ? trim((string) ($ligne['nom_affaire'] ?? ''))
+                            : (string) (int) $ligne['id_statut'];
+                        $parGroupe = [];
+                        foreach ($requests as $ligne) {
+                            $cle = $cleGroupe($ligne);
+                            $parGroupe[$cle] = ($parGroupe[$cle] ?? 0) + 1;
                         }
+                        // Une phrase sous chaque statut, pour qui découvre l'écran : ce que
+                        // le groupe attend, ou ce qu'il est devenu.
+                        $aideStatut = [
+                            1 => $isAdmin ? 'à examiner, puis valider ou refuser' : 'en attente de validation',
+                            2 => 'ouvertes à l’atelier',
+                        ];
+                        $groupeCourant = null;
                         ?>
 
                         <?php foreach ($requests as $row): ?>
+                            <?php $groupe = $cleGroupe($row); ?>
+                            <?php if ($groupe !== $groupeCourant): ?>
+                                <?php $groupeCourant = $groupe; ?>
+                                <tbody class="prefa-groupe">
+                                    <tr>
+                                        <th scope="colgroup" colspan="<?= $colonnes ?>">
+                                            <?php if ($vueParAffaire): ?>
+                                                <span class="prefa-groupe-nom"><?= prefaEscape($groupe !== '' ? $groupe : 'Sans affaire') ?></span>
+                                            <?php else: ?>
+                                                <span class="prefa-groupe-nom prefa-groupe-statut status-<?= (int) $row['id_statut'] ?>"><?= prefaEscape($row['libelle']) ?></span>
+                                            <?php endif; ?>
+                                            <span class="prefa-groupe-compte"><?= (int) $parGroupe[$groupe] ?></span>
+                                            <?php if (!$vueParAffaire && isset($aideStatut[(int) $row['id_statut']])): ?>
+                                                <span class="prefa-groupe-aide"><?= prefaEscape($aideStatut[(int) $row['id_statut']]) ?></span>
+                                            <?php endif; ?>
+                                        </th>
+                                    </tr>
+                                </tbody>
+                            <?php endif; ?>
                             <?php
                             require __DIR__
                                 . '/../partials/prefa_list_row.php';

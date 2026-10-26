@@ -106,11 +106,13 @@ $vueParAffaire = !$canViewAllPrefa && !$isWorkshopPersonnel;
 $stmt = $db->prepare(
     'SELECT d.*, s.libelle, u.name, u.prenom, val.name AS valideur_name, val.prenom AS valideur_prenom, TRIM(CONCAT(taker.prenom, \' \', taker.name)) AS prise_en_charge_nom, TRIM(CONCAT(staff.prenom, \' \', staff.name)) AS personnel_atelier_nom, p.libelle AS passivation_libelle, m.libelle AS matiere_libelle' . $joins . $where
     // Celui qui ne voit que ses propres demandes les lit par affaire : elles se suivent
-    // sous leur chantier, la plus récente en tête. L'encadrement et l'atelier gardent
-    // l'ordre chronologique — ils cherchent ce qui vient d'arriver, pas ce qui va ensemble.
+    // sous leur chantier, la plus récente en tête. L'encadrement et l'atelier les lisent par
+    // statut — en attente, validées, refusées, dans l'ordre des identifiants — et, dans
+    // chaque groupe, de la plus récente à la plus ancienne : ce qui demande une décision
+    // vient d'abord, et ce qui vient d'arriver reste en tête de son groupe.
     . ($vueParAffaire
         ? ' ORDER BY d.nom_affaire, d.date_creation DESC, d.id DESC'
-        : ' ORDER BY d.date_creation DESC, d.id DESC')
+        : ' ORDER BY d.id_statut, d.date_creation DESC, d.id DESC')
 );
 foreach ($params as $key => $value) $stmt->bindValue(':' . $key, $value);
 $stmt->execute();

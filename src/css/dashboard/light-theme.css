@@ -1419,3 +1419,11 @@ body[data-theme="light"],
 
 /* La grande vue arrondie est dans dashboard-base.css : elle vaut pour les deux thèmes. */
 
+/* Le compte des urgentes, dans le résumé de la liste : le seul des trois nombres sur
+   lequel on agit le jour même. Venu de la refonte de la liste poussée sur main ; les deux
+   autres règles qui l'accompagnaient n'ont pas été reprises — « Urgente » est désormais
+   une seule règle valable pour les deux thèmes, dans prefa-form.css, et le bouton
+   principal qu'elles encadraient a laissé place au menu d'actions de la ligne. */
+[data-theme="light"] .prefa-list-summary .prefa-list-summary-urgent {
+    color: var(--alerte-texte) !important;
+}
