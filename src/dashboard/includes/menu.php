@@ -44,7 +44,7 @@ function dashboardMenu(): array
             'libelle' => 'Accueil',
             'page' => 'pages/accueil.php',
             'pour' => [],   // vide : tout le monde
-            'icone' => '<path d="m3 10 9-7 9 7v9a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2v-9Z" />',
+            'icone' => '<path d="M4 10.5 12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19z"/><path d="M9.5 20.5V15a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v5.5"/>',
             'styles' => [],
             'scripts' => [],
         ],
@@ -54,7 +54,7 @@ function dashboardMenu(): array
             'libelle' => 'Créer un utilisateur',
             'page' => 'pages/create_users.php',
             'pour' => [Role::ChargeDeProduction],
-            'icone' => '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M19 8v6M22 11h-6" />',
+            'icone' => '<circle cx="10" cy="8" r="3.5"/><path d="M3.5 20c.6-3.4 3.2-5.5 6.5-5.5 1.6 0 3 .5 4.1 1.3"/><path d="M18 14v6M15 17h6"/>',
             'styles' => [],
             // Plus de script propre à cet écran : son champ « Rôle » est le composant
             // filtrable commun, et liste-filtrable.js est dans le socle.
@@ -66,7 +66,7 @@ function dashboardMenu(): array
             'libelle' => 'Liste des utilisateurs',
             'page' => 'pages/lists_users.php',
             'pour' => [Role::ChargeDeProduction],
-            'icone' => '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M19 8v6M22 11h-6" />',
+            'icone' => '<circle cx="9.5" cy="8" r="3.5"/><path d="M3 20c.6-3.4 3.2-5.5 6.5-5.5S15.4 16.6 16 20"/><path d="M15.5 4.8a3.5 3.5 0 0 1 0 6.4M18.5 15c1.5.8 2.4 2.5 2.6 5"/>',
             'styles' => [],
             'scripts' => [],
         ],
@@ -76,7 +76,7 @@ function dashboardMenu(): array
             'libelle' => 'Paramètres',
             'page' => 'pages/settings.php',
             'pour' => [Role::ChargeDeProduction],
-            'icone' => '<path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1" /><circle cx="12" cy="12" r="3.5" />',
+            'icone' => '<path d="M4 7.5h9M17 7.5h3M4 16.5h3M11 16.5h9"/><circle cx="15" cy="7.5" r="2"/><circle cx="9" cy="16.5" r="2"/>',
             'styles' => [],
             'scripts' => [],
         ],
@@ -87,7 +87,7 @@ function dashboardMenu(): array
             'libelle' => 'Affaires',
             'page' => 'pages/affaires.php',
             'pour' => [Role::ChargeDeProduction],
-            'icone' => '<path d="M3 7h18v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" /><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" /><path d="M3 12h18" />',
+            'icone' => '<path d="M3.5 7A1.5 1.5 0 0 1 5 5.5h4l2 2.5h8A1.5 1.5 0 0 1 20.5 9.5V18a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 18z"/><path d="M3.5 11h17"/>',
             'styles' => ['dashboard/affaires.css'],
             'scripts' => ['affaires.js'],
         ],
@@ -99,7 +99,7 @@ function dashboardMenu(): array
             'libelle' => 'Nouvelle demande',
             'page' => 'pages/create_prefa.php',
             'pour' => [Role::ChargeDAffaire],
-            'icone' => '<path d="m10 3 7 4-7 4-7-4 7-4Z" /><path d="M3 7v9l7 4v-9M17 7v5M10 20l3-1.7" /><path d="M18 15v6M15 18h6" />',
+            'icone' => '<path d="M13.5 3.5H7A1.5 1.5 0 0 0 5.5 5v14A1.5 1.5 0 0 0 7 20.5h10a1.5 1.5 0 0 0 1.5-1.5V8.5z"/><path d="M13.5 3.5v5h5"/><path d="M12 11.5v6M9 14.5h6"/>',
             'styles' => [],
             // Le formulaire s'ouvre aussi depuis la liste, pour modifier une demande — et
             // le chargé de production, qui n'en dépose pas, en modifie. Ses scripts sont
@@ -122,7 +122,7 @@ function dashboardMenu(): array
             },
             'page' => 'pages/lists_prefa.php',
             'pour' => [],   // vide : tout le monde
-            'icone' => '<rect x="5" y="4" width="14" height="17" rx="2" /><path d="M9 4V2h6v2M9 10l2 2 4-4M9 16h6" />',
+            'icone' => '<path d="M8.5 7.5h10A1.5 1.5 0 0 1 20 9v10a1.5 1.5 0 0 1-1.5 1.5h-10A1.5 1.5 0 0 1 7 19V9a1.5 1.5 0 0 1 1.5-1.5z"/><path d="M4 16V5a1.5 1.5 0 0 1 1.5-1.5H15"/><path d="m10.5 14 2 2 3.5-3.5"/>',
             'styles' => [],
             'scripts' => [],
         ],
@@ -135,7 +135,7 @@ function dashboardMenu(): array
             'page' => 'pages/soudures.php',
             'pour' => [Role::PersonnelAtelier],
             // Un cordon, et son repère.
-            'icone' => '<path d="M4 15c2-3 4-3 6 0s4 3 6 0 2-3 4-1" /><path d="M8 5h8M12 5v4" />',
+            'icone' => '<path d="M3.5 16c1.4 0 1.4-2 2.8-2s1.4 2 2.8 2 1.4-2 2.8-2 1.4 2 2.8 2 1.4-2 2.8-2 1.4 2 2.5 2"/><path d="M3.5 20h17"/><path d="M8 9.5 6.5 6M12 8.5V4.5M16 9.5 17.5 6"/>',
             'styles' => [...$ressourcesIso['styles'], 'dashboard/soudures.css'],
             'scripts' => [...$ressourcesIso['scripts'], 'soudures.js'],
         ],
@@ -147,7 +147,7 @@ function dashboardMenu(): array
             'libelle' => 'Soudures',
             'page' => 'pages/suivi_soudures.php',
             'pour' => [Role::ChargeDeProduction, Role::ChefDAtelier],
-            'icone' => '<path d="M4 15c2-3 4-3 6 0s4 3 6 0 2-3 4-1" /><path d="M8 5h8M12 5v4" />',
+            'icone' => '<path d="M3.5 16c1.4 0 1.4-2 2.8-2s1.4 2 2.8 2 1.4-2 2.8-2 1.4 2 2.8 2 1.4-2 2.8-2 1.4 2 2.5 2"/><path d="M3.5 20h17"/><path d="m9 7.5 2 2 4-4"/>',
             'styles' => ['dashboard/atelier.css'],
             'scripts' => ['atelier.js', 'suivi-soudures.js'],
         ],
@@ -157,7 +157,7 @@ function dashboardMenu(): array
             'libelle' => 'Plans / ISO & Affectations',
             'page' => 'pages/plans_iso.php',
             'pour' => [Role::ChargeDeProduction, Role::ChefDAtelier],
-            'icone' => '<polygon points="12 2 2 7 12 12 22 7 12 2" /><polyline points="2 17 12 22 22 17" /><polyline points="2 12 12 17 22 12" />',
+            'icone' => '<path d="M3.5 8.5H10a6.5 6.5 0 0 1 6.5 6.5v5.5"/><path d="M3.5 13H10a2 2 0 0 1 2 2v5.5"/><path d="M3.5 7v7.5M10.5 20.5h7.5"/>',
             'styles' => $ressourcesIso['styles'],
             'scripts' => [...$ressourcesIso['scripts'], 'iso.js'],
         ],
@@ -167,7 +167,7 @@ function dashboardMenu(): array
             'libelle' => 'Planning',
             'page' => 'pages/planning.php',
             'pour' => [Role::ChargeDeProduction, Role::ChefDAtelier],
-            'icone' => '<rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 11h18M7 15h3M14 15h3M7 18h3" />',
+            'icone' => '<path d="M5 6h14a1.5 1.5 0 0 1 1.5 1.5V19a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19V7.5A1.5 1.5 0 0 1 5 6z"/><path d="M3.5 10.5h17M8 3.5V7M16 3.5V7"/><path d="M7.5 14.5h4M7.5 17.5h7"/>',
             'styles' => ['dashboard/planning.css'],
             'scripts' => ['planning.js'],
         ],
@@ -181,7 +181,7 @@ function dashboardMenu(): array
             'libelle' => 'Commande matériel',
             'page' => 'pages/commande_materiel.php',
             'pour' => [Role::ChargeDeProduction, Role::ChefDAtelier],
-            'icone' => '<path d="M3 6h18l-1.5 10.5a2 2 0 0 1-2 1.5H6.5a2 2 0 0 1-2-1.5L3 6Z" /><path d="M8 6V4.5A2.5 2.5 0 0 1 10.5 2h3A2.5 2.5 0 0 1 16 4.5V6" /><path d="m9.5 11.5 2 2 3.5-3.5" />',
+            'icone' => '<path d="m12 3.5 8 4v9L12 20.5l-8-4v-9z"/><path d="m4 7.5 8 4 8-4M12 11.5v9"/><path d="m8 5.5 8 4"/>',
             'styles' => ['dashboard/commande-materiel.css'],
             'scripts' => ['commande-materiel.js'],
         ],
@@ -191,7 +191,7 @@ function dashboardMenu(): array
             'libelle' => 'Avancement préfabrication',
             'page' => 'pages/pv.php',
             'pour' => [Role::ChargeDeProduction, Role::ChefDAtelier, Role::ChargeDAffaire],
-            'icone' => '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z" /><path d="M14 3v5h5" /><path d="m9 14 2 2 4-4" />',
+            'icone' => '<path d="M9 4.5H6.5A1.5 1.5 0 0 0 5 6v13a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19V6a1.5 1.5 0 0 0-1.5-1.5H15"/><rect x="9" y="3" width="6" height="3" rx="1"/><path d="M8.5 16.5h2l1.5-3 1.5 4 1.5-2.5h.5"/>',
             // Le tableau des commandes fournisseur vit dans le PV « Réception matériel ».
             'styles' => ['dashboard/pv.css', 'dashboard/commandes.css'],
             'scripts' => ['pv.js', 'commandes.js'],
@@ -202,7 +202,7 @@ function dashboardMenu(): array
             'libelle' => 'Demandes urgentes',
             'page' => 'pages/lists_prefa.php?view=urgent',
             'pour' => [Role::ChargeDeProduction],
-            'icone' => '<path d="M12 3 2.8 19h18.4L12 3Z" /><path d="M12 9v4M12 16h.01" />',
+            'icone' => '<path d="M12.5 3.5 5.5 13h6l-1 7.5 7-9.5h-6z"/>',
             'styles' => [],
             'scripts' => [],
         ],
@@ -319,6 +319,9 @@ function dashboardRessources(Utilisateur $utilisateur): array
         // La page « Nouvelle demande » : comme ses scripts, elle est dans le socle, puisqu'on
         // l'ouvre aussi depuis la liste pour modifier une demande. Elle apporte ses polices.
         'css/dashboard/nouvelle-demande.css',
+        // La barre latérale en carte, avec ses compteurs : après les feuilles qui la
+        // dessinaient jusqu'ici, pour passer devant elles.
+        'css/dashboard/barre-laterale.css',
     ];
     $scripts = [
         'js/suggestions.js',
