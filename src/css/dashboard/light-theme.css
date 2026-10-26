@@ -1552,3 +1552,22 @@ body[data-theme="light"],
 [data-theme="light"] .theme-swatch {
     border-color: var(--border-subtle) !important;
 }
+
+/* ===== LISTE DES DEMANDES : PRIORITÉ ET COMMANDE PRINCIPALE =====
+   La règle des badges plus haut peint toute « Urgente » en rouge plein : dans la liste, où
+   les urgentes se suivent, l'étiquette reprend les teintes douces des alertes. Et
+   « Examiner » garde son contour, que la règle des boutons fantômes lui retirait. */
+[data-theme="light"] .prefa-list .prefa-table .prefa-urgent {
+    background: var(--alerte-fond) !important;
+    color: var(--alerte-texte) !important;
+}
+
+[data-theme="light"] .prefa-list tbody .prefa-toggle.est-principal {
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+    font-weight: 500 !important;
+}
+
+[data-theme="light"] .prefa-list-summary .prefa-list-summary-urgent {
+    color: var(--alerte-texte) !important;
+}

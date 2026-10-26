@@ -53,9 +53,27 @@
     font-size: 13px;
 }
 
+.filtres-recherche .icon {
+    transition: color .15s ease;
+}
+
+.filtres-recherche input {
+    transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+/* Le champ répond au survol avant le clic : sans ça, rien ne dit qu'on peut y taper. */
+.filtres-recherche input:hover {
+    border-color: var(--text-muted);
+}
+
 .filtres-recherche input:focus {
     border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
     outline: none;
+}
+
+.filtres-recherche:focus-within .icon {
+    color: var(--text);
 }
 
 /* La croix de l'aide à la saisie du navigateur double celle qu'on dessine ailleurs. */

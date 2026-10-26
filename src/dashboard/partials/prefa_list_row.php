@@ -14,17 +14,23 @@ $ownerName = trim($row['prenom'] . ' ' . $row['name']);
               // allongeait la colonne de deux cents pixels pour redire la voisine. ?>
         <td class="prefa-reference"><?= prefaEscape(prefaReference($requestId)) ?></td>
         <?php if (!$vueParAffaire): ?>
-            <td><?= prefaEscape($row['nom_affaire'] ?: '—') ?></td>
+            <td class="prefa-affaire"><?= prefaEscape($row['nom_affaire'] ?: '—') ?></td>
         <?php endif; ?>
         <td><?= $row['date_creation'] ? prefaEscape(prefaFormatDate($row['date_creation'])) : '—' ?></td>
         <td><?= $row['date_fin_prevue'] ? prefaEscape(prefaFormatDate($row['date_fin_prevue'])) : '—' ?></td>
-        <td><?= $row['urgent'] ? '<span class="prefa-urgent">Urgente</span>' : 'Normale' ?></td>
-        <td><?= prefaEscape($row['pouces_total_iso']) ?></td>
-        <td><?= prefaEscape(prefaFormatDays((float) $row['heures_chiffrees'] / 24)) ?></td>
+        <td><?= $row['urgent'] ? '<span class="prefa-urgent">Urgente</span>' : '<span class="prefa-normale">Normale</span>' ?></td>
+        <td class="prefa-nombre"><?= prefaEscape($row['pouces_total_iso']) ?></td>
+        <td class="prefa-nombre"><?= prefaEscape(prefaFormatDays((float) $row['heures_chiffrees'] / 24)) ?></td>
         <td><?= prefaEscape($ownerName) ?></td>
-        <td><span class="prefa-status status-<?= (int) $row['id_statut'] ?>"><?= prefaEscape($row['libelle']) ?></span></td>
+        <?php // Rangée par statut, la liste annonce le statut dans le titre du groupe : la
+              // colonne ne le répète que là où la liste est rangée par affaire. ?>
+        <?php if ($vueParAffaire): ?>
+            <td><span class="prefa-status status-<?= (int) $row['id_statut'] ?>"><?= prefaEscape($row['libelle']) ?></span></td>
+        <?php endif; ?>
         <td>
-            <button type="button" class="prefa-toggle" aria-expanded="false" aria-controls="prefa-detail-<?= $requestId ?>">
+            <?php // « Examiner » est ce que la ligne attend de l'administrateur : il reste
+                  // encadré au repos, pour qu'on ne le découvre pas seulement au survol. ?>
+            <button type="button" class="prefa-toggle<?= $isAdmin && $isPending ? ' est-principal' : '' ?>" aria-expanded="false" aria-controls="prefa-detail-<?= $requestId ?>">
                 <?= $isAdmin && $isPending ? 'Examiner' : 'Détails' ?>
             </button>
             <?php if ($canEditPrefa): ?><button type="button" class="edit-prefa" data-id="<?= $requestId ?>">Modifier</button><?php endif; ?>
@@ -38,7 +44,7 @@ $ownerName = trim($row['prenom'] . ' ' . $row['name']);
         </td>
     </tr>
     <tr id="prefa-detail-<?= $requestId ?>" class="prefa-detail-row" hidden>
-        <td colspan="<?= $vueParAffaire ? 9 : 10 ?>">
+        <td colspan="<?= $colonnes ?>">
             <div class="prefa-table-detail">
                 <?php require __DIR__ . '/prefa_detail.php'; ?>
                 <?php if ($isAdmin && $isPending): ?>
