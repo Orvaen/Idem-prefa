@@ -1,0 +1,714 @@
+/* ==========================================================================
+   NOUVELLE DEMANDE
+   ==========================================================================
+
+   La page a son apparence à elle : ivoire et argile en thème clair, brun chaud en thème
+   sombre, Inter pour le texte et Source Serif 4 pour les titres. Le reste de l'application
+   garde la sienne.
+
+   Les deux polices sont livrées avec l'application (assets/fonts, licence SIL OFL jointe) :
+   la page s'affiche pareil sans accès à Internet et sans rien installer sur le poste. Ce
+   sont des versions variables réduites à l'alphabet latin, graisses 400 à 600.
+
+   Les couleurs de l'application — --surface, --text, --accent… — sont redéfinies sur la
+   page : la liste déroulante des affaires, les lignes de fichiers et les messages, dessinés
+   par d'autres feuilles, prennent ainsi les teintes de la page sans qu'on les réécrive.
+
+   Le thème clair de l'application peint champs, étiquettes et titres avec des !important :
+   les règles « [data-theme="light"] .prefa-nouvelle … » plus bas reprennent leur forme, la
+   classe de la page en plus, pour peser plus lourd. */
+
+@font-face {
+    font-family: "Inter";
+    src: url("../../assets/fonts/inter-variable.woff2") format("woff2");
+    font-weight: 400 600;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Source Serif 4";
+    src: url("../../assets/fonts/source-serif-4-variable.woff2") format("woff2");
+    font-weight: 400 600;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* ===== LES TEINTES =====
+   Le sombre est la valeur par défaut, comme dans le reste de l'application. */
+
+.prefa-nouvelle {
+    --nd-fond: #262624;
+    --nd-texte: #F5F4EF;
+    --nd-discret: #A6A39A;
+    --nd-champ: #30302E;
+    --nd-champ-survol: #383835;
+    --nd-champ-bord-survol: #4A4844;
+    --nd-champ-focus: #1F1E1D;
+    --nd-filet: #3A3936;
+    --nd-pointilles: #5A5853;
+    --nd-ligne-survol: #2E2E2B;
+    --nd-accent: #D97757;
+    --nd-accent-survol: #E08A6D;
+    --nd-sur-accent: #1F1E1D;
+    --nd-halo: rgba(217, 119, 87, .22);
+    --nd-urgent: #E39A7D;
+
+    --surface: var(--nd-fond);
+    --text: var(--nd-texte);
+    --text-muted: var(--nd-discret);
+    --border: var(--nd-filet);
+    --hover: var(--nd-ligne-survol);
+    --active: var(--nd-champ);
+    --accent: var(--nd-accent);
+    --accent-hover: var(--nd-accent-survol);
+}
+
+[data-theme="light"] .prefa-nouvelle {
+    --nd-fond: #FAF9F5;
+    --nd-texte: #141413;
+    --nd-discret: #6B6A63;
+    --nd-champ: #F0EEE7;
+    --nd-champ-survol: #ECE9E1;
+    --nd-champ-bord-survol: #DCD8CB;
+    --nd-champ-focus: #FFFFFF;
+    --nd-filet: #ECE9E1;
+    --nd-pointilles: #CFCBBE;
+    --nd-ligne-survol: #F3F1EA;
+    --nd-accent: #B85433;
+    --nd-accent-survol: #9E4729;
+    --nd-sur-accent: #FFFFFF;
+    --nd-halo: rgba(184, 84, 51, .14);
+    --nd-urgent: #9A3F1F;
+}
+
+/* ===== LA PAGE ===== */
+
+.page.prefa-nouvelle,
+[data-theme="light"] .page.prefa-nouvelle {
+    min-height: 100%;
+    box-sizing: border-box;
+    padding: 40px 48px 48px;
+    background: var(--nd-fond) !important;
+    color: var(--nd-texte);
+    font-family: "Inter", var(--font);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.prefa-nouvelle .nd-form {
+    max-width: 1120px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+}
+
+.prefa-nouvelle .nd-discret {
+    color: var(--nd-discret);
+    font-weight: 400;
+}
+
+.prefa-nouvelle .nd-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/* ===== L'EN-TÊTE : TITRE À GAUCHE, ENVOI À DROITE ===== */
+
+.prefa-nouvelle .nd-entete {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.prefa-nouvelle .nd-titre {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.prefa-nouvelle .nd-retour {
+    align-self: flex-start;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--nd-discret);
+    font: inherit;
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: color .15s;
+}
+
+.prefa-nouvelle .nd-retour:hover {
+    color: var(--nd-accent);
+}
+
+.prefa-nouvelle .nd-titre h1,
+[data-theme="light"] .prefa-nouvelle .nd-titre h1 {
+    margin: 0;
+    color: var(--nd-texte) !important;
+    font-family: "Source Serif 4", Georgia, serif;
+    font-size: 30px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+}
+
+.prefa-nouvelle .nd-titre p,
+[data-theme="light"] .prefa-nouvelle .nd-titre p {
+    margin: 0;
+    color: var(--nd-discret) !important;
+    font-size: 14px;
+}
+
+.prefa-nouvelle .nd-envoi {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 18px;
+}
+
+.prefa-nouvelle .nd-urgent,
+[data-theme="light"] .prefa-nouvelle .nd-urgent {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--nd-texte) !important;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.prefa-nouvelle .nd-urgent:has(input:checked),
+[data-theme="light"] .prefa-nouvelle .nd-urgent:has(input:checked) {
+    color: var(--nd-urgent) !important;
+}
+
+.prefa-nouvelle .nd-boutons {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.prefa-nouvelle .nd-form .nd-annuler {
+    height: 36px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--nd-discret);
+    font: inherit;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+}
+
+.prefa-nouvelle .nd-form .nd-annuler:hover {
+    background: var(--nd-champ);
+    color: var(--nd-texte);
+}
+
+.prefa-nouvelle .nd-form button.nd-envoyer {
+    height: 36px;
+    padding: 0 18px;
+    border: 0;
+    border-radius: 7px;
+    background: var(--nd-accent);
+    color: var(--nd-sur-accent);
+    font: inherit;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .15s;
+}
+
+.prefa-nouvelle .nd-form button.nd-envoyer:hover:not(:disabled) {
+    background: var(--nd-accent-survol);
+}
+
+/* Le message d'enregistrement ou d'erreur, sous l'en-tête : c'est là qu'on regarde après
+   avoir cliqué sur « Envoyer ». */
+.prefa-nouvelle #prefa-form .prefa-message:not(:empty) {
+    margin: -16px 0 0;
+}
+
+/* ===== DEUX COLONNES ===== */
+
+.prefa-nouvelle .nd-colonnes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 40px 72px;
+}
+
+.prefa-nouvelle .nd-colonne {
+    flex: 1 1 380px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.prefa-nouvelle .nd-groupe {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.prefa-nouvelle .nd-groupe > legend {
+    padding: 0 0 12px;
+    color: var(--nd-texte);
+    font-family: "Source Serif 4", Georgia, serif;
+    font-size: 18px;
+    font-weight: 500;
+}
+
+.prefa-nouvelle .nd-grille {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.prefa-nouvelle .nd-grille > .prefa-full {
+    grid-column: 1 / -1;
+}
+
+/* Les éléments que le script montre et cache : leur display écrit à la main, plus haut,
+   ne doit pas l'emporter sur l'attribut. */
+.prefa-nouvelle [hidden] {
+    display: none !important;
+}
+
+@media (max-width: 560px) {
+    .page.prefa-nouvelle {
+        padding: 28px 18px 36px;
+    }
+
+    .prefa-nouvelle .nd-grille {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* ===== LES CHAMPS =====
+   Un fond beige sans bordure ; la bordure arrive au survol, et au clic le champ devient
+   blanc, cerclé d'argile. */
+
+.prefa-nouvelle .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+}
+
+.prefa-nouvelle .form-group > label,
+[data-theme="light"] .prefa-nouvelle .form-group > label {
+    color: var(--nd-texte) !important;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.prefa-nouvelle .required-mark {
+    color: var(--nd-accent);
+    font-weight: 500;
+}
+
+.prefa-nouvelle .prefa-aide,
+[data-theme="light"] .prefa-nouvelle .prefa-aide {
+    margin: 0;
+    color: var(--nd-discret) !important;
+    font-size: 12.5px;
+}
+
+.prefa-nouvelle .nd-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+.prefa-nouvelle .nd-form select,
+[data-theme="light"] .prefa-nouvelle .nd-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+[data-theme="light"] .prefa-nouvelle .nd-form select {
+    width: 100%;
+    height: 40px;
+    box-sizing: border-box;
+    padding: 0 12px;
+    border: 1px solid transparent !important;
+    border-radius: 8px;
+    background-color: var(--nd-champ) !important;
+    color: var(--nd-texte) !important;
+    font: inherit;
+    font-size: 14px;
+    box-shadow: none;
+    color-scheme: inherit;
+    transition: background-color .15s, border-color .15s, box-shadow .15s;
+}
+
+[data-theme="light"] .prefa-nouvelle .nd-form {
+    color-scheme: light;
+}
+
+.prefa-nouvelle .nd-form {
+    color-scheme: dark;
+}
+
+.prefa-nouvelle .nd-form input:not([type="checkbox"]):not([type="radio"]):not([readonly]):hover,
+.prefa-nouvelle .nd-form select:hover,
+[data-theme="light"] .prefa-nouvelle .nd-form input:not([type="checkbox"]):not([type="radio"]):not([readonly]):hover,
+[data-theme="light"] .prefa-nouvelle .nd-form select:hover {
+    background-color: var(--nd-champ-survol) !important;
+    border-color: var(--nd-champ-bord-survol) !important;
+}
+
+.prefa-nouvelle .nd-form input:not([type="checkbox"]):not([type="radio"]):not([readonly]):focus,
+.prefa-nouvelle .nd-form select:focus,
+[data-theme="light"] .prefa-nouvelle .nd-form input:not([type="checkbox"]):not([type="radio"]):not([readonly]):focus,
+[data-theme="light"] .prefa-nouvelle .nd-form select:focus {
+    outline: none !important;
+    background-color: var(--nd-champ-focus) !important;
+    border-color: var(--nd-accent) !important;
+    box-shadow: 0 0 0 3px var(--nd-halo) !important;
+}
+
+.prefa-nouvelle .nd-form input::placeholder,
+[data-theme="light"] .prefa-nouvelle .nd-form input::placeholder {
+    color: var(--nd-discret) !important;
+    opacity: .85;
+}
+
+.prefa-nouvelle .nd-form input[type="checkbox"],
+[data-theme="light"] .prefa-nouvelle .nd-form input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    margin: 0;
+    flex-shrink: 0;
+    accent-color: var(--nd-accent);
+}
+
+/* Les erreurs gardent leur rouge, posé sur la bordure qu'on a laissée libre. */
+.prefa-nouvelle .nd-form .champ-invalide:not([type="checkbox"]):not([type="radio"]),
+[data-theme="light"] .prefa-nouvelle .nd-form .champ-invalide:not([type="checkbox"]):not([type="radio"]) {
+    border-color: var(--danger-bord) !important;
+}
+
+/* ===== LA LISTE DÉROULANTE FILTRABLE =====
+   Le champ prend l'apparence des autres ; la croix d'effacement garde sa place. */
+
+.prefa-nouvelle .liste-filtrable {
+    position: relative;
+}
+
+.prefa-nouvelle .nd-form .liste-filtrable .liste-filtrable-champ {
+    padding-right: 38px;
+}
+
+.prefa-nouvelle .liste-filtrable-options {
+    background: var(--nd-champ-focus);
+    border-color: var(--nd-filet);
+    border-radius: 8px;
+}
+
+.prefa-nouvelle .liste-filtrable-options [role="option"]:hover,
+.prefa-nouvelle .liste-filtrable-options [aria-selected="true"] {
+    background: var(--nd-ligne-survol);
+    color: var(--nd-texte);
+}
+
+/* ===== LA DURÉE ESTIMÉE : UNE VALEUR, PAS UN CHAMP ===== */
+
+.prefa-nouvelle .nd-duree {
+    justify-content: flex-end;
+    gap: 2px;
+    padding-bottom: 6px;
+}
+
+.prefa-nouvelle .nd-duree > label,
+[data-theme="light"] .prefa-nouvelle .nd-duree > label {
+    color: var(--nd-discret) !important;
+    font-size: 12.5px;
+    font-weight: 400;
+}
+
+.prefa-nouvelle .nd-duree-valeur {
+    font-size: 14px;
+}
+
+.prefa-nouvelle .nd-duree > .nd-discret {
+    font-size: 12.5px;
+}
+
+.prefa-nouvelle .nd-form .nd-duree input#heures,
+[data-theme="light"] .prefa-nouvelle .nd-form .nd-duree input#heures {
+    display: inline;
+    width: 3ch;
+    field-sizing: content;
+    min-width: 1ch;
+    height: auto;
+    padding: 0;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: var(--nd-texte) !important;
+    font-weight: 600;
+    text-align: left;
+    pointer-events: none;
+    -moz-appearance: textfield;
+}
+
+.prefa-nouvelle .nd-duree input#heures::-webkit-inner-spin-button,
+.prefa-nouvelle .nd-duree input#heures::-webkit-outer-spin-button {
+    appearance: none;
+    margin: 0;
+}
+
+/* ===== LES DOCUMENTS ===== */
+
+.prefa-nouvelle .nd-form label.nd-depot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 112px;
+    padding: 16px;
+    border: 1px dashed var(--nd-pointilles);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--nd-texte) !important;
+    text-align: center;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+}
+
+.prefa-nouvelle .nd-form label.nd-depot:hover,
+.prefa-nouvelle .nd-form label.nd-depot.is-dragging {
+    background: var(--nd-ligne-survol);
+    border-color: var(--nd-discret);
+}
+
+.prefa-nouvelle .nd-depot-titre {
+    font-size: 14px;
+    font-weight: 400;
+}
+
+.prefa-nouvelle .nd-depot-titre u {
+    text-underline-offset: 3px;
+}
+
+.prefa-nouvelle .nd-depot-aide {
+    color: var(--nd-discret);
+    font-size: 12.5px;
+}
+
+.prefa-nouvelle .nd-form label.prefa-dropzone.champ-invalide {
+    border-color: var(--danger-bord);
+}
+
+.prefa-nouvelle .nd-complements {
+    display: flex;
+    flex-direction: column;
+}
+
+.prefa-nouvelle .nd-complements-entete {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 10px;
+    font-weight: 500;
+}
+
+.prefa-nouvelle .nd-complements-entete .nd-discret {
+    font-size: 12.5px;
+}
+
+.prefa-nouvelle .nd-complement {
+    border-top: 1px solid var(--nd-filet);
+}
+
+/* Une ligne de dépôt : elle s'ouvre au clic comme une zone, et accepte qu'on y lâche un
+   fichier. Elle n'a ni cadre ni pointillés : c'est le survol qui la désigne. */
+.prefa-nouvelle .nd-form label.nd-ligne {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 0;
+    margin: 0 -8px;
+    padding: 10px 8px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--nd-texte) !important;
+    text-align: left;
+    cursor: pointer;
+    transition: background .12s;
+}
+
+.prefa-nouvelle .nd-form label.nd-ligne:hover,
+.prefa-nouvelle .nd-form label.nd-ligne.is-dragging {
+    background: var(--nd-ligne-survol);
+}
+
+.prefa-nouvelle .nd-ligne-texte {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.prefa-nouvelle .prefa-dropzone .nd-ligne-titre,
+.prefa-nouvelle .prefa-dropzone .nd-depot-titre {
+    color: var(--nd-texte);
+    font-weight: 500;
+}
+
+.prefa-nouvelle .prefa-dropzone .nd-depot-titre {
+    font-weight: 400;
+}
+
+.prefa-nouvelle .prefa-dropzone .nd-discret,
+.prefa-nouvelle .prefa-dropzone .nd-depot-aide {
+    color: var(--nd-discret);
+}
+
+.prefa-nouvelle .nd-ligne-texte .nd-discret {
+    font-size: 12.5px;
+}
+
+.prefa-nouvelle .nd-ligne-action {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    color: var(--nd-discret);
+    font-size: 12.5px;
+    white-space: nowrap;
+    transition: color .15s;
+}
+
+.prefa-nouvelle .nd-ligne:hover .nd-ligne-action {
+    color: var(--nd-accent);
+}
+
+.prefa-nouvelle .nd-ligne-etat:empty {
+    display: none;
+}
+
+.prefa-nouvelle .nd-ligne-etat {
+    color: var(--nd-texte);
+}
+
+.prefa-nouvelle .nd-complement .prefa-file-list {
+    margin: 0 0 10px;
+}
+
+/* Les fichiers choisis : une ligne discrète, sans l'étiquette « FILE » des autres écrans. */
+.prefa-nouvelle .prefa-file-row {
+    min-height: 36px;
+    padding: 6px 6px 6px 12px;
+    border: 0;
+    border-radius: 7px;
+    background: var(--nd-champ);
+    box-shadow: none;
+    font-size: 12.5px;
+}
+
+.prefa-nouvelle .prefa-file-row::before {
+    display: none;
+}
+
+.prefa-nouvelle .prefa-file-row a {
+    color: var(--nd-texte);
+}
+
+.prefa-nouvelle .nd-form .prefa-file-row button {
+    min-height: 26px;
+    height: 26px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+    color: var(--nd-discret);
+    font-size: 12px;
+}
+
+.prefa-nouvelle .nd-form .prefa-file-row button:hover:not(:disabled) {
+    background: var(--nd-champ-survol);
+    color: var(--nd-texte);
+}
+
+/* ===== LES CONTRÔLES =====
+   Une ligne chacun : la case et le nom à gauche, le pourcentage au bout une fois coché,
+   « Non demandé » sinon. */
+
+.prefa-nouvelle .nd-controles {
+    gap: 0;
+}
+
+.prefa-nouvelle .nd-controles > legend {
+    padding-bottom: 10px;
+}
+
+.prefa-nouvelle .nd-controle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 46px;
+    border-top: 1px solid var(--nd-filet);
+}
+
+.prefa-nouvelle .nd-controle-nom,
+[data-theme="light"] .prefa-nouvelle .nd-controle-nom {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--nd-texte) !important;
+    cursor: pointer;
+}
+
+.prefa-nouvelle .nd-pourcentage {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    color: var(--nd-discret);
+}
+
+.prefa-nouvelle .nd-pourcentage .prefa-control-range {
+    display: none;
+}
+
+.prefa-nouvelle .nd-form .nd-pourcentage .prefa-control-value,
+[data-theme="light"] .prefa-nouvelle .nd-form .nd-pourcentage .prefa-control-value {
+    flex: none;
+    width: 64px !important;
+    height: 32px !important;
+    padding: 0 10px !important;
+    border-radius: 7px;
+    text-align: right;
+}
+
+.prefa-nouvelle .nd-non-demande {
+    color: var(--nd-discret);
+    font-size: 12.5px;
+}
+
+.prefa-nouvelle .nd-controle:has(input[type="checkbox"]:checked) .nd-non-demande {
+    display: none;
+}
+
+/* ===== LE FOCUS AU CLAVIER ===== */
+
+.prefa-nouvelle button:focus-visible,
+.prefa-nouvelle label:focus-visible,
+.prefa-nouvelle input[type="checkbox"]:focus-visible {
+    outline: 2px solid var(--nd-accent);
+    outline-offset: 2px;
+}

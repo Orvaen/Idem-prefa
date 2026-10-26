@@ -316,6 +316,9 @@ function dashboardRessources(Utilisateur $utilisateur): array
         'css/dashboard/flux.css',
         'css/dashboard/selection.css',
         'css/dashboard/filtres.css',
+        // La page « Nouvelle demande » : comme ses scripts, elle est dans le socle, puisqu'on
+        // l'ouvre aussi depuis la liste pour modifier une demande. Elle apporte ses polices.
+        'css/dashboard/nouvelle-demande.css',
     ];
     $scripts = [
         'js/suggestions.js',
