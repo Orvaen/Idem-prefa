@@ -183,7 +183,7 @@
 .account-check {
     flex-shrink: 0;
     width: 16px;
-    color: var(--accent);
+    color: var(--accent-texte);
 }
 
 /* La suppression n'apparaît que dans le mode « Gérer les comptes ». */
@@ -194,7 +194,7 @@
     border: 0;
     border-radius: 8px;
     background: transparent;
-    color: #e25c5c;
+    color: var(--danger-texte);
     font: inherit;
     font-size: 12px;
     font-weight: 500;
@@ -207,8 +207,8 @@
 }
 
 .account-remove:hover {
-    background: rgb(226 92 92 / 14%);
-    color: #ef7b7b;
+    background: var(--alerte-fond);
+    color: var(--alerte-texte);
 }
 
 .account-menu.is-managing .account-item {
@@ -221,7 +221,7 @@
 
 .account-menu.is-managing .account-manage {
     background: var(--hover);
-    color: var(--accent);
+    color: var(--accent-texte);
 }
 
 /* La ligne qu'on vient de cliquer garde le focus : elle portait un contour et rien
@@ -293,7 +293,7 @@
 }
 
 .account-add .account-action-icon {
-    color: #23a55a;
+    color: var(--succes-texte);
 }
 
 /* ===== FENÊTRE D'AJOUT DE COMPTE ===== */
@@ -360,7 +360,7 @@
 }
 
 .account-message.is-error {
-    color: #f6a4a4;
+    color: var(--danger-texte);
 }
 
 .account-dialog-footer {

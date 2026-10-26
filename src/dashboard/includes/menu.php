@@ -114,10 +114,14 @@ function dashboardMenu(): array
             'libelle' => static fn (Utilisateur $utilisateur): string => match (true) {
                 $utilisateur->est(Role::ChargeDeProduction) => 'Valider les demandes',
                 $utilisateur->est(Role::ChefDAtelier) => 'Suivi des demandes',
-                $utilisateur->est(Role::PersonnelAtelier) => 'Mes affectations',
-                // « Mes affaires » depuis qu'une affaire est une entité à part : ce que le
-                // chargé d'affaire ouvre ici, ce sont ses demandes, rangées sous le nom du
-                // chantier. Deux choses différentes ne peuvent pas porter le même mot.
+                // « Mes plans » pour l'atelier : ce qu'il ouvre ici, ce sont les plans
+                // qu'on lui a confiés. L'entrée s'est appelée « Mes affectations », puis
+                // « Mes affaires » — le premier est le mot du logiciel, le second celui du
+                // chargé d'affaire, qui désigne ses chantiers. Celui-ci est le sien.
+                $utilisateur->est(Role::PersonnelAtelier) => 'Mes plans',
+                // Et pour lui, ici, ce sont ses demandes, rangées sous le nom du chantier :
+                // une affaire est une entité à part depuis, et deux choses différentes ne
+                // peuvent pas porter le même mot.
                 default => 'Mes demandes',
             },
             'page' => 'pages/lists_prefa.php',
@@ -127,11 +131,19 @@ function dashboardMenu(): array
             'scripts' => [],
         ],
         [
-            // Pour le personnel d'atelier, « Mes affectations » rend en réalité atelier.php :
+            // Pour le personnel d'atelier, « Mes plans » rend en réalité atelier.php :
             // c'est donc par cette entrée-là qu'il reçoit l'outillage du plan ISO.
+            //
+            // L'entrée porte le nom de ce qu'on vient y faire. Elle s'est appelée « Mes
+            // affaires » le temps d'un essai : le mot ne dit pas ce qu'il y a derrière, et
+            // un soudeur qui ouvre la barre cherche ses soudures, pas ses affaires.
+            //
+            // Le suivi matériel suit les soudures : c'est le même plan qu'on y travaille,
+            // et la barre le dit plutôt que d'ouvrir une deuxième entrée pour le même
+            // écran.
             'id' => 'soudures',
             'rayon' => 'atelier',
-            'libelle' => 'Mes soudures',
+            'libelle' => 'Mes soudures & Suivi matériel',
             'page' => 'pages/soudures.php',
             'pour' => [Role::PersonnelAtelier],
             // Un cordon, et son repère.
@@ -257,6 +269,33 @@ function dashboardRayons(): array
         'atelier' => 'Atelier',
         'administration' => 'Administration',
     ];
+}
+
+/**
+ * L'écran que l'adresse demande — ?vue=list-prefa — ou l'accueil.
+ *
+ * Le serveur rendait toujours l'accueil et laissait le navigateur recharger l'écran voulu
+ * juste après : on voyait l'accueil clignoter, et la page se construisait deux fois.
+ *
+ * @return array<string, mixed> l'entrée de menu, telle que dashboardMenu() la décrit
+ */
+function dashboardVueDemandee(Utilisateur $utilisateur, ?string $vue): array
+{
+    $entrees = dashboardMenuVisible($utilisateur);
+
+    foreach ($entrees as $entree) {
+        if ($entree['id'] === $vue) return $entree;
+    }
+
+    // Une adresse qui nomme un écran inconnu, ou auquel ce rôle n'a pas droit, ouvre
+    // l'accueil sans rien dire. On ne répond pas 404 : l'adresse reste celle d'un tableau
+    // de bord qui existe, c'est seulement l'onglet demandé qui n'est pas pour cette
+    // personne, et le menu à côté montre ce qu'elle peut ouvrir.
+    foreach ($entrees as $entree) {
+        if ($entree['defaut'] ?? false) return $entree;
+    }
+
+    return $entrees[0];
 }
 
 /**

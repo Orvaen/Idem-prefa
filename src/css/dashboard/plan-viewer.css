@@ -44,7 +44,7 @@
     border: 1px solid var(--border);
     border-radius: 999px;
     background: transparent;
-    color: var(--accent);
+    color: var(--accent-texte);
     font: inherit;
     font-size: 12px;
     cursor: pointer;
@@ -580,7 +580,7 @@
 .plan-sommaire-marque {
     display: block;
     font-size: 10px;
-    color: var(--accent);
+    color: var(--accent-texte);
 }
 
 .plan-dialog-liste h5 {
@@ -808,7 +808,7 @@
 .plan-coulee-choix li:hover,
 .plan-coulee-choix li.est-active {
     background: var(--hover);
-    color: var(--accent);
+    color: var(--accent-texte);
 }
 
 .plan-coulee-choix-note {
@@ -877,7 +877,18 @@
 /* La case ne rogne pas en hauteur : le texte est à la taille des lettres imprimées, donc
    un peu plus haut qu'elle — elle est posée en retrait des traits, lui s'étend jusqu'à
    eux sans les toucher. C'est le texte lui-même qui coupe, et seulement en largeur. */
-.plan-soudure,
+.plan-soudure {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #0f172a;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
 /* Le texte porté par la cellule. Il coupe à droite plutôt que de déborder de part et
    d'autre : un fragment lisible du début vaut mieux qu'un mot rogné aux deux bouts. */
 .plan-soudure-valeur {
@@ -973,7 +984,7 @@
     width: 15px;
     height: 15px;
     margin: 0;
-    accent-color: var(--accent);
+    accent-color: var(--accent-texte);
     cursor: pointer;
 }
 
@@ -1029,7 +1040,7 @@
 .plan-soudures-feuille > summary {
     padding: 0.4rem 0;
     font-size: 0.85rem;
-    color: var(--accent);
+    color: var(--accent-texte);
     cursor: pointer;
 }
 

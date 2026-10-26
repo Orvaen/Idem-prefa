@@ -59,6 +59,6 @@ if (!$user->startSession($compte)) {
 }
 
 session_regenerate_id(true);
-error_log(sprintf('[dev] connexion sans mot de passe sur %s', $compte));
+Journal::noter(sprintf('[dev] connexion sans mot de passe sur %s', $compte));
 
 echo json_encode(['success' => true]);

@@ -10,8 +10,8 @@ require_once __DIR__ . '/../includes/prefa_context.php';
 // La page arrive seule dans #content : elle demande elle-même le composant du champ
 // filtrable et le libellé métier des rôles, que le squelette du tableau de bord charge
 // de son côté mais qui ne lui sont pas transmis.
-require_once __DIR__ . '/../includes/liste_filtrable.php';
-require_once __DIR__ . '/../includes/user_display.php';
+require_once __DIR__ . '/../includes/vue/liste_filtrable.php';
+require_once __DIR__ . '/../includes/vue/user_display.php';
 
 if (!$isAdmin) prefaError(403, 'Seul un administrateur peut créer un compte.');
 

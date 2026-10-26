@@ -13,7 +13,7 @@
  *
  * @var list<array<string, mixed>> $commandes les commandes de la demande, articles compris
  */
-require_once __DIR__ . '/../includes/commandes.php';
+require_once __DIR__ . '/../includes/materiel/commandes.php';
 
 $etats = commandeEtats();
 $articlesEnTout = 0;

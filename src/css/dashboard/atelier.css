@@ -107,7 +107,7 @@
 }
 
 .atelier-documents a {
-    color: #8ab4f8;
+    color: var(--accent-texte);
 }
 
 .atelier-progress {
@@ -119,7 +119,7 @@
 }
 
 .atelier-progress progress {
-    accent-color: var(--accent);
+    accent-color: var(--accent-texte);
     max-width: 100%;
 }
 
@@ -167,6 +167,26 @@
     font-size: 12px;
 }
 
+/* Les fichiers du plan s'ouvrent depuis la ligne. Le lien de la maison est fait pour une
+   liste de documents — une boîte de 9 px de rembourrage par fichier ; dans une cellule,
+   c'est le nom qui porte le lien, rien de plus. */
+.atelier-row-documents {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 12px;
+}
+
+.atelier-row-document {
+    color: var(--accent-texte);
+    text-decoration: none;
+    overflow-wrap: anywhere;
+}
+
+.atelier-row-document:hover,
+.atelier-row-document:focus-visible {
+    text-decoration: underline;
+}
+
 .atelier-page .prefa-table td {
     max-width: 300px;
 }
@@ -189,7 +209,7 @@
 }
 
 .atelier-status-progress {
-    color: #8ab4f8;
+    color: var(--accent-texte);
 }
 
 .atelier-detail-content {
@@ -329,9 +349,9 @@
 }
 
 .atelier-state.is-taken {
-    color: #a7d7ba;
-    border-color: #355b47;
-    background: #1c3025;
+    color: var(--succes-texte);
+    border-color: var(--succes-bord);
+    background: var(--succes-fond);
 }
 
 .atelier-start {
@@ -357,7 +377,7 @@
 
 .atelier-new-element>summary {
     font-weight: 600;
-    color: #8ab4f8;
+    color: var(--accent-texte);
 }
 
 .atelier-plan-card {
@@ -369,15 +389,15 @@
 
 .atelier-plan-heading {
     padding: 20px;
-    background: #1c293b;
-    border-left: 3px solid #8ab4f8;
+    background: var(--accent-fond);
+    border-left: 3px solid var(--accent-texte);
     margin-bottom: 16px;
 }
 
 .atelier-plan-label {
     display: block;
     margin-bottom: 8px;
-    color: #8ab4f8;
+    color: var(--accent-texte);
     font-size: 11px;
     font-weight: 600;
     letter-spacing: .4px;
@@ -467,8 +487,10 @@
     padding: 6px 10px;
     border: 1px solid var(--border);
     border-radius: 5px;
-    background: transparent;
-    color: #8ab4f8;
+    /* Une surface, comme les autres boutons bordés de l'écran : transparent, il laissait
+       voir le fond de la page au travers, et le thème clair le repeignait en blanc. */
+    background: var(--surface);
+    color: var(--accent-texte);
     cursor: pointer;
 }
 
@@ -505,7 +527,7 @@
 }
 
 .atelier-manage-form .atelier-remove-assignment {
-    color: #f6a4a4;
+    color: var(--danger-texte);
 }
 
 .atelier-plan-secondary {
@@ -614,7 +636,7 @@
 }
 
 .atelier-assignment-count.is-complete {
-    color: #a7d7ba;
+    color: var(--succes-texte);
 }
 
 .atelier-plans-table>tbody>tr.atelier-plan-detail>td {
@@ -751,7 +773,7 @@
 .atelier-missing-file {
     display: block;
     margin-top: 6px;
-    color: #e5b568;
+    color: var(--attente-texte);
     font-size: 12px;
 }
 
@@ -811,7 +833,7 @@
 }
 
 .atelier-history-kind {
-    color: #8ab4f8;
+    color: var(--accent-texte);
 }
 
 .atelier-history-period,
@@ -1625,7 +1647,7 @@
     min-height: 0;
     margin: 2px 0 0;
     padding: 0;
-    accent-color: var(--accent);
+    accent-color: var(--accent-texte);
 }
 
 .atelier-plan-dialog .atelier-checkbox span {
@@ -1772,8 +1794,8 @@
 }
 
 .atelier-tab[aria-selected="true"] {
-    color: var(--accent);
-    border-bottom-color: var(--accent);
+    color: var(--accent-texte);
+    border-bottom-color: var(--accent-texte);
     font-weight: 600;
 }
 
@@ -1792,7 +1814,7 @@
     border: 1px solid var(--border);
     border-radius: 999px;
     background: transparent;
-    color: var(--accent);
+    color: var(--accent-texte);
     font: inherit;
     font-size: 12px;
     cursor: pointer;
@@ -1877,22 +1899,6 @@
 
 .atelier-soudures-entete .atelier-plan-titre-section {
     margin: 0;
-}
-
-.atelier-soudures-compte {
-    margin: 0;
-    font-size: 13px;
-}
-
-.atelier-soudures-compte strong {
-    margin-right: 6px;
-    font-size: 17px;
-    font-weight: 400;
-    font-variant-numeric: tabular-nums;
-}
-
-.atelier-soudures-compte span {
-    color: var(--text-muted);
 }
 
 .atelier-soudures-table {
@@ -1983,7 +1989,7 @@
     border: 1px solid var(--border);
     border-radius: 999px;
     background: transparent;
-    color: var(--accent);
+    color: var(--accent-texte);
     font: inherit;
     font-size: 12px;
     cursor: pointer;

@@ -52,6 +52,7 @@
     --nd-accent-survol: #E08A6D;
     --nd-sur-accent: #1F1E1D;
     --nd-halo: rgba(217, 119, 87, .22);
+    --nd-manque: rgba(219, 62, 51, .16);
     --nd-urgent: #E39A7D;
 
     --surface: var(--nd-fond);
@@ -79,6 +80,7 @@
     --nd-accent-survol: #9E4729;
     --nd-sur-accent: #FFFFFF;
     --nd-halo: rgba(184, 84, 51, .14);
+    --nd-manque: rgba(191, 44, 34, .10);
     --nd-urgent: #9A3F1F;
 }
 
@@ -504,6 +506,16 @@
 
 .prefa-nouvelle .nd-form label.prefa-dropzone.champ-invalide {
     border-color: var(--danger-bord);
+}
+
+/* Une ligne de dépôt n'a pas de cadre : la couleur du bord ne s'y verrait pas. C'est un
+   lavis qui dit qu'il manque, et le titre qui passe au rouge avec sa marque. */
+.prefa-nouvelle .nd-form label.nd-ligne.champ-invalide {
+    background: var(--nd-manque);
+}
+
+.prefa-nouvelle .nd-form label.nd-ligne.champ-invalide .nd-ligne-titre {
+    color: var(--danger-texte);
 }
 
 .prefa-nouvelle .nd-complements {

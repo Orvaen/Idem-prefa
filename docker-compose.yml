@@ -13,8 +13,16 @@ services:
       # de n'importe quel compte sans son mot de passe, pour essayer les quatre profils
       # sans se déconnecter. Rien de tout cela n'existe en production.
       APP_ENV: ${APP_ENV:-prod}
+      # Le journal laisse de côté ce qui ne dit rien : les fichiers statiques, le flux
+      # d'événements qui rend la main toutes les minutes, Apache qui se parle à lui-même.
+      # JOURNAL_COMPLET=1 rend tout, le temps de comprendre quelque chose de précis.
+      JOURNAL_COMPLET: ${JOURNAL_COMPLET:-}
     volumes:
       - ./src:/var/www/html
+      # Les essais, en lecture seule et hors de la racine web : personne ne les sert, mais
+      # php les lit comme des fichiers. Envoyés par l'entrée standard, leur code de sortie
+      # se perdait en route — un essai rouge rendait quand même « tout va bien ».
+      - ./tests:/tests:ro
     depends_on:
       - db
 

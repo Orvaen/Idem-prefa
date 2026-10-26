@@ -1,8 +1,8 @@
 <?php
 require_once __DIR__ . '/../includes/prefa_context.php';
-require_once __DIR__ . '/../includes/atelier.php';
-require_once __DIR__ . '/../includes/avancement.php';
-require_once __DIR__ . '/../includes/soudure.php';
+require_once __DIR__ . '/../includes/atelier/atelier.php';
+require_once __DIR__ . '/../includes/atelier/avancement.php';
+require_once __DIR__ . '/../includes/atelier/soudure.php';
 
 // L'écran de l'encadrement : il regarde l'atelier entier d'un coup. L'atelier, lui, a
 // « Mes soudures » et n'y voit que ses propres plans.
@@ -136,10 +136,15 @@ $etatDuPlan = static function (array $ligne): array {
                             </td>
                             <td><?= $ligne['avancement'] ?> %</td>
                             <td><span class="prefa-status <?= $etatClasse ?>"><?= $etatLibelle ?></span></td>
-                            <?php // « Valider » et rien d'autre : c'est ce qu'on vient faire ici, et un
-                                  // libellé qui change d'une ligne à l'autre oblige à lire chaque bouton
-                                  // avant de cliquer. Le volet montre les cordons par la même occasion. ?>
-                            <td><button type="button" class="prefa-toggle" aria-controls="suivi-soudures-detail-<?= $elementId ?>" aria-expanded="false">Valider</button></td>
+                            <?php // « Examiner », comme sur la liste des demandes : ce bouton n'est pas
+                                  // celui qui valide, il ouvre le volet où l'on décide — le chiffre
+                                  // déclaré d'un côté, les cordons relevés de l'autre, et c'est là que
+                                  // se trouvent « Valider » et « Refuser ». Il s'est appelé « Valider »,
+                                  // et promettait alors une action qu'il ne faisait pas : sur un plan
+                                  // sans déclaration en attente, il ouvrait un volet pour y lire qu'il
+                                  // n'y avait rien à valider. Le libellé ne change toujours pas d'une
+                                  // ligne à l'autre — l'état de la ligne est dans sa colonne. ?>
+                            <td><button type="button" class="prefa-toggle" aria-controls="suivi-soudures-detail-<?= $elementId ?>" aria-expanded="false">Examiner</button></td>
                         </tr>
 
                         <tr id="suivi-soudures-detail-<?= $elementId ?>" class="prefa-detail-row" hidden>
@@ -182,12 +187,11 @@ $etatDuPlan = static function (array $ligne): array {
                                     <?php endforeach; ?>
 
                                     <section class="atelier-soudures">
+                                        <?php // Le compte des cordons était redit ici, au-dessus du tableau qui
+                                              // les montre — et la ligne du plan, trois lignes plus haut, le
+                                              // porte déjà dans sa colonne. ?>
                                         <div class="atelier-soudures-entete">
                                             <h4 class="atelier-plan-titre-section">Cordons relevés</h4>
-                                            <p class="atelier-soudures-compte">
-                                                <strong><?= $ligne['faites'] ?><?= $ligne['prevues'] ? ' / ' . $ligne['prevues'] : '' ?></strong>
-                                                <span>renseignés<?= $ligne['prevues'] ? ' sur ' . $ligne['prevues'] . ' prévus au plan' : '' ?><?= $ligne['lues'] ? ' · ' . prefaEscape($ligne['lues']) : '' ?></span>
-                                            </p>
                                         </div>
 
                                         <?php if (!$relevees): ?>

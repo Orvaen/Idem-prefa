@@ -31,8 +31,8 @@
             var val = card.dataset.themeVal;
             var isCur = val === cur;
             if (val === 'light') {
-                card.style.borderColor = isCur ? '#2563eb' : '#cbd5e1';
-                card.style.boxShadow = isCur ? '0 0 0 3px #2563eb, 0 6px 16px rgba(37, 99, 235, 0.25)' : 'none';
+                card.style.borderColor = isCur ? '#0D79A8' : '#cbd5e1';
+                card.style.boxShadow = isCur ? '0 0 0 3px #0D79A8, 0 6px 16px rgba(13, 121, 168, 0.25)' : 'none';
             } else {
                 card.style.borderColor = isCur ? 'var(--accent)' : 'var(--border)';
                 card.style.boxShadow = isCur ? '0 0 0 2px var(--accent)' : 'none';

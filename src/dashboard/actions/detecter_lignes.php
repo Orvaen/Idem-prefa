@@ -6,9 +6,9 @@
 // personne n'a enregistré, et un plan dont le tableau n'est pas reconnu — un scan, un
 // autre gabarit — rend simplement une liste vide, le placement manuel prenant le relais.
 require_once __DIR__ . '/../includes/prefa_context.php';
-require_once __DIR__ . '/../includes/prefa_attachments.php';
-require_once __DIR__ . '/../includes/plan_document.php';
-require_once __DIR__ . '/../includes/plan_lignes.php';
+require_once __DIR__ . '/../includes/demande/prefa_attachments.php';
+require_once __DIR__ . '/../includes/atelier/plan_document.php';
+require_once __DIR__ . '/../includes/lecture/plan_lignes.php';
 
 prefaPost();
 
@@ -22,7 +22,7 @@ if (!$elementId) prefaError(400, 'Plan invalide.');
 //
 // Il reste tenu à SES plans : l'affectation est la porte, et elle est vérifiée ici.
 if (!$canManageWorkshop) {
-    require_once __DIR__ . '/../includes/soudure_atelier.php';
+    require_once __DIR__ . '/../includes/atelier/soudure_atelier.php';
     if (!$isWorkshopPersonnel || !soudureAtelierAffectation($db, $elementId, (int) $actor['id'])) {
         prefaError(403, 'Ce plan ne vous est pas affecté.');
     }
@@ -67,6 +67,14 @@ if (!empty($liste['occupees'])) {
         ? 'Une case de la liste soudure porte déjà du texte sur le plan : elle est laissée telle quelle.'
         : $liste['occupees'] . ' cases de la liste soudure portent déjà du texte sur le plan :'
             . ' elles sont laissées telles quelles.';
+}
+// Le plan ne porte que du validé : sans ce mot, le soudeur qui vient de renseigner dix
+// cordons ouvre son dessin, ne les y voit pas, et croit sa saisie perdue.
+if (!empty($liste['enAttente'])) {
+    $avertissements[] = $liste['enAttente'] === 1
+        ? 'Un cordon renseigné attend la validation du chef d’atelier : il ne s’écrit pas encore sur le plan.'
+        : $liste['enAttente'] . ' cordons renseignés attendent la validation du chef d’atelier :'
+            . ' ils ne s’écrivent pas encore sur le plan.';
 }
 if ($soudures && $horsTableau) {
     $avertissements[] = count($horsTableau) === 1

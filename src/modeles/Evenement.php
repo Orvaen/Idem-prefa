@@ -53,8 +53,27 @@ final class Evenement
                    $idDestinataire,
                    $donnees ? json_encode($donnees, JSON_UNESCAPED_UNICODE) : null,
                ]);
+            // Les mêmes faits dans le journal du conteneur. La table evenement dit aux
+            // écrans ouverts ce qui vient de changer ; elle ne se lit pas quand on cherche,
+            // le lendemain, qui a validé quoi et dans quel ordre.
+            Journal::noter(self::resume($type, $idDemande, $donnees));
         } catch (PDOException $erreur) {
-            error_log('Événement non noté (' . $type . ') : ' . $erreur->getMessage());
+            Journal::erreur('Événement non noté (' . $type . ')', $erreur);
         }
+    }
+
+    /**
+     * L'événement en une ligne de journal : « demande.validee demande 42 affaire=Pont 3 ».
+     *
+     * @param array<string, mixed> $donnees
+     */
+    private static function resume(string $type, ?int $idDemande, array $donnees): string
+    {
+        $ligne = $type . ($idDemande !== null ? ' demande ' . $idDemande : '');
+        foreach ($donnees as $cle => $valeur) {
+            if (!is_scalar($valeur) || $valeur === '' || $valeur === false) continue;
+            $ligne .= ' ' . $cle . '=' . ($valeur === true ? 'oui' : $valeur);
+        }
+        return $ligne;
     }
 }

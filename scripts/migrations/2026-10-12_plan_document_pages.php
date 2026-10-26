@@ -12,7 +12,7 @@
 // relus, et un plan d'une seule page le reste.
 $root = is_dir('/var/www/html/dashboard') ? '/var/www/html' : __DIR__ . '/../../src';
 require_once $root . '/db.php';
-require_once $root . '/dashboard/includes/prefa_attachments.php';
+require_once $root . '/dashboard/includes/demande/prefa_attachments.php';
 $db = new MyPDO($root . '/my_setting.ini');
 
 $faits = [];

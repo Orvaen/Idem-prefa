@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/prefa_context.php';
-require_once __DIR__ . '/../includes/atelier.php';
-require_once __DIR__ . '/../includes/avancement.php';
+require_once __DIR__ . '/../includes/atelier/atelier.php';
+require_once __DIR__ . '/../includes/atelier/avancement.php';
 prefaPost();
 if (!$isWorkshopPersonnel && !$canManageWorkshop) prefaError(403, 'Action réservée au personnel atelier et au chef d’atelier.');
 $id = filter_var($_POST['affectation'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
@@ -106,6 +106,6 @@ try {
     echo json_encode(['success' => true, 'message' => $reponse]);
 } catch (PDOException $e) {
     if ($db->inTransaction()) $db->rollBack();
-    error_log('Avancement atelier: ' . $e->getMessage());
+    Journal::erreur('Avancement atelier', $e);
     prefaError(500, 'Impossible d’enregistrer. Réessayez.');
 }

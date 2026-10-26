@@ -75,6 +75,17 @@ final class Utilisateur
         return $this->est(Role::ChargeDeProduction, Role::ChargeDAffaire);
     }
 
+    /**
+     * Valider ou refuser une demande déposée.
+     *
+     * Le chef d'atelier voit tout ce qui est validé, mais ne décide pas : c'est le chargé
+     * de production qui engage l'atelier, parce que c'est lui qui connaît la charge.
+     */
+    public function valideLesDemandes(): bool
+    {
+        return $this->est(Role::ChargeDeProduction);
+    }
+
     /** Affecter l'atelier, remplir les plans et les suivis de soudage. */
     public function gereLAtelier(): bool
     {

@@ -27,20 +27,32 @@ $ownerName = trim($row['prenom'] . ' ' . $row['name']);
         <?php if ($vueParAffaire): ?>
             <td><span class="prefa-status status-<?= (int) $row['id_statut'] ?>"><?= prefaEscape($row['libelle']) ?></span></td>
         <?php endif; ?>
-        <td>
-            <?php // « Examiner » est ce que la ligne attend de l'administrateur : il reste
-                  // encadré au repos, pour qu'on ne le découvre pas seulement au survol. ?>
-            <button type="button" class="prefa-toggle<?= $isAdmin && $isPending ? ' est-principal' : '' ?>" aria-expanded="false" aria-controls="prefa-detail-<?= $requestId ?>">
-                <?= $isAdmin && $isPending ? 'Examiner' : 'Détails' ?>
+        <?php // Une cellule d'actions à déclencheur unique, comme le TableActionCell de Propel.
+              // Les trois commandes étaient posées à plat dans la cellule et se répétaient sur
+              // chaque ligne : la colonne pesait plus lourd que les données qu'elle accompagne,
+              // et l'œil la lisait avant elles.
+              //
+              // Les boutons gardent leurs classes et leurs data- : les gestionnaires sont
+              // branchés par délégation sur le document, ils continuent donc de répondre sans
+              // rien savoir du menu qui les contient. ?>
+        <td class="prefa-actions">
+            <button type="button" class="prefa-actions-declencheur" aria-haspopup="menu" aria-expanded="false"
+                    aria-label="Actions sur la demande <?= prefaEscape(prefaReference($requestId)) ?>">
+                <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" />
+                </svg>
             </button>
-            <?php if ($canEditPrefa): ?><button type="button" class="edit-prefa" data-id="<?= $requestId ?>">Modifier</button><?php endif; ?>
-
-            <?php if ($canEditPrefa && ($isAdmin || ($isPending && (int) $row['idUsers'] === (int) $actor['id']))): ?>
-                <button type="button" class="delete-prefa" data-id="<?= $requestId ?>" data-csrf="<?= prefaEscape(Session::jeton()) ?>">Supprimer</button>
-            <?php endif; ?>
-
-
-
+            <div class="prefa-actions-menu" role="menu" hidden>
+                <button type="button" role="menuitem" class="prefa-toggle" aria-expanded="false" aria-controls="prefa-detail-<?= $requestId ?>">
+                    <?= $isAdmin && $isPending ? 'Examiner' : 'Détails' ?>
+                </button>
+                <?php if ($canEditPrefa): ?>
+                    <button type="button" role="menuitem" class="edit-prefa" data-id="<?= $requestId ?>">Modifier</button>
+                <?php endif; ?>
+                <?php if ($canEditPrefa && ($isAdmin || ($isPending && (int) $row['idUsers'] === (int) $actor['id']))): ?>
+                    <button type="button" role="menuitem" class="delete-prefa est-destructrice" data-id="<?= $requestId ?>" data-csrf="<?= prefaEscape(Session::jeton()) ?>">Supprimer</button>
+                <?php endif; ?>
+            </div>
         </td>
     </tr>
     <tr id="prefa-detail-<?= $requestId ?>" class="prefa-detail-row" hidden>

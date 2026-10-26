@@ -2,7 +2,7 @@
 // Sert un document de PV. Le droit de lecture suit celui de la demande : l'atelier
 // consulte les PV des demandes où il est affecté, le reste est réservé à l'encadrement.
 require_once __DIR__ . '/../includes/prefa_context.php';
-require_once __DIR__ . '/../includes/pv.php';
+require_once __DIR__ . '/../includes/demande/pv.php';
 
 $id = filter_var($_GET['id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 if (!$id) prefaError(400, 'Document invalide.');

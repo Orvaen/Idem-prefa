@@ -13,7 +13,9 @@
 
 function prefaAttachmentDirectory(int $id): string
 {
-    return dirname(__DIR__) . '/uploads/prefa/' . $id;
+    // Deux crans : le fichier vit dans includes/demande/, le dossier des dépôts est
+    // à côté de includes/, pas dedans.
+    return dirname(__DIR__, 2) . '/uploads/prefa/' . $id;
 }
 
 function prefaAttachments(int $id): array

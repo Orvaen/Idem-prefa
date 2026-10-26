@@ -14,17 +14,18 @@ Trois familles, et elles ne se lancent pas dans les mêmes circonstances.
 
 | Script | Ce qu'il fait |
 |---|---|
-| `add_user.php` | Crée un compte en posant les questions. C'est par là qu'on fait le premier administrateur. |
+| `add_user.php` | Crée un compte : nom, prénom, et au choix le rôle, le courriel, le mot de passe. Sans mot de passe, il en tire un au sort et le montre une fois. |
 | `add_test_users.php` | Pose les comptes d'essai des quatre profils. Relançable sans doublon. |
 | `add_demo_data.php` | Remplit la base de demandes et de plans de démonstration. Ne touche pas à l'existant. |
 
-```bash
-docker exec -it php-app-php-1 php /scripts/init/add_user.php
+```
+run admin Dupont Jean --role chef-atelier
+run demo                                    # les comptes d'essai et le jeu de démonstration
 ```
 
-```powershell
-Get-Content scripts\init\add_user.php -Raw | docker exec -i php-app-php-1 php
-```
+`add_user.php` ne fabrique rien lui-même : il appelle `User::register()`, comme le ferait
+l'application. Le format de l'identifiant, le refus des doublons et le hachage du mot de
+passe sont décidés à un seul endroit.
 
 ---
 
@@ -71,15 +72,15 @@ Dans le doute, lancez-les tous dans l'ordre alphabétique : la date en tête les
 chronologiquement, et quelques-uns dépendent d'un précédent — `materiel_lignes` suppose
 `materiel_documents`.
 
-```bash
-for f in scripts/migrations/*.php; do docker exec -i php-app-php-1 php < "$f"; done
+Elles s'appliquent une par une, dans l'ordre du nom :
+
+```
+run migration -- scripts/migrations/2026-10-07_roles.php
+run migration -- scripts/migrations/2026-10-07_approvisionnement.php
 ```
 
-```powershell
-Get-ChildItem scripts\migrations\*.php | Sort-Object Name | ForEach-Object {
-    Get-Content $_.FullName -Raw | docker exec -i php-app-php-1 php
-}
-```
+Il n'y a pas de commande qui les lance toutes : le tableau ci-dessus est à lire avant,
+et dix d'entre elles touchent aux données.
 
 ---
 
@@ -96,18 +97,17 @@ Get-ChildItem scripts\migrations\*.php | Sort-Object Name | ForEach-Object {
 
 ## Les deux façons de lancer un script, et leur piège
 
-```bash
-docker exec -i php-app-php-1 php < scripts/migrations/2026-10-14_materiel_lignes.php
+Un script peut venir de deux endroits, et ce n'est pas le même fichier.
+
+Tous les `run` envoient **le fichier de votre copie de travail** — par l'entrée standard
+pour `admin`, `demo` et `migration`, par le montage `/tests` pour `test` et `pages`. Ce
+que vous venez de modifier part tel quel, sans rien reconstruire.
+
+```
+docker.exe compose exec php php /scripts/init/add_user.php
 ```
 
-Celle-ci envoie **le fichier de votre copie de travail** : ce que vous venez de modifier
-part tel quel.
-
-```bash
-docker exec php-app-php-1 php /scripts/migrations/2026-10-14_materiel_lignes.php
-```
-
-Celle-là lit `/scripts` **dans l'image**, que le `Dockerfile` a copié au moment du build.
-Un script ajouté ou déplacé depuis n'y est pas encore : il faut un
-`docker compose up -d --build php` pour que l'image rattrape. C'est la différence qui fait
-dire « mon script n'existe pas » alors qu'il est bien là.
+Celle-ci, tapée à la main, lit `/scripts` **dans l'image**, que le `Dockerfile` a copié au
+moment du build. Un script ajouté ou modifié depuis n'y est pas : il faut un `run rebuild`
+pour que l'image rattrape. C'est la différence qui fait dire « ma correction ne change
+rien » alors que le fichier est bien à jour sur le disque.

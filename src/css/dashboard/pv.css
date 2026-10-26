@@ -121,7 +121,7 @@
 }
 
 .pv-bloc > summary:hover {
-    color: var(--accent);
+    color: var(--accent-texte);
 }
 
 .pv-bloc-titre {

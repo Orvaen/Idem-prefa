@@ -1,9 +1,9 @@
 <?php
 require_once __DIR__ . '/../includes/prefa_context.php';
-require_once __DIR__ . '/../includes/prefa_hours.php';
-require_once __DIR__ . '/../includes/planning.php';
-require_once __DIR__ . '/../includes/prefa_attachments.php';
-require_once __DIR__ . '/../includes/atelier.php';
+require_once __DIR__ . '/../includes/demande/prefa_hours.php';
+require_once __DIR__ . '/../includes/atelier/planning.php';
+require_once __DIR__ . '/../includes/demande/prefa_attachments.php';
+require_once __DIR__ . '/../includes/atelier/atelier.php';
 
 if (!$canViewAllPrefa) prefaError(403, 'Acces au planning non autorise.');
 

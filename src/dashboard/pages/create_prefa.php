@@ -1,9 +1,9 @@
 <?php
 require_once __DIR__ . '/../includes/prefa_context.php';
 if (!$canEditPrefa) prefaError(403, 'Création et modification réservées aux demandeurs.');
-require_once __DIR__ . '/../includes/prefa_attachments.php';
-require_once __DIR__ . '/../includes/prefa_hours.php';
-require_once __DIR__ . '/../includes/liste_filtrable.php';
+require_once __DIR__ . '/../includes/demande/prefa_attachments.php';
+require_once __DIR__ . '/../includes/demande/prefa_hours.php';
+require_once __DIR__ . '/../includes/vue/liste_filtrable.php';
 
 $editing = isset($_GET['id']);
 $request = [];
@@ -72,13 +72,20 @@ $controles = [
     ['name' => 'PT', 'code' => 'PT', 'libelle' => 'Ressuage', 'key' => 'pt', 'input' => 'controles-pt'],
 ];
 // Les documents complémentaires : une ligne chacun, que l'on peut cliquer ou sur laquelle
-// on peut déposer. Seuls les plans sont obligatoires ; le reste s'ajoute plus tard s'il
-// manque, et ne mérite donc pas cinq grandes zones de dépôt qui se ressemblent toutes.
+// on peut déposer. Le plan, le QMOS et le DMOS sont obligatoires — on ne soude pas sans
+// le mode opératoire ni sa qualification, et actions/create_prefa.php refuse la demande
+// qui s'en passe ; la fiche matériel et les CCPU s'ajoutent plus tard s'ils manquent.
+// Aucun ne mérite pour autant cinq grandes zones de dépôt qui se ressemblent toutes.
 $complements = [
     ['id' => 'qmos', 'nom' => 'qmos_pdf[]', 'titre' => 'QMOS', 'aide' => 'Qualification du mode opératoire de soudage',
+     'obligatoire' => true,
      'fichiers' => $qmosFiles, 'liste' => 'qmos-saved-files', 'retirer' => 'prefa-remove-qmos-saved', 'telecharger' => 'download_qmos.php'],
+    // La liste des DMOS déjà en base porte un identifiant comme celle des QMOS : c'est là que
+    // la vérification d'envoi compte ce qui reste, et sans lui une modification se refusait
+    // alors que le document était bien là.
     ['id' => 'dmos', 'nom' => 'dmos_pdf[]', 'titre' => 'DMOS', 'aide' => 'Descriptif du mode opératoire de soudage',
-     'fichiers' => $dmosFiles, 'liste' => null, 'retirer' => 'prefa-remove-dmos-saved', 'telecharger' => 'download_dmos.php'],
+     'obligatoire' => true,
+     'fichiers' => $dmosFiles, 'liste' => 'dmos-saved-files', 'retirer' => 'prefa-remove-dmos-saved', 'telecharger' => 'download_dmos.php'],
     ['id' => 'materiel', 'nom' => 'materiel_pdf[]', 'titre' => 'Fiche matériel', 'aide' => 'Liste du matériel à prévoir',
      'fichiers' => $materielFiles, 'liste' => null, 'retirer' => 'prefa-remove-materiel-saved', 'telecharger' => 'download_materiel.php'],
     ['id' => 'ccpu', 'nom' => 'ccpu_pdf[]', 'titre' => 'CCPU', 'aide' => 'Certificats matière',
@@ -156,13 +163,13 @@ $complements = [
                 <div class="nd-complements">
                     <div class="nd-complements-entete">
                         <span>Documents complémentaires</span>
-                        <span class="nd-discret">Facultatifs · PDF</span>
+                        <span class="nd-discret">PDF · facultatifs sauf <span class="required-mark" aria-hidden="true">*</span></span>
                     </div>
                     <?php foreach ($complements as $doc): ?>
                         <div class="nd-complement">
                             <label class="prefa-dropzone nd-ligne" for="<?= $doc['id'] ?>" tabindex="0">
                                 <span class="nd-ligne-texte">
-                                    <span class="nd-ligne-titre"><?= prefaEscape($doc['titre']) ?></span>
+                                    <span class="nd-ligne-titre"><?= prefaEscape($doc['titre']) ?><?php if (!empty($doc['obligatoire'])): ?> <span class="required-mark" aria-hidden="true">*</span><?php endif; ?></span>
                                     <span class="nd-discret"><?= prefaEscape($doc['aide']) ?></span>
                                 </span>
                                 <span class="nd-ligne-action"><span id="<?= $doc['id'] ?>-help" class="nd-ligne-etat"></span>Ajouter un PDF</span>

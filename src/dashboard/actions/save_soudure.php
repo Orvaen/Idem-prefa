@@ -2,8 +2,8 @@
 // Enregistre la liste des soudures d'un plan. Réservé à qui gère l'atelier : les
 // contrôles RT/VI/PT engagent la conformité de la pièce.
 require_once __DIR__ . '/../includes/prefa_context.php';
-require_once __DIR__ . '/../includes/plan_document.php';
-require_once __DIR__ . '/../includes/soudure.php';
+require_once __DIR__ . '/../includes/atelier/plan_document.php';
+require_once __DIR__ . '/../includes/atelier/soudure.php';
 
 prefaPost();
 if (!$canManageWorkshop) prefaError(403, 'Seul l’encadrement peut saisir la liste des soudures.');

@@ -3,7 +3,7 @@
 // Les affaires, vues par le chargé de production : il ouvre le chantier, désigne qui en a
 // la charge, et voit combien de demandes y sont déposées.
 require_once __DIR__ . '/../includes/prefa_context.php';
-require_once __DIR__ . '/../includes/liste_filtrable.php';
+require_once __DIR__ . '/../includes/vue/liste_filtrable.php';
 if (!$isAdmin) prefaError(403, 'Seul le chargé de production gère les affaires.');
 
 $affaires = Affaire::toutes($db);

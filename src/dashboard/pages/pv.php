@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/prefa_context.php';
-require_once __DIR__ . '/../includes/pv.php';
-require_once __DIR__ . '/../includes/commandes.php';
+require_once __DIR__ . '/../includes/demande/pv.php';
+require_once __DIR__ . '/../includes/materiel/commandes.php';
 if (!$canViewPv) prefaError(403, 'Cette page est réservée à l’atelier et aux demandeurs.');
 // Le chargé d'affaire suit l'avancement de ses PV sans les renseigner : la saisie
 // appartient au chef d'atelier.

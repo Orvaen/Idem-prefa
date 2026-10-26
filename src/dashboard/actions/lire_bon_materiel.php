@@ -8,7 +8,7 @@
 // Ce qui est lu ne vaut pas saisie : une relecture efface la vérification précédente, et
 // c'est l'encadrement qui corrige ensuite, dans l'écran « Commande matériel ».
 require_once __DIR__ . '/../includes/prefa_context.php';
-require_once __DIR__ . '/../includes/materiel_bon.php';
+require_once __DIR__ . '/../includes/materiel/materiel_bon.php';
 prefaPost();
 // La lecture dure plusieurs secondes. On rend la session avant : PHP la verrouille le
 // temps de la requête, et les autres pages de la même personne attendraient derrière.
@@ -37,7 +37,7 @@ try {
 } catch (DomainException $exception) {
     prefaError(409, $exception->getMessage());
 } catch (Throwable $exception) {
-    error_log('Lecture du bon ' . $idDocument . ' : ' . $exception->getMessage());
+    Journal::erreur('Lecture du bon ' . $idDocument, $exception);
     prefaError(500, 'Lecture impossible. Réessayez.');
 }
 

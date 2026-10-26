@@ -311,12 +311,14 @@
         majCaseTout();
     });
 
-    // Un clic sur la ligne la coche ; un double-clic ouvre la case qu'on vise. Les deux
-    // gestes partagent le même premier clic, d'où l'attente : sans elle, ouvrir une case
-    // ferait clignoter le pointage au passage.
-    const DELAI_DOUBLE_CLIC = 220;
-    let clicEnAttente = null;
-
+    // La réception ne se pointe que par son bouton, dans la première colonne. Un clic sur
+    // la ligne la cochait : viser une case pour lire une quantité, ou cliquer à côté,
+    // suffisait à déclarer un article arrivé — et le pointage part au serveur de
+    // lui-même, « Annuler » ne le défait pas. Un bon de trente articles se pointait ainsi
+    // sans qu'on s'en aperçoive.
+    //
+    // Le clic est donc rendu à ce qu'il fait partout ailleurs : il ouvre la case qu'on
+    // vise. Il fallait un double-clic pour cela, le temps d'écarter le pointage.
     function ouvrirCase(cellule) {
         const champ = cellule.querySelector('.materiel-champ[readonly]');
         if (!champ) return false;
@@ -332,24 +334,11 @@
         });
     }
 
-    $(document).on('click', '.materiel-edition-ligne', function (event) {
-        // La case à cocher et les boutons gardent leur propre geste, et une case déjà
-        // ouverte n'est pas un endroit où l'on pointe.
+    $(document).on('click', '.materiel-edition-ligne td', function (event) {
+        // Le bouton de réception et les autres commandes gardent leur propre geste, et une
+        // case déjà ouverte n'est pas un endroit où l'on clique pour l'ouvrir.
         if (event.target.closest('.materiel-colonne-recu, button, label, a')) return;
         if (event.target.closest('.materiel-champ:not([readonly])')) return;
-
-        const rangee = this;
-        clearTimeout(clicEnAttente);
-        clicEnAttente = setTimeout(() => {
-            fermerCases(null);
-            pointer(rangee, !estRecue(rangee));
-            majCaseTout();
-        }, DELAI_DOUBLE_CLIC);
-    });
-
-    $(document).on('dblclick', '.materiel-edition-ligne td', function (event) {
-        clearTimeout(clicEnAttente);
-        if (event.target.closest('.materiel-colonne-recu, button, label, a')) return;
         fermerCases(null);
         ouvrirCase(this);
     });

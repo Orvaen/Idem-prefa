@@ -1,7 +1,7 @@
 <?php
 
-require_once __DIR__ . '/ccpu_demande.php';
-require_once __DIR__ . '/materiel_bon.php';
+require_once __DIR__ . '/../materiel/ccpu_demande.php';
+require_once __DIR__ . '/../materiel/materiel_bon.php';
 
 /**
  * Les documents d'une demande : où ils sont rangés, et comment ils s'affichent dans sa fiche.

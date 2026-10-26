@@ -51,8 +51,8 @@ $estValidee = $statut === 2;
 // attendait. La décision se prend donc aussi d'ici, et c'est la même qu'ailleurs.
 $avancementsAValider = [];
 if ($estValidee && $canManageWorkshop) {
-    require_once __DIR__ . '/../includes/avancement.php';
-    require_once __DIR__ . '/../includes/atelier.php';
+    require_once __DIR__ . '/../includes/atelier/avancement.php';
+    require_once __DIR__ . '/../includes/atelier/atelier.php';
     $attente = $db->prepare("SELECT h.*, a.id AS id_affectation, a.type_affectation, e.reference,
             TRIM(CONCAT(u.prenom, ' ', u.name)) AS auteur
         FROM avancement_atelier h

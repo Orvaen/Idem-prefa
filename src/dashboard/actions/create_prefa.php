@@ -1,9 +1,9 @@
 <?php
 require_once __DIR__ . '/../includes/prefa_context.php';
 if (!$canEditPrefa) prefaError(403, 'Création et modification réservées aux demandeurs.');
-require_once __DIR__ . '/../includes/prefa_attachments.php';
-require_once __DIR__ . '/../includes/prefa_hours.php';
-require_once __DIR__ . '/../includes/prefa_pdf.php';
+require_once __DIR__ . '/../includes/demande/prefa_attachments.php';
+require_once __DIR__ . '/../includes/demande/prefa_hours.php';
+require_once __DIR__ . '/../includes/demande/prefa_pdf.php';
 // Vérifier le type de conexion et la méthode POST reçus.
 prefaPost();
 
@@ -215,6 +215,20 @@ foreach ($removeDmosIds as $id) {
     if (!is_string($id) || !ctype_digit($id) || !array_key_exists((int) $id, $existingDmosById)) prefaError(400, 'DMOS à retirer introuvable.');
 }
 $removeDmosIds = array_unique(array_map('intval', $removeDmosIds));
+// QMOS et DMOS sont obligatoires : le mode opératoire de soudage et sa qualification.
+// Une demande qui part sans eux envoie souder sans référence, et l'atelier s'en aperçoit
+// au moment où il faudrait déjà avoir commencé.
+//
+// Le compte se fait sur ce qui restera : les documents déjà en base, moins ceux qu'on
+// retire, plus ceux qu'on dépose. À la création comme en modification — autrement, on
+// pourrait les retirer tous dans un second temps et vider la règle de son sens.
+if (count($existingQmos) - count($removeQmosIds) + count($qmosPdfs) < 1) {
+    prefaError(400, 'Ajoutez au moins un document QMOS.');
+}
+if (count($existingDmos) - count($removeDmosIds) + count($dmosPdfs) < 1) {
+    prefaError(400, 'Ajoutez au moins un document DMOS.');
+}
+
 $removeMaterielIds = $_POST['remove_materiel'] ?? [];
 if (!is_array($removeMaterielIds) || (!$editing && $removeMaterielIds)) prefaError(400, 'Liste des fiches matériel invalide.');
 $existingMateriel = [];
@@ -406,7 +420,7 @@ try {
     if ($db->inTransaction()) $db->rollBack();
     foreach ($savedFiles as $path) unlink($path);
     foreach ($pendingRemoval as $path => $pendingPath) rename($pendingPath, $path);
-    error_log('Création demande de préfabrication : ' . $e->getMessage());
+    Journal::erreur('Création demande de préfabrication', $e);
     $message = 'Impossible d’enregistrer la demande. Vérifiez les champs et réessayez.';
     if ($e instanceof RuntimeException && $e->getCode() === 507) {
         $message = 'Le serveur ne peut pas stocker les documents joints. Veuillez réessayer après rétablissement du stockage.';

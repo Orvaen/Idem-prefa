@@ -29,7 +29,8 @@ function pvStatuts(): array
 /** Dossier des documents d'un PV, à côté des pièces jointes des demandes. */
 function pvDocumentDirectory(int $idPv): string
 {
-    return dirname(__DIR__) . '/uploads/pv/' . $idPv;
+    // Deux crans : voir prefaAttachmentDirectory().
+    return dirname(__DIR__, 2) . '/uploads/pv/' . $idPv;
 }
 
 /**

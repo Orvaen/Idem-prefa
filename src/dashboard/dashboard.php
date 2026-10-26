@@ -3,9 +3,9 @@
 require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../modeles/autoload.php';
 require_once __DIR__ . '/includes/comptes.php';
-require_once __DIR__ . '/includes/user_display.php';
+require_once __DIR__ . '/includes/vue/user_display.php';
 require_once __DIR__ . '/includes/menu.php';
-require_once __DIR__ . '/includes/accueil.php';
+require_once __DIR__ . '/includes/demande/accueil.php';
 
 Session::demarrer();
 header('Cache-Control: no-store');
@@ -55,9 +55,29 @@ if (Environnement::estDev()) {
 $entrees = dashboardMenuRange($utilisateur);
 $ressources = dashboardRessources($utilisateur);
 
+// L'écran demandé par l'adresse, rendu tout de suite. Les styles et les scripts de tous
+// les écrans de cette personne sont déjà dans la page : il n'y a rien à charger en plus.
+$vue = dashboardVueDemandee($utilisateur, isset($_GET['vue']) ? (string) $_GET['vue'] : null);
+
+// Une entrée de menu peut porter un filtre dans son adresse — « Demandes urgentes », c'est
+// la liste des demandes resserrée sur les urgentes. Le navigateur passe cette adresse
+// telle quelle à $.load() ; ici il faut séparer le fichier de son filtre, et poser le
+// filtre dans $_GET comme l'aurait fait une vraie requête. Le filtre du menu l'emporte :
+// c'est lui qui définit l'écran, l'adresse n'a pas à le contredire.
+[$vueFichier, $vueFiltre] = array_pad(explode('?', $vue['page'], 2), 2, '');
+if ($vueFiltre !== '') {
+    parse_str($vueFiltre, $vueParametres);
+    $_GET = $vueParametres + $_GET;
+}
+
 // L'accueil : les chiffres du métier de cette personne, et ce qui a bougé aujourd'hui.
-$tuiles = accueilTuiles($db, $utilisateur);
-$activite = accueilActivite($db, $utilisateur);
+// Deux requêtes qu'on ne fait que si c'est bien lui qu'on affiche — elles tournaient
+// jusqu'ici même quand l'adresse demandait un autre écran.
+$tuiles = $activite = [];
+if ($vue['id'] === 'accueil') {
+    $tuiles = accueilTuiles($db, $utilisateur);
+    $activite = accueilActivite($db, $utilisateur);
+}
 
 // Nombre de demandes urgentes en attente, affiché à l'administrateur
 if ($isAdmin) {
@@ -141,7 +161,7 @@ if ($isAdmin || $isWorkshopChief) {
                 <!-- L'action qu'on vient faire en arrivant, au-dessus des rayons. -->
                 <?php foreach ($entrees['avant'] as $entree): ?>
                     <?php $libelle = is_callable($entree['libelle']) ? ($entree['libelle'])($utilisateur) : $entree['libelle']; ?>
-                    <button id="btn-<?= $entree['id'] ?>" class="nav-btn nav-btn-avant<?= ($entree['defaut'] ?? false) ? ' is-active' : '' ?>" type="button" data-page="<?= htmlspecialchars($entree['page'], ENT_QUOTES, 'UTF-8') ?>"<?= ($entree['defaut'] ?? false) ? ' aria-current="page"' : '' ?>>
+                    <button id="btn-<?= $entree['id'] ?>" class="nav-btn nav-btn-avant<?= $entree['id'] === $vue['id'] ? ' is-active' : '' ?>" type="button" data-page="<?= htmlspecialchars($entree['page'], ENT_QUOTES, 'UTF-8') ?>"<?= $entree['id'] === $vue['id'] ? ' aria-current="page"' : '' ?>>
                         <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><?= $entree['icone'] ?></svg>
                         <span><?= htmlspecialchars($libelle, ENT_QUOTES, 'UTF-8') ?></span>
                     </button>
@@ -160,7 +180,7 @@ if ($isAdmin || $isWorkshopChief) {
                         <div class="nav-rayon-corps" id="rayon-<?= $cle ?>">
                             <?php foreach ($rayon['entrees'] as $entree): ?>
                         <?php $libelle = is_callable($entree['libelle']) ? ($entree['libelle'])($utilisateur) : $entree['libelle']; ?>
-                        <button id="btn-<?= $entree['id'] ?>" class="nav-btn" type="button" data-page="<?= htmlspecialchars($entree['page'], ENT_QUOTES, 'UTF-8') ?>">
+                        <button id="btn-<?= $entree['id'] ?>" class="nav-btn<?= $entree['id'] === $vue['id'] ? ' is-active' : '' ?>" type="button" data-page="<?= htmlspecialchars($entree['page'], ENT_QUOTES, 'UTF-8') ?>"<?= $entree['id'] === $vue['id'] ? ' aria-current="page"' : '' ?>>
                             <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><?= $entree['icone'] ?></svg>
                             <span><?= htmlspecialchars($libelle, ENT_QUOTES, 'UTF-8') ?></span>
                             <?= dashboardBadge($entree['id'], $utilisateur, $urgentPending, $pvAFaire) ?>
@@ -227,8 +247,11 @@ if ($isAdmin || $isWorkshopChief) {
                 </div>
             </div>
 
-            <div id="content">
-                <?php require __DIR__ . '/includes/accueil_vue.php'; ?>
+            <!-- data-vue dit au navigateur quel écran est déjà là : il ne le recharge pas
+                 par-dessus. L'accueil passe par sa vue et non par pages/accueil.php, parce
+                 que ses chiffres sont déjà lus plus haut. -->
+            <div id="content" data-vue="<?= htmlspecialchars($vue['id'], ENT_QUOTES, 'UTF-8') ?>">
+                <?php require __DIR__ . '/' . ($vue['id'] === 'accueil' ? 'includes/vue/accueil_vue.php' : $vueFichier); ?>
             </div>
         </div>
     </div>

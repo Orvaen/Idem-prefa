@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/prefa_context.php';
-require_once __DIR__ . '/../includes/prefa_hours.php';
+require_once __DIR__ . '/../includes/demande/prefa_hours.php';
 if (!$isAdmin) prefaError(403, 'Accès réservé aux administrateurs.');
 $hoursSettings = prefaHoursSettings($db);
 ?>

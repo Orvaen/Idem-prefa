@@ -2,8 +2,8 @@
 // Enregistre la nomenclature d'un plan. Réservé à qui gère l'atelier : c'est une donnée
 // de traçabilité, pas un brouillon.
 require_once __DIR__ . '/../includes/prefa_context.php';
-require_once __DIR__ . '/../includes/plan_document.php';
-require_once __DIR__ . '/../includes/nomenclature.php';
+require_once __DIR__ . '/../includes/atelier/plan_document.php';
+require_once __DIR__ . '/../includes/atelier/nomenclature.php';
 
 prefaPost();
 if (!$canManageWorkshop) prefaError(403, 'Seul l’encadrement peut saisir la nomenclature.');

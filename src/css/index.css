@@ -17,8 +17,14 @@
     --border: #343d4c;
     --text: #e2e7ef;
     --text-muted: #a2adbd;
-    --accent: #2563eb;
-    --accent-hover: #1d4ed8;
+    /* L'azur d'IDEM PROCESS, relevé sur le logo. Deux intensités, parce qu'une seule ne
+       peut pas faire les deux métiers : « accent » est le plein, qui doit porter du texte
+       blanc ; « accent-texte » est le trait, qui doit se lire sur le fond de la page.
+       L'ancien bleu #2563eb tenait les boutons mais ne faisait que 3:1 en lien sur fond
+       sombre — sous le minimum lisible. */
+    --accent: #0D79A8;
+    --accent-hover: #0A6890;
+    --accent-texte: #4FB9E8;
     --danger: #f6a4a4;
     --ctrl-sm: 32px;
     --ctrl-md: 44px;
@@ -128,7 +134,7 @@ body {
     --field-text: #0f172a;
     --field-muted: #64748b;
     --field-border: #cbd5e1;
-    --field-focus: #2563eb;
+    --field-focus: #0D79A8;
 }
 
 /* Le bouton d'envoi, et lui seul : « #login-form button » prenait aussi l'œil des mots de

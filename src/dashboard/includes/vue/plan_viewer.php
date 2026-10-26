@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '/nomenclature.php';
+require_once __DIR__ . '/../atelier/nomenclature.php';
 
 /**
  * Les fichiers ISO d'un élément, et les numéros de coulée posés sur chacun.

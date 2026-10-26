@@ -156,7 +156,7 @@
     width: 16px;
     height: 16px;
     margin-top: 2px;
-    accent-color: var(--accent);
+    accent-color: var(--accent-texte);
     flex-shrink: 0;
 }
 
@@ -223,7 +223,7 @@
     height: var(--ctrl-sm);
     padding: 0 12px;
     border: 1px solid transparent;
-    border-radius: var(--r-sm);
+    border-radius: var(--r-md);
     background: var(--accent);
     color: #ffffff;
     font-size: 13px;
@@ -328,8 +328,10 @@
     color: var(--alerte-texte);
 }
 
+/* Le jeton, pas un or écrit en dur : celui-ci venait du thème sombre et restait tel quel
+   en clair, où il donnait 1,7:1 sur blanc — un libellé qu'on devine plus qu'on ne le lit. */
 .status-1 {
-    color: #e6c078;
+    color: var(--attente-texte);
 }
 
 .prefa-list {
@@ -391,9 +393,24 @@
     background: currentColor;
 }
 
+/* Une priorite se lit dans une ligne, au milieu de huit autres colonnes : en pastille
+   sourde elle se repere sans ecraser sa voisine. Elle prend la famille « attente » et non
+   « alerte » : urgent n'est pas une erreur, c'est un ordre de passage.
+
+   La regle vaut pour les deux themes. Elle etait ecrite deux fois — un bloc rouge en clair,
+   un texte orange sans fond en sombre — et c'est exactement l'ecart que la direction
+   artistique doit supprimer. */
 .prefa-urgent {
+    display: inline-flex;
+    align-items: center;
+    height: var(--h-xs);
+    padding: 0 8px;
+    border: 1px solid var(--attente-bord);
+    border-radius: 999px;
+    background: var(--attente-fond);
+    color: var(--attente-texte);
     font-size: 11px;
-    color: #efb078;
+    font-weight: 600;
 }
 
 .prefa-overview {
@@ -416,7 +433,7 @@
 
 .prefa-details summary {
     padding: 13px 0;
-    color: var(--accent);
+    color: var(--accent-texte);
     font-size: 12px;
     cursor: pointer;
 }

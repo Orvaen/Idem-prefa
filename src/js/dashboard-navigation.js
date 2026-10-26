@@ -82,8 +82,12 @@ function ouvrirVue(bouton, { historique = 'pousser' } = {}) {
         $('.nav-header .nav-btn').removeClass('is-active').removeAttr('aria-current');
         $(bouton).addClass('is-active').attr('aria-current', 'page');
 
+        // #content porte le nom de ce qu'il montre, posé par le serveur au premier
+        // affichage. On le tient à jour, sinon il désignerait l'écran d'avant.
+        const vue = bouton.id.replace(/^btn-/, '');
+        $('#content').attr('data-vue', vue);
+
         if (historique !== 'aucun') {
-            const vue = bouton.id.replace(/^btn-/, '');
             const adresse = window.location.pathname + '?vue=' + encodeURIComponent(vue);
             // « remplacer » au premier affichage : restaurer la vue d'une adresse ne doit pas
             // ajouter une entrée, sinon Précédent ne fait que revenir sur place.
@@ -111,14 +115,16 @@ window.addEventListener('popstate', function () {
     if (bouton) ouvrirVue(bouton, { historique: 'aucun' });
 });
 
-// À l'ouverture : on rouvre l'écran que l'adresse nomme. L'accueil est déjà rendu par le
-// serveur, on ne le recharge donc pas pour rien.
+// À l'ouverture : le serveur a déjà rendu l'écran que l'adresse nomme, et il écrit lequel
+// sur #content. Il n'y a donc rien à recharger — y compris quand l'adresse nomme un écran
+// auquel ce rôle n'a pas droit : le serveur a mis l'accueil, et data-vue le dit.
+//
+// Ce bloc rechargeait l'écran par-dessus l'accueil : on voyait l'accueil, puis l'écran,
+// et la page était construite deux fois pour une seule ouverture.
 $(function () {
     const vue = vueDeLAdresse();
-    if (!vue || vue === 'accueil') return;
+    if (!vue || vue === document.getElementById('content')?.dataset.vue) return;
     const bouton = document.getElementById('btn-' + vue);
-    // Une adresse qui nomme un écran auquel ce rôle n'a pas droit — ou qui n'existe plus —
-    // laisse simplement l'accueil en place.
     if (bouton) ouvrirVue(bouton, { historique: 'remplacer' });
 });
 

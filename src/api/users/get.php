@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../../dashboard/includes/prefa_context.php';
-require_once __DIR__ . '/../../dashboard/includes/user_display.php';
+require_once __DIR__ . '/../../dashboard/includes/vue/user_display.php';
 
 if (!$isAdmin) prefaError(403, 'Seul un administrateur peut consulter les comptes.');
 

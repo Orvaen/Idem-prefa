@@ -47,7 +47,7 @@ session_regenerate_id(true);
 
 // Une prise de place laisse une trace, même en développement : c'est la seule façon de
 // comprendre, plus tard, pourquoi une donnée porte le nom de quelqu'un d'autre.
-error_log(sprintf('[dev] %s a pris la place de %s', $precedent, $compte));
+Journal::noter(sprintf('[dev] %s a pris la place de %s', $precedent, $compte));
 
 header('Content-Type: application/json; charset=utf-8');
 echo json_encode(['success' => true]);

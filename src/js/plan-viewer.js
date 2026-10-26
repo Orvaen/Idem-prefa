@@ -303,14 +303,14 @@
             .catch(() => { if (!automatique) message(viewer, 'Détection impossible. Réessayez.', true); });
     }
 
-    // Sur « Mes soudures », la feuille se choisit dans une liste et s'ouvre d'un bouton :
-    // le lecteur de l'élément vit plus bas, masqué, et c'est sa fenêtre qu'on ouvre.
+    // Sur « Mes soudures », chaque feuille du tableau porte son bouton, et l'en-tête de la
+    // saisie porte celui de la feuille travaillée : le lecteur de l'élément vit plus bas,
+    // masqué, et c'est sa fenêtre qu'on ouvre.
     $(document).on('click', '.soudures-ouvrir-plan', function () {
-        const choisi = document.getElementById('soudures-feuille');
-        if (!choisi) return;
-        // Le choix dit l'élément, la feuille ET la page : la fenêtre s'ouvre donc sur
+        // Le bouton dit l'élément, la feuille ET la page : la fenêtre s'ouvre donc sur
         // l'isométrique qu'on vient de désigner, pas sur la première page de son cahier.
-        const [element, feuille, page] = String(choisi.value).split(':');
+        const [element, feuille, page] = String(this.dataset.repere || '').split(':');
+        if (!element) return;
         const bloc = document.querySelector('.soudures-lecteur[data-element="' + element + '"]');
         const lecteur = bloc && bloc.querySelector('.plan-viewer[data-document="' + feuille + '"]');
         if (!lecteur) return;

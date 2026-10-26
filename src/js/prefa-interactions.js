@@ -428,11 +428,21 @@ $(document).on('click', '.btn-goto-plans-iso', function () {
 
 /** Le nom du champ tel que son intitulé l'écrit, sans l'astérisque. */
 function nomDuChamp(champ) {
-    // La zone de dépôt est elle-même un intitulé : son propre texte annonce le fichier
-    // attendu, et remonter au groupe donnerait le titre de toute la section.
-    if (champ.matches('label.prefa-dropzone')) return 'un document du plan BPE / ISO';
-    const groupe = champ.closest('.form-group, .liste-filtrable, .prefa-dropzone-groupe');
-    const intitule = groupe && groupe.querySelector('label');
+    // Une zone de dépôt n'a pas d'intitulé à elle : c'est l'étiquette de son groupe qui
+    // nomme ce qu'on attend — « Documents QMOS », « Plans BPE / ISO ». Elle portait un nom
+    // écrit en dur, du temps où un seul dépôt était obligatoire.
+    const groupe = champ.closest('.form-group, .liste-filtrable, .prefa-dropzone-groupe, .nd-complement');
+    let intitule = groupe && groupe.querySelector('label:not(.prefa-dropzone)');
+    // Une ligne de dépôt des documents complémentaires n'a pas d'étiquette du tout : son
+    // titre est dans la ligne même. Sans ce regard, un QMOS oublié s'annonçait « un champ
+    // obligatoire » alors que le groupe en compte quatre.
+    if (!intitule && groupe) intitule = groupe.querySelector('.nd-ligne-titre');
+    // Une liste filtrable n'a pas d'étiquette à elle : elle est posée dans le groupe qui
+    // la porte. Sans ce second regard, « Affaire » s'annonçait « un champ obligatoire ».
+    if (!intitule && groupe && groupe.parentElement) {
+        const parent = groupe.parentElement.closest('.form-group');
+        intitule = parent && parent.querySelector('label:not(.prefa-dropzone)');
+    }
     const texte = intitule ? intitule.textContent.replace('*', '').trim() : '';
     return texte || champ.name || 'un champ obligatoire';
 }
@@ -517,10 +527,10 @@ $(document).on('change', '#prefa-form .liste-filtrable[data-obligatoire="1"] inp
     marquerListesObligatoires(form);
 });
 
-// Le dépôt d'un plan efface son propre reproche.
-$(document).on('change', '#prefa-form #plan-documents', function () {
+// Un dépôt efface son propre reproche.
+$(document).on('change', '#prefa-form #plan-documents, #prefa-form #qmos, #prefa-form #dmos', function () {
     if (this.files && this.files.length) {
-        $(this).closest('form').find('label.prefa-dropzone[for="plan-documents"]').removeClass('champ-invalide');
+        $(this).closest('form').find('label.prefa-dropzone[for="' + this.id + '"]').removeClass('champ-invalide');
     }
 });
 
@@ -547,15 +557,27 @@ $(document).on('submit', '#prefa-form, .prefa-review', function (event) {
         // sans jamais lui dire combien il en restait.
         const manquants = [];
 
-        if (!form.find('[name="id"]').length) {
-            const planInput = form.find('#plan-documents')[0];
-            const planFiles = planInput?.files?.length || 0;
-            const savedPlans = form.find('#plan-saved-files .prefa-file-row').length;
-            const zone = form.find('label.prefa-dropzone[for="plan-documents"]');
-            const sansPlan = planFiles === 0 && savedPlans === 0;
-            zone.toggleClass('champ-invalide', sansPlan);
-            if (sansPlan && zone.length) manquants.push(zone[0]);
-        }
+        // Les dépôts obligatoires. Le plan ne l'est qu'à la création — on ne le redépose
+        // pas pour corriger une date —, tandis que le QMOS et le DMOS le sont toujours :
+        // on ne soude pas sans le mode opératoire ni sa qualification, et les retirer
+        // après coup reviendrait à s'en passer.
+        //
+        // Un document retiré ne compte plus : sa ligne reste à l'écran, barrée, le temps
+        // qu'on se ravise, et c'est la croix qui dit s'il part ou non.
+        const creation = !form.find('[name="id"]').length;
+        [
+            { champ: 'plan-documents', gardes: '#plan-saved-files', aLaCreation: true },
+            { champ: 'qmos', gardes: '#qmos-saved-files' },
+            { champ: 'dmos', gardes: '#dmos-saved-files' },
+        ].forEach(depot => {
+            if (depot.aLaCreation && !creation) return;
+            const deposes = form.find('#' + depot.champ)[0]?.files?.length || 0;
+            const restants = form.find(depot.gardes + ' .prefa-file-row').not('.is-removed').length;
+            const zone = form.find('label.prefa-dropzone[for="' + depot.champ + '"]');
+            const manque = deposes === 0 && restants === 0;
+            zone.toggleClass('champ-invalide', manque);
+            if (manque && zone.length) manquants.push(zone[0]);
+        });
         marquerChampsObligatoires(form).forEach(champ => manquants.push(champ));
         marquerListesObligatoires(form).forEach(champ => manquants.push(champ));
 
@@ -677,3 +699,127 @@ $(document).on('input change', '#controles-pt-value', function (event) {
 });
 
 
+
+
+/* ---------- Le menu d'actions d'une ligne ----------
+ *
+ * Le TableActionCell de Propel : un déclencheur unique par ligne, qui ouvre les commandes.
+ * Elles étaient posées à plat dans la cellule et se répétaient sur chaque ligne.
+ *
+ * Les boutons gardent leurs classes : leurs gestionnaires sont branchés par délégation sur
+ * le document, plus haut dans ce fichier, et continuent donc de répondre sans rien savoir
+ * du menu qui les contient.
+ *
+ * Le menu est en position fixe, posée ici : la cellule vit dans un tableau qui défile, et
+ * un menu en position absolue y serait découpé. C'est le parti déjà pris par le menu des
+ * comptes, dans dashboard-accounts.js.
+ */
+(function () {
+    const ECART = 6;   // sideOffset de Propel
+    const MARGE = 16;  // collisionPadding
+
+    function placer(declencheur, menu) {
+        const repere = declencheur.getBoundingClientRect();
+        const largeur = menu.offsetWidth;
+        const hauteur = menu.offsetHeight;
+
+        // Propel aligne un menu sur le bord gauche de son déclencheur. Ici la colonne des
+        // actions est la dernière du tableau : aligné à gauche, le menu sortirait par la
+        // droite. On l'aligne donc sur le bord droit — c'est la résolution de collision que
+        // « collisionPadding » demande, et le seul alignement qui tienne contre le bord.
+        let gauche = Math.min(repere.right - largeur, window.innerWidth - MARGE - largeur);
+        let haut = repere.bottom + ECART;
+
+        // Pas la place dessous : le menu passe au-dessus du déclencheur.
+        if (haut + hauteur > window.innerHeight - MARGE) haut = repere.top - ECART - hauteur;
+
+        menu.style.left = Math.max(MARGE, gauche) + 'px';
+        menu.style.top = Math.max(MARGE, haut) + 'px';
+    }
+
+    function fermerTout(sauf) {
+        document.querySelectorAll('.prefa-actions-menu:not([hidden])').forEach(menu => {
+            if (menu === sauf) return;
+            menu.hidden = true;
+            menu.previousElementSibling?.setAttribute('aria-expanded', 'false');
+        });
+    }
+
+    function entrees(menu) {
+        return Array.from(menu.querySelectorAll('button'));
+    }
+
+    $(document).on('click', '.prefa-actions-declencheur', function (evenement) {
+        evenement.preventDefault();
+        evenement.stopPropagation();
+        const menu = this.nextElementSibling;
+        if (!menu) return;
+        const ouvrir = menu.hidden;
+        fermerTout(menu);
+        menu.hidden = !ouvrir;
+        this.setAttribute('aria-expanded', String(ouvrir));
+        if (ouvrir) placer(this, menu);
+    });
+
+    // Une commande choisie referme son menu. Le gestionnaire de l'action, délégué lui aussi,
+    // s'exécute dans le même événement : masquer le bouton ne l'empêche pas de répondre.
+    $(document).on('click', '.prefa-actions-menu button', function () {
+        const menu = this.closest('.prefa-actions-menu');
+        menu.hidden = true;
+        menu.previousElementSibling?.setAttribute('aria-expanded', 'false');
+    });
+
+    document.addEventListener('click', function (evenement) {
+        if (!evenement.target.closest('.prefa-actions')) fermerTout(null);
+    });
+
+    document.addEventListener('keydown', function (evenement) {
+        const ouvert = document.querySelector('.prefa-actions-menu:not([hidden])');
+
+        if (evenement.key === 'Escape' && ouvert) {
+            const declencheur = ouvert.previousElementSibling;
+            fermerTout(null);
+            declencheur?.focus();
+            return;
+        }
+
+        // Flèche bas sur le déclencheur : le menu s'ouvre et la première commande prend le
+        // focus, comme le fait celui de Propel.
+        const declencheur = evenement.target.closest?.('.prefa-actions-declencheur');
+        if (declencheur && (evenement.key === 'ArrowDown' || evenement.key === 'ArrowUp')) {
+            evenement.preventDefault();
+            const menu = declencheur.nextElementSibling;
+            if (menu.hidden) declencheur.click();
+            const liste = entrees(menu);
+            (evenement.key === 'ArrowDown' ? liste[0] : liste[liste.length - 1])?.focus();
+            return;
+        }
+
+        if (!ouvert || !ouvert.contains(evenement.target)) return;
+        if (evenement.key !== 'ArrowDown' && evenement.key !== 'ArrowUp') return;
+        evenement.preventDefault();
+        const liste = entrees(ouvert);
+        const depart = liste.indexOf(document.activeElement);
+        const pas = evenement.key === 'ArrowDown' ? 1 : -1;
+        liste[(depart + pas + liste.length) % liste.length]?.focus();
+    });
+
+    // Le menu est en position fixe : si le tableau défile sous lui, il se retrouve détaché
+    // de sa ligne. Il la suit donc, et ne se referme que si son déclencheur quitte l'écran.
+    //
+    // Il se refermait d'abord à tout défilement. C'était trop brutal : l'écouteur est en
+    // phase de capture, donc n'importe quel élément qui défile ailleurs dans la page — une
+    // liste, un volet — faisait disparaître le menu sans que l'on ait rien demandé.
+    window.addEventListener('scroll', function () {
+        document.querySelectorAll('.prefa-actions-menu:not([hidden])').forEach(menu => {
+            const declencheur = menu.previousElementSibling;
+            const repere = declencheur.getBoundingClientRect();
+            const dehors = repere.bottom < 0 || repere.top > window.innerHeight
+                || repere.right < 0 || repere.left > window.innerWidth;
+            if (dehors) fermerTout(null);
+            else placer(declencheur, menu);
+        });
+    }, true);
+
+    window.addEventListener('resize', () => fermerTout(null));
+}());

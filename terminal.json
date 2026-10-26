@@ -1,0 +1,144 @@
+{
+  "scripts": {
+    "up": {
+      "run": [
+        "docker.exe compose up -d",
+        "run wait",
+        "echo \"Prêt : http://localhost:8080 — phpMyAdmin : http://localhost:8081\""
+      ],
+      "description": "Monte la stack et attend que la base réponde"
+    },
+
+    "down": {
+      "run": "docker.exe compose down",
+      "description": "Arrête la stack, sans toucher aux données"
+    },
+
+    "rebuild": {
+      "run": [
+        "docker.exe compose up -d --build",
+        "run wait"
+      ],
+      "description": "Reconstruit l'image php puis remonte — après un changement de Dockerfile ou de scripts/"
+    },
+
+    "wait": {
+      "run": "docker.exe compose exec -T -e MYSQL_PWD=mypassword db sh -c 'until mysql -umyuser -e \"select 1\" myapp >/dev/null 2>&1; do sleep 1; done'",
+      "description": "Attend que MySQL accepte les requêtes (boucle dans le conteneur)"
+    },
+
+    "etat": {
+      "run": [
+        "docker.exe compose ps",
+        "docker.exe compose exec -T php printenv APP_ENV"
+      ],
+      "description": "Qui tourne, et si l'on est en dev ou en prod"
+    },
+
+    "logs": {
+      "run": "docker.exe compose logs -f --tail=50 php",
+      "description": "Suit les logs d'Apache et de PHP (Ctrl+C pour sortir)"
+    },
+
+    "db": {
+      "run": "docker.exe compose exec -e MYSQL_PWD=mypassword db mysql --default-character-set=utf8mb4 -umyuser myapp",
+      "description": "Ouvre un client MySQL sur la base"
+    },
+
+    "dump": {
+      "run": "docker.exe compose exec -T -e MYSQL_PWD=mypassword db mysqldump --default-character-set=utf8mb4 -umyuser --no-tablespaces --single-transaction myapp > db/dump.sql",
+      "description": "Sauvegarde la base dans db/dump.sql — écarté du dépôt par .gitignore"
+    },
+
+    "schema": {
+      "run": "docker.exe compose exec -T -e MYSQL_PWD=mypassword db mysql --default-character-set=utf8mb4 -umyuser myapp < db/schema.sql",
+      "description": "Crée les tables sur une base VIDE — jamais sur une base remplie, les INSERT de référence feraient des doublons"
+    },
+
+    "clean": {
+      "run": [
+        "docker.exe compose down -v",
+        "rm -rf src/uploads/prefa src/dashboard/uploads/prefa src/dashboard/uploads/pv",
+        "mkdir -p src/uploads/prefa src/dashboard/uploads/prefa src/dashboard/uploads/pv",
+        "docker.exe compose up -d",
+        "run wait",
+        "run schema",
+        "echo \"Base remise à zéro. Comptes : run admin — jeu d'essai : run demo\""
+      ],
+      "description": "REMISE À ZÉRO : détruit la base et les fichiers déposés, puis recrée les tables"
+    },
+
+    "demo": {
+      "run": [
+        "docker.exe compose exec -T php php < scripts/init/add_test_users.php",
+        "docker.exe compose exec -T php php < scripts/init/add_demo_data.php"
+      ],
+      "description": "Comptes d'essai et données de démonstration — lit les scripts du disque, pas ceux de l'image"
+    },
+
+    "admin": {
+      "run": "docker.exe compose exec -T php php -- --nom $nom --prenom $prenom --role $role --courriel $courriel --mot-de-passe $mdp < scripts/init/add_user.php",
+      "args": ["nom", "prenom", "role=charge-production", "courriel=", "mdp="],
+      "description": "Crée un compte. Sans mot de passe, il en tire un au sort et le montre une fois. Rôles : charge-production, chef-atelier, personnel-atelier, charge-affaire"
+    },
+
+    "migration": {
+      "run": "docker.exe compose exec -T php php <",
+      "description": "Applique une migration : run migration -- scripts/migrations/2026-10-07_prefa_references.php (le fichier du disque, pas celui de l'image)"
+    },
+
+    "test": {
+      "run": [
+        "docker.exe compose exec -T php php /tests/encodage.php",
+        "docker.exe compose exec -T php php /tests/dashboard_vues.php",
+        "docker.exe compose exec -T php php /tests/api_demandes.php",
+        "docker.exe compose exec -T php php /tests/prefa_references.php",
+        "docker.exe compose exec -T php php /tests/atelier_plans.php",
+        "run pages"
+      ],
+      "description": "Tous les essais, et il s'arrête au premier rouge. Ils lisent la base : run demo d'abord"
+    },
+
+    "pages": {
+      "run": [
+        "docker.exe compose exec -T php php /tests/prefa_pages.php plans_iso",
+        "docker.exe compose exec -T php php /tests/prefa_pages.php lists_prefa",
+        "docker.exe compose exec -T php php /tests/prefa_pages.php planning",
+        "docker.exe compose exec -T php php /tests/prefa_pages.php create_prefa",
+        "docker.exe compose exec -T php php /tests/prefa_pages.php atelier",
+        "docker.exe compose exec -T php php /tests/prefa_pages.php soudures"
+      ],
+      "description": "Dessine les six écrans et vérifie qu'aucun ne part en erreur"
+    },
+
+    "dev": {
+      "env": { "APP_ENV": "dev" },
+      "run": [
+        "docker.exe compose up -d php",
+        "run wait",
+        "echo \"Développement : la bascule de compte sans mot de passe est ouverte\""
+      ],
+      "description": "Remonte le conteneur web en développement, le temps de cette machine"
+    },
+
+    "prod": {
+      "env": { "APP_ENV": "prod" },
+      "run": [
+        "docker.exe compose up -d php",
+        "run wait",
+        "echo \"Production : plus aucune porte dérobée\""
+      ],
+      "description": "Remonte le conteneur web en production — c'est le mode du serveur de l'atelier"
+    },
+
+    "journal-complet": {
+      "env": { "JOURNAL_COMPLET": "1" },
+      "run": [
+        "docker.exe compose up -d php",
+        "run wait",
+        "echo \"Journal complet : les fichiers statiques et le flux sont notés eux aussi. run up pour revenir.\""
+      ],
+      "description": "Remonte le conteneur web en notant tout, le temps de comprendre quelque chose de précis"
+    }
+  }
+}

@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/prefa_context.php';
-require_once __DIR__ . '/../includes/passivation_row.php';
+require_once __DIR__ . '/../includes/vue/passivation_row.php';
 if (!$isAdmin) prefaError(403, 'Accès réservé aux administrateurs.');
 $types = $db->query('SELECT id, libelle FROM type_passivation ORDER BY libelle')->fetchAll();
 ?>

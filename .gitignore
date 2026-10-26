@@ -3,6 +3,9 @@
 .vscode/
 uploads
 
+# Le bocal a cookies des essais d'API : il porte une session ouverte.
+.cookies
+
 # Sauvegardes completes de la base : elles contiennent les mots de passe haches des
 # comptes et les documents deposes. Le depot ne garde que db/schema.sql, qui cree
 # les tables sans aucune donnee metier.

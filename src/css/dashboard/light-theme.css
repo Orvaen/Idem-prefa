@@ -6,40 +6,61 @@ html[data-theme="light"],
 body[data-theme="light"],
 [data-theme="light"] {
     color-scheme: light;
-    --frame: #f1f5f9;
-    --surface: #ffffff;
-    --border: #cbd5e1;
-    --border-subtle: #e2e8f0;
-    --border-faint: #eef2f6;
-    --text: #0f172a;
-    --text-muted: #64748b;
-    --hover: #f1f5f9;
-    --active: #e2e8f0;
-    --ligne-survol: #e9edf3;
-    --selection-fond: #dbe7fb;
-    --selection-filet: #bcd3f6;
-    --filtre-fond: #eef4fe;
-    --filtre-bord: #bcd3f6;
-    --danger-texte: #b42318;
-    --danger-bord: #f0b4ae;
-    --danger-fond: #b42318;
-    --succes-texte: #166534;
-    --succes-fond: #f0fdf4;
-    --succes-bord: #86efac;
-    --alerte-texte: #991b1b;
-    --alerte-fond: #fef2f2;
-    --alerte-bord: #fca5a5;
-    --attente-texte: #a16207;
-    --accent: #2563eb;
-    --accent-hover: #1d4ed8;
+    --frame: #F2F2F3;
+    --surface: #FFFFFF;
+    /* « bg-card » de la palette : une carte posee sur la surface, un cran en retrait. */
+    --carte: #F9F9F9;
+    --border: #E1E2E3;
+    --border-subtle: #EAEBEC;
+    /* border-strong de Propel : le bord de la grande vue, et lui seul. */
+    --border-fort: #D5D7D9;
+    --border-faint: #EAEBEC;
+    --text: #0F0F10;
+    --text-muted: #494D50;
+    --hover: #F2F2F3;
+    --active: #EAEBEC;
+    --ligne-survol: #F2F2F3;
+    --selection-fond: #EBF8FF;
+    --selection-filet: #B9DDF0;
+    --filtre-fond: #EBF8FF;
+    --filtre-bord: #B9DDF0;
+    --danger-texte: #BF2C22;
+    --danger-bord: #F2C0BC;
+    --danger-fond: #BF2C22;
+    --succes-texte: #2F934B;
+    --succes-fond: #E4F6E9;
+    --succes-bord: #A9DCBA;
+    --alerte-texte: #BF2C22;
+    --alerte-fond: #FBEAE9;
+    --alerte-bord: #F2C0BC;
+    --attente-texte: #BB4D00;
+    --attente-fond: #FEF3C6;
+    --attente-bord: #F3D98A;
+    --compteur-texte: #FFFFFF;
+    --accent: #006399;
+    --accent-hover: #005685;
+    --accent-texte: #005685;
+    --accent-fond: #EBF8FF;
+
+    /* Voir le commentaire du meme jeton dans dashboard-base.css. */
+    --bouton-plein: #000000;
+    --bouton-plein-hover: #1F1F1F;
+    --bouton-plein-texte: #FFFFFF;
     --radius: 8px;
-    --scrollbar-thumb: #cbd5e1;
-    --scrollbar-thumb-hover: #94a3b8;
+
+    --ctrl-xs: var(--h-sm);
+    --ctrl-sm: var(--h-lg);
+    --ctrl-md: var(--h-xl);
+    --ligne-th: 32px;
+    --ligne-td: 36px;
+
+    --scrollbar-thumb: #D5D7D9;
+    --scrollbar-thumb-hover: #B6B9BB;
 }
 
 [data-theme="light"] ::selection {
-    background: #bfdbfe !important;
-    color: #1e3a8a !important;
+    background: #cfe3ee !important;
+    color: #083049 !important;
 }
 
 /* ===== STRUCTURE GÉNÉRALE ===== */
@@ -49,7 +70,13 @@ body[data-theme="light"],
 }
 
 /* Plus d'ombre portée : le panneau ne flotte plus, il est à plat contre la barre, et une
-   ombre sous un bord collé ne fait qu'un trait flou de plus. */
+   ombre sous un bord collé ne fait qu'un trait flou de plus.
+
+   Il porte le fond de l'application : les écrans sont déjà transparents en clair (voir
+   plus bas), et c'est lui qu'on voit entre et sous leurs tableaux. Un voile blanc d'un
+   tiers tient les coins bleus de l'image : sans lui, le plus sombre de ses pixels ne
+   laisse que 2,8:1 au texte en retrait. Le panneau ne défile pas — ce sont les écrans
+   dedans qui défilent — donc l'image reste en place. */
 [data-theme="light"] #right-panel {
     background: var(--surface) !important;
 }
@@ -58,12 +85,24 @@ body[data-theme="light"],
     background: transparent !important;
 }
 
+/* Les écrans ne peignent rien : le fond du panneau se voit au travers, et chaque tableau,
+   carte ou volet garde le sien par-dessus. C'est ce qui fait que l'image est là partout
+   sans qu'un seul texte change de fond.
+
+   Trois étaient restés en dehors de cette liste et se peignaient en blanc sur toute leur
+   hauteur — l'accueil, son journal et les affaires. L'accueil surtout : c'est le premier
+   écran qu'on voit, et il n'avait pas de fond. Ils se repèrent à leur « height: 100% »
+   posé avec une couleur ; les suivants devront y penser. */
 [data-theme="light"] .page,
 [data-theme="light"] .page.prefa-list,
+[data-theme="light"] .page.prefa-simple,
 [data-theme="light"] .settings-page,
 [data-theme="light"] .atelier-page,
 [data-theme="light"] .planning-page,
-[data-theme="light"] .plans-iso-page {
+[data-theme="light"] .plans-iso-page,
+[data-theme="light"] .affaires-page,
+[data-theme="light"] .accueil,
+[data-theme="light"] .accueil-journal {
     background: transparent !important;
 }
 
@@ -75,12 +114,12 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] #left-panel .nav-btn {
-    color: #334155 !important;
+    color: #3f4247 !important;
     font-weight: 500;
 }
 
 [data-theme="light"] #left-panel .nav-btn .icon {
-    color: #475569 !important;
+    color: var(--text-muted) !important;
 }
 
 /* Le fond de la barre était hérité du conteneur : posé ici, il ne peut plus rester celui
@@ -90,50 +129,50 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .nav-rayon-titre {
-    color: #475569 !important;
+    color: var(--text-muted) !important;
 }
 
 [data-theme="light"] .nav-rayon-titre:hover {
-    color: #0f172a !important;
+    color: #171717 !important;
 }
 
 [data-theme="light"] #left-panel .nav-btn:hover {
-    color: #0f172a !important;
+    color: #171717 !important;
 }
 
 [data-theme="light"] #left-panel .nav-btn.is-active {
-    background: #eff6ff !important;
-    color: #2563eb !important;
+    background: #eaf2f7 !important;
+    color: #006399 !important;
     font-weight: 600;
 }
 
 [data-theme="light"] #left-panel .nav-btn.is-active .icon {
-    color: #2563eb !important;
+    color: #006399 !important;
 }
 
 [data-theme="light"] #left-panel .nav-footer:hover,
 [data-theme="light"] #left-panel .nav-footer:focus-within {
-    background: #f1f5f9 !important;
+    background: #efeff0 !important;
 }
 
 [data-theme="light"] .user-avatar {
-    background: #e2e8f0 !important;
-    color: #1e293b !important;
-    border: 1px solid #cbd5e1 !important;
+    background: #eaebec !important;
+    color: #26282a !important;
+    border: 1px solid #e4e6e7 !important;
     font-weight: 700;
 }
 
 [data-theme="light"] .nav-subfooter .title {
-    color: #0f172a !important;
+    color: #171717 !important;
     font-weight: 600;
 }
 
 [data-theme="light"] .nav-subfooter .subtitle {
-    color: #64748b !important;
+    color: var(--text-muted) !important;
 }
 
 [data-theme="light"] .nav-logout {
-    color: #64748b !important;
+    color: var(--text-muted) !important;
 }
 
 [data-theme="light"] .nav-logout:hover {
@@ -157,7 +196,7 @@ body[data-theme="light"],
 [data-theme="light"] .atelier-element-card,
 [data-theme="light"] .plans-iso-card,
 [data-theme="light"] .planning-card {
-    background: #ffffff !important;
+    background: var(--carte) !important;
     border-color: var(--border) !important;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
@@ -171,7 +210,7 @@ body[data-theme="light"],
 [data-theme="light"] .prefa-heading h1,
 [data-theme="light"] .settings-card-title,
 [data-theme="light"] .atelier-heading h1 {
-    color: #0f172a !important;
+    color: #171717 !important;
 }
 
 [data-theme="light"] p,
@@ -179,7 +218,7 @@ body[data-theme="light"],
 [data-theme="light"] .settings-header p,
 [data-theme="light"] .settings-card-desc,
 [data-theme="light"] .prefa-heading p {
-    color: #475569 !important;
+    color: var(--text-muted) !important;
 }
 
 /* Dans la fiche, un document est une ligne, pas une carte : la règle générale ci-dessous
@@ -191,7 +230,7 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .fiche-famille .prefa-document-link:hover {
-    background: #f1f5f9 !important;
+    background: #efeff0 !important;
     border-color: transparent !important;
 }
 
@@ -217,13 +256,13 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .plans-iso-summary {
-    background: #f8fafc !important;
+    background: #fafafa !important;
     border-bottom: 1px solid var(--border-subtle);
-    color: #0f172a !important;
+    color: #171717 !important;
 }
 
 [data-theme="light"] .plans-iso-summary:hover {
-    background: #f1f5f9 !important;
+    background: #efeff0 !important;
 }
 
 [data-theme="light"] .plans-iso-body .atelier-new-element {
@@ -237,23 +276,23 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .atelier-start {
-    background: #f8fafc !important;
+    background: #fafafa !important;
     border: 1px solid var(--border) !important;
 }
 
 [data-theme="light"] .atelier-new-element {
-    background: #f8fafc !important;
+    background: #fafafa !important;
     border: 1px solid var(--border) !important;
 }
 
 [data-theme="light"] .atelier-new-element summary {
-    background: #f1f5f9 !important;
-    color: #1e293b !important;
+    background: #efeff0 !important;
+    color: #26282a !important;
     font-weight: 600;
 }
 
 [data-theme="light"] .atelier-manage-panel {
-    background: #f8fafc !important;
+    background: #fafafa !important;
     border: 1px solid var(--border) !important;
 }
 
@@ -264,19 +303,19 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .settings-tab-btn {
-    color: #64748b !important;
+    color: var(--text-muted) !important;
     font-weight: 600;
 }
 
 [data-theme="light"] .settings-tab-btn:hover {
-    color: #0f172a !important;
-    background: #f1f5f9 !important;
+    color: #171717 !important;
+    background: #efeff0 !important;
 }
 
 [data-theme="light"] .settings-tab-btn.is-active {
-    color: #2563eb !important;
-    border-bottom-color: #2563eb !important;
-    background: #eff6ff !important;
+    color: #006399 !important;
+    border-bottom-color: #006399 !important;
+    background: #eaf2f7 !important;
     font-weight: 700;
 }
 
@@ -289,11 +328,11 @@ body[data-theme="light"],
 [data-theme="light"] button.planning-btn-primary,
 [data-theme="light"] .btn-apply-theme[data-theme="light"],
 [data-theme="light"] input[type="submit"] {
-    background: #2563eb !important;
-    color: #ffffff !important;
+    background: var(--bouton-plein) !important;
+    color: var(--bouton-plein-texte) !important;
     font-weight: 600 !important;
     border: none !important;
-    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+    box-shadow: none !important;
 }
 
 [data-theme="light"] button.settings-btn-primary:hover,
@@ -302,7 +341,7 @@ body[data-theme="light"],
 [data-theme="light"] button.atelier-btn-primary:hover,
 [data-theme="light"] button.planning-btn-primary:hover,
 [data-theme="light"] input[type="submit"]:hover {
-    background: #1d4ed8 !important;
+    background: var(--bouton-plein-hover) !important;
 }
 
 [data-theme="light"] button.settings-btn-secondary,
@@ -311,7 +350,7 @@ body[data-theme="light"],
 [data-theme="light"] .atelier-cancel-assignment,
 [data-theme="light"] .prefa-toggle {
     background: #ffffff !important;
-    color: #334155 !important;
+    color: #3f4247 !important;
     border: 1px solid var(--border) !important;
     font-weight: 600 !important;
 }
@@ -320,36 +359,26 @@ body[data-theme="light"],
 [data-theme="light"] button.btn-secondary:hover,
 [data-theme="light"] button.prefa-btn-secondary:hover,
 [data-theme="light"] .prefa-toggle:hover {
-    background: #f1f5f9 !important;
-    color: #0f172a !important;
-    border-color: #94a3b8 !important;
+    background: #efeff0 !important;
+    color: #171717 !important;
+    border-color: #c4c6c8 !important;
 }
 
 [data-theme="light"] .atelier-person-button {
     background: #ffffff !important;
     border: 1px dashed var(--border) !important;
-    color: #2563eb !important;
+    color: #006399 !important;
 }
 
 [data-theme="light"] .atelier-person-button:hover {
-    background: #eff6ff !important;
-    border-color: #93c5fd !important;
+    background: #eaf2f7 !important;
+    border-color: #a9cde2 !important;
 }
 
 [data-theme="light"] .atelier-person-button.is-assigned {
-    background: #eff6ff !important;
-    border: 1px solid #93c5fd !important;
-    color: #1d4ed8 !important;
-}
-
-/* ===== FORMULAIRES & INPUTS ===== */
-
-[data-theme="light"] .floating-field {
-    --field-surface: #ffffff;
-    --field-text: #0f172a;
-    --field-muted: #64748b;
-    --field-border: #cbd5e1;
-    --field-focus: #2563eb;
+    background: #eaf2f7 !important;
+    border: 1px solid #a9cde2 !important;
+    color: #004268 !important;
 }
 
 /* « background » et non « background-color » effaçait aussi background-image : les
@@ -359,8 +388,8 @@ body[data-theme="light"],
 [data-theme="light"] select,
 [data-theme="light"] textarea {
     background-color: #ffffff !important;
-    border: 1px solid #cbd5e1 !important;
-    color: #0f172a !important;
+    border: 1px solid #e4e6e7 !important;
+    color: #171717 !important;
 }
 
 /* Les contrôles posés dans une ligne de tableau échappent à la règle ci-dessus : là-bas,
@@ -380,10 +409,43 @@ body[data-theme="light"],
     background-color: transparent !important;
 }
 
+/* La fiche reprend le fond de l'application. Elle ne peut pas se contenter de laisser
+   voir celui du panneau : son volet est en « fixed inset: 0 », il couvre aussi la barre
+   latérale. Même image, même voile, donc même fond d'un écran à l'autre. */
+[data-theme="light"] .prefa-detail-row:has(> td > .prefa-table-detail) {
+    background: var(--surface) !important;
+}
+
+/* L'en-tête est le seul texte de la fiche qui ne soit pas sur une carte : il tombe
+   directement sur le fond. Le gris en retrait de la maison passait tout juste sur blanc
+   (4,8:1) ; sur une teinte, il tombait à 2,5:1. Un cran plus foncé le remet à 7:1, et il
+   reste second par rapport au numéro de la demande. */
+[data-theme="light"] .fiche-entete .fiche-surtitre,
+[data-theme="light"] .fiche-entete .fiche-affaire,
+[data-theme="light"] .fiche-entete .fiche-parcours {
+    color: #3f4247;
+}
+
+/* Même raison pour l'état : l'ambre du jeton se lit sur blanc (4,9:1), pas sur le bleu
+   pâle du fond (2,7:1). Celui-ci tire vers le brun, mais il tient à 4,7:1 sur le plus
+   sombre de l'image, et reste un ambre à côté du rouge d'un refus. */
+[data-theme="light"] .fiche-entete .prefa-status.status-1 {
+    color: #713f12;
+}
+
+/* Le cordon de quelqu'un d'autre se lit, ne se reprend pas : son champ est désactivé, et
+   il doit en avoir l'air. La règle générale l'encadrait comme un champ à remplir — on
+   reprend sa forme, la classe de la ligne en plus, comme pour les tableaux ci-dessus. */
+[data-theme="light"] .soudures-champ input:not([type="checkbox"]):not([type="radio"]):disabled {
+    border-color: transparent !important;
+    background-color: transparent !important;
+    color: var(--text-muted) !important;
+}
+
 /* La fenêtre d'un bon ne révèle rien au survol : un clic coche la ligne reçue, un
    double-clic ouvre la case qu'on vise, et elle est alors la seule à porter un cadre. */
 [data-theme="light"] .materiel-edition input:not([readonly]):not([type="checkbox"]):not([type="radio"]) {
-    border-color: #2563eb !important;
+    border-color: #006399 !important;
     background-color: #ffffff !important;
 }
 
@@ -397,7 +459,7 @@ body[data-theme="light"],
 [data-theme="light"] .commandes-editable tbody tr:focus-within select,
 [data-theme="light"] .commande-articles-table tbody tr:hover input:not([type="checkbox"]),
 [data-theme="light"] .commande-articles-table tbody tr:focus-within input:not([type="checkbox"]) {
-    border-color: #cbd5e1 !important;
+    border-color: #e4e6e7 !important;
     background-color: #ffffff !important;
 }
 
@@ -406,13 +468,13 @@ body[data-theme="light"],
 [data-theme="light"] .commandes-editable tbody tr input:not([type="checkbox"]):focus,
 [data-theme="light"] .commandes-editable tbody tr select:focus,
 [data-theme="light"] .commande-articles-table tbody tr input:not([type="checkbox"]):focus {
-    border-color: #2563eb !important;
+    border-color: #006399 !important;
 }
 
 [data-theme="light"] input:focus,
 [data-theme="light"] select:focus,
 [data-theme="light"] textarea:focus {
-    border-color: #2563eb !important;
+    border-color: #006399 !important;
     outline: none !important;
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
 }
@@ -430,22 +492,22 @@ body[data-theme="light"],
 
 [data-theme="light"] input::placeholder,
 [data-theme="light"] textarea::placeholder {
-    color: #94a3b8 !important;
+    color: #c4c6c8 !important;
 }
 
 [data-theme="light"] option {
     background: #ffffff !important;
-    color: #0f172a !important;
+    color: #171717 !important;
 }
 
 [data-theme="light"] input[type="checkbox"],
 [data-theme="light"] input[type="radio"],
 [data-theme="light"] progress {
-    accent-color: #2563eb;
+    accent-color: #006399;
 }
 
 [data-theme="light"] input:autofill {
-    -webkit-text-fill-color: #0f172a !important;
+    -webkit-text-fill-color: #171717 !important;
     box-shadow: inset 0 0 0 1000px #ffffff !important;
 }
 
@@ -462,7 +524,7 @@ body[data-theme="light"],
 [data-theme="light"] .prefa-table td,
 [data-theme="light"] .atelier-plans-table td {
     background: #ffffff !important;
-    color: #0f172a !important;
+    color: #171717 !important;
 }
 
 /* La règle ci-dessus repeint en blanc, et en !important, toutes les cellules de
@@ -476,14 +538,14 @@ body[data-theme="light"],
 /* Le volet de détail est exclu des deux côtés : ce n'est pas une ligne de données mais un
    écran déplié sous elle, et le survoler teintait tout son fond. Sa propre règle le
    protégeait déjà — mais celle-ci, plus spécifique, passait devant. */
-[data-theme="light"] tbody tr:hover:not(.prefa-detail-row) > td,
-[data-theme="light"] tbody tr:focus-within:not(.prefa-detail-row) > td {
+[data-theme="light"] tbody tr:hover:not(.prefa-detail-row):not(:has(> .prefa-table-empty)) > td,
+[data-theme="light"] tbody tr:focus-within:not(.prefa-detail-row):not(:has(> .prefa-table-empty)) > td {
     background: var(--ligne-survol) !important;
 }
 
 /* hover sur lignes de tableau désactivé – uniquement sur les boutons/actions */
 [data-theme="light"] .atelier-editor-row td {
-    background: #f8fafc !important;
+    background: #fafafa !important;
 }
 
 /* ===== BADGES, ALERTES & MESSAGES ===== */
@@ -491,18 +553,14 @@ body[data-theme="light"],
 [data-theme="light"] .prefa-badge,
 [data-theme="light"] .atelier-state,
 [data-theme="light"] .status-badge {
-    background: #f1f5f9 !important;
-    color: #334155 !important;
-    border: 1px solid #cbd5e1 !important;
+    background: #efeff0 !important;
+    color: #3f4247 !important;
+    border: 1px solid #e4e6e7 !important;
     font-weight: 600 !important;
 }
 
-[data-theme="light"] .nav-urgent-badge,
-[data-theme="light"] .prefa-urgent,
-[data-theme="light"] .is-urgent {
-    background: #ef4444 !important;
-    color: #ffffff !important;
-}
+/* Le compteur prend ses couleurs des jetons « attente », dans prefa-list.css : une seule
+   règle pour les deux thèmes. Il était peint ici en rouge, ce qui annulait le jeton. */
 
 /* Les bandeaux prennent leurs couleurs des jetons --succes-* et --alerte-*, redéfinis plus
    haut : il ne reste ici que le commentaire de refus, qui n'en est pas un. */
@@ -513,21 +571,21 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .prefa-document-link {
-    background: #f8fafc !important;
-    border: 1px solid #e2e8f0 !important;
-    color: #2563eb !important;
+    background: #fafafa !important;
+    border: 1px solid #eaebec !important;
+    color: #006399 !important;
 }
 
 [data-theme="light"] .prefa-document-link:hover {
-    background: #eff6ff !important;
-    border-color: #bfdbfe !important;
+    background: #eaf2f7 !important;
+    border-color: #cfe3ee !important;
 }
 
 /* ===== PLANNING & GANTT ===== */
 
 [data-theme="light"] .planning-matrix-table th {
-    background: #f8fafc !important;
-    color: #334155 !important;
+    background: #fafafa !important;
+    color: #3f4247 !important;
     border-color: var(--border) !important;
 }
 
@@ -536,19 +594,9 @@ body[data-theme="light"],
     border-color: var(--border) !important;
 }
 
-[data-theme="light"] .planning-matrix-table td.status-ok {
-    background: #dcfce7 !important;
-    color: #166534 !important;
-}
-
-[data-theme="light"] .planning-matrix-table td.status-non-ok {
-    background: #fee2e2 !important;
-    color: #991b1b !important;
-}
-
 [data-theme="light"] .planning-matrix-table td.status-ras {
-    background: #f1f5f9 !important;
-    color: #475569 !important;
+    background: #efeff0 !important;
+    color: var(--text-muted) !important;
 }
 
 [data-theme="light"] .gantt-outer-container {
@@ -559,23 +607,15 @@ body[data-theme="light"],
 [data-theme="light"] .gantt-header-row,
 [data-theme="light"] .gantt-header-corner,
 [data-theme="light"] .gantt-weeks-header {
-    background: #f8fafc !important;
+    background: #fafafa !important;
     border-color: var(--border) !important;
-    color: #334155 !important;
-}
-
-[data-theme="light"] .gantt-bg-col.is-weekend {
-    background: #f8fafc !important;
-}
-
-[data-theme="light"] .gantt-bg-col.is-workday {
-    background: #ffffff !important;
+    color: #3f4247 !important;
 }
 
 [data-theme="light"] .gantt-label-col {
     background: #ffffff !important;
     border-color: var(--border) !important;
-    color: #0f172a !important;
+    color: #171717 !important;
 }
 
 [data-theme="light"] .gantt-row {
@@ -588,7 +628,7 @@ body[data-theme="light"],
 
 [data-theme="light"] dialog {
     background: #ffffff !important;
-    color: #0f172a !important;
+    color: #171717 !important;
     border: 1px solid var(--border) !important;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
 }
@@ -608,84 +648,52 @@ body[data-theme="light"],
 
 /* ===== PAGE DE PLANNING ===== */
 [data-theme="light"] .planning-page {
-    color: #0f172a !important;
-}
-
-[data-theme="light"] .planning-feedback.is-success {
-    color: #16a34a !important;
-}
-
-[data-theme="light"] .planning-feedback.is-error {
-    color: #dc2626 !important;
-}
-
-[data-theme="light"] #contenaire #planning-page-message.is-removed {
-    color: #991b1b !important;
-    background: #fef2f2 !important;
-    border-left: 3px solid #ef4444 !important;
+    color: #171717 !important;
 }
 
 /* ===== BOUTONS PLANNING ===== */
 [data-theme="light"] .planning-page .planning-button {
     background: #ffffff !important;
-    border-color: #cbd5e1 !important;
-    color: #334155 !important;
+    border-color: #e4e6e7 !important;
+    color: #3f4247 !important;
 }
 
 [data-theme="light"] .planning-page .planning-button:hover {
-    background: #f1f5f9 !important;
-    border-color: #94a3b8 !important;
-    color: #0f172a !important;
+    background: #efeff0 !important;
+    border-color: #c4c6c8 !important;
+    color: #171717 !important;
 }
 
 [data-theme="light"] .planning-page .planning-primary {
-    background: #2563eb !important;
-    border-color: #2563eb !important;
+    background: #006399 !important;
+    border-color: #006399 !important;
     color: #ffffff !important;
 }
 
 [data-theme="light"] .planning-page .planning-primary:hover {
-    background: #1d4ed8 !important;
+    background: #00527f !important;
 }
 
 /* ===== GANTT - EN-TÊTE ===== */
 [data-theme="light"] .gantt-header-corner {
-    background: #f8fafc !important;
-    color: #64748b !important;
+    background: #fafafa !important;
+    color: var(--text-muted) !important;
     border-right-color: var(--border) !important;
 }
 
 [data-theme="light"] .gantt-weeks-header {
-    background: #f8fafc !important;
+    background: #fafafa !important;
     border-bottom-color: var(--border) !important;
 }
 
 [data-theme="light"] .gantt-week-cell {
-    background: #f1f5f9 !important;
-    color: #334155 !important;
+    background: #efeff0 !important;
+    color: #3f4247 !important;
     border-right-color: var(--border) !important;
     font-weight: 700;
 }
 
-/* ===== GANTT - NUMÉROS DE JOURS ===== */
-[data-theme="light"] .gantt-day-number {
-    color: #334155 !important;
-    border-right-color: var(--border) !important;
-}
-
-[data-theme="light"] .gantt-day-number.is-workday {
-    background: #f0fdf4 !important;
-    color: #166534 !important;
-}
-
-[data-theme="light"] .gantt-day-number.is-weekend {
-    background: #f8fafc !important;
-    color: #94a3b8 !important;
-}
-
 [data-theme="light"] .gantt-day-number.is-today {
-    background: #eff6ff !important;
-    color: #2563eb !important;
     font-weight: 800;
 }
 
@@ -694,50 +702,27 @@ body[data-theme="light"],
     border-right-color: rgba(203, 213, 225, 0.5) !important;
 }
 
-[data-theme="light"] .gantt-bg-col.is-workday {
-    background: rgba(240, 253, 244, 0.4) !important;
-}
-
-[data-theme="light"] .gantt-bg-col.is-weekend {
-    background: rgba(241, 245, 249, 0.5) !important;
-}
-
 /* ===== GANTT - LIGNES ===== */
-[data-theme="light"] .gantt-row:hover {
-    background: #f1f5f9 !important;
-}
-
-[data-theme="light"] .gantt-row.is-selected {
-    background: #eff6ff !important;
-}
 
 /* ===== GANTT - BADGE AFFAIRES ===== */
 [data-theme="light"] .gantt-affaire-badge {
-    background: #f8fafc !important;
+    background: #fafafa !important;
     border-color: var(--border) !important;
-    color: #0f172a !important;
+    color: #171717 !important;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
 }
 
-[data-theme="light"] .gantt-affaire-badge:hover {
-    background: #eff6ff !important;
-    border-color: #93c5fd !important;
-    color: #1e40af !important;
-}
-
 [data-theme="light"] .gantt-row.is-selected .gantt-affaire-badge {
-    background: #dbeafe !important;
-    border-color: #3b82f6 !important;
-    color: #1e40af !important;
+    border-color: #3d8cb4 !important;
 }
 
 /* ===== GANTT - BARRES ===== */
 /* Mêmes teintes, échelonnées pour la surface claire. */
 [data-theme="light"] .planning-page {
-    --person-a: #2a78d6;
+    --person-a: #006399;
     --person-b: #eb6834;
     --person-c: #1baf7a;
-    --person-other: #64748b;
+    --person-other: #6b7280;
 }
 
 /* ===== BLOCS INFÉRIEURS DU PLANNING (4 CARTES) ===== */
@@ -748,18 +733,18 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .planning-card-header {
-    background: #f8fafc !important;
-    color: #0f172a !important;
+    background: #fafafa !important;
+    color: #171717 !important;
     border-bottom-color: var(--border) !important;
 }
 
 [data-theme="light"] .planning-card-body {
     background: #ffffff !important;
-    color: #0f172a !important;
+    color: #171717 !important;
 }
 
 [data-theme="light"] .planning-card-footer {
-    background: #f8fafc !important;
+    background: #fafafa !important;
     border-top-color: var(--border) !important;
 }
 
@@ -769,59 +754,51 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .planning-info-item dt {
-    color: #64748b !important;
+    color: var(--text-muted) !important;
 }
 
 [data-theme="light"] .planning-info-item dd {
-    color: #0f172a !important;
-}
-
-[data-theme="light"] .planning-info-item dd a {
-    color: #2563eb !important;
+    color: #171717 !important;
 }
 
 /* ===== MATRICE AVANCEMENT (carte 2) ===== */
 [data-theme="light"] .planning-matrix-table th {
-    background: #f8fafc !important;
-    color: #334155 !important;
+    background: #fafafa !important;
+    color: #3f4247 !important;
     border-color: var(--border) !important;
 }
 
 [data-theme="light"] .planning-matrix-table td {
     background: #ffffff !important;
-    color: #334155 !important;
+    color: #3f4247 !important;
     border-color: var(--border) !important;
 }
 
 [data-theme="light"] .planning-matrix-table td.step-label {
-    background: #f8fafc !important;
-    color: #334155 !important;
+    background: #fafafa !important;
+    color: #3f4247 !important;
 }
 
 /* ===== COMMENTAIRES (carte 3) ===== */
 [data-theme="light"] .comment-item {
-    background: #f8fafc !important;
-    border-left-color: #3b82f6 !important;
+    background: #fafafa !important;
+    border-left-color: #3d8cb4 !important;
     border-top-color: var(--border) !important;
     border-right-color: var(--border) !important;
     border-bottom-color: var(--border) !important;
 }
 
-[data-theme="light"] .comment-meta {
-    color: #2563eb !important;
-}
-
 [data-theme="light"] .comment-text {
-    color: #0f172a !important;
+    color: #171717 !important;
 }
 
 /* ===== LIVRAISON (carte 4) ===== */
 [data-theme="light"] .planning-delivery-info p {
-    color: #64748b !important;
+    color: var(--text-muted) !important;
 }
 
 [data-theme="light"] .planning-delivery-info strong {
-    color: #0f172a !important;
+    color: #171717 !important;
 }
 
 /* ===== BACKLOG ===== */
@@ -831,18 +808,16 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .planning-backlog-summary {
-    background: #f8fafc !important;
-    color: #0f172a !important;
+    background: #fafafa !important;
+    color: #171717 !important;
     border-bottom: 1px solid var(--border);
 }
 
 [data-theme="light"] .planning-backlog-summary:hover {
-    background: #f1f5f9 !important;
+    background: #efeff0 !important;
 }
 
 [data-theme="light"] .planning-urgent-badge {
-    background: #fef2f2 !important;
-    color: #dc2626 !important;
     border-color: #fca5a5 !important;
 }
 
@@ -851,7 +826,7 @@ body[data-theme="light"],
 [data-theme="light"] dialog#planning-dialog {
     background: #ffffff !important;
     border-color: var(--border) !important;
-    color: #0f172a !important;
+    color: #171717 !important;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12) !important;
 }
 
@@ -862,70 +837,40 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .planning-dialog-badge {
-    color: #2563eb !important;
-    background: rgba(37, 99, 235, 0.08) !important;
     border-color: rgba(37, 99, 235, 0.25) !important;
 }
 
-[data-theme="light"] .planning-dialog-heading h2 {
-    color: #0f172a !important;
-}
-
 [data-theme="light"] .planning-dialog-close {
-    background: #f1f5f9 !important;
+    background: #efeff0 !important;
     border-color: var(--border) !important;
-    color: #64748b !important;
-}
-
-[data-theme="light"] .planning-dialog-close:hover {
-    background: #e2e8f0 !important;
-    color: #0f172a !important;
+    color: var(--text-muted) !important;
 }
 
 [data-theme="light"] .planning-meta-chip {
-    background: #f8fafc !important;
+    background: #fafafa !important;
     border-color: var(--border) !important;
 }
 
 [data-theme="light"] .planning-meta-chip .meta-label {
-    color: #64748b !important;
-}
-
-[data-theme="light"] .planning-meta-chip .meta-val {
-    color: #0f172a !important;
-}
-
-[data-theme="light"] .planning-label {
-    color: #475569 !important;
+    color: var(--text-muted) !important;
 }
 
 [data-theme="light"] .planning-date-input {
-    background: #f8fafc !important;
-    border-color: #cbd5e1 !important;
-    color: #0f172a !important;
+    background: #fafafa !important;
+    border-color: #e4e6e7 !important;
+    color: #171717 !important;
 }
 
 [data-theme="light"] .planning-date-input:focus {
-    border-color: #2563eb !important;
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
 }
 
-[data-theme="light"] .planning-help-text {
-    color: #64748b !important;
-}
-
 [data-theme="light"] .planning-preview {
-    background: #f8fafc !important;
-    border-color: #cbd5e1 !important;
-}
-
-[data-theme="light"] .planning-preview-dates {
-    color: #0f172a !important;
+    background: #fafafa !important;
+    border-color: #e4e6e7 !important;
 }
 
 [data-theme="light"] .planning-preview-badge {
-    background: rgba(37, 99, 235, 0.1) !important;
-    color: #1e40af !important;
     border-color: rgba(37, 99, 235, 0.3) !important;
 }
 
@@ -934,80 +879,13 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .planning-btn-remove {
-    background: rgba(239, 68, 68, 0.07) !important;
     border-color: rgba(239, 68, 68, 0.25) !important;
-    color: #dc2626 !important;
-}
-
-[data-theme="light"] .planning-btn-remove:hover {
-    background: rgba(239, 68, 68, 0.15) !important;
-    color: #b91c1c !important;
 }
 
 [data-theme="light"] .planning-btn-cancel {
-    background: #f8fafc !important;
+    background: #fafafa !important;
     border-color: var(--border) !important;
-    color: #475569 !important;
-}
-
-[data-theme="light"] .planning-btn-cancel:hover {
-    background: #f1f5f9 !important;
-    color: #0f172a !important;
-}
-
-/* ===== ATELIER - ÉLÉMENTS HARDCODÉS ===== */
-[data-theme="light"] .atelier-documents a {
-    color: #2563eb !important;
-}
-
-[data-theme="light"] .atelier-status-progress {
-    color: #2563eb !important;
-}
-
-[data-theme="light"] .atelier-state.is-taken {
-    color: #166534 !important;
-    border-color: #86efac !important;
-    background: #f0fdf4 !important;
-}
-
-[data-theme="light"] .atelier-new-element > summary {
-    color: #2563eb !important;
-}
-
-[data-theme="light"] .atelier-plan-heading {
-    background: #eff6ff !important;
-    border-left-color: #3b82f6 !important;
-}
-
-[data-theme="light"] .atelier-plan-label {
-    color: #2563eb !important;
-}
-
-[data-theme="light"] .atelier-edit-assignment {
-    color: #2563eb !important;
-    border-color: var(--border) !important;
-    background: #ffffff !important;
-}
-
-[data-theme="light"] .atelier-edit-assignment:hover {
-    background: #eff6ff !important;
-    border-color: #93c5fd !important;
-}
-
-[data-theme="light"] .atelier-manage-form .atelier-remove-assignment {
-    color: #dc2626 !important;
-}
-
-[data-theme="light"] .atelier-missing-file {
-    color: #b45309 !important;
-}
-
-[data-theme="light"] .atelier-assignment-count.is-complete {
-    color: #16a34a !important;
-}
-
-[data-theme="light"] .atelier-history-kind {
-    color: #2563eb !important;
+    color: var(--text-muted) !important;
 }
 
 [data-theme="light"] .plans-iso-card.is-urgent {
@@ -1020,30 +898,30 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .atelier-plans-table > tbody > tr.atelier-plan-summary:hover > td {
-    background: #f8fafc !important;
+    background: #fafafa !important;
 }
 
 [data-theme="light"] .atelier-plan-toggle:hover {
-    background: #f1f5f9 !important;
+    background: #efeff0 !important;
 }
 
 [data-theme="light"] .atelier-plans-table .atelier-person-button {
-    color: #64748b !important;
-    border-color: #cbd5e1 !important;
+    color: var(--text-muted) !important;
+    border-color: #e4e6e7 !important;
 }
 
 [data-theme="light"] .atelier-plans-table .atelier-person-button.is-assigned {
-    color: #0f172a !important;
+    color: #171717 !important;
 }
 
 [data-theme="light"] .atelier-plans-table .atelier-person-button:hover,
 [data-theme="light"] .atelier-plans-table .atelier-person-button[aria-expanded="true"] {
-    background: #f1f5f9 !important;
-    border-color: #94a3b8 !important;
+    background: #efeff0 !important;
+    border-color: #c4c6c8 !important;
 }
 
 [data-theme="light"] .atelier-editor-row .atelier-manage-panel {
-    background: #f8fafc !important;
+    background: #fafafa !important;
     border-bottom-color: var(--border) !important;
 }
 
@@ -1053,7 +931,7 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .atelier-history-timeline li::before {
-    background: #94a3b8 !important;
+    background: #c4c6c8 !important;
     border-color: #ffffff !important;
 }
 
@@ -1066,43 +944,13 @@ body[data-theme="light"],
     background: var(--surface) !important;
 }
 
-/* Les commandes d'une ligne sont des boutons fantômes, dans les deux thèmes. Trois règles
-   d'ici les rhabillaient : « Examiner » revenait encadré et en gras, « Supprimer » encadré
-   de rose. Leurs sélecteurs pèsent deux classes, ceux-ci trois — et ils les suivent. */
-[data-theme="light"] .prefa-list tbody .prefa-toggle,
-[data-theme="light"] .prefa-list tbody .edit-prefa,
-[data-theme="light"] .prefa-list tbody .delete-prefa {
-    background: transparent !important;
-    border-color: transparent !important;
-    color: #64748b !important;
-    font-weight: 450 !important;
-}
-
-[data-theme="light"] .prefa-list tbody tr:hover .prefa-toggle,
-[data-theme="light"] .prefa-list tbody tr:hover .edit-prefa,
-[data-theme="light"] .prefa-list tbody tr:hover .delete-prefa,
-[data-theme="light"] .prefa-list tbody tr:focus-within .prefa-toggle,
-[data-theme="light"] .prefa-list tbody tr:focus-within .edit-prefa,
-[data-theme="light"] .prefa-list tbody tr:focus-within .delete-prefa {
-    border-color: #cbd5e1 !important;
-    color: #0f172a !important;
-}
-
-[data-theme="light"] .prefa-list tbody .prefa-toggle:hover,
-[data-theme="light"] .prefa-list tbody .edit-prefa:hover {
-    background: #f1f5f9 !important;
-}
-
-[data-theme="light"] .prefa-list tbody .delete-prefa:hover:not(:disabled) {
-    background: #fff1f0 !important;
-    border-color: #dc8178 !important;
-    color: #b42318 !important;
-}
+/* Les commandes d'une ligne vivent maintenant dans un menu, habillé dans prefa-list.css
+   pour les deux thèmes. Trois règles les rhabillaient ici en boutons fantômes. */
 
 /* ===== DROPDOWN / SELECT GÉNÉRAL ===== */
 [data-theme="light"] select option {
     background: #ffffff !important;
-    color: #0f172a !important;
+    color: #171717 !important;
 }
 
 /* ===== PREFA DETAIL SECTION (résumé demande) ===== */
@@ -1113,15 +961,15 @@ body[data-theme="light"],
 
 [data-theme="light"] .prefa-section h2,
 [data-theme="light"] .prefa-section h3 {
-    color: #0f172a !important;
+    color: #171717 !important;
 }
 
 [data-theme="light"] .prefa-fact-label {
-    color: #64748b !important;
+    color: var(--text-muted) !important;
 }
 
 [data-theme="light"] .prefa-fact-value {
-    color: #0f172a !important;
+    color: #171717 !important;
 }
 
 [data-theme="light"] .prefa-request {
@@ -1130,37 +978,24 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .prefa-request:hover {
-    background: #f8fafc !important;
-}
-
-/* ===== ÉLÉMENTS DE FILTRES ===== */
-[data-theme="light"] .floating-field {
-    --field-surface: #ffffff;
-    --field-text: #0f172a;
-    --field-muted: #64748b;
-    --field-border: #cbd5e1;
-    --field-focus: #2563eb;
-}
-
-[data-theme="light"] .floating-field label {
-    color: #64748b !important;
+    background: #fafafa !important;
 }
 
 [data-theme="light"] .floating-field input:not(:placeholder-shown) ~ label,
 [data-theme="light"] .floating-field select:not([value=""]) ~ label,
 [data-theme="light"] .floating-field input:focus ~ label,
 [data-theme="light"] .floating-field select:focus ~ label {
-    color: #2563eb !important;
+    color: #006399 !important;
 }
 
 /* ===== BADGES / COMPTEURS ===== */
 [data-theme="light"] .planning-badge-count {
-    background: #2563eb !important;
+    background: #006399 !important;
     color: #ffffff !important;
 }
 
 [data-theme="light"] .prefa-list-summary strong {
-    color: #0f172a !important;
+    color: #171717 !important;
 }
 
 /* ===== PLANNING ISO - CARD URGENTE ===== */
@@ -1170,19 +1005,13 @@ body[data-theme="light"],
     border-color: #f0b4ae;
 }
 
-[data-theme="light"] .delete-prefa:hover:not(:disabled) {
-    color: #912018;
-    background: #fff1f0;
-    border-color: #dc8178;
-}
-
 [data-theme="light"] .delete-prefa:focus-visible {
     outline: 2px solid #b42318;
     outline-offset: 2px;
 }
 
 [data-theme="light"] .plans-iso-page .atelier-plans-table > thead > tr > th {
-    background: #e2e8f0 !important;
+    background: #eaebec !important;
 }
 
 [data-theme="light"] .plans-iso-card.is-urgent .plans-iso-summary {
@@ -1195,21 +1024,21 @@ body[data-theme="light"],
    ========================================================================== */
 
 [data-theme="light"] .plans-iso-page .plans-iso-toggle[aria-expanded="true"] {
-    background: #eff6ff !important;
-    border-color: #bfdbfe !important;
-    color: #1d4ed8 !important;
+    background: #eaf2f7 !important;
+    border-color: #cfe3ee !important;
+    color: #004268 !important;
 }
 
 [data-theme="light"] .plans-iso-page .plans-iso-toggle[aria-expanded="true"]:hover {
-    background: #dbeafe !important;
+    background: #e3eef5 !important;
 }
 
 [data-theme="light"] .plans-iso-page .atelier-section summary {
-    color: #64748b;
+    color: var(--text-muted);
 }
 
 [data-theme="light"] .plans-iso-page .atelier-section summary:hover {
-    color: #2563eb;
+    color: #006399;
 }
 
 /* ===== CARTE D'UN PLAN ===== */
@@ -1220,24 +1049,24 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .plans-iso-page .atelier-plan-files-inline .prefa-document-link {
-    background: #f1f5f9 !important;
+    background: #efeff0 !important;
     border: 1px solid transparent !important;
-    color: #334155 !important;
+    color: #3f4247 !important;
     transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 [data-theme="light"] .plans-iso-page .atelier-plan-files-inline .prefa-document-link:hover {
-    background: #eff6ff !important;
-    border-color: #bfdbfe !important;
-    color: #1d4ed8 !important;
+    background: #eaf2f7 !important;
+    border-color: #cfe3ee !important;
+    color: #004268 !important;
 }
 
 [data-theme="light"] .plans-iso-page .atelier-document-edit {
-    background: #f8fafc;
+    background: #fafafa;
 }
 
 [data-theme="light"] .plans-iso-page .atelier-document-edit .atelier-checkbox {
-    color: #0f172a !important;
+    color: #171717 !important;
     cursor: pointer;
 }
 
@@ -1248,30 +1077,30 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .plans-iso-page .atelier-plan-work {
-    background: #f8fafc;
+    background: #fafafa;
     border-bottom-color: var(--border-subtle);
 }
 
 [data-theme="light"] .plans-iso-page .atelier-plan-work h4 {
-    color: #475569 !important;
+    color: var(--text-muted) !important;
 }
 
 [data-theme="light"] .plans-iso-page .atelier-plan-work .atelier-person-button {
     background: transparent !important;
     border: 1px dashed var(--border) !important;
-    color: #2563eb !important;
+    color: #006399 !important;
     transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 [data-theme="light"] .plans-iso-page .atelier-plan-work .atelier-person-button:hover {
-    background: #eff6ff !important;
-    border-color: #93c5fd !important;
+    background: #eaf2f7 !important;
+    border-color: #a9cde2 !important;
 }
 
 [data-theme="light"] .plans-iso-page .atelier-plan-work .atelier-person-button.is-assigned {
     background: #ffffff !important;
     border: 1px solid var(--border-subtle) !important;
-    color: #0f172a !important;
+    color: #171717 !important;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
 }
 
@@ -1280,27 +1109,27 @@ body[data-theme="light"],
     flex: 0 0 24px;
     height: 24px;
     border-radius: 50%;
-    background: #dbeafe url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E") center / 14px 14px no-repeat;
+    background: #e3eef5 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230A6B93' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E") center / 14px 14px no-repeat;
 }
 
 [data-theme="light"] .plans-iso-page .atelier-plan-work .atelier-person-button.is-assigned:hover {
-    border-color: #93c5fd !important;
+    border-color: #a9cde2 !important;
 }
 
 [data-theme="light"] .plans-iso-page .atelier-plan-work .atelier-person-button[aria-expanded="true"],
 [data-theme="light"] .plans-iso-page .atelier-plan-work .atelier-person-button[aria-expanded="true"]:hover {
-    border: 1px solid #2563eb !important;
+    border: 1px solid #006399 !important;
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
 [data-theme="light"] .plans-iso-page .atelier-plan-work .atelier-work-status {
-    background: #e2e8f0;
-    color: #475569;
+    background: #eaebec;
+    color: var(--text-muted);
 }
 
 [data-theme="light"] .plans-iso-page .atelier-plan-work .atelier-work-status.is-progress {
-    background: #dbeafe;
-    color: #1d4ed8;
+    background: #e3eef5;
+    color: #004268;
 }
 
 [data-theme="light"] .plans-iso-page .atelier-plan-work .atelier-work-status.is-done {
@@ -1311,24 +1140,24 @@ body[data-theme="light"],
 [data-theme="light"] .plans-iso-page .atelier-work-report .atelier-note {
     background: #ffffff;
     border: 1px solid var(--border-subtle);
-    color: #334155 !important;
+    color: #3f4247 !important;
 }
 
 [data-theme="light"] .plans-iso-page .atelier-edit-progress {
     border-color: var(--border-subtle) !important;
-    color: #2563eb !important;
+    color: #006399 !important;
 }
 
 [data-theme="light"] .plans-iso-page .atelier-edit-progress:hover {
-    background: #eff6ff !important;
-    border-color: #93c5fd !important;
+    background: #eaf2f7 !important;
+    border-color: #a9cde2 !important;
 }
 
 /* ===== ÉDITEUR D'AFFECTATION & PRISE EN CHARGE ===== */
 
 [data-theme="light"] .plans-iso-page .atelier-plan-block .atelier-manage-panel {
-    background: #f8fafc !important;
-    border: 1px solid #dbeafe !important;
+    background: #fafafa !important;
+    border: 1px solid #e3eef5 !important;
 }
 
 [data-theme="light"] .plans-iso-page .atelier-plan-block .prefa-form button,
@@ -1358,7 +1187,7 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .plans-iso-page .atelier-start > p {
-    color: #334155 !important;
+    color: #3f4247 !important;
 }
 
 /* ===== ACTIONS & HISTORIQUE ===== */
@@ -1374,7 +1203,7 @@ body[data-theme="light"],
 [data-theme="light"] .plans-iso-page .atelier-plan-actions .atelier-plan-delete-button {
     background: transparent !important;
     border-color: transparent !important;
-    color: #475569 !important;
+    color: var(--text-muted) !important;
 }
 
 [data-theme="light"] .plans-iso-page .atelier-plan-actions .atelier-plan-delete-button:hover {
@@ -1396,7 +1225,7 @@ body[data-theme="light"],
    ========================================================================== */
 
 [data-theme="light"] .account-chevron {
-    color: #64748b !important;
+    color: var(--text-muted) !important;
 }
 
 [data-theme="light"] .account-menu {
@@ -1408,50 +1237,37 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .account-menu-title {
-    color: #64748b !important;
+    color: var(--text-muted) !important;
 }
 
 [data-theme="light"] .account-item,
 [data-theme="light"] .account-add,
 [data-theme="light"] .account-manage,
 [data-theme="light"] .account-menu .account-logout {
-    color: #0f172a !important;
+    color: #171717 !important;
 }
 
 [data-theme="light"] .account-identity span {
-    color: #64748b !important;
+    color: var(--text-muted) !important;
 }
 
 [data-theme="light"] .account-item:hover,
 [data-theme="light"] .account-add:hover,
 [data-theme="light"] .account-manage:hover,
 [data-theme="light"] .account-menu .account-logout:hover {
-    background: #f1f5f9 !important;
+    background: #efeff0 !important;
 }
 
 [data-theme="light"] .account-check {
-    color: #2563eb !important;
+    color: #006399 !important;
 }
 
 [data-theme="light"] .account-action-icon {
-    color: #64748b !important;
-}
-
-[data-theme="light"] .account-add .account-action-icon {
-    color: #15803d !important;
+    color: var(--text-muted) !important;
 }
 
 [data-theme="light"] .account-menu .account-logout .icon {
-    color: #64748b !important;
-}
-
-[data-theme="light"] .account-remove {
-    color: #b91c1c !important;
-}
-
-[data-theme="light"] .account-remove:hover {
-    background: #fef2f2 !important;
-    color: #991b1b !important;
+    color: var(--text-muted) !important;
 }
 
 [data-theme="light"] .account-menu.is-managing .account-item:hover {
@@ -1459,8 +1275,8 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .account-menu.is-managing .account-manage {
-    background: #eff6ff !important;
-    color: #1d4ed8 !important;
+    background: #eaf2f7 !important;
+    color: #004268 !important;
 }
 
 [data-theme="light"] .account-menu-separator {
@@ -1469,11 +1285,7 @@ body[data-theme="light"],
 
 [data-theme="light"] .account-dialog-intro,
 [data-theme="light"] .account-message {
-    color: #64748b !important;
-}
-
-[data-theme="light"] .account-message.is-error {
-    color: #b91c1c !important;
+    color: var(--text-muted) !important;
 }
 
 [data-theme="light"] .account-dialog-footer {
@@ -1482,22 +1294,22 @@ body[data-theme="light"],
 
 [data-theme="light"] .account-dialog-footer .account-dialog-close {
     background: #ffffff !important;
-    color: #334155 !important;
+    color: #3f4247 !important;
 }
 
 [data-theme="light"] .account-dialog-footer .account-dialog-close:hover {
-    background: #f1f5f9 !important;
-    color: #0f172a !important;
+    background: #efeff0 !important;
+    color: #171717 !important;
 }
 
 [data-theme="light"] .account-dialog-footer .account-submit {
-    background: #2563eb !important;
+    background: #006399 !important;
     color: #ffffff !important;
     font-weight: 600;
 }
 
 [data-theme="light"] .account-dialog-footer .account-submit:hover:not(:disabled) {
-    background: #1d4ed8 !important;
+    background: #00527f !important;
 }
 
 /* ==========================================================================
@@ -1509,16 +1321,16 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .atelier-tab {
-    color: #64748b !important;
+    color: var(--text-muted) !important;
 }
 
 [data-theme="light"] .atelier-tab:hover {
-    color: #0f172a !important;
+    color: #171717 !important;
 }
 
 [data-theme="light"] .atelier-tab[aria-selected="true"] {
-    color: #2563eb !important;
-    border-bottom-color: #2563eb !important;
+    color: #006399 !important;
+    border-bottom-color: #006399 !important;
 }
 
 [data-theme="light"] .atelier-page .atelier-detail-panel {
@@ -1532,42 +1344,86 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .planning-legend-title {
-    color: #64748b !important;
+    color: var(--text-muted) !important;
 }
 
 [data-theme="light"] .planning-legend-item {
-    color: #0f172a !important;
+    color: #171717 !important;
 }
 
 [data-theme="light"] .nav-theme {
-    color: #64748b !important;
+    color: var(--text-muted) !important;
 }
 
 [data-theme="light"] .nav-theme:hover,
 [data-theme="light"] .nav-theme[aria-expanded="true"] {
-    background: #f1f5f9 !important;
-    color: #0f172a !important;
+    background: #efeff0 !important;
+    color: #171717 !important;
 }
 
 [data-theme="light"] .theme-swatch {
     border-color: var(--border-subtle) !important;
 }
 
-/* ===== LISTE DES DEMANDES : PRIORITÉ ET COMMANDE PRINCIPALE =====
-   La règle des badges plus haut peint toute « Urgente » en rouge plein : dans la liste, où
-   les urgentes se suivent, l'étiquette reprend les teintes douces des alertes. Et
-   « Examiner » garde son contour, que la règle des boutons fantômes lui retirait. */
-[data-theme="light"] .prefa-list .prefa-table .prefa-urgent {
-    background: var(--alerte-fond) !important;
-    color: var(--alerte-texte) !important;
+/* ==========================================================================
+   LE REGISTRE DU THÈME CLAIR — 26 octobre 2026
+   ==========================================================================
+   Ce qui datait l'application ne tenait pas à sa mise en page, qui est juste, mais à
+   trois choses : une image de vagues en « cover » derrière des tableaux de production,
+   une famille de gris bleutés qui tirait tout vers le bleu marine, et de l'air partout
+   — un écran de suivi montrait sept lignes là où la place en portait le double.
+
+   Le fond est parti (voir #right-panel plus haut), les gris sont devenus neutres, et
+   l'échelle des contrôles est redescendue d'un cran pour le seul thème clair. Ne restent
+   ici que les finitions qui ne découlaient pas des jetons.
+
+   Tout est sous [data-theme="light"], y compris la géométrie : le thème sombre garde
+   l'échelle mesurée le 13 octobre, au pixel près. */
+
+/* « Urgente » est désormais une seule règle, dans prefa-form.css, valable pour les
+   deux thèmes. */
+
+/* L'en-tête d'écran tenait 18 px au-dessus et au-dessous du titre. C'était la mesure d'une
+   page aérée ; dans une application qu'on garde ouverte toute la journée, ces 8 px rendus
+   font une ligne de tableau de plus sans rien serrer à l'œil. */
+[data-theme="light"] .prefa-heading,
+[data-theme="light"] .prefa-list .prefa-heading,
+[data-theme="light"] .prefa-list-heading,
+[data-theme="light"] .atelier-page .prefa-heading,
+[data-theme="light"] .settings-header,
+[data-theme="light"] .header-list,
+[data-theme="light"] .planning-heading {
+    padding-top: 14px !important;
+    padding-bottom: 14px !important;
 }
 
-[data-theme="light"] .prefa-list tbody .prefa-toggle.est-principal {
-    border-color: #cbd5e1 !important;
-    color: #0f172a !important;
-    font-weight: 500 !important;
+/* Le compte des demandes était collé au filet de l'en-tête du tableau : on lisait une
+   ligne de tableau de plus, pas un résumé. */
+[data-theme="light"] .prefa-list-summary {
+    padding-bottom: 16px !important;
 }
 
+/* Le focus prenait la teinte du navigateur, qui ne suit aucun thème. Un halo d'azur, le
+   même partout, et le cadre qui s'affirme : sur un poste d'atelier on navigue au clavier
+   plus souvent qu'on ne le croit. */
+[data-theme="light"] input:focus-visible,
+[data-theme="light"] select:focus-visible,
+[data-theme="light"] textarea:focus-visible,
+[data-theme="light"] button:focus-visible,
+[data-theme="light"] .nav-btn:focus-visible,
+[data-theme="light"] .filtre-declencheur:focus-visible {
+    outline: 2px solid rgb(0 99 153 / 35%) !important;
+    outline-offset: 1px !important;
+    border-color: var(--accent) !important;
+}
+
+/* La grande vue arrondie est dans dashboard-base.css : elle vaut pour les deux thèmes. */
+
+/* Le compte des urgentes, dans le résumé de la liste : le seul des trois nombres sur
+   lequel on agit le jour même. Venu de la refonte de la liste poussée sur main ; les deux
+   autres règles qui l'accompagnaient n'ont pas été reprises — « Urgente » est désormais
+   une seule règle valable pour les deux thèmes, dans prefa-form.css, et le bouton
+   principal qu'elles encadraient a laissé place au menu d'actions de la ligne. */
 [data-theme="light"] .prefa-list-summary .prefa-list-summary-urgent {
     color: var(--alerte-texte) !important;
 }

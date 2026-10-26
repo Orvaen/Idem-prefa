@@ -30,6 +30,26 @@ enum Role: int
     }
 
     /**
+     * Le même, court et sans accent, pour le journal.
+     *
+     * Apache échappe tout octet non ASCII dans ses lignes : « Chargé » y ressortirait en
+     * « Charg\xc3\xa9 » à chaque requête.
+     *
+     * Le métier garde son premier mot — « charge-production » et non « production » tout
+     * court, qui se lisait comme l'environnement du serveur : on cherchait pourquoi un
+     * poste en développement annonçait de la production, et c'était un rôle.
+     */
+    public function abrege(): string
+    {
+        return match ($this) {
+            self::ChargeDeProduction => 'charge-production',
+            self::ChefDAtelier => 'chef-atelier',
+            self::PersonnelAtelier => 'personnel-atelier',
+            self::ChargeDAffaire => 'charge-affaire',
+        };
+    }
+
+    /**
      * Le rôle d'un numéro venu de la base.
      *
      * Un compte créé avec un rôle inconnu — cela s'est vu, un script de démonstration

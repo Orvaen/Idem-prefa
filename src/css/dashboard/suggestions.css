@@ -31,5 +31,5 @@
 .suggestions-liste [role="option"]:hover,
 .suggestions-liste [role="option"].est-active {
     background: var(--hover);
-    color: var(--accent);
+    color: var(--accent-texte);
 }

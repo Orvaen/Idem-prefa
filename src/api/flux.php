@@ -36,7 +36,7 @@
  */
 require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/autoload.php';
-require_once __DIR__ . '/../dashboard/includes/prefa_visibilite.php';
+require_once __DIR__ . '/../dashboard/includes/demande/prefa_visibilite.php';
 
 /** Durée d'une connexion, en secondes. Au-delà, on raccroche et le navigateur rappelle. */
 const FLUX_DUREE = 60;

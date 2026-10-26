@@ -46,6 +46,9 @@ class User
         $hash = $stmt->fetchColumn();
 
         if (!is_string($hash) || !password_verify($password, $hash)) {
+            // Noté : un compte qui n'arrive plus à entrer se voit ici, et une rafale de
+            // tentatives sur le même identifiant aussi.
+            Journal::noter('échec de connexion sur ' . $identifiant);
             return false;
         }
 
@@ -67,6 +70,10 @@ class User
         }
 
         Session::ouvrir($utilisateur->identifiant);
+        // Le rôle au long, une fois : les lignes suivantes ne portent que son abrégé, et
+        // c'est lui qui explique ce que cette personne a le droit de faire ensuite.
+        Journal::noter('connexion de ' . $utilisateur->identifiant
+            . ' (' . ($utilisateur->role?->metier() ?? $utilisateur->roleEnBase) . ')');
 
         return true;
     }

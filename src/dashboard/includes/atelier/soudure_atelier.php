@@ -18,7 +18,8 @@
 
 require_once __DIR__ . '/soudure.php';
 require_once __DIR__ . '/plan_document.php';
-require_once __DIR__ . '/plan_lignes.php';
+require_once __DIR__ . '/avancement.php';
+require_once __DIR__ . '/../lecture/plan_lignes.php';
 
 /**
  * L'affectation active de cette personne sur cet élément, si elle existe.
@@ -88,14 +89,22 @@ function soudureAtelierFeuille(PDO $db, int $elementId, array $plan, int $page, 
         $saisies[(string) $ligne['numero']] = $ligne;
     }
 
+    // Ce que le chef a déjà validé : une ligne saisie après sa dernière validation
+    // attend la prochaine. Le soudeur voyait « 1 soudure enregistrée », en vert, et rien
+    // ne lui disait ensuite qu'elle attendait encore.
+    $jusqua = avancementValideJusqua($db, $elementId);
+
     $lignes = [];
     $faites = 0;
     $miennes = 0;
-    $voir = static function (string $numero, ?array $saisie, bool $imprimee) use ($soudeurId, &$faites, &$miennes): array {
+    $enAttente = 0;
+    $voir = static function (string $numero, ?array $saisie, bool $imprimee) use ($soudeurId, $jusqua, &$faites, &$miennes, &$enAttente): array {
         $aMoi = $saisie !== null && (int) ($saisie['id_soudeur'] ?? 0) === $soudeurId;
         $remplie = $saisie !== null && (trim((string) $saisie['type_soudure']) !== '' || !empty($saisie['date_soudure']));
+        $validee = !$remplie || avancementCordonValide($saisie ?? [], $jusqua);
         if ($remplie) $faites++;
         if ($remplie && $aMoi) $miennes++;
+        if ($remplie && !$validee) $enAttente++;
         return [
             'numero' => $numero,
             'imprimee' => $imprimee,
@@ -107,6 +116,9 @@ function soudureAtelierFeuille(PDO $db, int $elementId, array $plan, int $page, 
             'pt' => (string) ($saisie['pt'] ?? ''),
             'visa' => (string) ($saisie['visa_nom'] ?? ''),
             'remplie' => $remplie,
+            // Validée, donc écrite sur le plan. Sinon elle attend le chef, et la feuille le
+            // dit — ligne par ligne et en un mot au-dessus du tableau.
+            'validee' => $validee,
             // Une soudure posée par quelqu'un d'autre se lit, ne se reprend pas : son nom
             // est sur le plan final, et ce n'est pas au voisin de le changer.
             'a_moi' => $aMoi,
@@ -125,7 +137,8 @@ function soudureAtelierFeuille(PDO $db, int $elementId, array $plan, int $page, 
         $lignes[] = $voir((string) $numero, $saisie, false);
     }
 
-    return ['lignes' => $lignes, 'imprimees' => $imprimees, 'faites' => $faites, 'miennes' => $miennes];
+    return ['lignes' => $lignes, 'imprimees' => $imprimees, 'faites' => $faites,
+        'miennes' => $miennes, 'enAttente' => $enAttente];
 }
 
 /**
@@ -187,10 +200,22 @@ function soudureAtelierEnregistrer(PDO $db, int $elementId, array $plan, int $pa
 }
 
 /**
- * Les feuilles ISO que cette personne peut travailler : un choix par page, parce que c'est
- * la question qu'elle se pose — sur quel isométrique suis-je ?
+ * Les feuilles ISO que cette personne peut travailler : une entrée par page de cahier,
+ * avec où en est chacune.
  *
- * @return list<array{element:int, reference:string, demande:int, document:int, nom:string, page:int, pages:int}>
+ * Une liste déroulante les cachait toutes derrière un seul contrôle. Un cahier en porte
+ * quinze, et il fallait les ouvrir une à une pour savoir laquelle restait à faire : elles
+ * se montrent donc en tableau. Chaque entrée porte le numéro de ligne imprimé sur la
+ * feuille — c'est ce que l'atelier lit sur le papier qu'il a en main — et le compte de ses
+ * cordons.
+ *
+ * Le dénominateur ne vient que du cache : aucun PDF n'est relu ici. La reconnaissance
+ * coûte quelques secondes par page, et quinze feuilles feraient attendre une demi-minute
+ * devant un écran vide. Une feuille jamais ouverte rend donc `imprimees` à null, et le
+ * tableau le dit au lieu d'annoncer un total qu'il ne connaît pas.
+ *
+ * @return list<array{element:int, reference:string, libelle:string, demande:int, document:int,
+ *                    nom:string, numero:string, page:int, pages:int, faites:int, imprimees:?int}>
  */
 function soudureAtelierFeuilles(PDO $db, int $userId): array
 {
@@ -202,22 +227,86 @@ function soudureAtelierFeuilles(PDO $db, int $userId): array
         ORDER BY e.id_demande DESC, e.reference');
     $stmt->execute([$userId]);
 
+    // Les cordons renseignés, rangés par feuille et par page : une lecture par plan, et
+    // non une par ligne du tableau. Même condition qu'avancementSouduresFaites — une
+    // ligne compte dès qu'elle porte une date ou un procédé.
+    $comptes = $db->prepare("SELECT id_document, page, COUNT(*) AS faites FROM plan_soudure
+        WHERE id_element = ? AND (TRIM(type_soudure) <> '' OR date_soudure IS NOT NULL)
+        GROUP BY id_document, page");
+
     $feuilles = [];
     foreach ($stmt->fetchAll() as $element) {
-        foreach (planDocuments($db, (int) $element['id']) as $doc) {
+        $elementId = (int) $element['id'];
+        $comptes->execute([$elementId]);
+        $faites = [];
+        foreach ($comptes->fetchAll() as $compte) {
+            $faites[(int) $compte['id_document'] . ':' . (int) $compte['page']] = (int) $compte['faites'];
+        }
+
+        foreach (planDocuments($db, $elementId) as $doc) {
+            $plan = planDocumentChoisi($db, $elementId, (int) $doc['id']);
+            $lisible = $plan !== null && is_file($plan['chemin']);
             for ($page = 1; $page <= max(1, (int) $doc['pages']); $page++) {
+                $analyse = $lisible ? planLignesAnalyseGardee(
+                    $plan['chemin'],
+                    planLignesCache((int) $plan['id_demande'], (string) $plan['cle_document'], $page)
+                ) : null;
                 $feuilles[] = [
-                    'element' => (int) $element['id'],
+                    'element' => $elementId,
                     'reference' => (string) $element['reference'],
                     'libelle' => (string) $element['libelle'],
                     'demande' => (int) $element['id_demande'],
                     'document' => (int) $doc['id'],
                     'nom' => preg_replace('/\.pdf$/i', '', (string) $doc['nom']),
+                    // Le numéro de ligne, relevé au dépôt. Le nom du fichier sert de
+                    // secours : un cahier sans numéros reconnus en est réduit à ses pages.
+                    'numero' => (string) ($doc['numeros_ligne'][$page] ?? ''),
                     'page' => $page,
                     'pages' => max(1, (int) $doc['pages']),
+                    'faites' => $faites[(int) $doc['id'] . ':' . $page] ?? 0,
+                    'imprimees' => $analyse === null ? null : count($analyse['soudures']['lignes'] ?? []),
                 ];
             }
         }
     }
     return $feuilles;
+}
+
+/**
+ * Où en est une feuille, en deux mots et dans la couleur que la maison donne déjà à cet
+ * état-là — la même pastille que sur l'écran du chef.
+ *
+ * Elle est ici, et non dans l'écran, parce que le tableau la rend au chargement et que les
+ * actions la renvoient après chaque enregistrement : deux listes de libellés à tenir
+ * d'accord finiraient par ne plus l'être.
+ *
+ * `$imprimees` à null veut dire « feuille jamais ouverte » : son tableau n'a pas encore
+ * été reconnu, et on ne sait donc pas combien de cordons elle demande. Zéro veut dire
+ * « lue, mais sans liste soudure » — un scan, ou un gabarit que la détection ne sait pas
+ * lire. Les deux se disent, parce qu'on n'y répond pas de la même façon.
+ *
+ * @return array{cle:string, libelle:string, classe:string}
+ */
+function soudureAtelierEtatFeuille(int $faites, ?int $imprimees): array
+{
+    if ($imprimees === null) {
+        return ['cle' => 'non_lue', 'libelle' => 'Pas encore ouverte', 'classe' => 'atelier-muted'];
+    }
+    if ($imprimees === 0) {
+        return $faites > 0
+            ? ['cle' => 'en_cours', 'libelle' => 'En cours', 'classe' => 'atelier-status-progress']
+            : ['cle' => 'sans_liste', 'libelle' => 'Aucune liste', 'classe' => 'atelier-muted'];
+    }
+    if ($faites >= $imprimees) {
+        return ['cle' => 'soudee', 'libelle' => 'Soudée', 'classe' => 'status-2'];
+    }
+    return $faites > 0
+        ? ['cle' => 'en_cours', 'libelle' => 'En cours', 'classe' => 'atelier-status-progress']
+        : ['cle' => 'a_faire', 'libelle' => 'À faire', 'classe' => 'atelier-muted'];
+}
+
+/** Le compte d'une feuille, tel qu'il s'écrit dans le tableau : « 3 / 7 », ou « 3 / — ». */
+function soudureAtelierCompteFeuille(int $faites, ?int $imprimees): string
+{
+    return $faites . ' / ' . ($imprimees === null ? '—' : $imprimees);
 }

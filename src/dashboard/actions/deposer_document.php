@@ -6,9 +6,9 @@
 // certificat matière qui arrive trois semaines après la validation. Ici, rien d'autre que
 // le document ne bouge.
 require_once __DIR__ . '/../includes/prefa_context.php';
-require_once __DIR__ . '/../includes/prefa_attachments.php';
-require_once __DIR__ . '/../includes/prefa_pdf.php';
-require_once __DIR__ . '/../includes/prefa_documents.php';
+require_once __DIR__ . '/../includes/demande/prefa_attachments.php';
+require_once __DIR__ . '/../includes/demande/prefa_pdf.php';
+require_once __DIR__ . '/../includes/demande/prefa_documents.php';
 prefaPost();
 
 $familles = prefaDocumentFamilles();
@@ -69,7 +69,7 @@ try {
     $db->prepare('UPDATE demande_prefabrication SET DateUpdate = NOW() WHERE id = ?')->execute([$idDemande]);
 } catch (Throwable $exception) {
     if ($db->inTransaction()) $db->rollBack();
-    error_log('Dépôt sur la demande ' . $idDemande . ' : ' . $exception->getMessage());
+    Journal::erreur('Dépôt sur la demande ' . $idDemande, $exception);
     prefaError(500, 'Dépôt impossible. Réessayez.');
 }
 

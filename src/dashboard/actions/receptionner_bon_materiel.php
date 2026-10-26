@@ -6,7 +6,7 @@
 // d'arriver, parfois en deux fois, et il faut bien pouvoir la pointer. Le pointage ne
 // touche donc qu'aux colonnes de réception.
 require_once __DIR__ . '/../includes/prefa_context.php';
-require_once __DIR__ . '/../includes/materiel_bon.php';
+require_once __DIR__ . '/../includes/materiel/materiel_bon.php';
 prefaPost();
 
 // Celui qui reçoit la marchandise est à l'atelier : même porte que l'écran lui-même.
@@ -37,7 +37,7 @@ if (count($pointages) > MATERIEL_LIGNES_MAX) prefaError(400, 'Trop de lignes poi
 try {
     materielPointerReception($db, $idDocument, $pointages, (int) $actor['id']);
 } catch (Throwable $exception) {
-    error_log('Pointage du bon ' . $idDocument . ' : ' . $exception->getMessage());
+    Journal::erreur('Pointage du bon ' . $idDocument, $exception);
     prefaError(500, 'Pointage impossible. Réessayez.');
 }
 
