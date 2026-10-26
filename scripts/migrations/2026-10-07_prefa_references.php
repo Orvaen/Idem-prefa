@@ -2,7 +2,7 @@
 // Idempotent migration: existing references and deleted numbers are preserved.
 $root = is_dir('/var/www/html/dashboard') ? '/var/www/html' : __DIR__ . '/../../src';
 require_once $root . '/db.php';
-require_once $root . '/dashboard/includes/prefa_references.php';
+require_once $root . '/dashboard/includes/demande/prefa_references.php';
 $db = new MyPDO($root . '/my_setting.ini');
 $db->exec('CREATE TABLE IF NOT EXISTS prefa_reference_compteur (
     annee SMALLINT UNSIGNED PRIMARY KEY,

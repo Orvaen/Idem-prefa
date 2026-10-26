@@ -20,7 +20,7 @@
  */
 $racine = is_dir('/var/www/html/dashboard') ? '/var/www/html' : __DIR__ . '/../../src';
 require_once $racine . '/db.php';
-require_once $racine . '/dashboard/includes/plan_numeros.php';
+require_once $racine . '/dashboard/includes/lecture/plan_numeros.php';
 
 $db = new MyPDO($racine . '/my_setting.ini');
 
