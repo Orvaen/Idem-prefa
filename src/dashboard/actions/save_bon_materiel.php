@@ -30,7 +30,7 @@ try {
 } catch (DomainException $exception) {
     prefaError(422, $exception->getMessage());
 } catch (Throwable $exception) {
-    error_log('Enregistrement du bon ' . $idDocument . ' : ' . $exception->getMessage());
+    Journal::erreur('Enregistrement du bon ' . $idDocument, $exception);
     prefaError(500, 'Enregistrement impossible. Réessayez.');
 }
 

@@ -29,7 +29,7 @@ try {
     ]);
 
 } catch (Exception $e) {
-    error_log('Login failed: ' . $e->getMessage());
+    Journal::erreur('Connexion impossible', $e);
     http_response_code(500);
 
     echo json_encode([

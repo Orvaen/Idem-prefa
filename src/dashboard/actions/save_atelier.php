@@ -120,6 +120,6 @@ try {
 } catch (PDOException $e) {
     if ($db->inTransaction()) $db->rollBack();
     if ($e->getCode() === '23000') prefaError(409, 'Cette référence ou affectation existe déjà. Actualisez la liste.');
-    error_log('Atelier: ' . $e->getMessage());
+    Journal::erreur('Atelier', $e);
     prefaError(500, 'Impossible d’enregistrer. Réessayez.');
 }

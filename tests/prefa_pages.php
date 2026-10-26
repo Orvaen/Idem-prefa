@@ -1,5 +1,10 @@
 <?php
 // Read-only rendering checks in the local PHP container.
+// The container sends warnings to the log instead of the response body: journal.php
+// installs an error handler and display_errors is off. This check looks for them in the
+// rendered HTML, so it puts PHP's own handling back for its own run.
+restore_error_handler();
+ini_set('display_errors', '1');
 chdir('/var/www/html');
 require_once 'db.php';
 $connection = new MyPDO();

@@ -106,6 +106,6 @@ try {
     echo json_encode(['success' => true, 'message' => $reponse]);
 } catch (PDOException $e) {
     if ($db->inTransaction()) $db->rollBack();
-    error_log('Avancement atelier: ' . $e->getMessage());
+    Journal::erreur('Avancement atelier', $e);
     prefaError(500, 'Impossible d’enregistrer. Réessayez.');
 }

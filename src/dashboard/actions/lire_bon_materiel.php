@@ -37,7 +37,7 @@ try {
 } catch (DomainException $exception) {
     prefaError(409, $exception->getMessage());
 } catch (Throwable $exception) {
-    error_log('Lecture du bon ' . $idDocument . ' : ' . $exception->getMessage());
+    Journal::erreur('Lecture du bon ' . $idDocument, $exception);
     prefaError(500, 'Lecture impossible. Réessayez.');
 }
 

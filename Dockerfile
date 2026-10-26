@@ -25,6 +25,32 @@ RUN printf '<Directory /var/www/html/uploads>\nRequire all denied\n</Directory>\
 # et continuent d'être servis directement.
 RUN printf '<Directory /var/www/html/api>\nFallbackResource /api/index.php\n</Directory>\n' > /etc/apache2/conf-available/prefa-api.conf && a2enconf prefa-api
 
+# Le journal du conteneur — « docker compose logs php ». Trois pièces :
+#
+# 1. Le format des lignes, dans docker/apache-journal.conf. Il remplace « combined », deux
+#    cents caractères par requête dont la moitié répète le nom du navigateur. Apache est
+#    livré avec un CustomLog dans son site par défaut, qui l'emporterait sur le nôtre ; et
+#    other-vhosts-access-log, une fois le premier retiré, se mettrait à tout noter une
+#    seconde fois. Les deux s'en vont donc ici.
+#
+# 2. log_errors : il valait Off. Aucun avertissement, aucune erreur fatale de PHP n'était
+#    notée — elles partaient dans la page, à la place de la réponse attendue. display_errors
+#    s'éteint pour la même raison : une erreur imprimée avant les en-têtes empêche PHP de
+#    répondre 500, et l'échec ressort en 200.
+#
+# 3. journal.php, chargé avant chaque script : il attrape ce que PHP signale et donne à
+#    l'application de quoi noter ses propres faits. Voir le fichier pour le détail.
+#
+# L'heure du journal est celle de l'atelier : les écrans affichent Europe/Paris, le journal
+# aussi. PHP ne lit pas TZ — il garde date.timezone, c'est-à-dire UTC — donc rien ne change
+# pour les dates enregistrées en base.
+ENV TZ=Europe/Paris
+COPY ./docker/apache-journal.conf /etc/apache2/conf-available/prefa-journal.conf
+RUN a2enconf prefa-journal \
+    && a2disconf other-vhosts-access-log \
+    && sed -i '/CustomLog/d' /etc/apache2/sites-available/000-default.conf
+RUN printf 'log_errors=On\ndisplay_errors=Off\nauto_prepend_file=/var/www/html/journal.php\n' > /usr/local/etc/php/conf.d/prefa-journal.ini
+
 # Lecture des certificats matière (CCPU) : Poppler ouvre le PDF, Tesseract lit les scans.
 # Tout reste sur le serveur, aucun service externe. Placé avant la copie de l'application
 # pour que cette couche ne soit pas reconstruite à chaque modification du code.

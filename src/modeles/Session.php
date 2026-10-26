@@ -27,7 +27,12 @@ final class Session
     {
         self::demarrer();
         $identifiant = $_SESSION['identifiant'] ?? null;
-        return is_string($identifiant) && $identifiant !== '' ? $identifiant : null;
+        $identifiant = is_string($identifiant) && $identifiant !== '' ? $identifiant : null;
+        // Le journal des requêtes relit cette note sous le nom %{qui}n : une ligne
+        // « 200 POST /dashboard/actions/save_atelier.php » ne dit rien tant qu'on ignore
+        // de quel poste de l'atelier elle vient. Le rôle s'y ajoute dans utilisateur().
+        if ($identifiant !== null) self::noterQui($identifiant);
+        return $identifiant;
     }
 
     public static function connectee(): bool
@@ -41,11 +46,16 @@ final class Session
         self::demarrer();
         $_SESSION['identifiant'] = $identifiant;
         self::$utilisateur = null;
+        // La requête qui ouvre la session n'a encore demandé qui est là à personne : sans
+        // cette note, la seule ligne qui compte — celle de la connexion — sort sans compte.
+        self::noterQui($identifiant);
     }
 
     public static function fermer(): void
     {
         self::demarrer();
+        // Avant de vider : après, plus personne ne sait qui vient de partir.
+        if (self::identifiant() !== null) Journal::noter('déconnexion');
         $_SESSION = [];
         self::$utilisateur = null;
         if (ini_get('session.use_cookies')) {
@@ -67,7 +77,27 @@ final class Session
         if (self::$utilisateur !== null) return self::$utilisateur;
         $identifiant = self::identifiant();
         if ($identifiant === null) return null;
-        return self::$utilisateur = Utilisateur::parIdentifiant($db, $identifiant);
+        self::$utilisateur = Utilisateur::parIdentifiant($db, $identifiant);
+        if (self::$utilisateur !== null) {
+            self::noterQui($identifiant . '/' . (self::$utilisateur->role?->abrege() ?? 'sans-role'));
+        }
+        return self::$utilisateur;
+    }
+
+    /**
+     * Dit au journal des requêtes qui est derrière celle-ci.
+     *
+     * apache_note n'existe que sous Apache : en ligne de commande — les scripts, les
+     * migrations — il n'y a pas de requête à annoter, et Journal lit la session lui-même.
+     */
+    private static function noterQui(string $qui): void
+    {
+        if (!function_exists('apache_note')) return;
+        // Sans ce garde-fou, « A.Admin/chef-atelier » redevient « A.Admin » : identifiant()
+        // repasse treize fois par requête, utilisateur() une seule, et la dernière note
+        // écrite est celle que le journal garde.
+        if (str_contains((string) apache_note('qui'), '/')) return;
+        apache_note('qui', $qui);
     }
 
     // ------------------------------------------------------- le jeton des formulaires

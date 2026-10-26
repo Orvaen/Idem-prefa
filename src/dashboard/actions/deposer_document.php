@@ -69,7 +69,7 @@ try {
     $db->prepare('UPDATE demande_prefabrication SET DateUpdate = NOW() WHERE id = ?')->execute([$idDemande]);
 } catch (Throwable $exception) {
     if ($db->inTransaction()) $db->rollBack();
-    error_log('Dépôt sur la demande ' . $idDemande . ' : ' . $exception->getMessage());
+    Journal::erreur('Dépôt sur la demande ' . $idDemande, $exception);
     prefaError(500, 'Dépôt impossible. Réessayez.');
 }
 

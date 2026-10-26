@@ -420,7 +420,7 @@ try {
     if ($db->inTransaction()) $db->rollBack();
     foreach ($savedFiles as $path) unlink($path);
     foreach ($pendingRemoval as $path => $pendingPath) rename($pendingPath, $path);
-    error_log('Création demande de préfabrication : ' . $e->getMessage());
+    Journal::erreur('Création demande de préfabrication', $e);
     $message = 'Impossible d’enregistrer la demande. Vérifiez les champs et réessayez.';
     if ($e instanceof RuntimeException && $e->getCode() === 507) {
         $message = 'Le serveur ne peut pas stocker les documents joints. Veuillez réessayer après rétablissement du stockage.';

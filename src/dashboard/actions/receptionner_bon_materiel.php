@@ -37,7 +37,7 @@ if (count($pointages) > MATERIEL_LIGNES_MAX) prefaError(400, 'Trop de lignes poi
 try {
     materielPointerReception($db, $idDocument, $pointages, (int) $actor['id']);
 } catch (Throwable $exception) {
-    error_log('Pointage du bon ' . $idDocument . ' : ' . $exception->getMessage());
+    Journal::erreur('Pointage du bon ' . $idDocument, $exception);
     prefaError(500, 'Pointage impossible. Réessayez.');
 }
 

@@ -55,7 +55,7 @@ try {
     $db->commit();
 } catch (PDOException $erreur) {
     if ($db->inTransaction()) $db->rollBack();
-    error_log('Soudures atelier: ' . $erreur->getMessage());
+    Journal::erreur('Soudures atelier', $erreur);
     prefaError(500, 'Impossible d’enregistrer. Réessayez.');
 }
 
