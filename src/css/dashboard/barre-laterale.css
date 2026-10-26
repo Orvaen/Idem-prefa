@@ -1,0 +1,230 @@
+/* ==========================================================================
+   BARRE LATÉRALE
+   ==========================================================================
+
+   Une carte posée à côté du travail, plutôt qu'un bandeau collé au bord : coins arrondis,
+   ombre légère, un peu d'air tout autour. Le texte est en Inter (livrée avec la page
+   « Nouvelle demande », voir nouvelle-demande.css), les icônes sont celles de menu.php,
+   dessinées pour l'application au trait de 1,5.
+
+   L'entrée ouverte se teinte d'argile très pâle — la couleur de la page « Nouvelle
+   demande » — et les compteurs deviennent des pastilles douces : argile pour les urgences,
+   neutre pour le reste.
+
+   Le thème clair de l'application peint la barre avec des !important : les règles
+   « html[data-theme="light"] #left-panel … » plus bas reprennent leur forme, un élément de
+   plus, pour peser plus lourd. */
+
+/* ===== LES TEINTES ===== */
+
+#left-panel {
+    --bl-gouttiere: var(--frame);
+    --bl-carte: var(--surface);
+    --bl-bord: var(--border);
+    --bl-ombre: 0 1px 2px rgb(0 0 0 / 20%), 0 10px 30px rgb(0 0 0 / 18%);
+    --bl-texte: var(--text);
+    --bl-discret: var(--text-muted);
+    --bl-icone: var(--text-muted);
+    --bl-survol: var(--hover);
+    --bl-actif-fond: rgb(217 119 87 / 14%);
+    --bl-actif-texte: #F0B49E;
+    --bl-actif-icone: #E08A6D;
+    --bl-urgent-fond: rgb(217 119 87 / 18%);
+    --bl-urgent-texte: #F0B49E;
+    --bl-neutre-fond: var(--active);
+    --bl-neutre-texte: var(--text-muted);
+}
+
+html[data-theme="light"] #left-panel {
+    --bl-gouttiere: #FAF9F5;
+    --bl-carte: #FFFFFF;
+    --bl-bord: #EEEBE3;
+    --bl-ombre: 0 1px 2px rgb(20 20 19 / 3%), 0 10px 30px rgb(20 20 19 / 4%);
+    --bl-texte: #3D3C37;
+    --bl-discret: #74726A;
+    --bl-icone: #8A887F;
+    --bl-survol: #F7F5F0;
+    --bl-actif-fond: #FBF0EA;
+    --bl-actif-texte: #8E3A1C;
+    --bl-actif-icone: #B85433;
+    --bl-urgent-fond: #FBE5DB;
+    --bl-urgent-texte: #9A3F1F;
+    --bl-neutre-fond: #F1EFE9;
+    --bl-neutre-texte: #5F5E57;
+}
+
+/* La gouttière autour de la carte : ivoire en clair. */
+html[data-theme="light"] #contenaire {
+    background: #FAF9F5 !important;
+}
+
+/* ===== LA CARTE ===== */
+
+#left-panel,
+html[data-theme="light"] #left-panel {
+    box-sizing: border-box;
+    height: calc(100vh - 24px);
+    margin: 12px 0 12px 12px;
+    border: 1px solid var(--bl-bord);
+    border-radius: 14px;
+    background: var(--bl-carte) !important;
+    box-shadow: var(--bl-ombre);
+    font-family: "Inter", var(--font);
+    color: var(--bl-texte);
+}
+
+/* La poignée de redimensionnement suit la carte : elle s'écarte de la gouttière. */
+#drag {
+    margin: 12px 6px;
+}
+
+/* ===== LA MARQUE ===== */
+
+#left-panel .nav-marque {
+    min-height: 60px;
+    padding: 0 18px;
+    border-bottom: 0;
+}
+
+#left-panel .nav-marque img {
+    height: 30px;
+}
+
+/* ===== LES ENTRÉES ===== */
+
+#left-panel .nav-header {
+    gap: 2px;
+    padding: 6px 10px 20px;
+}
+
+#left-panel .nav-btn,
+html[data-theme="light"] #left-panel .nav-btn {
+    min-height: 34px;
+    padding: 6px 10px;
+    gap: 10px;
+    border-radius: 8px;
+    color: var(--bl-texte) !important;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 400;
+    transition: background .12s, color .12s;
+}
+
+#left-panel .nav-btn .icon,
+html[data-theme="light"] #left-panel .nav-btn .icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: var(--bl-icone) !important;
+}
+
+#left-panel .nav-btn:hover,
+html[data-theme="light"] #left-panel .nav-btn:hover {
+    background: var(--bl-survol) !important;
+    color: var(--bl-texte) !important;
+}
+
+#left-panel .nav-btn-avant {
+    margin-bottom: 0;
+}
+
+#left-panel .nav-btn.is-active,
+#left-panel .nav-btn.is-active:hover,
+html[data-theme="light"] #left-panel .nav-btn.is-active,
+html[data-theme="light"] #left-panel .nav-btn.is-active:hover {
+    background: var(--bl-actif-fond) !important;
+    color: var(--bl-actif-texte) !important;
+    font-weight: 500;
+}
+
+#left-panel .nav-btn.is-active .icon,
+html[data-theme="light"] #left-panel .nav-btn.is-active .icon {
+    color: var(--bl-actif-icone) !important;
+}
+
+#left-panel .nav-btn:focus-visible {
+    outline: 2px solid var(--bl-actif-icone);
+    outline-offset: 1px;
+}
+
+/* ===== LES RUBRIQUES ===== */
+
+#left-panel .nav-rayon {
+    margin-top: 14px;
+    gap: 2px;
+}
+
+#left-panel .nav-rayon-titre,
+html[data-theme="light"] #left-panel .nav-rayon-titre {
+    justify-content: space-between;
+    margin: 0 0 2px;
+    padding: 4px 10px;
+    color: var(--bl-discret) !important;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: normal;
+    text-transform: none;
+}
+
+#left-panel .nav-rayon-titre:hover,
+html[data-theme="light"] #left-panel .nav-rayon-titre:hover {
+    color: var(--bl-texte) !important;
+}
+
+/* Le chevron reste visible, très pâle : on doit savoir que la rubrique se replie. */
+#left-panel .nav-rayon-chevron {
+    opacity: .45;
+}
+
+#left-panel .nav-rayon:hover .nav-rayon-chevron {
+    opacity: .8;
+}
+
+#left-panel .nav-rayon-corps {
+    gap: 2px;
+}
+
+/* ===== LES COMPTEURS ===== */
+
+#left-panel .nav-btn .nav-urgent-badge,
+html[data-theme="light"] #left-panel .nav-btn .nav-urgent-badge {
+    width: auto;
+    min-width: 20px;
+    height: 18px;
+    padding: 0 7px;
+    box-sizing: border-box;
+    border-radius: 999px;
+    background: var(--bl-urgent-fond) !important;
+    color: var(--bl-urgent-texte) !important;
+    font-size: 11.5px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+#left-panel .nav-btn .nav-urgent-badge[data-compteur="pv"],
+html[data-theme="light"] #left-panel .nav-btn .nav-urgent-badge[data-compteur="pv"] {
+    background: var(--bl-neutre-fond) !important;
+    color: var(--bl-neutre-texte) !important;
+}
+
+#left-panel .nav-btn .nav-urgent-badge[hidden] {
+    display: none;
+}
+
+/* ===== SUR TÉLÉPHONE =====
+   La barre s'ouvre par-dessus la page : la carte garde ses marges et ses coins. */
+
+@media (max-width: 900px) {
+    #left-panel,
+    html[data-theme="light"] #left-panel {
+        inset: 12px auto 12px 12px;
+        height: auto;
+        margin: 0;
+        border-radius: 14px;
+    }
+
+    #left-panel .sidebar-mobile-header {
+        border-bottom: 0;
+    }
+}

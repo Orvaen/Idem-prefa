@@ -162,7 +162,7 @@ if ($isAdmin || $isWorkshopChief) {
                 <?php foreach ($entrees['avant'] as $entree): ?>
                     <?php $libelle = is_callable($entree['libelle']) ? ($entree['libelle'])($utilisateur) : $entree['libelle']; ?>
                     <button id="btn-<?= $entree['id'] ?>" class="nav-btn nav-btn-avant<?= $entree['id'] === $vue['id'] ? ' is-active' : '' ?>" type="button" data-page="<?= htmlspecialchars($entree['page'], ENT_QUOTES, 'UTF-8') ?>"<?= $entree['id'] === $vue['id'] ? ' aria-current="page"' : '' ?>>
-                        <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><?= $entree['icone'] ?></svg>
+                        <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><?= $entree['icone'] ?></svg>
                         <span><?= htmlspecialchars($libelle, ENT_QUOTES, 'UTF-8') ?></span>
                     </button>
                 <?php endforeach; ?>
@@ -181,7 +181,7 @@ if ($isAdmin || $isWorkshopChief) {
                             <?php foreach ($rayon['entrees'] as $entree): ?>
                         <?php $libelle = is_callable($entree['libelle']) ? ($entree['libelle'])($utilisateur) : $entree['libelle']; ?>
                         <button id="btn-<?= $entree['id'] ?>" class="nav-btn<?= $entree['id'] === $vue['id'] ? ' is-active' : '' ?>" type="button" data-page="<?= htmlspecialchars($entree['page'], ENT_QUOTES, 'UTF-8') ?>"<?= $entree['id'] === $vue['id'] ? ' aria-current="page"' : '' ?>>
-                            <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><?= $entree['icone'] ?></svg>
+                            <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><?= $entree['icone'] ?></svg>
                             <span><?= htmlspecialchars($libelle, ENT_QUOTES, 'UTF-8') ?></span>
                             <?= dashboardBadge($entree['id'], $utilisateur, $urgentPending, $pvAFaire) ?>
                         </button>
