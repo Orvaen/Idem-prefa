@@ -58,6 +58,21 @@ final class Reponse
         return self::erreur(400, 'demande_invalide', $message);
     }
 
+    // Ce qu'il y a dedans, pour les essais : envoyer() termine le script, un test ne peut
+    // donc pas lire ce qu'il a envoyé. Les ressources, elles, n'en ont pas besoin — elles
+    // construisent une réponse, elles ne la relisent pas.
+
+    public function statut(): int
+    {
+        return $this->statut;
+    }
+
+    /** @return array<string, mixed> */
+    public function corps(): array
+    {
+        return $this->corps;
+    }
+
     public function envoyer(): never
     {
         http_response_code($this->statut);
