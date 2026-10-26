@@ -18,10 +18,9 @@
 /* ===== LES TEINTES ===== */
 
 #left-panel {
-    --bl-gouttiere: var(--frame);
-    --bl-carte: var(--surface);
+    --bl-carte: color-mix(in srgb, var(--surface) 92%, #ffffff);
     --bl-bord: var(--border);
-    --bl-ombre: 0 1px 2px rgb(0 0 0 / 20%), 0 10px 30px rgb(0 0 0 / 18%);
+    --bl-ombre: 0 1px 2px rgb(0 0 0 / 18%);
     --bl-texte: var(--text);
     --bl-discret: var(--text-muted);
     --bl-icone: var(--text-muted);
@@ -36,26 +35,28 @@
 }
 
 html[data-theme="light"] #left-panel {
-    --bl-gouttiere: #FAF9F5;
-    --bl-carte: #FFFFFF;
+    --bl-carte: #FAF9F5;
     --bl-bord: #EEEBE3;
-    --bl-ombre: 0 1px 2px rgb(20 20 19 / 3%), 0 10px 30px rgb(20 20 19 / 4%);
+    --bl-ombre: 0 1px 2px rgb(20 20 19 / 3%);
     --bl-texte: #3D3C37;
     --bl-discret: #74726A;
     --bl-icone: #8A887F;
-    --bl-survol: #F7F5F0;
-    --bl-actif-fond: #FBF0EA;
+    --bl-survol: #F1EFE8;
+    --bl-actif-fond: #F6E6DD;
     --bl-actif-texte: #8E3A1C;
     --bl-actif-icone: #B85433;
     --bl-urgent-fond: #FBE5DB;
     --bl-urgent-texte: #9A3F1F;
-    --bl-neutre-fond: #F1EFE9;
+    --bl-neutre-fond: #ECE9E1;
     --bl-neutre-texte: #5F5E57;
 }
 
-/* La gouttière autour de la carte : ivoire en clair. */
+/* Autour de la carte, le fond de la page et rien d'autre : une bande d'une autre teinte
+   découpait l'écran en trois — la gouttière, la carte, le travail. C'est la carte qui
+   porte la couleur, pas ce qui l'entoure. */
+#contenaire,
 html[data-theme="light"] #contenaire {
-    background: #FAF9F5 !important;
+    background: var(--surface) !important;
 }
 
 /* ===== LA CARTE ===== */
