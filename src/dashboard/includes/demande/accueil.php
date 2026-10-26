@@ -2,6 +2,8 @@
 
 require_once __DIR__ . '/prefa_visibilite.php';
 require_once __DIR__ . '/../atelier/avancement.php';
+// Pour accueilIcone() : pages/accueil.php n'ouvre pas le menu, lui.
+require_once __DIR__ . '/../menu.php';
 
 /**
  * Ce que l'accueil montre : quelques chiffres, et ce qui a bougé aujourd'hui.
@@ -110,6 +112,29 @@ function accueilTuiles(PDO $db, Utilisateur $utilisateur): array
         $tuile($demandes(' AND d.id_statut = 2'), 'Validées', 'demandes parties en atelier', 'btn-list-prefa'),
         $tuile($demandes(' AND d.id_statut = 3'), 'Refusées', 'demandes à reprendre', 'btn-list-prefa', $demandes(' AND d.id_statut = 3') > 0),
     ];
+}
+
+/**
+ * Le dessin d'une tuile : celui de l'écran qu'elle ouvre.
+ *
+ * Une tuile porte déjà « ouvre », l'identifiant du bouton de menu qu'elle déclenche —
+ * « btn-pv » pour l'entrée « pv ». On reprend donc l'icône du menu au lieu d'en tenir une
+ * seconde liste ici : elle aurait divergé au premier écran redessiné, et la tuile aurait
+ * montré autre chose que la page où elle mène.
+ *
+ * Une tuile sans cible n'a pas d'icône, et la vue n'en dessine alors aucune.
+ */
+function accueilIcone(?string $ouvre): string
+{
+    static $icones = null;
+    if ($icones === null) {
+        $icones = [];
+        foreach (dashboardMenu() as $entree) {
+            $icones[$entree['id']] = $entree['icone'] ?? '';
+        }
+    }
+    if (!$ouvre) return '';
+    return $icones[preg_replace('/^btn-/', '', $ouvre)] ?? '';
 }
 
 /** Les PV encore à faire : quatre par demande validée, moins ceux déjà tranchés. */

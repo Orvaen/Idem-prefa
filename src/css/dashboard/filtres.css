@@ -46,7 +46,7 @@
     height: var(--ctrl-sm);
     padding: 0 10px 0 30px;
     border: 1px solid var(--border);
-    border-radius: var(--r-sm);
+    border-radius: var(--r-md);
     background: var(--surface);
     color: var(--text);
     font: inherit;
@@ -71,7 +71,7 @@
     align-items: center;
     height: var(--ctrl-sm);
     border: 1px solid var(--border);
-    border-radius: var(--r-sm);
+    border-radius: var(--r-md);
     background: var(--surface);
 }
 

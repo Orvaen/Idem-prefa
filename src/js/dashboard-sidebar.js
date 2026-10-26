@@ -64,3 +64,59 @@ btn_hide_sidebar.addEventListener('click', function () {
 });
 sidebarLayout.addEventListener('change', function (event) { setSidebar(!event.matches); });
 setSidebar(!sidebarLayout.matches);
+
+/* ---------- La barre se parcourt aux flèches ----------
+ *
+ * C'est le comportement de la liste de Propel : un seul arrêt de tabulation pour toute la
+ * barre, et les flèches déplacent d'une ligne à l'autre. Sans lui, atteindre « Paramètres »
+ * demandait une tabulation par entrée — on traversait toute la barre avant d'arriver au
+ * contenu, à chaque fois.
+ *
+ * L'arrêt se pose sur l'écran ouvert, qui porte déjà aria-current="page" : reprendre le
+ * clavier après une navigation souris repart donc d'où l'on est, et non du haut.
+ */
+(function () {
+    const barre = document.querySelector('.nav-header');
+    if (!barre) return;
+
+    // Un rayon replié passe en display:none, donc ses entrées n'ont plus d'offsetParent :
+    // les flèches ne traversent pas ce qu'on ne voit pas.
+    const lignes = () => Array.from(barre.querySelectorAll('.nav-rayon-titre, .nav-btn'))
+        .filter(ligne => ligne.offsetParent !== null);
+
+    function reposerArret() {
+        const visibles = lignes();
+        if (!visibles.length) return;
+        const ouverte = barre.querySelector('.nav-btn[aria-current="page"]');
+        const arret = visibles.includes(ouverte) ? ouverte : visibles[0];
+        visibles.forEach(ligne => { ligne.tabIndex = ligne === arret ? 0 : -1; });
+    }
+
+    barre.addEventListener('keydown', function (evenement) {
+        const pas = { ArrowDown: 1, ArrowUp: -1 };
+        const saut = evenement.key === 'Home' || evenement.key === 'End';
+        if (!(evenement.key in pas) && !saut) return;
+
+        const visibles = lignes();
+        const depart = visibles.indexOf(document.activeElement);
+        if (depart === -1) return;
+        evenement.preventDefault();
+
+        let cible;
+        if (evenement.key === 'Home') cible = 0;
+        else if (evenement.key === 'End') cible = visibles.length - 1;
+        else cible = (depart + pas[evenement.key] + visibles.length) % visibles.length;
+
+        visibles.forEach(ligne => { ligne.tabIndex = -1; });
+        visibles[cible].tabIndex = 0;
+        visibles[cible].focus();
+    });
+
+    // L'écran ouvert change, ou un rayon se replie : l'arrêt se repose au bon endroit.
+    new MutationObserver(reposerArret).observe(barre, {
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['aria-current', 'aria-expanded'],
+    });
+    reposerArret();
+}());

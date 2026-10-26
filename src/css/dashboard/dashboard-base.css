@@ -1,27 +1,36 @@
 :root {
     color-scheme: dark;
-    --frame: #141820;
-    --surface: #1c222d;
-    --border: #343d4c;
+    --frame: #0F0F10;
+    --surface: #141415;
+    /* « bg-card » de la palette : une carte posee sur la surface, un cran en retrait. */
+    --carte: #181A1B;
+    --border: #2C2E30;
     /* Le filet qui sépare deux lignes d'un tableau. Plus discret que la bordure d'un cadre :
        sur quarante lignes, une bordure franche fait une grille, et c'est la grille qu'on
        lit au lieu des données. */
-    --border-faint: #252c38;
-    --text: #e2e7ef;
-    --text-muted: #a2adbd;
-    --hover: #2a3342;
-    --active: #354155;
+    --border-faint: #222425;
+    --text: #E4E6E7;
+    --text-muted: #AFB3B6;
+    --hover: #222425;
+    --active: #2C2E30;
     /* L'azur d'IDEM PROCESS, relevé sur le logo. Deux intensités, parce qu'une seule ne
        peut pas faire les deux métiers : « accent » est le plein, qui doit porter du texte
        blanc ; « accent-texte » est le trait, qui doit se lire sur le fond de la page.
        L'ancien bleu #2563eb tenait les boutons mais ne faisait que 3:1 en lien sur fond
        sombre — sous le minimum lisible. */
-    --accent: #0D79A8;
-    --accent-hover: #0A6890;
-    --accent-texte: #4FB9E8;
+    --accent: #2893CC;
+    --accent-hover: #3FA3D9;
+    --accent-texte: #2893CC;
     /* La surface de l'accent, comme « succes-fond » l'est du vert : le bandeau d'un plan,
        le fond d'un bloc qu'on veut rattacher à l'azur sans le peindre en plein. */
-    --accent-fond: #1c293b;
+    --accent-fond: #0A2533;
+
+    /* Le bouton plein n'est plus peint de l'accent : il porte sa propre
+       valeur, inversee par rapport au fond. C'est ce que fait la palette
+       fournie, ou « button-primary » est noir en clair et presque blanc ici. */
+    --bouton-plein: #F5F5F5;
+    --bouton-plein-hover: #E2E2E2;
+    --bouton-plein-texte: #171717;
     --radius: 8px;
 
     /* ---------- L'échelle des contrôles ----------
@@ -33,9 +42,40 @@
        sm  partout ailleurs — boutons, barres d'outils, filtres
        md  les champs de formulaire, qui portent une étiquette flottante et ont besoin
            de la place pour la laisser monter */
-    --ctrl-xs: 28px;
-    --ctrl-sm: 32px;
-    --ctrl-md: 44px;
+    /* ---------- L'échelle des contrôles, six barreaux ----------
+       Reprise de Propel (foundations/sizing). Un libellé vaut une hauteur, et la même
+       partout : c'est ce qui manquait quand les boutons se mesuraient à 30, 32, 33, 35,
+       36, 38 et 39 pixels selon l'écran. Le padding latéral suit la hauteur.
+
+       xs  20px / 6px   une pastille dans une cellule
+       sm  24px / 8px   un contrôle dans une ligne de tableau
+       md  28px / 10px  une entrée de menu, un filtre
+       lg  32px / 12px  un bouton, une barre d'outils
+       xl  36px / 14px  un champ de formulaire
+       2xl 40px / 16px  un champ principal, une recherche en tête d'écran
+
+       Les trois anciens noms restent, pointés sur le bon barreau : ils servent 45 fois,
+       et les déplacer d'un cran aurait tout décalé. */
+    --h-xs: 20px;
+    --h-sm: 24px;
+    --h-md: 28px;
+    --h-lg: 32px;
+    --h-xl: 36px;
+    --h-2xl: 40px;
+
+    /* Le filet le plus franc de Propel (border-strong) : le bord de la grande vue et la
+       séparation de deux zones, rien d'autre. Posé sur les 240 emplois de --border, il
+       aurait fait une grille de toute l'application. */
+    --border-fort: #36393A;
+
+    /* Le rayon croît avec la surface : 4 une pastille, 6 un bouton, 8 une carte,
+       12 la grande vue. Le 10px utilisé jusqu'ici n'appartenait à aucune échelle. */
+    --r-lg: 8px;
+    --r-xl: 12px;
+
+    --ctrl-xs: var(--h-sm);
+    --ctrl-sm: var(--h-lg);
+    --ctrl-md: var(--h-xl);
 
     /* Deux rayons : le petit pour ce qui est posé dans la page, le grand pour ce qui
        flotte au-dessus. On en comptait six — 3, 4, 5, 6, 7 et 8. */
@@ -44,8 +84,8 @@
 
     /* Les lignes d'un tableau. L'en-tête est plus court que les lignes : c'est un repère,
        pas une donnée. */
-    --ligne-th: 34px;
-    --ligne-td: 40px;
+    --ligne-th: 32px;
+    --ligne-td: 36px;
 
     /* Le fond d'une ligne de tableau au survol. Ce n'est pas celui des menus : une gélule
        de menu se détache par sa forme, une ligne de tableau n'a que sa teinte. Sur fond
@@ -55,36 +95,39 @@
 
     /* La ligne retenue dans une sélection. Plus franche que le survol : on doit distinguer
        « je la pointe » de « je l'ai prise ». */
-    --selection-fond: #15303f;
-    --selection-filet: #1f4a60;
+    --selection-fond: #0A2533;
+    --selection-filet: #14455C;
 
     /* La pastille d'un filtre posé : assez teintée pour se distinguer des filtres vides
        de la même barre, assez sobre pour ne pas crier à côté du tableau. */
-    --filtre-fond: #152835;
-    --filtre-bord: #2b5467;
+    --filtre-fond: #0A2533;
+    --filtre-bord: #14455C;
 
     /* Le rouge des suppressions, nommé une fois. */
-    --danger-texte: #f6a4a4;
-    --danger-bord: #694047;
-    --danger-fond: #b42318;
+    --danger-texte: #DB3E33;
+    --danger-bord: #6B1E18;
+    --danger-fond: #BF2C22;
 
     /* Les bandeaux de résultat — « enregistré », « impossible ». Leurs couleurs étaient
        écrites en dur dans quatre feuilles, pensées pour le fond sombre : sur le thème clair,
        un succès s'affichait en vert foncé sur blanc. Nommées ici, les deux thèmes les
        redéfinissent au même endroit. */
-    --succes-texte: #86dba6;
-    --succes-fond: #183329;
-    --succes-bord: #315b43;
-    --alerte-texte: #f6a4a4;
-    --alerte-fond: #382326;
-    --alerte-bord: #694047;
+    --succes-texte: #36AB57;
+    --succes-fond: #11361C;
+    --succes-bord: #1F5B31;
+    --alerte-texte: #DB3E33;
+    --alerte-fond: #3C0E0B;
+    --alerte-bord: #6B1E18;
     /* Ce qui n'est pas encore arrivé : un PV à faire, une commande non reçue. L'ambre était
        écrit en dur à deux endroits, et le même ton pensé pour le fond sombre tombait à
        2,3:1 sur du blanc — lisible nulle part en thème clair. */
-    --attente-texte: #e0a92a;
+    --attente-texte: #FE9A00;
+    --attente-fond: #501D01;
+    --attente-bord: #7A3B0A;
+    --compteur-texte: #1B1403;
     --font: -apple-system, "Segoe UI", system-ui, "Noto Sans", "Ubuntu", sans-serif;
-    --scrollbar-thumb: #414b5b;
-    --scrollbar-thumb-hover: #637086;
+    --scrollbar-thumb: #2C2E30;
+    --scrollbar-thumb-hover: #44484A;
 }
 
 * {
@@ -226,6 +269,8 @@ input[type="number"]::-webkit-outer-spin-button {
 /* La barre porte le seul trait de l'écran : c'est lui qui sépare la navigation du travail.
    Tout le reste est à plat, sans marge ni coin arrondi — les panneaux flottants donnaient
    trois traits et deux gouttières là où un suffit. */
+/* La barre laterale n'a plus de filet a droite : c'est l'ecart entre elle et la grande
+   vue qui separe desormais, et un filet en plus y ferait un double trait. */
 #left-panel {
     width: 260px;
     min-width: 150px;
@@ -233,19 +278,47 @@ input[type="number"]::-webkit-outer-spin-button {
 
     display: flex;
     flex-direction: column;
-    border-right: 1px solid var(--border);
 }
 
+/* La grande vue : une surface posee sur le cadre, decollee des quatre cotes et arrondie,
+   comme le fait un editeur moderne. L'application etait faite de pleins carres colles bord
+   a bord, et c'est ce qui la datait.
+
+   Aucun calcul de hauteur : #right-panel est un element flex etire dans une rangee, ses
+   marges verticales lui retranchent sa hauteur toutes seules. La marge de gauche laisse
+   aussi sa place a #drag, la poignee de redimensionnement, large de zero.
+
+   L'« overflow: hidden » etait deja la : c'est lui qui rogne la barre d'outils a l'arrondi. */
 #right-panel {
     position: relative;
     flex: 1;
     min-width: 200px;
 
+    margin: 8px;
+    border: 1px solid var(--border-fort);
+    border-radius: var(--r-xl);
     background: var(--surface);
+    /* Deux ombres : la premiere pose la vue sur le cadre, la seconde l'en decolle. Une
+       seule ombre large fait un halo gris ; une seule ombre courte fait un trait. */
+    box-shadow:
+        0 1px 2px rgb(15 15 16 / 5%),
+        0 6px 16px rgb(15 15 16 / 4%);
 
     overflow: hidden;
     display: flex;
     flex-direction: column;
+}
+
+/* Sur un ecran etroit, la barre laterale passe par-dessus le contenu et la place est
+   comptee : la vue reprend toute la largeur. Des coins ronds sur une surface qui touche
+   deja les quatre bords ne montrent rien. */
+@media (max-width: 700px) {
+    #right-panel {
+        margin: 0;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
 }
 
 #content {
@@ -344,10 +417,8 @@ input[type="number"]::-webkit-outer-spin-button {
     background: transparent;
     color: var(--text-muted);
     font: inherit;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    font-size: 12px;
+    font-weight: 500;
     text-align: left;
     cursor: pointer;
 }
@@ -397,7 +468,7 @@ input[type="number"]::-webkit-outer-spin-button {
 
 .nav-btn {
     width: 100%;
-    height: 28px;
+    height: var(--h-lg);
     padding: 0 8px;
 
     display: flex;
@@ -405,7 +476,7 @@ input[type="number"]::-webkit-outer-spin-button {
     gap: 8px;
 
     border: 0;
-    border-radius: 4px;
+    border-radius: var(--r-md);
 
     background: transparent;
     color: var(--text);

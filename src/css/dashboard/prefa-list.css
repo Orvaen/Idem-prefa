@@ -54,14 +54,17 @@
     display: none;
 }
 
+/* 20px, comme tout titre d'écran : il était seul à 18, et le chapeau seul à 12. Deux
+   écarts d'un cran qui, additionnés, faisaient paraître l'en-tête bâclé à côté du reste. */
 .prefa-list .prefa-heading h1 {
-    font-size: 18px;
+    font-size: 20px;
+    line-height: 28px;
     letter-spacing: normal;
 }
 
 .prefa-list .prefa-heading p {
-    margin-top: 4px;
-    font-size: 12px;
+    margin-top: 3px;
+    font-size: 13px;
 }
 
 .prefa-table-scroll {
@@ -78,13 +81,13 @@
     align-items: center;
     justify-content: center;
     margin-left: auto;
-    width: 16px;
-    height: 16px;
-    padding: 0;
-    border-radius: 50%;
-    background: #b54708;
-    color: white;
-    font-size: 10px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--attente-texte);
+    color: var(--compteur-texte);
+    font-size: 11px;
     line-height: 1;
     font-weight: 600;
     text-align: center;
@@ -690,7 +693,7 @@ body:has(.prefa-detail-row:not([hidden]))::before {
     min-width: 20px;
     height: 20px;
     padding: 0 6px;
-    border-radius: 10px;
+    border-radius: 999px;
     background: var(--hover);
     color: var(--text-muted);
     font-size: 11px;
@@ -1166,9 +1169,9 @@ body.prefa-viewer-open {
 }
 
 .prefa-pdf-download {
-    background: #0D79A8;
+    background: var(--accent);
     color: #ffffff;
-    border: 1px solid #0D79A8;
+    border: 1px solid var(--accent);
 }
 
 .prefa-pdf-close {
@@ -1223,11 +1226,134 @@ body.prefa-viewer-open {
     color: var(--text-muted);
 }
 
+/* Une liste vide est un etat normal, pas une panne. Une seule phrase grise au ras de
+   l'en-tete donnait l'impression d'un tableau casse ; elle respire, et le filet du bas
+   disparait — il n'y a pas de ligne suivante dont il faudrait la separer. */
 .prefa-table-empty {
-    padding: 40px 16px;
+    padding: 56px 16px 60px;
+    border-bottom: 0;
     text-align: center;
     color: var(--text-muted);
+    font-size: 13px;
 }
+
+/* Les colonnes de nombres s'alignent a droite, et l'en-tete suit sa colonne — c'est la
+   regle d'alignement de Propel. On compare des ordres de grandeur d'une ligne a l'autre :
+   96 sous 312 doit tomber sous le 2, pas sous le 3. Les chiffres tabulaires gardent la
+   colonne droite malgre les largeurs variables des glyphes. */
+.prefa-nombre {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---------- La cellule d'actions ----------
+   Un declencheur unique — l'ellipse du TableActionCell de Propel — qui ouvre les commandes
+   de la ligne. Trois libelles repetes sur chaque ligne faisaient une colonne de texte plus
+   lourde que les donnees, et l'oeil la lisait avant elles.
+
+   Le declencheur s'efface au repos et revient au survol. Deux garde-fous : « focus-within »
+   le rend au clavier des qu'on entre dans la ligne, et la media query « hover: hover »
+   exclut les ecrans tactiles, ou il n'y a pas de survol et ou il doit donc rester visible —
+   sur une tablette d'atelier, le cacher le rendrait inatteignable. */
+.prefa-actions {
+    position: relative;
+    width: 1%;
+    white-space: nowrap;
+}
+
+.prefa-actions-declencheur {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--h-sm);
+    height: var(--h-sm);
+    padding: 0;
+    border: 0;
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.prefa-actions-declencheur .icon {
+    width: 16px;
+    height: 16px;
+}
+
+.prefa-actions-declencheur:hover,
+.prefa-actions-declencheur[aria-expanded="true"] {
+    background: var(--active);
+    color: var(--text);
+}
+
+@media (hover: hover) {
+
+    .prefa-list tbody .prefa-actions-declencheur {
+        opacity: 0;
+        transition: opacity 0.12s ease;
+    }
+
+    .prefa-list tbody tr:hover .prefa-actions-declencheur,
+    .prefa-list tbody tr:focus-within .prefa-actions-declencheur,
+    .prefa-list tbody .prefa-actions-declencheur[aria-expanded="true"] {
+        opacity: 1;
+    }
+}
+
+/* Le menu est en position fixe, posee par le script : la cellule qui le porte est dans un
+   tableau qui defile, et un menu en position absolue y serait decoupe. C'est le meme parti
+   que le menu des comptes, dans dashboard-accounts.js. */
+.prefa-actions-menu {
+    position: fixed;
+    z-index: 60;
+    min-width: 204px;
+    padding: 4px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    box-shadow:
+        0 1px 2px rgb(15 15 16 / 6%),
+        0 8px 24px rgb(15 15 16 / 10%);
+    text-align: left;
+}
+
+.prefa-actions-menu[hidden] {
+    display: none;
+}
+
+/* Une entree de menu vaut un barreau « md » de l'echelle : 28px de haut, 10px de padding. */
+.prefa-actions-menu button {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: var(--h-md);
+    padding: 0 10px;
+    border: 0;
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.prefa-actions-menu button:hover,
+.prefa-actions-menu button:focus-visible {
+    background: var(--hover);
+}
+
+/* La variante « danger » de Propel : l'action destructrice se distingue de ses voisines,
+   sans crier tant qu'on ne la pointe pas. */
+.prefa-actions-menu .est-destructrice {
+    color: var(--danger-texte);
+}
+
+.prefa-actions-menu .est-destructrice:hover,
+.prefa-actions-menu .est-destructrice:focus-visible {
+    background: var(--alerte-fond);
+}
+
 
 /* ===== TABLEAUX =====
    Des lignes serrées, des filets presque invisibles, et une seule graisse de texte. Les
@@ -1277,8 +1403,10 @@ td {
  *
  * Le volet de détail est exclu : il n'est pas une ligne de données mais un écran entier
    déplié sous elle, et il contient des champs qui prennent le focus. */
-tbody tr:hover:not(.prefa-detail-row) > td,
-tbody tr:focus-within:not(.prefa-detail-row) > td {
+/* La ligne d'etat vide est exclue : « Aucune demande trouvee » n'est pas une donnee qu'on
+   pointe, et l'eclairer peignait un bandeau gris sur toute la largeur du tableau. */
+tbody tr:hover:not(.prefa-detail-row):not(:has(> .prefa-table-empty)) > td,
+tbody tr:focus-within:not(.prefa-detail-row):not(:has(> .prefa-table-empty)) > td {
     background: var(--ligne-survol);
 }
 
@@ -1458,29 +1586,41 @@ tbody tr:last-child > td {
 }
 
 /* ---------- L'accueil ----------
-   Un bonjour, quelques chiffres, et ce qui a bougé aujourd'hui. Tout est carré et à plat :
-   ce sont les filets qui séparent, pas les ombres ni les marges. Le fond du cadre passe
-   entre les tuiles — c'est lui qui aère, sans qu'aucune ne flotte. */
-/* En colonne, pour que le journal prenne toute la hauteur qui reste : sans cela le fond
-   du cadre reprenait sous le dernier bloc, et la page semblait coupée en deux. */
+   Un bonjour, quelques chiffres, et ce qui a bougé aujourd'hui.
+
+   La version précédente posait les tuiles d'un bord à l'autre de la fenêtre, séparées par
+   un filet d'un pixel, puis laissait le journal s'étirer sur toute la hauteur restante.
+   Sur un écran large, cela donnait quatre nombres nus très écartés au-dessus de six cents
+   pixels de vide : on lisait un relevé, pas un tableau de bord. La page tient désormais
+   dans une colonne bornée et centrée, et chaque chiffre est une carte qui se voit
+   cliquable avant qu'on la survole. */
 .accueil {
     height: 100%;
     overflow-y: auto;
+    background: transparent;
+}
+
+/* Assez large pour quatre tuiles de front, assez étroite pour que l'œil n'ait pas à
+   traverser l'écran entre le premier chiffre et le dernier. */
+.accueil-colonne {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 28px 24px 32px;
     display: flex;
     flex-direction: column;
-    background: var(--frame);
+    gap: 20px;
 }
 
 .accueil-entete {
-    padding: 20px 24px 16px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
+    padding: 0;
+    background: none;
+    border: 0;
 }
 
 .accueil-entete h1 {
-    margin: 0 0 2px;
-    font-size: 20px;
-    line-height: 28px;
+    margin: 0 0 3px;
+    font-size: 22px;
+    line-height: 30px;
     font-weight: 600;
     color: var(--text);
 }
@@ -1491,47 +1631,73 @@ tbody tr:last-child > td {
     color: var(--text-muted);
 }
 
-/* Les tuiles se touchent par un filet d'un pixel : la grille a un trou d'un pixel entre
-   les cellules, et le fond du cadre le remplit. Pas de bordure à dessiner, donc pas de
-   double trait là où deux tuiles se rejoignent. */
 .accueil-tuiles {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-    gap: 1px;
-    border-bottom: 1px solid var(--border);
+    gap: 12px;
 }
 
+/* Quatre nombres posés sur du blanc ne disent pas qu'ils ouvrent quelque chose. Une tuile
+   a donc un fond, un cadre et le dessin de l'écran où elle mène. */
 .accueil-tuile {
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
     gap: 2px;
-    padding: 18px 20px 20px;
-    border: 0;
-    border-radius: 0;
-    background: var(--surface);
+    padding: 14px 16px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    background: var(--carte);
     color: var(--text);
     font: inherit;
     text-align: left;
     cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
 .accueil-tuile[disabled] {
     cursor: default;
 }
 
-.accueil-tuile:not([disabled]):hover {
-    background: var(--hover);
+.accueil-tuile:not([disabled]):hover,
+.accueil-tuile:not([disabled]):focus-visible {
+    border-color: var(--accent);
+    background: var(--surface);
+}
+
+.accueil-tuile-icone {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    background: var(--accent-fond);
+    color: var(--accent-texte);
+}
+
+.accueil-tuile-icone svg {
+    width: 17px;
+    height: 17px;
 }
 
 .accueil-tuile-valeur {
-    font-size: 30px;
-    line-height: 36px;
+    font-size: 28px;
+    line-height: 34px;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
 }
 
-/* Un chiffre qui attend quelque chose de vous se voit : rien d'autre ne change de couleur
-   sur cet écran, c'est ce qui le rend lisible d'un coup d'œil. */
+/* Une tuile qui attend quelque chose de vous prend la teinte de l'accent — fond compris,
+   pas seulement son chiffre. Rien d'autre ne se colore sur cet écran : c'est ce qui la
+   rend lisible d'un coup d'œil. Le rouge a été écarté : « quatre demandes à valider »
+   n'est pas une anomalie, c'est le travail du jour. */
+.accueil-tuile.est-en-alerte {
+    border-color: var(--filtre-bord);
+    background: var(--accent-fond);
+}
+
 .accueil-tuile.est-en-alerte .accueil-tuile-valeur {
     color: var(--accent-texte);
 }
@@ -1547,19 +1713,23 @@ tbody tr:last-child > td {
     color: var(--text-muted);
 }
 
+/* Le journal est une carte comme les tuiles, et non un bloc qui descend jusqu'en bas : sa
+   hauteur suit son contenu. Le vide sous lui redevient du vide, au lieu de passer pour une
+   zone de la page restée inachevée. */
 .accueil-journal {
-    flex: 1;
-    padding: 18px 24px 24px;
-    background: var(--surface);
+    padding: 16px 18px 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    background: var(--carte);
 }
 
+/* En petites capitales espacées, le titre était une étiquette de formulaire au-dessus
+   d'une seule phrase. En titre ordinaire, il coiffe son bloc. */
 .accueil-journal h2 {
-    margin: 0 0 10px;
-    font-size: 12px;
+    margin: 0 0 12px;
+    font-size: 14px;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-muted);
+    color: var(--text);
 }
 
 .accueil-evenements {
@@ -1572,18 +1742,21 @@ tbody tr:last-child > td {
     display: flex;
     gap: 12px;
     padding: 7px 0;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border-faint);
     font-size: 13px;
 }
 
 .accueil-evenement:last-child {
+    padding-bottom: 0;
     border-bottom: 0;
 }
 
-/* L'heure en chiffres tabulaires : la colonne reste droite d'une ligne à l'autre. */
+/* L'heure en chiffres tabulaires : la colonne reste droite d'une ligne à l'autre. La
+   largeur est en pixels, pas en rem — « html » est à 13px, et 3.2rem y valait 41,6px
+   sans que personne ne l'ait voulu. */
 .accueil-heure {
     flex: none;
-    width: 3.2rem;
+    width: 42px;
     color: var(--text-muted);
     font-variant-numeric: tabular-nums;
 }
@@ -1598,9 +1771,34 @@ tbody tr:last-child > td {
 .accueil-evenement.est-validation .accueil-texte { border-left-color: #16a34a; }
 .accueil-evenement.est-refus .accueil-texte { border-left-color: #dc2626; }
 
+/* Un journal vide est l'état normal d'un début de matinée. Une phrase grise collée sous le
+   titre le faisait passer pour un écran en panne ; il se dit maintenant au centre de sa
+   carte, et dit aussi ce qui le remplira. */
 .accueil-rien {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 26px 16px 30px;
+    text-align: center;
+}
+
+.accueil-rien-dessin {
+    width: 26px;
+    height: 26px;
+    margin-bottom: 6px;
+    color: var(--text-muted);
+    opacity: 0.55;
+}
+
+.accueil-rien p {
     margin: 0;
     font-size: 13px;
+    color: var(--text);
+}
+
+.accueil-rien .accueil-rien-aide {
+    font-size: 12px;
     color: var(--text-muted);
 }
 
@@ -2210,15 +2408,28 @@ summary {
    tout label de la barre », rhabillaient le nouveau balisage : les cases à cocher passaient
    sous leur texte, et l'icône de recherche se posait sur la saisie. */
 
+/* Le résumé ferme le bloc d'en-tête. Ce sont les nombres qu'on y cherche : ils portent la
+   couleur du texte plein, le reste reste sourd, et les points qui séparent s'effacent au
+   niveau des filets. En phrase continue, l'œil relisait trois fois « en attente ». */
 .prefa-list-summary {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 5px;
     margin: 0;
-    padding: 0 16px 12px;
+    padding: 0 16px 14px;
     color: var(--text-muted);
     font-size: 12px;
 }
 
 .prefa-list-summary strong {
     color: var(--text);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.prefa-list-summary-point {
+    color: var(--border-fort);
 }
 
 .prefa-list-heading {

@@ -171,22 +171,22 @@ if ($isWorkshopPersonnel) {
                     data-count="<?= (int) $urgentPending ?>"
                     hidden></span>
 
+                <?php // Trois fois le même mot : « 0 en attente au total · 0 urgente(s) en
+                      // attente · 0 demande(s) affichée(s) ». Les nombres portent le sens, le
+                      // reste les sépare — et le « (s) » d'un pluriel qu'on n'ose pas trancher
+                      // se lit comme un formulaire administratif. ?>
                 <p class="prefa-list-summary">
-
-                    <strong>
-                        <?= (int) $pendingTotal ?> en attente au total
-                    </strong>
-
-                    · <?= (int) $urgentPending ?> urgente(s) en attente
-
-                    · <?= (int) $total ?> demande(s) affichée(s)
-
+                    <strong><?= (int) $pendingTotal ?></strong> en attente
+                    <span class="prefa-list-summary-point" aria-hidden="true">·</span>
+                    <strong><?= (int) $urgentPending ?></strong> urgente<?= $urgentPending > 1 ? 's' : '' ?>
+                    <span class="prefa-list-summary-point" aria-hidden="true">·</span>
+                    <strong><?= (int) $total ?></strong> affichée<?= $total > 1 ? 's' : '' ?>
                 </p>
 
             <?php else: ?>
 
                 <p class="prefa-list-summary">
-                    <?= (int) $total ?> demande(s) affichée(s)
+                    <strong><?= (int) $total ?></strong> demande<?= $total > 1 ? 's' : '' ?> affichée<?= $total > 1 ? 's' : '' ?>
                 </p>
 
             <?php endif; ?>
@@ -229,11 +229,11 @@ if ($isWorkshopPersonnel) {
                                 Priorité
                             </th>
 
-                            <th scope="col">
+                            <th scope="col" class="prefa-nombre">
                                 Pouces
                             </th>
 
-                            <th scope="col">
+                            <th scope="col" class="prefa-nombre">
                                 Temps atelier
                             </th>
 

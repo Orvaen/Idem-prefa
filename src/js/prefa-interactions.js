@@ -695,3 +695,127 @@ $(document).on('input change', '#controles-pt-value', function (event) {
 });
 
 
+
+
+/* ---------- Le menu d'actions d'une ligne ----------
+ *
+ * Le TableActionCell de Propel : un déclencheur unique par ligne, qui ouvre les commandes.
+ * Elles étaient posées à plat dans la cellule et se répétaient sur chaque ligne.
+ *
+ * Les boutons gardent leurs classes : leurs gestionnaires sont branchés par délégation sur
+ * le document, plus haut dans ce fichier, et continuent donc de répondre sans rien savoir
+ * du menu qui les contient.
+ *
+ * Le menu est en position fixe, posée ici : la cellule vit dans un tableau qui défile, et
+ * un menu en position absolue y serait découpé. C'est le parti déjà pris par le menu des
+ * comptes, dans dashboard-accounts.js.
+ */
+(function () {
+    const ECART = 6;   // sideOffset de Propel
+    const MARGE = 16;  // collisionPadding
+
+    function placer(declencheur, menu) {
+        const repere = declencheur.getBoundingClientRect();
+        const largeur = menu.offsetWidth;
+        const hauteur = menu.offsetHeight;
+
+        // Propel aligne un menu sur le bord gauche de son déclencheur. Ici la colonne des
+        // actions est la dernière du tableau : aligné à gauche, le menu sortirait par la
+        // droite. On l'aligne donc sur le bord droit — c'est la résolution de collision que
+        // « collisionPadding » demande, et le seul alignement qui tienne contre le bord.
+        let gauche = Math.min(repere.right - largeur, window.innerWidth - MARGE - largeur);
+        let haut = repere.bottom + ECART;
+
+        // Pas la place dessous : le menu passe au-dessus du déclencheur.
+        if (haut + hauteur > window.innerHeight - MARGE) haut = repere.top - ECART - hauteur;
+
+        menu.style.left = Math.max(MARGE, gauche) + 'px';
+        menu.style.top = Math.max(MARGE, haut) + 'px';
+    }
+
+    function fermerTout(sauf) {
+        document.querySelectorAll('.prefa-actions-menu:not([hidden])').forEach(menu => {
+            if (menu === sauf) return;
+            menu.hidden = true;
+            menu.previousElementSibling?.setAttribute('aria-expanded', 'false');
+        });
+    }
+
+    function entrees(menu) {
+        return Array.from(menu.querySelectorAll('button'));
+    }
+
+    $(document).on('click', '.prefa-actions-declencheur', function (evenement) {
+        evenement.preventDefault();
+        evenement.stopPropagation();
+        const menu = this.nextElementSibling;
+        if (!menu) return;
+        const ouvrir = menu.hidden;
+        fermerTout(menu);
+        menu.hidden = !ouvrir;
+        this.setAttribute('aria-expanded', String(ouvrir));
+        if (ouvrir) placer(this, menu);
+    });
+
+    // Une commande choisie referme son menu. Le gestionnaire de l'action, délégué lui aussi,
+    // s'exécute dans le même événement : masquer le bouton ne l'empêche pas de répondre.
+    $(document).on('click', '.prefa-actions-menu button', function () {
+        const menu = this.closest('.prefa-actions-menu');
+        menu.hidden = true;
+        menu.previousElementSibling?.setAttribute('aria-expanded', 'false');
+    });
+
+    document.addEventListener('click', function (evenement) {
+        if (!evenement.target.closest('.prefa-actions')) fermerTout(null);
+    });
+
+    document.addEventListener('keydown', function (evenement) {
+        const ouvert = document.querySelector('.prefa-actions-menu:not([hidden])');
+
+        if (evenement.key === 'Escape' && ouvert) {
+            const declencheur = ouvert.previousElementSibling;
+            fermerTout(null);
+            declencheur?.focus();
+            return;
+        }
+
+        // Flèche bas sur le déclencheur : le menu s'ouvre et la première commande prend le
+        // focus, comme le fait celui de Propel.
+        const declencheur = evenement.target.closest?.('.prefa-actions-declencheur');
+        if (declencheur && (evenement.key === 'ArrowDown' || evenement.key === 'ArrowUp')) {
+            evenement.preventDefault();
+            const menu = declencheur.nextElementSibling;
+            if (menu.hidden) declencheur.click();
+            const liste = entrees(menu);
+            (evenement.key === 'ArrowDown' ? liste[0] : liste[liste.length - 1])?.focus();
+            return;
+        }
+
+        if (!ouvert || !ouvert.contains(evenement.target)) return;
+        if (evenement.key !== 'ArrowDown' && evenement.key !== 'ArrowUp') return;
+        evenement.preventDefault();
+        const liste = entrees(ouvert);
+        const depart = liste.indexOf(document.activeElement);
+        const pas = evenement.key === 'ArrowDown' ? 1 : -1;
+        liste[(depart + pas + liste.length) % liste.length]?.focus();
+    });
+
+    // Le menu est en position fixe : si le tableau défile sous lui, il se retrouve détaché
+    // de sa ligne. Il la suit donc, et ne se referme que si son déclencheur quitte l'écran.
+    //
+    // Il se refermait d'abord à tout défilement. C'était trop brutal : l'écouteur est en
+    // phase de capture, donc n'importe quel élément qui défile ailleurs dans la page — une
+    // liste, un volet — faisait disparaître le menu sans que l'on ait rien demandé.
+    window.addEventListener('scroll', function () {
+        document.querySelectorAll('.prefa-actions-menu:not([hidden])').forEach(menu => {
+            const declencheur = menu.previousElementSibling;
+            const repere = declencheur.getBoundingClientRect();
+            const dehors = repere.bottom < 0 || repere.top > window.innerHeight
+                || repere.right < 0 || repere.left > window.innerWidth;
+            if (dehors) fermerTout(null);
+            else placer(declencheur, menu);
+        });
+    }, true);
+
+    window.addEventListener('resize', () => fermerTout(null));
+}());

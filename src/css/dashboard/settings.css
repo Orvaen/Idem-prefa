@@ -228,8 +228,8 @@
     padding: 0 12px !important;
     width: auto !important;
     max-width: fit-content !important;
-    background: var(--accent) !important;
-    color: #ffffff !important;
+    background: var(--bouton-plein) !important;
+    color: var(--bouton-plein-texte) !important;
     border: 0 !important;
     border-radius: var(--r-sm) !important;
     font-size: 13px !important;
@@ -243,7 +243,7 @@
 }
 
 .settings-btn-primary:hover:not(:disabled) {
-    background: var(--accent-hover) !important;
+    background: var(--bouton-plein-hover) !important;
 }
 
 .settings-btn-primary:disabled {
