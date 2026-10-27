@@ -1244,3 +1244,203 @@ html #soudures-page .soudures-feuilles thead th:nth-child(1) { width: auto; }
 html #soudures-page .soudures-feuilles .soudures-feuille.est-choisie > td.prefa-nombre {
     background: var(--selection-fond) !important;
 }
+
+/* ==========================================================================
+   MISE EN PAGE — DEUX COLONNES, TOUJOURS
+   ==========================================================================
+
+   Les feuilles à gauche, la saisie à droite, posées dès l'arrivée : la colonne de
+   droite explique l'écran tant qu'aucune feuille n'est ouverte, puis porte la saisie.
+   Tout s'aligne sur le titre de la page (16px de gouttière), et les blocs se suivent à
+   des pas réguliers : 16px entre deux blocs d'une colonne, 24px entre les colonnes. */
+
+#soudures-page .soudures-onglets,
+#soudures-page .soudures-plan-de-travail {
+    margin-inline: 16px;
+}
+
+#soudures-page .soudures-onglets {
+    margin-bottom: 16px;
+}
+
+html #soudures-page .soudures-plan-ligne:first-child {
+    padding-left: 0;
+}
+
+#soudures-page .soudures-plan-de-travail,
+#soudures-page .soudures-plan-de-travail.est-coupe-en-deux {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 560px);
+    align-items: start;
+    gap: 24px;
+}
+
+#soudures-page .soudures-plans,
+#soudures-page .soudures-plan-de-travail.est-coupe-en-deux .soudures-plans {
+    max-width: none;
+    row-gap: 12px;
+}
+
+/* La barre du plan en premier — de quelle demande il vient, son dessin —, la recherche
+   dessous, puis la liste. */
+#soudures-page .soudures-feuilles-section > .soudures-plan-outils {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    justify-content: space-between;
+    margin: 0;
+}
+
+#soudures-page .soudures-filtres {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    margin: 0;
+}
+
+html #soudures-page .soudures-plan-contexte {
+    font-size: 13px;
+}
+
+html #soudures-page .soudures-plan-contexte strong {
+    color: var(--text);
+    font-weight: 500;
+}
+
+/* ----- La colonne de droite : une carte, la seule de l'écran (DA, § 8) ----- */
+
+#soudures-page .soudures-saisie,
+#soudures-page .soudures-saisie[data-vide] {
+    display: block;
+    position: sticky;
+    top: 16px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    background: var(--carte);
+}
+
+#soudures-page .soudures-saisie[data-vide] .soudures-saisie-contenu {
+    display: none;
+}
+
+#soudures-page .soudures-saisie:not([data-vide]) .soudures-invite {
+    display: none;
+}
+
+#soudures-page .soudures-saisie-contenu {
+    position: static;
+    max-height: calc(100vh - 140px);
+    padding: 16px 20px 0;
+    overflow-y: auto;
+}
+
+/* Dans la carte, l'en-tête et le pied collants prennent son fond. */
+#soudures-page .soudures-saisie-entete,
+#soudures-page .soudures-pied {
+    background: var(--carte);
+}
+
+/* ----- L'invite ----- */
+
+.soudures-invite {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 24px;
+}
+
+.soudures-invite-icone {
+    width: 28px;
+    height: 28px;
+    color: var(--text-muted);
+}
+
+html .soudures-invite-titre {
+    margin: 0;
+    color: var(--text) !important;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.soudures-invite-etapes {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.soudures-invite-etapes li {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+
+/* Le numéro de l'étape : une pastille de compteur. */
+.soudures-invite-etapes span {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    background: var(--hover);
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ----- Écran étroit : la saisie passe sous la liste ----- */
+
+@media (max-width: 1180px) {
+    #soudures-page .soudures-plan-de-travail,
+    #soudures-page .soudures-plan-de-travail.est-coupe-en-deux {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    #soudures-page .soudures-saisie,
+    #soudures-page .soudures-saisie[data-vide] {
+        position: static;
+    }
+
+    #soudures-page .soudures-saisie-contenu {
+        max-height: none;
+        overflow-y: visible;
+    }
+}
+
+/* Le nom de la feuille démarre au bord, comme le titre et la barre au-dessus. */
+html #soudures-page .soudures-renseigner {
+    padding-left: 0;
+}
+
+/* Dans la carte, le tableau prend le fond de la carte : il peignait celui de la page,
+   et faisait une bande plus sombre au milieu. */
+html #soudures-page .soudures-saisie table.prefa-table,
+html #soudures-page .soudures-saisie .prefa-table-scroll {
+    background: transparent !important;
+}
+
+#soudures-page .soudures-saisie[data-vide] {
+    min-height: 0;
+    height: auto;
+}
+
+/* La carte prend la hauteur de son contenu : étirée sur celle de la liste, l'invite
+   flottait au-dessus d'un grand vide. */
+#soudures-page .soudures-saisie,
+#soudures-page .soudures-saisie[data-vide] {
+    align-self: start;
+}
+
+/* Le titre de l'invite en texte franc : la règle du thème clair grisait tout « p ». */
+html #soudures-page .soudures-invite-titre {
+    color: var(--text) !important;
+}

@@ -80,7 +80,7 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
             <?php // La phrase dit la chaîne entière — plan, feuille, cordon — parce que
                   // l'écran n'en montre qu'un maillon à la fois. Sans elle, on arrive devant
                   // un tableau et rien ne dit ce qu'on est venu y faire. ?>
-            <p>Ouvrez un de vos plans pour voir ses feuilles, puis notez sur chaque feuille les cordons que vous avez soudés.</p>
+            <p>Choisissez une feuille de votre plan, puis notez les cordons que vous avez soudés.</p>
         </div>
     </header>
 
@@ -109,24 +109,25 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
               // ouvert, à droite la feuille travaillée. Les deux colonnes sont posées dès
               // l'arrivée — sans quoi le tableau passait de pleine largeur à la moitié au
               // moment du clic, et l'écran se tordait sous la main. ?>
+        <?php // Les plans, en onglets comptés — la forme des PV et de la liste des demandes.
+              // C'était un tableau à quatre colonnes étalées sur toute la largeur, avec un
+              // bouton « Ouvrir » / « Fermer » par ligne. ?>
+        <div class="soudures-onglets" role="tablist" aria-label="Mes plans">
+            <?php foreach ($plans as $plan): $ouvert = $plan['element'] === $planOuvert; ?>
+                <button type="button" role="tab" class="soudures-plan-ligne<?= $ouvert ? ' est-choisie' : '' ?>"
+                        id="soudures-onglet-<?= (int) $plan['element'] ?>"
+                        data-element="<?= (int) $plan['element'] ?>"
+                        aria-selected="<?= $ouvert ? 'true' : 'false' ?>"
+                        <?= $ouvert ? '' : 'tabindex="-1"' ?>
+                        title="<?= prefaEscape(prefaReferenceComplete($plan['demande'])) ?>">
+                    <?= prefaEscape($plan['reference']) ?>
+                    <span class="soudures-onglet-compte"><?= count($plan['feuilles']) ?></span>
+                </button>
+            <?php endforeach; ?>
+        </div>
+
         <div class="soudures-plan-de-travail">
         <div class="soudures-plans">
-            <?php // Les plans, en onglets comptés — la forme des PV et de la liste des demandes.
-                  // C'était un tableau à quatre colonnes étalées sur toute la largeur, avec un
-                  // bouton « Ouvrir » / « Fermer » par ligne. ?>
-            <div class="soudures-onglets" role="tablist" aria-label="Mes plans">
-                <?php foreach ($plans as $plan): $ouvert = $plan['element'] === $planOuvert; ?>
-                    <button type="button" role="tab" class="soudures-plan-ligne<?= $ouvert ? ' est-choisie' : '' ?>"
-                            id="soudures-onglet-<?= (int) $plan['element'] ?>"
-                            data-element="<?= (int) $plan['element'] ?>"
-                            aria-selected="<?= $ouvert ? 'true' : 'false' ?>"
-                            <?= $ouvert ? '' : 'tabindex="-1"' ?>
-                            title="<?= prefaEscape(prefaReferenceComplete($plan['demande'])) ?>">
-                        <?= prefaEscape($plan['reference']) ?>
-                        <span class="soudures-onglet-compte"><?= count($plan['feuilles']) ?></span>
-                    </button>
-                <?php endforeach; ?>
-            </div>
 
             <?php // La recherche, sous les onglets, à gauche : elle porte sur les feuilles du
                   // plan choisi. Elle flottait à droite, entre les deux tableaux, et sortait du
@@ -177,7 +178,7 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
                           // devant le bouton du dessin. ?>
                     <?php // Sous les onglets : de quelle demande vient le plan, et son dessin. ?>
                     <div class="soudures-plan-outils">
-                        <p class="soudures-plan-contexte"><?= prefaEscape(prefaReference($plan['demande'])) ?><?= $plan['affaire'] !== '' ? ' · ' . prefaEscape($plan['affaire']) : '' ?></p>
+                        <p class="soudures-plan-contexte">Demande <strong><?= prefaEscape(prefaReference($plan['demande'])) ?></strong><?= $plan['affaire'] !== '' ? ' · ' . prefaEscape($plan['affaire']) : '' ?></p>
                         <?php if ($premiere): ?>
                             <button type="button" class="soudures-ouvrir-plan soudures-voir-dessin"
                                     data-repere="<?= $plan['element'] ?>:<?= $premiere['document'] ?>:1"
@@ -263,6 +264,18 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
               // fermer que sur les écrans du chef — et sa liste est un tableau comme celui
               // des feuilles. Deux formes pour tout l'écran : un en-tête, un tableau. ?>
         <section class="soudures-saisie atelier-detail-content" aria-labelledby="soudures-saisie-titre" data-vide>
+            <?php // Tant qu'aucune feuille n'est choisie, la colonne dit comment se sert
+                  // l'écran, en trois gestes. Elle était vide — ou absente —, et rien ne disait
+                  // ce qu'on était venu faire devant une liste de feuilles. ?>
+            <div class="soudures-invite">
+                <svg class="soudures-invite-icone" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 16c1.4 0 1.4-2 2.8-2s1.4 2 2.8 2 1.4-2 2.8-2 1.4 2 2.8 2 1.4-2 2.8-2 1.4 2 2.5 2"/><path d="M3.5 20h17"/><path d="M8 9.5 6.5 6M12 8.5V4.5M16 9.5 17.5 6"/></svg>
+                <p class="soudures-invite-titre">Aucune feuille ouverte</p>
+                <ol class="soudures-invite-etapes">
+                    <li><span>1</span>Choisissez une feuille dans la liste.</li>
+                    <li><span>2</span>Pour chaque cordon soudé, notez la date et le procédé.</li>
+                    <li><span>3</span>Enregistrez : le chef d’atelier valide ensuite.</li>
+                </ol>
+            </div>
             <div class="soudures-saisie-contenu">
             <?php // L'en-tête des volets : ce que c'est (« Feuille »), laquelle, et d'où elle
                   // vient ; les commandes à droite, sur la ligne du titre. Elles tombaient
