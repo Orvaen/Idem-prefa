@@ -237,13 +237,14 @@ $anciennes = $stmt->fetchAll();
                         $voletId = 'mes-plans-volet-' . $element;
                         $documents = $documentsDuPlan[$element];
                         $feuilles = $feuillesDuPlan[$element];
-                        // Le plan porte-t-il une liste de soudures ? Alors l'avancement se compte
-                        // sur les cordons renseignés dans « Mes soudures », et ne se tape pas ici :
-                        // deux endroits pour le même chiffre, c'est un chiffre de trop.
+                        // Rien ne se tape ici : l'avancement se calcule (avancementSource()). Le
+                        // suivi soudage d'un plan qui porte une liste de soudures se compte sur les
+                        // cordons renseignés dans « Mes soudures » ; tout le reste, sur les étapes.
                         $prevu = avancementSouduresPrevues($db, $element);
                         $soudureTotal = $prevu['prevues'];
                         $soudureFaites = $soudureTotal ? avancementSouduresFaites($db, $element) : 0;
                         $etapes = atelierElementSteps($db, $element);
+                        $compteEtapes = avancementEtapes($etapes['statuts']);
                         // Les étapes s'enregistrent au titre d'une affectation de la personne sur
                         // ce plan : n'importe laquelle, elles appartiennent au plan.
                         $affectationEtapes = (int) $plan['travaux'][0]['id'];
@@ -282,7 +283,7 @@ $anciennes = $stmt->fetchAll();
                                         <?php foreach ($plan['travaux'] as $travail):
                                             [$etat] = $etatTravail((int) $travail['avancement']);
                                             $attente = $enAttente[(int) $travail['id']] ?? null; ?>
-                                            <span class="atelier-work-status is-<?= $etat ?>"<?= $attente ? ' title="' . prefaEscape('Déclaré : ' . avancementPhrase($attente) . ', en attente de validation') . '"' : '' ?>><?= prefaEscape($types[$travail['type_affectation']]) ?> · <?= (int) $travail['avancement'] ?> %</span>
+                                            <span class="atelier-work-status is-<?= $etat ?>"<?= $attente ? ' title="' . prefaEscape('En attente du chef d’atelier : ' . avancementPhrase($attente)) . '"' : '' ?>><?= prefaEscape($types[$travail['type_affectation']]) ?> · <?= (int) $travail['avancement'] ?> %</span>
                                         <?php endforeach; ?>
                                     </span>
                                 </td>
@@ -304,7 +305,7 @@ $anciennes = $stmt->fetchAll();
                                         </div>
 
                                         <?php // Ses travaux sur ce plan, comme les affectations du volet du chef :
-                                              // le travail, son état, et de quoi le faire avancer. ?>
+                                              // le travail, son état, et d'où vient le chiffre. ?>
                                         <section class="mes-plans-section">
                                             <h3 class="mes-plans-titre">Mes travaux</h3>
                                             <dl class="mes-plans-proprietes">
@@ -316,22 +317,13 @@ $anciennes = $stmt->fetchAll();
                                                     <div>
                                                         <dt><?= prefaEscape($libelle) ?></dt>
                                                         <dd>
+                                                            <span class="mes-plans-source"><?= avancementSource((string) $travail['type_affectation'], $soudureTotal) === 'cordons' ? 'selon les cordons' : 'selon les étapes' ?></span>
                                                             <span class="atelier-work-status is-<?= $etat ?>"><?= $etatLibelle ?> · <?= $pct ?> %</span>
-                                                            <?php if (!$soudureTotal): ?>
-                                                                <button type="button" class="mes-plans-commande-ligne atelier-edit-progress"
-                                                                        data-dialog="mes-plans-declaration"
-                                                                        data-affectation="<?= (int) $travail['id'] ?>"
-                                                                        data-revision="<?= (int) $travail['revision'] ?>"
-                                                                        data-avancement="<?= $pct ?>"
-                                                                        data-soudures="0" data-origine=""
-                                                                        data-commentaire="<?= prefaEscape((string) ($travail['commentaire'] ?? '')) ?>"
-                                                                        data-label="<?= prefaEscape($plan['reference'] . ' · ' . $libelle) ?>">Déclarer</button>
-                                                            <?php endif; ?>
                                                         </dd>
-                                                        <?php // Ce qu'il a déclaré et que le chef n'a pas tranché : la bande
+                                                        <?php // Le nouveau chiffre, que le chef n'a pas encore tranché : la bande
                                                               // d'attente des volets, sous le chiffre reconnu. ?>
                                                         <?php if ($attente): ?>
-                                                            <dd class="mes-plans-attente">Déclaré : <strong><?= prefaEscape(avancementPhrase($attente)) ?></strong> · en attente du chef d’atelier · <?= prefaEscape(atelierLocalDateTime($attente['date_saisie'])) ?></dd>
+                                                            <dd class="mes-plans-attente">En attente du chef d’atelier : <strong><?= prefaEscape(avancementPhrase($attente)) ?></strong> · <?= prefaEscape(atelierLocalDateTime($attente['date_saisie'])) ?></dd>
                                                         <?php endif; ?>
                                                     </div>
                                                 <?php endforeach; ?>
@@ -347,12 +339,18 @@ $anciennes = $stmt->fetchAll();
                                             </dl>
                                         </section>
 
-                                        <?php // Les étapes du plan, partagées par tous ceux qui y travaillent. Un
-                                              // état en boutons côte à côte, comme celui des PV : sept listes
-                                              // déroulantes cachaient chacune leur valeur derrière un clic. ?>
+                                        <?php // Les étapes du plan, partagées par tous ceux qui y travaillent, et
+                                              // ce qui fait l'avancement de leurs travaux. Un état en boutons côte à
+                                              // côte, comme celui des PV : sept listes déroulantes cachaient chacune
+                                              // leur valeur derrière un clic. ?>
                                         <section class="mes-plans-section">
-                                            <h3 class="mes-plans-titre">Étapes du plan</h3>
-                                            <p class="mes-plans-aide">Partagées avec les autres personnes affectées à ce plan.</p>
+                                            <div class="mes-plans-titre-ligne">
+                                                <h3 class="mes-plans-titre">Étapes du plan</h3>
+                                                <span class="mes-plans-compte"><?= $compteEtapes['applicables']
+                                                    ? $compteEtapes['faites'] . ' sur ' . $compteEtapes['applicables'] . ' faite' . ($compteEtapes['faites'] > 1 ? 's' : '')
+                                                    : 'aucune ne s’applique' ?></span>
+                                            </div>
+                                            <p class="mes-plans-aide">Elles font l’avancement : OK compte, RAS ne compte pas. Partagées avec ceux qui travaillent sur ce plan.</p>
                                             <form class="atelier-action mes-plans-etapes" data-endpoint="update_atelier.php">
                                                 <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
                                                 <input type="hidden" name="affectation" value="<?= $affectationEtapes ?>">
@@ -451,45 +449,6 @@ $anciennes = $stmt->fetchAll();
                 </table>
             </div>
 
-            <?php // Déclarer l'avancement d'un travail : la fenêtre de la maison, comme « Nouvel
-                  // utilisateur ». Une seule pour l'écran ; le bouton du travail la remplit
-                  // (atelier.js, « .atelier-edit-progress »). Le champ des soudures reste dans le
-                  // balisage pour ce script, éteint : un plan qui porte une liste de soudures se
-                  // déclare dans « Mes soudures », pas ici. ?>
-            <dialog id="mes-plans-declaration" class="mes-plans-dialogue" aria-labelledby="mes-plans-declaration-titre">
-                <form class="atelier-action" data-endpoint="update_atelier.php">
-                    <div class="mes-plans-dialogue-tete">
-                        <h2 id="mes-plans-declaration-titre">Déclarer l’avancement</h2>
-                        <button type="button" class="atelier-close-plan-edit mes-plans-dialogue-fermer" aria-label="Fermer"><?= $fermer ?></button>
-                    </div>
-                    <div class="mes-plans-dialogue-corps">
-                        <p class="atelier-progress-target mes-plans-dialogue-cible"></p>
-                        <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
-                        <input type="hidden" name="operation" value="progress">
-                        <input type="hidden" name="affectation">
-                        <input type="hidden" name="revision">
-                        <div class="form-group atelier-champ-soudures" hidden>
-                            <label for="mes-plans-declaration-soudures">Soudures faites</label>
-                            <input id="mes-plans-declaration-soudures" name="soudures" type="number" min="0" step="1" disabled>
-                            <span class="atelier-champ-aide"><span class="atelier-soudures-origine"></span> · <output class="atelier-quotient"></output></span>
-                        </div>
-                        <div class="form-group atelier-champ-pourcentage">
-                            <label for="mes-plans-declaration-pourcentage">Avancement (%)</label>
-                            <input id="mes-plans-declaration-pourcentage" name="avancement" type="number" min="0" max="100" step="1" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="mes-plans-declaration-note">Compte rendu <span class="mes-plans-facultatif">facultatif</span></label>
-                            <textarea id="mes-plans-declaration-note" name="commentaire" maxlength="2000" rows="3"></textarea>
-                        </div>
-                        <p class="mes-plans-dialogue-aide">Le chef d’atelier valide avant que le pourcentage change.</p>
-                        <span class="atelier-message" role="status" aria-live="polite"></span>
-                    </div>
-                    <div class="mes-plans-dialogue-pied">
-                        <button type="button" class="prefa-ligne-contour atelier-close-plan-edit">Annuler</button>
-                        <button type="submit" class="mes-plans-enregistrer">Déclarer</button>
-                    </div>
-                </form>
-            </dialog>
         <?php endif; ?>
 
         <?php if ($anciennes): ?>

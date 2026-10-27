@@ -40,15 +40,19 @@ try {
     // Le compte est celui du plan entier, toutes feuilles et tous soudeurs confondus :
     // c'est l'avancement de ce plan qu'on annonce, pas celui d'une page. C'est le même
     // chiffre que l'autre écran envoyait, et la même fonction qui l'écrit.
+    //
+    // Le chiffre va au suivi soudage du plan, et à lui seul : c'est le travail que les
+    // cordons mesurent (avancementSource()). Il partait sur l'affectation de celui qui
+    // enregistrait, quelle qu'elle soit — un montage pouvait recevoir le compte des
+    // cordons. Sans suivi soudage affecté, il n'y a personne à qui l'annoncer.
     $prevues = avancementSouduresPrevues($db, $elementId)['prevues'];
-    $declaree = ($bilan['ecrites'] || $bilan['retirees']) && $prevues > 0;
+    // Verrouillée : avancementDeclarer() l'exige, et deux pages enregistrées en même temps
+    // écriraient deux déclarations concurrentes.
+    $soudage = $prevues > 0 ? avancementAffectationCordons($db, $elementId, true) : null;
+    $declaree = $soudage !== null && ($bilan['ecrites'] || $bilan['retirees']);
     if ($declaree) {
-        // L'affectation est verrouillée : avancementDeclarer() l'exige, et deux pages
-        // enregistrées en même temps écriraient deux déclarations concurrentes.
-        $db->prepare('SELECT id FROM affectation_atelier WHERE id = ? FOR UPDATE')
-            ->execute([(int) $affectation['id']]);
         $faites = avancementSouduresFaites($db, $elementId);
-        avancementDeclarer($db, (int) $affectation['id'], (int) $actor['id'],
+        avancementDeclarer($db, $soudage['id'], (int) $actor['id'],
             avancementPourcentage($faites, $prevues), $faites, $prevues, null);
     }
 
@@ -64,9 +68,8 @@ $feuille = soudureAtelierFeuille($db, $elementId, $plan, $page, (int) $actor['id
 // Les mêmes chiffres qu'à la lecture : l'écran se remet à jour d'un bloc après
 // l'enregistrement, et le total du plan vient de bouger.
 $prevu = avancementSouduresPrevues($db, $elementId);
-$avancement = $db->prepare('SELECT avancement FROM affectation_atelier
-    WHERE id_element = ? AND id_utilisateur = ? AND actif = 1 LIMIT 1');
-$avancement->execute([$elementId, (int) $actor['id']]);
+// L'avancement que les cordons font bouger : celui du suivi soudage du plan.
+$cordons = avancementAffectationCordons($db, $elementId);
 
 header('Content-Type: application/json; charset=utf-8');
 echo json_encode([
@@ -79,7 +82,7 @@ echo json_encode([
     // l'écran le dit au-dessus du tableau, et ligne par ligne.
     'attente' => [
         'cordons' => $feuille['enAttente'],
-        'depuis' => ($declaration = avancementEnAttente($db, (int) $affectation['id']))
+        'depuis' => $cordons && ($declaration = avancementEnAttente($db, $cordons['id']))
             ? prefaFormatDate($declaration['date_saisie'], true) : '',
     ],
     // De quoi remettre à jour la ligne de cette feuille dans le tableau : son compte et
@@ -94,7 +97,7 @@ echo json_encode([
         'faites' => avancementSouduresFaites($db, $elementId),
         'feuilles' => avancementFeuillesPhrase($prevu),
     ],
-    'valide' => (int) $avancement->fetchColumn(),
+    'valide' => $cordons['avancement'] ?? 0,
     'message' => $bilan['ecrites'] === 0 && $bilan['retirees'] === 0
         ? 'Rien à enregistrer.'
         : trim(($bilan['ecrites'] ? $bilan['ecrites'] . ' soudure' . ($bilan['ecrites'] > 1 ? 's' : '') . ' enregistrée' . ($bilan['ecrites'] > 1 ? 's' : '') . '.' : '')

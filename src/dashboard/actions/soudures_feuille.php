@@ -33,9 +33,8 @@ $feuille = soudureAtelierFeuille($db, $elementId, $plan, $page, (int) $actor['id
 // dit pas où en est le cahier, et c'est pourtant ce qui part en validation.
 require_once __DIR__ . '/../includes/atelier/avancement.php';
 $prevu = avancementSouduresPrevues($db, $elementId);
-$avancement = $db->prepare('SELECT avancement FROM affectation_atelier
-    WHERE id_element = ? AND id_utilisateur = ? AND actif = 1 LIMIT 1');
-$avancement->execute([$elementId, (int) $actor['id']]);
+// L'avancement que les cordons font bouger : celui du suivi soudage du plan.
+$cordons = avancementAffectationCordons($db, $elementId);
 
 header('Content-Type: application/json; charset=utf-8');
 echo json_encode([
@@ -48,7 +47,7 @@ echo json_encode([
     // l'écran le dit au-dessus du tableau, et ligne par ligne.
     'attente' => [
         'cordons' => $feuille['enAttente'],
-        'depuis' => ($declaration = avancementEnAttente($db, (int) $affectation['id']))
+        'depuis' => $cordons && ($declaration = avancementEnAttente($db, $cordons['id']))
             ? prefaFormatDate($declaration['date_saisie'], true) : '',
     ],
     // De quoi remettre à jour la ligne de cette feuille dans le tableau : son compte et
@@ -63,7 +62,7 @@ echo json_encode([
         'faites' => avancementSouduresFaites($db, $elementId),
         'feuilles' => avancementFeuillesPhrase($prevu),
     ],
-    'valide' => (int) $avancement->fetchColumn(),
+    'valide' => $cordons['avancement'] ?? 0,
     // Dit à l'écran pourquoi le tableau est vide : un plan scanné, ou un gabarit que la
     // reconnaissance ne sait pas lire, n'a aucune ligne à proposer.
     'message' => $feuille['imprimees'] === 0 && !$feuille['lignes']

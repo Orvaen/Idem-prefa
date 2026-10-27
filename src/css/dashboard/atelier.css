@@ -3418,6 +3418,27 @@ html .mes-plans-detail .mes-plans-aide {
     font-size: 12px;
 }
 
+/* D'où vient le chiffre d'un travail : rien ne se tape, il se calcule. */
+html .mes-plans-detail .mes-plans-source {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+/* Le titre d'une section et ce qu'elle compte, sur une ligne : comme la puce d'état au
+   bout du titre d'une section de PV. */
+.mes-plans-titre-ligne {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+html .mes-plans-detail .mes-plans-compte {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
 /* Les commandes d'une ligne du volet : 24px, au contour (DA, § 4). */
 html .mes-plans-detail .mes-plans-commande-ligne {
     display: inline-flex;
@@ -3612,124 +3633,12 @@ html .mes-plans-page .mes-plans-historique summary {
     margin: 24px 16px 0;
 }
 
-/* ----- La fenêtre « Déclarer l'avancement » : celle de « Nouvel utilisateur » ----- */
-
-.mes-plans-dialogue {
-    width: min(460px, calc(100vw - 32px));
-    margin: auto;
-    padding: 0;
-    border: 1px solid var(--border);
-    border-radius: var(--r-xl);
-    background: var(--surface);
-    color: var(--text);
-    box-shadow: 0 1px 2px rgb(0 0 0 / 6%), 0 16px 48px rgb(0 0 0 / 18%);
-}
-
-.mes-plans-dialogue::backdrop {
-    background: rgb(15 15 16 / 38%);
-}
-
-.mes-plans-dialogue-tete {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px 0;
-}
-
-html .mes-plans-dialogue-tete h2 {
-    margin: 0;
-    font-size: 16px;
-    font-weight: 600;
-}
-
-html .mes-plans-dialogue-tete .mes-plans-dialogue-fermer {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--h-md);
-    height: var(--h-md);
-    padding: 0;
-    border: 0 !important;
-    border-radius: var(--r-md);
-    background: transparent !important;
-    color: var(--text-muted) !important;
-    cursor: pointer;
-}
-
-html .mes-plans-dialogue-tete .mes-plans-dialogue-fermer:hover {
-    background: var(--hover) !important;
-    color: var(--text) !important;
-}
-
-.mes-plans-dialogue-tete .icon {
-    width: 16px;
-    height: 16px;
-}
-
-.mes-plans-dialogue-corps {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    padding: 16px 20px 20px;
-}
-
-html .mes-plans-dialogue .mes-plans-dialogue-cible {
-    margin: 0;
-    color: var(--text) !important;
-    font-size: 13px;
-    font-weight: 500;
-}
-
-html .mes-plans-dialogue .mes-plans-dialogue-aide,
-html .mes-plans-dialogue .atelier-message {
-    margin: 0;
-    color: var(--text-muted) !important;
-    font-size: 12px;
-}
-
-html .mes-plans-dialogue .atelier-message:empty {
-    display: none;
-}
-
-.mes-plans-facultatif {
-    color: var(--text-muted);
-    font-weight: 400;
-}
-
-.mes-plans-dialogue-pied {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    padding: 12px 20px;
-    border-top: 1px solid var(--border-faint);
-}
-
-html .mes-plans-dialogue-pied .prefa-ligne-contour {
-    display: inline-flex;
-    align-items: center;
-    height: var(--h-lg);
-    margin: 0;
-    padding: 0 12px;
-    border: 1px solid var(--border) !important;
-    border-radius: var(--r-md) !important;
-    background: transparent !important;
-    color: var(--text) !important;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-}
-
-html .mes-plans-dialogue-pied .prefa-ligne-contour:hover {
-    background: var(--hover) !important;
-}
-
 /* Sur une tablette d'atelier, comme les PV : 44px sous le doigt. */
 @media (max-width: 1100px), (pointer: coarse) {
 
     .mes-plans-segments span,
     html .mes-plans-page .mes-plans-enregistrer,
-    html .mes-plans-detail .mes-plans-commande-ligne,
-    html .mes-plans-dialogue-pied .prefa-ligne-contour {
+    html .mes-plans-detail .mes-plans-commande-ligne {
         min-height: 44px;
     }
 }

@@ -81,6 +81,8 @@ CREATE TABLE `avancement_atelier` (
   `avancement` tinyint unsigned NOT NULL,
   `soudures` smallint unsigned DEFAULT NULL,
   `soudures_total` smallint unsigned DEFAULT NULL,
+  `etapes` tinyint unsigned DEFAULT NULL,
+  `etapes_total` tinyint unsigned DEFAULT NULL,
   `commentaire` text,
   `etat` enum('propose','valide','refuse') NOT NULL DEFAULT 'valide',
   `valide_par` int DEFAULT NULL,

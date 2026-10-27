@@ -94,6 +94,7 @@
         "docker.exe compose exec -T php php /tests/api_demandes.php",
         "docker.exe compose exec -T php php /tests/prefa_references.php",
         "docker.exe compose exec -T php php /tests/atelier_plans.php",
+        "docker.exe compose exec -T php php /tests/avancement_etapes.php",
         "run pages"
       ],
       "description": "Tous les essais, et il s'arrête au premier rouge. Ils lisent la base : run demo d'abord"

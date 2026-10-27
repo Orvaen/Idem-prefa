@@ -28,7 +28,12 @@ Les demandeurs continuent de consulter leurs demandes et l’administrateur cons
 
 ## Avancement et pointages
 
-Les mises à jour d’avancement référencent l’affectation et enregistrent leur auteur et leur date dans `avancement_atelier`. Seul l’utilisateur affecté peut saisir 0 à 100 % et un compte rendu. Le suivi soudage possède sa propre affectation, son avancement et son compte rendu ; les fiches détaillées de soudures et de contrôles restent à définir.
+Les mises à jour d’avancement référencent l’affectation et enregistrent leur auteur et leur date dans `avancement_atelier`. L’atelier ne saisit pas de pourcentage : il se calcule (`includes/atelier/avancement.php`).
+
+- Le suivi soudage d’un plan qui porte une liste de soudures se mesure aux cordons : renseignés sur prévus. Enregistrer ses cordons dans « Mes soudures » déclare le chiffre.
+- Tous les autres travaux — montage, plan / ISO, et le suivi soudage d’un plan sans liste — se mesurent aux étapes du plan : celles qui sont « OK » sur celles qui s’appliquent. Une étape « RAS » ne s’applique pas et sort du total ; « Non OK » et une étape vide restent à faire. Enregistrer les étapes déclare le chiffre pour chaque travail du plan qui s’y mesure.
+
+Le chiffre calculé part en déclaration, que le chef d’atelier valide ou refuse ; il est posé d’office quand c’est le chef qui a changé les étapes. Une déclaration retient le compte qui l’a produite — « 4 étapes sur 6 », « 7 soudures sur 12 » — figé au jour où elle est faite. Le chef garde la main sur un pourcentage direct, comme autorité. Le suivi soudage possède sa propre affectation, son avancement et son compte rendu.
 
 Les pointages référencent l’affectation et l’utilisateur, avec date de travail non future et durée positive en minutes. Le total journalier ne peut pas dépasser 1 440 minutes. Une clé de saisie empêche le double enregistrement lors d’un renvoi du même formulaire. La vue personnelle conserve les 100 derniers pointages, même après une réaffectation.
 

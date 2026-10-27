@@ -173,7 +173,7 @@ $avancementsAValider = avancementEnAttentePlusieurs($db, $affectationsActives);
                                             <!-- Le chiffre annoncé se tient à part du chiffre reconnu, et ne
                                                  se confond pas avec lui : c'est tout l'objet de la validation. -->
                                             <div class="atelier-declaration">
-                                                <p class="atelier-declaration-titre">Avancement déclaré, à valider</p>
+                                                <p class="atelier-declaration-titre">Avancement calculé, à valider</p>
                                                 <p class="atelier-declaration-chiffre"><?= prefaEscape(avancementPhrase($declaration)) ?></p>
                                                 <p class="atelier-muted"><?= prefaEscape($declaration['auteur']) ?> · <?= prefaEscape(atelierLocalDateTime($declaration['date_saisie'])) ?></p>
                                                 <?php if ($declaration['commentaire']): ?><p class="atelier-note"><?= prefaEscape($declaration['commentaire']) ?></p><?php endif; ?>

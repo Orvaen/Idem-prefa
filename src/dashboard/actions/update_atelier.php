@@ -47,6 +47,14 @@ try {
             ->execute([$assignment['id_element'], json_encode($statuses, JSON_UNESCAPED_UNICODE), $actor['id']]);
         $db->prepare('INSERT INTO element_atelier_etapes_historique (id_element, statuts, revision, modifie_par) VALUES (?, ?, ?, ?)')
             ->execute([$assignment['id_element'], json_encode($statuses, JSON_UNESCAPED_UNICODE), $currentRevision + 1, $actor['id']]);
+        // Les étapes font l'avancement : chaque travail du plan qui s'y mesure reçoit le
+        // nouveau chiffre — en déclaration pour le chef, posé d'office si c'est lui.
+        $calcul = avancementSelonEtapes($db, (int) $assignment['id_element'], (int) $actor['id'], $canManageWorkshop);
+        $reponse = 'Étapes enregistrées.';
+        if ($calcul && $calcul['travaux'] > 0) {
+            $reponse .= ' Avancement calculé : ' . $calcul['pourcentage'] . ' %'
+                . ($canManageWorkshop ? '.' : ', envoyé au chef d’atelier.');
+        }
     } elseif ($operation === 'valider') {
         $declaration = filter_var($_POST['declaration'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
         $decision = $_POST['decision'] ?? '';
@@ -62,6 +70,12 @@ try {
             ? 'Avancement validé : ' . avancementPhrase($tranchee) . '.'
             : 'Déclaration refusée. L’avancement n’a pas changé.';
     } elseif ($operation === 'progress') {
+        // L'atelier ne tape plus de pourcentage : il se calcule sur les étapes et les
+        // cordons (avancement.php). Seul le chef garde la main, comme autorité.
+        if (!$canManageWorkshop) {
+            $db->rollBack();
+            prefaError(403, 'L’avancement se calcule tout seul, sur les étapes et les cordons : il ne se déclare plus à la main.');
+        }
         $revision = filter_var($_POST['revision'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
         if ($revision === false) { $db->rollBack(); prefaError(400, 'Formulaire incomplet. Actualisez avant de réessayer.'); }
         if ((int) $assignment['revision'] !== $revision) { $db->rollBack(); prefaError(409, 'Cet avancement a changé. Actualisez avant de réessayer.'); }
@@ -94,12 +108,8 @@ try {
         // soudures grandit, et « sept sur sept » doit rester vrai quand le plan en compte douze.
         $totalRetenu = $soudures === null ? null : $total;
 
-        if ($canManageWorkshop) {
-            avancementPoser($db, $id, $actor['id'], $progress, $soudures, $totalRetenu, $comment ?: null);
-        } else {
-            avancementDeclarer($db, $id, $actor['id'], $progress, $soudures, $totalRetenu, $comment ?: null);
-            $reponse = 'Déclaration envoyée au chef d’atelier. L’avancement changera quand il l’aura validée.';
-        }
+        // Seul le chef arrive ici (refus plus haut) : son chiffre est posé d'office.
+        avancementPoser($db, $id, $actor['id'], $progress, $soudures, $totalRetenu, $comment ?: null);
     }
     $db->commit();
     header('Content-Type: application/json; charset=utf-8');

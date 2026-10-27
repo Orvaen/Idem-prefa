@@ -1,11 +1,18 @@
 <?php
 
 /**
- * L'avancement d'une affectation : déclaré par l'atelier, validé par le chef.
+ * L'avancement d'une affectation : calculé, déclaré, validé par le chef.
+ *
+ * Personne ne tape de pourcentage côté atelier. Il se calcule (avancementSource()) :
+ *
+ * - le suivi soudage, sur les cordons — faits sur prévus — dès que le plan porte une
+ *   liste de soudures ; enregistrer ses cordons déclare le chiffre ;
+ * - tous les autres travaux, et le suivi soudage d'un plan sans liste, sur les étapes du
+ *   plan — faites sur applicables — ; enregistrer les étapes déclare le chiffre.
  *
  * Deux écritures distinctes, et c'est tout l'objet de ce fichier :
  *
- * - la personne affectée **déclare** — sa ligne part en « propose » et ne déplace rien ;
+ * - le calcul **déclare** — sa ligne part en « propose » et ne déplace rien ;
  * - le chef d'atelier **tranche** — il valide, et c'est cette validation qui écrit le
  *   pourcentage sur l'affectation ; ou il refuse, et rien ne bouge.
  *
@@ -112,6 +119,132 @@ function avancementPourcentage(int $faites, int $total): int
 {
     if ($total < 1) return 0;
     return max(0, min(100, (int) round($faites * 100 / $total)));
+}
+
+/**
+ * D'où se calcule l'avancement d'un travail.
+ *
+ * Le suivi soudage se mesure aux cordons dès que le plan porte une liste de soudures : ce
+ * sont les lignes que le bureau d'études a imprimées, rien de plus juste ne le dira. Tout
+ * le reste — le montage, le plan / ISO, et le suivi soudage tant qu'aucune liste n'est
+ * reconnue — se mesure aux étapes du plan.
+ *
+ * @return 'cordons'|'etapes'
+ */
+function avancementSource(string $type, int $souduresPrevues): string
+{
+    return $type === 'soudage' && $souduresPrevues > 0 ? 'cordons' : 'etapes';
+}
+
+/**
+ * Les étapes du plan, comptées : celles qui sont faites, sur celles qui s'appliquent.
+ *
+ * - « OK » : faite ;
+ * - « RAS » : rien à faire à cette étape sur ce plan — elle sort du total, sans quoi un
+ *   plan sans passivation ne pourrait jamais atteindre 100 % ;
+ * - « Non OK » : à reprendre, donc pas faite ;
+ * - sans état : pas encore faite.
+ *
+ * « Autre » vaut RAS tant que personne ne l'a renseignée : c'est la valeur que l'écran
+ * propose d'office, et une étape fourre-tout ne doit pas retenir un plan à 86 %.
+ *
+ * @param array<string, string> $statuts ceux d'atelierElementSteps()
+ * @return array{faites:int, applicables:int}
+ */
+function avancementEtapes(array $statuts): array
+{
+    require_once __DIR__ . '/atelier.php';
+    $faites = 0;
+    $applicables = 0;
+    foreach (array_keys(atelierSteps()) as $cle) {
+        $valeur = $statuts[$cle] ?? ($cle === 'autre' ? 'RAS' : '');
+        if ($valeur === 'RAS') continue;
+        $applicables++;
+        if ($valeur === 'OK') $faites++;
+    }
+    return ['faites' => $faites, 'applicables' => $applicables];
+}
+
+/**
+ * La base sait-elle ranger le compte d'étapes avec une déclaration ?
+ *
+ * Les colonnes viennent de la migration 2026-10-27_avancement_etapes. Tant qu'elle n'est
+ * pas passée sur un serveur, la déclaration part quand même, avec son seul pourcentage :
+ * enregistrer ses étapes ne doit pas échouer pour une colonne qui manque.
+ */
+function avancementEtapesEnBase(PDO $db): bool
+{
+    static $presentes = null;
+    return $presentes ??= (bool) $db->query("SHOW COLUMNS FROM avancement_atelier LIKE 'etapes_total'")->fetch();
+}
+
+/**
+ * Le travail que les cordons font avancer : le suivi soudage du plan, quel que soit celui
+ * qui le tient.
+ *
+ * Les cordons sont ceux du plan, toutes feuilles et tous soudeurs confondus. Le chiffre
+ * partait sur l'affectation de celui qui enregistrait — n'importe laquelle, la requête ne
+ * choisissait pas — et pouvait donc tomber sur son montage.
+ *
+ * @return array{id:int, avancement:int}|null
+ */
+function avancementAffectationCordons(PDO $db, int $elementId, bool $verrouiller = false): ?array
+{
+    $stmt = $db->prepare("SELECT id, avancement FROM affectation_atelier
+        WHERE id_element = ? AND type_affectation = 'soudage' AND actif = 1" . ($verrouiller ? ' FOR UPDATE' : ''));
+    $stmt->execute([$elementId]);
+    $ligne = $stmt->fetch();
+    return $ligne ? ['id' => (int) $ligne['id'], 'avancement' => (int) $ligne['avancement']] : null;
+}
+
+/**
+ * Les étapes du plan viennent de changer : chaque travail qui s'y mesure reçoit le nouveau
+ * chiffre.
+ *
+ * Tous les travaux du plan, et pas seulement ceux de qui enregistre : les étapes sont
+ * celles du plan, partagées, et le montage de l'un ne peut pas rester sur l'ancien compte
+ * quand l'autre vient de cocher « Pliage ».
+ *
+ * Le chiffre part en déclaration, que le chef valide — sauf quand c'est le chef qui a
+ * changé les étapes : il est l'autorité, le chiffre est posé. Un chiffre déjà reconnu ne
+ * part pas une seconde fois ; une déclaration en attente devenue fausse est alors retirée.
+ *
+ * L'appelant tient la transaction.
+ *
+ * @return array{pourcentage:int, faites:int, applicables:int, travaux:int}|null
+ *         null quand aucune étape ne s'applique ; « travaux », combien ont reçu le chiffre
+ */
+function avancementSelonEtapes(PDO $db, int $elementId, int $acteurId, bool $autorite): ?array
+{
+    require_once __DIR__ . '/atelier.php';
+    $compte = avancementEtapes(atelierElementSteps($db, $elementId)['statuts']);
+    if ($compte['applicables'] < 1) return null;
+    $pourcentage = avancementPourcentage($compte['faites'], $compte['applicables']);
+    $prevues = avancementSouduresPrevues($db, $elementId)['prevues'];
+
+    $stmt = $db->prepare('SELECT id, type_affectation, avancement, commentaire FROM affectation_atelier
+        WHERE id_element = ? AND actif = 1 FOR UPDATE');
+    $stmt->execute([$elementId]);
+    $travaux = 0;
+    foreach ($stmt->fetchAll() as $affectation) {
+        if (avancementSource((string) $affectation['type_affectation'], $prevues) !== 'etapes') continue;
+        $id = (int) $affectation['id'];
+        if ((int) $affectation['avancement'] === $pourcentage) {
+            $db->prepare("DELETE FROM avancement_atelier WHERE id_affectation = ? AND etat = 'propose'")
+                ->execute([$id]);
+            continue;
+        }
+        if ($autorite) {
+            // Le compte rendu de l'affectation reste le sien : un calcul n'a rien à en dire.
+            avancementPoser($db, $id, $acteurId, $pourcentage, null, null, $affectation['commentaire'],
+                $compte['faites'], $compte['applicables']);
+        } else {
+            avancementDeclarer($db, $id, $acteurId, $pourcentage, null, null, null,
+                $compte['faites'], $compte['applicables']);
+        }
+        $travaux++;
+    }
+    return $compte + ['pourcentage' => $pourcentage, 'travaux' => $travaux];
 }
 
 /**
@@ -232,14 +365,47 @@ function avancementAValider(PDO $db): int
  *
  * L'appelant tient la transaction et a déjà verrouillé l'affectation.
  */
-function avancementDeclarer(PDO $db, int $affectationId, int $acteurId, int $pourcentage, ?int $soudures, ?int $total, ?string $commentaire): void
+function avancementDeclarer(PDO $db, int $affectationId, int $acteurId, int $pourcentage, ?int $soudures, ?int $total, ?string $commentaire, ?int $etapes = null, ?int $etapesTotal = null): void
 {
     $db->prepare("DELETE FROM avancement_atelier WHERE id_affectation = ? AND etat = 'propose'")
         ->execute([$affectationId]);
-    $db->prepare("INSERT INTO avancement_atelier
-        (id_affectation, id_utilisateur, avancement, soudures, soudures_total, commentaire, etat)
-        VALUES (?, ?, ?, ?, ?, ?, 'propose')")
-        ->execute([$affectationId, $acteurId, $pourcentage, $soudures, $total, $commentaire]);
+    avancementInserer($db, [
+        'id_affectation' => $affectationId, 'id_utilisateur' => $acteurId, 'avancement' => $pourcentage,
+        'soudures' => $soudures, 'soudures_total' => $total, 'commentaire' => $commentaire, 'etat' => 'propose',
+    ], $etapes, $etapesTotal);
+}
+
+/**
+ * L'heure de la base, pour une colonne de date : la base compte en UTC, et PHP à l'heure
+ * de Paris — une date prise côté PHP se lirait décalée d'une heure ou deux.
+ */
+const AVANCEMENT_MAINTENANT = "\0NOW()";
+
+/**
+ * Une ligne d'avancement, avec le compte d'étapes quand la base sait le ranger.
+ *
+ * @param array<string, int|string|null> $valeurs colonne => valeur ; AVANCEMENT_MAINTENANT
+ *        pour l'heure de la base
+ */
+function avancementInserer(PDO $db, array $valeurs, ?int $etapes, ?int $etapesTotal): void
+{
+    if ($etapes !== null && avancementEtapesEnBase($db)) {
+        $valeurs['etapes'] = $etapes;
+        $valeurs['etapes_total'] = $etapesTotal;
+    }
+    $marques = [];
+    $parametres = [];
+    foreach ($valeurs as $valeur) {
+        if ($valeur === AVANCEMENT_MAINTENANT) {
+            $marques[] = 'NOW()';
+        } else {
+            $marques[] = '?';
+            $parametres[] = $valeur;
+        }
+    }
+    $db->prepare('INSERT INTO avancement_atelier (' . implode(', ', array_keys($valeurs)) . ')
+        VALUES (' . implode(', ', $marques) . ')')
+        ->execute($parametres);
 }
 
 /**
@@ -250,14 +416,15 @@ function avancementDeclarer(PDO $db, int $affectationId, int $acteurId, int $pou
  *
  * L'appelant tient la transaction, a verrouillé l'affectation et a comparé sa révision.
  */
-function avancementPoser(PDO $db, int $affectationId, int $acteurId, int $pourcentage, ?int $soudures, ?int $total, ?string $commentaire): void
+function avancementPoser(PDO $db, int $affectationId, int $acteurId, int $pourcentage, ?int $soudures, ?int $total, ?string $commentaire, ?int $etapes = null, ?int $etapesTotal = null): void
 {
     $db->prepare("DELETE FROM avancement_atelier WHERE id_affectation = ? AND etat = 'propose'")
         ->execute([$affectationId]);
-    $db->prepare("INSERT INTO avancement_atelier
-        (id_affectation, id_utilisateur, avancement, soudures, soudures_total, commentaire, etat, valide_par, date_validation)
-        VALUES (?, ?, ?, ?, ?, ?, 'valide', ?, NOW())")
-        ->execute([$affectationId, $acteurId, $pourcentage, $soudures, $total, $commentaire, $acteurId]);
+    avancementInserer($db, [
+        'id_affectation' => $affectationId, 'id_utilisateur' => $acteurId, 'avancement' => $pourcentage,
+        'soudures' => $soudures, 'soudures_total' => $total, 'commentaire' => $commentaire, 'etat' => 'valide',
+        'valide_par' => $acteurId, 'date_validation' => AVANCEMENT_MAINTENANT,
+    ], $etapes, $etapesTotal);
     $db->prepare('UPDATE affectation_atelier SET avancement = ?, commentaire = ?, revision = revision + 1 WHERE id = ?')
         ->execute([$pourcentage, $commentaire, $affectationId]);
 }
@@ -298,7 +465,9 @@ function avancementTrancher(PDO $db, int $affectationId, int $declarationId, int
         ->execute([$accepte ? 'valide' : 'refuse', $acteurId, $declarationId]);
 
     if ($accepte) {
-        $db->prepare('UPDATE affectation_atelier SET avancement = ?, commentaire = ?, revision = revision + 1 WHERE id = ?')
+        // Une déclaration calculée — sur les étapes ou les cordons — n'a pas de compte
+        // rendu : elle laisse en place celui de l'affectation au lieu de l'effacer.
+        $db->prepare('UPDATE affectation_atelier SET avancement = ?, commentaire = COALESCE(?, commentaire), revision = revision + 1 WHERE id = ?')
             ->execute([(int) $declaration['avancement'], $declaration['commentaire'], $affectationId]);
     }
     return $declaration;
@@ -313,6 +482,11 @@ function avancementTrancher(PDO $db, int $affectationId, int $declarationId, int
 function avancementPhrase(array $declaration): string
 {
     $pourcentage = (int) $declaration['avancement'] . ' %';
+    if (($declaration['etapes'] ?? null) !== null && (int) ($declaration['etapes_total'] ?? 0) > 0) {
+        $faites = (int) $declaration['etapes'];
+        return $faites . ($faites > 1 ? ' étapes sur ' : ' étape sur ')
+            . (int) $declaration['etapes_total'] . ' — ' . $pourcentage;
+    }
     if (($declaration['soudures'] ?? null) === null || (int) $declaration['soudures_total'] < 1) {
         return $pourcentage;
     }
