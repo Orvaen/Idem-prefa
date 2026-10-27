@@ -248,11 +248,20 @@
         // La feuille ISO et sa page : un élément porte plusieurs feuilles, un cahier
         // plusieurs pages, et chaque page a ses propres tableaux imprimés.
         donnees.set('document', viewer.dataset.document || '');
-        donnees.set('page', pageVue(viewer));
+        // La page lue, retenue AVANT de partir. La lecture d'une page jamais ouverte dure
+        // quelques secondes, et on feuillette le cahier pendant ce temps : sans ce
+        // souvenir, la réponse s'appliquait à la page affichée à son arrivée, pas à celle
+        // qu'elle décrit.
+        const page = pageVue(viewer);
+        donnees.set('page', page);
 
         fetch('actions/detecter_lignes.php', { method: 'POST', body: donnees })
             .then(reponse => reponse.json().then(corps => ({ ok: reponse.ok, corps })))
             .then(({ ok, corps }) => {
+                // On a tourné la page pendant la lecture : cette réponse décrit une autre
+                // feuille, et ses cases tombent où le tableau d'ici ne va pas. La page
+                // affichée a lancé la sienne — c'est elle qui la servira.
+                if (pageVue(viewer) !== page) return;
                 if (!ok) {
                     if (!automatique) message(viewer, corps.message || 'Détection impossible.', true);
                     return;
@@ -278,7 +287,7 @@
                 // La géométrie du tableau de cette page resservira à chaque frappe dans
                 // la liste : on la garde sur la fenêtre plutôt que de la redemander.
                 viewer.tableauxSoudures = viewer.tableauxSoudures || {};
-                viewer.tableauxSoudures[pageVue(viewer)] = corps.soudures;
+                viewer.tableauxSoudures[page] = corps.soudures;
 
                 const proposees = poserCases ? corps.cases || [] : [];
                 const posees = proposees.filter(c => !occupee(c));
