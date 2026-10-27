@@ -75,7 +75,6 @@ $filtreEnSql = static function (string $colonne, string $nom, array $valeurs) us
 };
 
 if ($canViewAllPrefa) $filtreEnSql('d.idUsers', 'user', $userId);
-$filtreEnSql('d.id_statut', 'status', $status);
 $filtreEnSql('d.urgent', 'priority', $priority);
 if ($q !== '') {
     $columns = [
@@ -98,6 +97,19 @@ if ($q !== '') {
     $where .= ' AND (' . implode(' OR ', $conditions) . ')';
 }
 
+// Le compte de chaque onglet de statut. Il se prend sur tous les autres filtres — la
+// recherche, le demandeur, la priorité — mais avant celui du statut : l'onglet « Validées »
+// doit dire combien il en montrerait, pas zéro parce qu'on regarde « En attente ».
+$comptesParStatut = [];
+$comptes = $db->prepare('SELECT d.id_statut, COUNT(*) AS n' . $joins . $where . ' GROUP BY d.id_statut');
+foreach ($params as $key => $value) $comptes->bindValue(':' . $key, $value);
+$comptes->execute();
+foreach ($comptes->fetchAll() as $compte) {
+    $comptesParStatut[(int) $compte['id_statut']] = (int) $compte['n'];
+}
+
+$filtreEnSql('d.id_statut', 'status', $status);
+
 // L'écran « Mes demandes » : celui de qui ne voit ni toutes les demandes ni ses seules
 // affectations. C'est le même critère qui donne son titre à la page et qui range la liste,
 // pour qu'ils ne puissent pas se contredire.
@@ -119,6 +131,15 @@ $stmt->execute();
 $requests = $stmt->fetchAll();
 
 $total = count($requests);
+
+// Les demandes affichées dont l'échéance est passée. Une refusée ne court plus : elle ne
+// sera pas faite, elle n'est donc pas en retard — la même règle que sur la ligne.
+$enRetardTotal = count(array_filter(
+    $requests,
+    static fn (array $r): bool => !empty($r['date_fin_prevue'])
+        && (int) $r['id_statut'] !== 3
+        && $r['date_fin_prevue'] < date('Y-m-d')
+));
 $attachmentsByRequest = [];
 foreach ($requests as $request) {
     $attachmentsByRequest[$request['id']] = prefaAttachments((int) $request['id']);

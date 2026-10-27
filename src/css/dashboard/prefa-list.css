@@ -3032,3 +3032,221 @@ summary {
     color: var(--text);
     font-weight: 500;
 }
+
+/* ===== LA LISTE, FAÇON LINEAR / GITHUB =====
+ *
+ * Quatre changements, et seulement ceux-là ; le reste du tableau ne bouge pas.
+ *
+ * 1. Le statut se lit en onglets comptés au-dessus du tableau, et non plus dans une
+ *    pastille de filtre parmi les autres. La phrase « 1 en attente · 0 urgente · 2
+ *    affichées » disparaît : chaque compte est posé sur ce qu'il compte.
+ * 2. Chaque groupe s'ouvre sur le signe de son statut — un cercle pointillé qui attend,
+ *    un cercle plein quand c'est tranché — au lieu d'un point de huit pixels.
+ * 3. L'échéance est une date nue. Seul le retard se voit, en jours, dessous : encadrer
+ *    toutes les dates de rouge revenait à alerter sur toutes.
+ * 4. Une demande en attente se valide ou se refuse depuis sa ligne.
+ *
+ * Toutes les couleurs sont des jetons de la DA (section 7 quater) : rien en dur. */
+
+/* ---------- 1. Les onglets ---------- */
+
+.prefa-onglets-barre {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 4px 16px;
+    padding: 0 12px;
+    border-bottom: 1px solid var(--border-fort);
+}
+
+.prefa-onglets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+}
+
+/* Un onglet n'est pas un bouton de la DA : ni cadre ni fond, un trait sous l'actif. Le
+   trait déborde d'un pixel pour recouvrir le filet de la barre, comme sur GitHub. */
+.prefa-onglet {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: var(--h-2xl);
+    margin-bottom: -1px;
+    padding: 0 10px;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.prefa-onglet:hover {
+    color: var(--text);
+}
+
+.prefa-onglet[aria-pressed="true"] {
+    border-bottom-color: var(--accent);
+    color: var(--text);
+    font-weight: 600;
+}
+
+.prefa-onglet-compte {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-width: 20px;
+    height: 18px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--hover);
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+}
+
+.prefa-onglet[aria-pressed="true"] .prefa-onglet-compte {
+    background: var(--active);
+    color: var(--text);
+}
+
+/* Le résumé se range au bout de la barre des onglets. Il n'a plus que deux nombres, ceux
+   sur lesquels on agit le jour même ; à zéro ils restent sourds, et ne prennent la teinte
+   de l'alerte que s'il y a quelque chose à faire.
+
+   Les « !important » répondent à ceux du thème clair, qui posaient un retrait sous le
+   résumé et peignaient le compte des urgentes en rouge même à zéro. */
+.prefa-onglets-barre .prefa-list-summary,
+[data-theme="light"] .prefa-onglets-barre .prefa-list-summary {
+    gap: 14px;
+    padding: 0 0 11px !important;
+}
+
+.prefa-onglets-barre .prefa-list-summary strong,
+.prefa-onglets-barre .prefa-list-summary .prefa-list-summary-urgent,
+[data-theme="light"] .prefa-onglets-barre .prefa-list-summary .prefa-list-summary-urgent {
+    color: var(--text-muted) !important;
+}
+
+.prefa-onglets-barre .prefa-list-summary .est-a-traiter,
+.prefa-onglets-barre .prefa-list-summary .est-a-traiter strong,
+[data-theme="light"] .prefa-onglets-barre .prefa-list-summary .est-a-traiter strong {
+    color: var(--alerte-texte) !important;
+}
+
+/* ---------- 2. Le signe du statut ---------- */
+
+.prefa-groupe-statut::before {
+    content: none;
+}
+
+.prefa-statut-icone {
+    flex: none;
+}
+
+.prefa-statut-icone.status-1 { color: var(--attente-texte); }
+.prefa-statut-icone.status-2 { color: var(--succes-texte); }
+.prefa-statut-icone.status-3 { color: var(--alerte-texte); }
+
+/* ---------- 3. L'échéance ---------- */
+
+.prefa-list .prefa-table td.prefa-echeance {
+    color: var(--text);
+    font-weight: 400;
+}
+
+.prefa-date {
+    display: block;
+    font-variant-numeric: tabular-nums;
+}
+
+.prefa-retard {
+    display: block;
+    margin-top: 1px;
+    color: var(--alerte-texte);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 16px;
+}
+
+/* En compact, la ligne ne peut pas prendre une seconde ligne de texte : le retard se
+   range à côté de la date. */
+.prefa-list[data-densite="compact"] .prefa-date,
+.prefa-list[data-densite="compact"] .prefa-retard {
+    display: inline;
+}
+
+.prefa-list[data-densite="compact"] .prefa-retard {
+    margin-left: 8px;
+}
+
+/* ---------- 4. Valider et Refuser sur la ligne ---------- */
+
+.prefa-decision {
+    display: inline-flex;
+    gap: 6px;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+/* Échelle « sm » de la DA : un contrôle dans une ligne de tableau. Valider est le bouton
+   plein — noir en clair, comme partout ailleurs ; Refuser reste au contour, en rouge, et
+   ne prend son fond qu'au survol. */
+.prefa-decision button {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: var(--h-sm);
+    padding: 0 8px;
+    border-radius: var(--r-md);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.prefa-ligne-refuser {
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--alerte-texte);
+}
+
+.prefa-ligne-refuser:hover {
+    border-color: var(--alerte-bord);
+    background: var(--alerte-fond);
+}
+
+.prefa-ligne-valider {
+    border: 1px solid var(--bouton-plein);
+    background: var(--bouton-plein);
+    color: var(--bouton-plein-texte);
+}
+
+.prefa-ligne-valider:hover {
+    border-color: var(--bouton-plein-hover);
+    background: var(--bouton-plein-hover);
+}
+
+.prefa-ligne-valider .icon {
+    width: 12px;
+    height: 12px;
+}
+
+.prefa-decision button:disabled {
+    opacity: .55;
+    cursor: progress;
+}
+
+/* Sur une tablette d'atelier, les cibles passent à 44 px comme le reste de l'écran. */
+@media (max-width: 1100px), (pointer: coarse) {
+
+    .prefa-onglet,
+    .prefa-decision button {
+        min-height: 44px;
+    }
+}

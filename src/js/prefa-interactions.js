@@ -60,6 +60,55 @@ $(document).on('input', '#prefa-search', differerRafraichissement);
 // elle n'appelle pas le rechargement : c'est l'écran qui sait comment se recharger.
 $(document).on('change', '#prefa-filters', differerRafraichissement);
 $(document).on('click', '#refresh-prefa', refreshPrefaList);
+
+// ===== Les onglets de statut =====
+// L'onglet n'est qu'une autre manière de remplir le champ « status » du formulaire : le
+// rafraîchissement sérialise le formulaire, il n'a rien d'autre à savoir. Un ancien lien
+// pouvait retenir plusieurs statuts ; choisir un onglet n'en garde qu'un.
+$(document).on('click', '.prefa-onglet', function () {
+    const form = document.getElementById('prefa-filters');
+    if (!form) return;
+    const champs = form.querySelectorAll('.prefa-statut-choisi');
+    champs.forEach((champ, rang) => { if (rang > 0) champ.remove(); });
+    if (champs[0]) champs[0].value = this.dataset.statut;
+    document.querySelectorAll('.prefa-onglet').forEach(onglet => {
+        onglet.setAttribute('aria-pressed', String(onglet === this));
+    });
+    clearTimeout(prefaFilterTimer);
+    refreshPrefaList();
+});
+
+// ===== Valider et Refuser depuis la ligne =====
+// Les deux passent par le formulaire d'examen du volet : une seule voie vers
+// review_prefa.php, avec ses contrôles et son jeton.
+function formulaireExamen(bouton) {
+    const volet = document.getElementById(bouton.dataset.detail);
+    return volet ? volet.querySelector('form.prefa-review') : null;
+}
+
+// Valider n'a besoin de rien d'autre : le formulaire part tel quel, comme si l'on avait
+// cliqué son propre bouton — « submitter » porte la valeur 2 jusqu'au gestionnaire.
+$(document).on('click', '.prefa-ligne-valider', function () {
+    const form = formulaireExamen(this);
+    const valider = form?.querySelector('button[value="2"]');
+    if (!valider) return;
+    this.closest('.prefa-decision').querySelectorAll('button').forEach(b => { b.disabled = true; });
+    form.requestSubmit(valider);
+});
+
+// Refuser demande un motif : on ouvre le volet sur son champ plutôt que de refuser à l'aveugle.
+$(document).on('click', '.prefa-ligne-refuser', function () {
+    const form = formulaireExamen(this);
+    if (!form) return;
+    const volet = form.closest('.prefa-detail-row');
+    if (volet.hidden) {
+        document.querySelector(`.prefa-toggle[aria-controls="${volet.id}"]`)?.click();
+    }
+    form.querySelector('.prefa-message').textContent = 'Indiquez le motif, puis cliquez sur Refuser.';
+    const motif = form.querySelector('[name="commentaire"]');
+    motif.focus();
+    motif.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+});
 $(document).on('input', '#controles', function () {
     $('#controles-value').val(this.value).prop('required', true).get(0).setCustomValidity('');
 });
@@ -608,6 +657,10 @@ $(document).on('submit', '#prefa-form, .prefa-review', function (event) {
         method: 'POST', data: data, dataType: 'json', processData: false, contentType: false,
         success: function (response) {
             message.addClass('success').text(response.message);
+            // Validée depuis la ligne, le volet est resté fermé : sa réponse ne se verrait pas.
+            if (review && form.closest('.prefa-detail-row').prop('hidden') && window.toast) {
+                window.toast(response.message);
+            }
             if (review) {
                 const request = form.closest('.prefa-request');
                 if (request.hasClass('is-urgent-pending')) {
@@ -657,10 +710,17 @@ $(document).on('submit', '#prefa-form, .prefa-review', function (event) {
             }
         },
         error: function (xhr) {
-            message.addClass('error').text(xhr.responseJSON?.message || 'Enregistrement impossible. Réessayez.');
+            const texte = xhr.responseJSON?.message || 'Enregistrement impossible. Réessayez.';
+            message.addClass('error').text(texte);
+            if (review && form.closest('.prefa-detail-row').prop('hidden') && window.toast) {
+                window.toast(texte, { erreur: true });
+            }
         },
         complete: function () {
             form.data('submitting', false).find('button').prop('disabled', !!form.data('reviewed'));
+            if (review && !form.data('reviewed')) {
+                form.closest('.prefa-request').find('.prefa-decision button').prop('disabled', false);
+            }
         }
     });
 });

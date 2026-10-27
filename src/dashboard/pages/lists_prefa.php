@@ -36,6 +36,51 @@ $priority = $priority ?? '';
 $users = $users ?? [];
 $statuses = $statuses ?? [];
 $requests = $requests ?? [];
+$comptesParStatut = $comptesParStatut ?? [];
+$enRetardTotal = $enRetardTotal ?? 0;
+
+/*
+|--------------------------------------------------------------------------
+| Onglets de statut
+|--------------------------------------------------------------------------
+|
+| Le statut n'est plus une pastille de filtre parmi les autres : c'est la façon dont on
+| découpe la liste, et il se lit en onglets au-dessus du tableau, chacun avec son compte.
+| Un seul onglet à la fois — « Toutes » quand aucun statut n'est retenu. Un ancien lien
+| qui en retient plusieurs reste valable : aucun onglet n'est alors marqué.
+*/
+
+$libelleOnglet = [1 => 'En attente', 2 => 'Validées', 3 => 'Refusées'];
+$ongletsStatut = [[
+    'valeur' => '',
+    'libelle' => 'Toutes',
+    'compte' => array_sum($comptesParStatut),
+    'actif' => !$status,
+]];
+foreach ($statuses as $s) {
+    $id = (int) $s['id'];
+    $ongletsStatut[] = [
+        'valeur' => (string) $id,
+        'libelle' => $libelleOnglet[$id] ?? (string) $s['libelle'],
+        'compte' => $comptesParStatut[$id] ?? 0,
+        'actif' => $status === [(string) $id],
+    ];
+}
+
+/** Le signe d'un statut, façon Linear : un cercle pointillé qui attend, plein quand c'est tranché. */
+$iconeStatut = static function (int $statut): string {
+    return match ($statut) {
+        1 => '<svg class="prefa-statut-icone status-1" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">'
+            . '<circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-dasharray="2.6 2.1" /></svg>',
+        2 => '<svg class="prefa-statut-icone status-2" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">'
+            . '<circle cx="8" cy="8" r="7" fill="currentColor" />'
+            . '<path d="m5 8.2 2 2 4-4.2" fill="none" stroke="var(--surface)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>',
+        3 => '<svg class="prefa-statut-icone status-3" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">'
+            . '<circle cx="8" cy="8" r="7" fill="currentColor" />'
+            . '<path d="m5.6 5.6 4.8 4.8M10.4 5.6l-4.8 4.8" stroke="var(--surface)" stroke-width="1.8" stroke-linecap="round" /></svg>',
+        default => '',
+    };
+};
 
 /*
 |--------------------------------------------------------------------------
@@ -168,10 +213,12 @@ if ($isWorkshopPersonnel) {
                     ), $userId, ['aucun' => 'Aucun utilisateur à ce nom.']);
                 }
 
-                $barre .= filtreRendu('status', 'Statut', array_map(
-                    static fn (array $s): array => ['id' => (int) $s['id'], 'libelle' => (string) $s['libelle']],
-                    $statuses
-                ), $status);
+                // Le statut se choisit dans les onglets, au-dessus du tableau. Il reste un
+                // champ du formulaire pour que le rafraîchissement l'emporte sans rien savoir
+                // des onglets.
+                foreach ($status ?: [''] as $statutChoisi) {
+                    echo '<input type="hidden" name="status[]" class="prefa-statut-choisi" value="' . prefaEscape($statutChoisi) . '">';
+                }
 
                 // L'écran des demandes urgentes est un filtre figé : on ne propose pas de
                 // le défaire, sinon l'entrée du menu ne voudrait plus rien dire.
@@ -185,7 +232,7 @@ if ($isWorkshopPersonnel) {
                     ], $priority);
                 }
 
-                $pose = $userId || $status || (!$urgentView && $priority);
+                $pose = $userId || (!$urgentView && $priority);
                 echo filtresBarre($barre, (bool) $pose);
                 ?>
 
@@ -198,34 +245,46 @@ if ($isWorkshopPersonnel) {
         <div id="prefa-results">
 
             <?php if ($canViewAllPrefa): ?>
-
                 <span
                     id="prefa-urgent-total"
                     data-count="<?= (int) $urgentPending ?>"
                     hidden></span>
-
-                <?php // Trois fois le même mot : « 0 en attente au total · 0 urgente(s) en
-                      // attente · 0 demande(s) affichée(s) ». Les nombres portent le sens, le
-                      // reste les sépare — et le « (s) » d'un pluriel qu'on n'ose pas trancher
-                      // se lit comme un formulaire administratif.
-                      //
-                      // Le compte des urgentes prend la teinte des alertes : c'est le seul
-                      // des trois sur lequel on agit le jour même. ?>
-                <p class="prefa-list-summary">
-                    <strong><?= (int) $pendingTotal ?></strong> en attente
-                    <span class="prefa-list-summary-point" aria-hidden="true">·</span>
-                    <strong class="prefa-list-summary-urgent"><?= (int) $urgentPending ?></strong> urgente<?= $urgentPending > 1 ? 's' : '' ?>
-                    <span class="prefa-list-summary-point" aria-hidden="true">·</span>
-                    <strong><?= (int) $total ?></strong> affichée<?= $total > 1 ? 's' : '' ?>
-                </p>
-
-            <?php else: ?>
-
-                <p class="prefa-list-summary">
-                    <strong><?= (int) $total ?></strong> demande<?= $total > 1 ? 's' : '' ?> affichée<?= $total > 1 ? 's' : '' ?>
-                </p>
-
             <?php endif; ?>
+
+            <?php // Les onglets remplacent la phrase « 1 en attente · 0 urgente · 2 affichées » :
+                  // chaque compte est posé sur ce qu'il compte, et un clic suffit à n'afficher
+                  // que lui. Ils vivent dans #prefa-results pour que leurs comptes suivent la
+                  // recherche à chaque rafraîchissement. ?>
+            <div class="prefa-onglets-barre">
+
+                <div class="prefa-onglets" role="group" aria-label="Statut des demandes">
+                    <?php foreach ($ongletsStatut as $onglet): ?>
+                        <button type="button"
+                                class="prefa-onglet"
+                                data-statut="<?= prefaEscape($onglet['valeur']) ?>"
+                                aria-pressed="<?= $onglet['actif'] ? 'true' : 'false' ?>">
+                            <?= prefaEscape($onglet['libelle']) ?>
+                            <span class="prefa-onglet-compte"><?= (int) $onglet['compte'] ?></span>
+                        </button>
+                    <?php endforeach; ?>
+                </div>
+
+                <?php // Ce sur quoi on agit le jour même : les urgentes en attente, les
+                      // échéances dépassées. Un nombre à zéro reste sourd ; il ne prend la
+                      // teinte de l'alerte que s'il y a quelque chose à faire. ?>
+                <p class="prefa-list-summary">
+                    <?php if ($canViewAllPrefa): ?>
+                        <span class="<?= $urgentPending > 0 ? 'est-a-traiter' : '' ?>">
+                            <strong class="prefa-list-summary-urgent"><?= (int) $urgentPending ?></strong>
+                            urgente<?= $urgentPending > 1 ? 's' : '' ?>
+                        </span>
+                    <?php endif; ?>
+                    <span class="<?= $enRetardTotal > 0 ? 'est-a-traiter' : '' ?>">
+                        <strong><?= (int) $enRetardTotal ?></strong> en retard
+                    </span>
+                </p>
+
+            </div>
 
 
             <!-- Tableau -->
@@ -326,6 +385,7 @@ if ($isWorkshopPersonnel) {
                         $aideStatut = [
                             1 => $isAdmin ? 'à examiner, puis valider ou refuser' : 'en attente de validation',
                             2 => 'ouvertes à l’atelier',
+                            3 => 'non retenues',
                         ];
                         $groupeCourant = null;
                         ?>
@@ -340,7 +400,7 @@ if ($isWorkshopPersonnel) {
                                             <?php if ($vueParAffaire): ?>
                                                 <span class="prefa-groupe-nom"><?= prefaEscape($groupe !== '' ? $groupe : 'Sans affaire') ?></span>
                                             <?php else: ?>
-                                                <span class="prefa-groupe-nom prefa-groupe-statut status-<?= (int) $row['id_statut'] ?>"><?= prefaEscape($row['libelle']) ?></span>
+                                                <span class="prefa-groupe-nom prefa-groupe-statut status-<?= (int) $row['id_statut'] ?>"><?= $iconeStatut((int) $row['id_statut']) ?><?= prefaEscape($libelleOnglet[(int) $row['id_statut']] ?? $row['libelle']) ?></span>
                                             <?php endif; ?>
                                             <span class="prefa-groupe-compte"><?= (int) $parGroupe[$groupe] ?></span>
                                             <?php if (!$vueParAffaire && isset($aideStatut[(int) $row['id_statut']])): ?>

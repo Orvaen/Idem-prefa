@@ -16,6 +16,14 @@ $initiales = mb_strtoupper(mb_substr(trim($row['prenom']), 0, 1) . mb_substr(tri
 $enRetard = !empty($row['date_fin_prevue'])
     && (int) $row['id_statut'] !== 3
     && $row['date_fin_prevue'] < date('Y-m-d');
+
+// Le retard se dit en jours : « en retard » seul ne distingue pas la veille du mois dernier.
+$joursDeRetard = $enRetard
+    ? (new DateTimeImmutable((string) $row['date_fin_prevue']))->diff(new DateTimeImmutable('today'))->days
+    : 0;
+
+// La décision se prend sur la ligne quand c'est elle que la ligne attend.
+$decisionEnLigne = $isAdmin && $isPending;
 ?>
 <tbody class="prefa-request<?= $isUrgentPending ? ' is-urgent-pending' : '' ?>">
     <tr>
@@ -54,15 +62,14 @@ $enRetard = !empty($row['date_fin_prevue'])
               // mesures d'à côté restent des nombres nus — une pastille sur un nombre
               // empêcherait de le comparer à celui du dessous, qui est tout l'intérêt
               // d'une colonne de nombres. ?>
-        <td class="prefa-echeance<?= $enRetard ? ' est-en-retard' : '' ?>"<?= $enRetard ? ' title="Échéance dépassée"' : '' ?>>
-            <span class="prefa-propriete">
-                <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="5" width="18" height="16" rx="2" />
-                    <path d="M3 10h18M8 3v4M16 3v4" />
-                </svg>
-                <?= $row['date_fin_prevue'] ? prefaEscape(prefaFormatDate($row['date_fin_prevue'])) : '—' ?>
-            </span>
+        <?php // La date nue, et le retard dessous quand il y en a un. Encadrer chaque date
+              // d'une pastille rouge revenait à alerter sur toutes : c'est la ligne de
+              // retard, seule, qui doit se voir. ?>
+        <td class="prefa-echeance">
+            <span class="prefa-date"><?= $row['date_fin_prevue'] ? prefaEscape(prefaFormatDate($row['date_fin_prevue'])) : '—' ?></span>
+            <?php if ($enRetard): ?>
+                <span class="prefa-retard"><?= (int) $joursDeRetard ?> j de retard</span>
+            <?php endif; ?>
             <?php if ($vueParAffaire && $row['urgent']): ?>
                 <span class="prefa-urgent">Urgente</span>
             <?php endif; ?>
@@ -91,6 +98,19 @@ $enRetard = !empty($row['date_fin_prevue'])
               // branchés par délégation sur le document, ils continuent donc de répondre sans
               // rien savoir du menu qui les contient. ?>
         <td class="prefa-actions">
+            <?php // Valider et Refuser sur la ligne : c'est ce que l'écran attend d'une
+                  // demande en attente. Ils passent par le formulaire d'examen du volet —
+                  // Valider le soumet tel quel, Refuser l'ouvre sur le motif, obligatoire. ?>
+            <?php if ($decisionEnLigne): ?>
+                <span class="prefa-decision">
+                    <button type="button" class="prefa-ligne-refuser" data-detail="prefa-detail-<?= $requestId ?>">Refuser</button>
+                    <button type="button" class="prefa-ligne-valider" data-detail="prefa-detail-<?= $requestId ?>">
+                        <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10" /></svg>
+                        Valider
+                    </button>
+                </span>
+            <?php endif; ?>
             <button type="button" class="prefa-actions-declencheur" aria-haspopup="menu" aria-expanded="false"
                     aria-label="Actions sur la demande <?= prefaEscape(prefaReference($requestId)) ?>">
                 <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="currentColor">
