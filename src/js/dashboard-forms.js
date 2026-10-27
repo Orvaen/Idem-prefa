@@ -122,6 +122,16 @@ $(document).on('submit', '#create-user-form', function (e) {
 
             // Ton select custom
             $('#role').val('');
+
+            // Créé depuis la fenêtre de la liste : on la referme, on le dit, et la liste
+            // se recharge pour montrer le nouveau compte.
+            const dialogue = form.closest('dialog')[0];
+            if (dialogue) {
+                message.removeClass('success').text('');
+                dialogue.close();
+                if (window.toast) window.toast(response.message);
+                if (window.htmx) htmx.trigger(document.body, 'usersChanged');
+            }
         },
 
         error: function (xhr) {
@@ -185,3 +195,38 @@ $(document).on('submit', '#prefa-settings-form', function (event) {
     });
 });
 
+
+
+// ===== Utilisateurs : les onglets de rôle et la fenêtre « Nouvel utilisateur » =====
+
+// L'onglet remplit le champ « role » du formulaire de recherche, et htmx fait le reste.
+$(document).on('click', '.utilisateurs-onglet', function () {
+    const form = document.getElementById('users-filters');
+    if (!form) return;
+    form.querySelector('[name="role"]').value = this.dataset.role;
+    document.querySelectorAll('.utilisateurs-onglet').forEach(onglet => {
+        onglet.setAttribute('aria-pressed', String(onglet === this));
+    });
+    htmx.trigger(form, 'submit');
+});
+
+$(document).on('click', '.utilisateurs-nouveau', function () {
+    const dialogue = document.getElementById(this.dataset.dialog);
+    if (!dialogue) return;
+    const form = dialogue.querySelector('form');
+    form.reset();
+    $('#role').val('');
+    $(form).find('#form-message').removeClass('success error').text('');
+    $(form).find('[name="name"]').trigger('input');
+    dialogue.showModal();
+    form.querySelector('[name="prenom"]').focus();
+});
+
+$(document).on('click', '.utilisateur-dialogue-fermer', function () {
+    this.closest('dialog')?.close();
+});
+
+// Un clic sur le voile, à côté de la fenêtre, la referme : le geste des fenêtres modales.
+$(document).on('click', '.utilisateur-dialogue', function (event) {
+    if (event.target === this) this.close();
+});

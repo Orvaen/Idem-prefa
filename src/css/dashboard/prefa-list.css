@@ -1719,113 +1719,6 @@ tbody tr:last-child > td {
     margin-left: auto;
 }
 
-.users-page .header-list {
-    flex-direction: column;
-    align-items: flex-start;
-}
-
-/* Les filtres sont dans le bandeau, qui pose déjà les côtés. */
-.users-filters {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-    width: 100%;
-    margin: 0;
-    padding: 10px 0 0;
-}
-
-.users-page .users-filters input {
-    margin: 0;
-    max-width: 280px;
-}
-
-.users-filters select {
-    min-width: 170px;
-    max-width: 100%;
-    height: var(--ctrl-sm);
-    padding: 0 10px;
-    border: 1px solid var(--border);
-    border-radius: var(--r-sm);
-    background: var(--surface);
-    color: var(--text);
-    font: inherit;
-    font-size: 13px;
-}
-
-@media (max-width: 700px) {
-    .users-filters {
-        width: 100%;
-        padding: 0;
-    }
-
-    .users-filters input,
-    .users-filters select {
-        flex: 1 1 180px;
-        height: 44px;
-    }
-}
-
-/* Boutons de la liste et pagination */
-#users-results button {
-    min-height: 30px;
-    padding: 4px 12px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    background: var(--surface);
-    color: var(--text);
-    font: inherit;
-    line-height: 20px;
-    cursor: pointer;
-}
-
-#users-results button:hover:not(:disabled) {
-    background: var(--hover);
-}
-
-#users-results button:active:not(:disabled) {
-    background: var(--active);
-}
-
-#users-results button:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-}
-
-#users-results button:disabled {
-    background: var(--frame);
-    color: var(--text-muted);
-    opacity: 0.55;
-    cursor: not-allowed;
-}
-
-#users-results td button {
-    margin: 2px 4px 2px 0;
-}
-
-.users-pagination {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    flex-wrap: wrap;
-    gap: 12px;
-    padding: 12px 16px;
-    background: var(--surface);
-}
-
-.users-pagination span {
-    color: var(--text-muted);
-    font-size: 12px;
-    text-align: center;
-}
-
-@media (max-width: 700px) {
-    .users-pagination {
-        justify-content: center;
-        gap: 8px;
-    }
-}
-
 /* Navigation active et accueil */
 .nav-btn.is-active {
     background: var(--hover);
@@ -2160,11 +2053,6 @@ tbody tr:last-child > td {
     font: inherit;
 }
 
-.users-page {
-    height: 100%;
-    overflow-y: auto;
-}
-
 .passivation-form {
     display: flex;
     align-items: end;
@@ -2222,14 +2110,6 @@ tbody tr:last-child > td {
     display: none;
 }
 
-#users-results {
-    overflow-x: auto;
-}
-
-#users-results table {
-    min-width: 650px;
-}
-
 .nav-btn {
     height: auto;
     min-height: 32px;
@@ -2257,8 +2137,7 @@ summary {
     .prefa-form button:not(.modal-close):not(.bouton-discret),
     #refresh-prefa,
     .prefa-toggle,
-    .edit-prefa,
-    #users-results button {
+    .edit-prefa {
         min-height: 44px;
     }
 
@@ -2277,9 +2156,7 @@ summary {
         font-size: 16px;
     }
 
-    .prefa-form textarea,
-    #users-results input,
-    #users-results select {
+    .prefa-form textarea {
         font-size: 16px;
     }
 
@@ -2684,21 +2561,6 @@ summary {
 
 .prefa-list-heading {
     flex-wrap: wrap;
-}
-
-#prefa-results .users-pagination button {
-    height: 26px;
-    padding: 0 10px;
-    font-size: 12px;
-    cursor: pointer;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    background: var(--surface);
-    color: var(--text);
-}
-
-#prefa-results .users-pagination button:disabled {
-    opacity: .5;
 }
 
 .prefa-form .form-group input[type="file"] {
@@ -3249,4 +3111,306 @@ summary {
     .prefa-decision button {
         min-height: 44px;
     }
+}
+
+/* « users-page » ne sert plus à l'écran des utilisateurs, mais l'écran des affaires et celui
+   des passivations en portent encore la coque : ces deux règles restent pour eux. */
+.users-page {
+    height: 100%;
+    overflow-y: auto;
+}
+
+.users-page .header-list {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+/* ===== UTILISATEURS =====
+ *
+ * La liste et la création réunies, sur le modèle de la liste des demandes : même en-tête,
+ * même recherche, rôles en onglets comptés, tableau à monogrammes, actions dans le menu
+ * « … ». « Nouvel utilisateur » ouvre une fenêtre sur la liste. */
+
+.page.prefa-list.utilisateurs-page {
+    width: auto;
+    height: 100%;
+    overflow-y: auto;
+}
+
+/* L'action de l'écran : le bouton au contour des barres d'outils, comme « Actualiser ». */
+.utilisateurs-nouveau {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: var(--h-lg);
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.utilisateurs-nouveau:hover {
+    background: var(--hover);
+}
+
+.utilisateurs-nouveau .icon {
+    width: 14px;
+    height: 14px;
+}
+
+.utilisateurs-table {
+    min-width: 640px;
+}
+
+.utilisateurs-table thead th:first-child {
+    padding-left: 12px;
+}
+
+.utilisateur-identite {
+    display: inline-flex;
+    flex-direction: column;
+    line-height: 1.3;
+}
+
+.utilisateur-nom {
+    color: var(--text);
+    font-weight: 500;
+}
+
+.utilisateur-identifiant {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+/* « vous » : sa propre ligne se reconnaît sans lire, et on comprend pourquoi elle ne se
+   sélectionne pas. */
+.utilisateur-moi {
+    margin-left: 4px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--hover);
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.utilisateur-date {
+    font-variant-numeric: tabular-nums;
+}
+
+.utilisateur-edition-champs {
+    display: inline-flex;
+    gap: 6px;
+}
+
+.utilisateur-edition-champs input {
+    box-sizing: border-box;
+    width: 140px;
+    height: var(--h-md);
+    padding: 0 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 13px;
+}
+
+.utilisateurs-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    padding: 12px 16px;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
+.utilisateurs-pagination span {
+    margin-right: 6px;
+}
+
+.utilisateurs-pagination button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--h-md);
+    height: var(--h-md);
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+}
+
+.utilisateurs-pagination button:hover:not(:disabled) {
+    background: var(--hover);
+}
+
+.utilisateurs-pagination button:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+.utilisateurs-pagination .icon {
+    width: 14px;
+    height: 14px;
+}
+
+/* La commande au contour, dans une ligne ou au pied d'une fenêtre : celle qui n'engage
+   rien (Annuler, Plans & affectations). */
+.prefa-ligne-contour {
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+}
+
+.prefa-ligne-contour:hover,
+.prefa-ligne-contour[aria-expanded="true"] {
+    background: var(--hover);
+}
+
+/* ---------- La fenêtre « Nouvel utilisateur » ----------
+ *
+ * Le padding est sur le formulaire, pas sur la fenêtre : un clic dont la cible est la
+ * fenêtre elle-même tombe alors forcément sur le voile, et la referme. La fenêtre laisse
+ * déborder la liste des rôles, qui s'ouvre sous son champ. */
+.utilisateur-dialogue {
+    width: min(460px, calc(100vw - 32px));
+    margin: auto;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--r-xl);
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 6%), 0 16px 48px rgb(0 0 0 / 18%);
+    overflow: visible;
+}
+
+.utilisateur-dialogue::backdrop {
+    background: rgb(15 15 16 / 38%);
+}
+
+.utilisateur-dialogue #create-user-form {
+    gap: 0;
+}
+
+.utilisateur-dialogue-tete {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px 0;
+}
+
+.utilisateur-dialogue-tete h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.utilisateur-dialogue-tete .utilisateur-dialogue-fermer {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--h-md);
+    height: var(--h-md);
+    padding: 0;
+    border: 0;
+    border-radius: var(--r-md);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.utilisateur-dialogue-tete .utilisateur-dialogue-fermer:hover {
+    background: var(--hover);
+    color: var(--text);
+}
+
+.utilisateur-dialogue-tete .icon {
+    width: 16px;
+    height: 16px;
+}
+
+.utilisateur-dialogue-corps {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 16px 20px 20px;
+}
+
+.utilisateur-dialogue-ligne {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.utilisateur-facultatif {
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+/* Les messages de la fenêtre sont des lignes de texte, pas des encadrés colorés : gris
+   pour ce qui renseigne, rouge pour ce qui bloque. */
+.utilisateur-dialogue .form-message,
+[data-theme="light"] .utilisateur-dialogue .form-message {
+    margin: -6px 0 0;
+    padding: 0;
+    border: 0 !important;
+    background: transparent !important;
+    color: var(--text-muted) !important;
+    font-size: 12px;
+}
+
+.utilisateur-dialogue .form-message.error,
+[data-theme="light"] .utilisateur-dialogue .form-message.error {
+    color: var(--alerte-texte) !important;
+}
+
+.utilisateur-dialogue #form-message {
+    margin: 0;
+}
+
+.utilisateur-dialogue-pied {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 20px;
+    border-top: 1px solid var(--border-faint);
+}
+
+/* Le pied reprend les deux commandes de la DA : Annuler au contour, Créer en plein. La
+   règle de l'ancien écran peignait le bouton d'envoi à l'accent ; l'identifiant la fait
+   peser plus lourd, d'où la même forme ici. */
+.utilisateur-dialogue-pied button,
+#create-user-form .utilisateur-dialogue-pied button[type="submit"] {
+    display: inline-flex;
+    align-items: center;
+    height: var(--h-lg);
+    margin: 0;
+    padding: 0 12px;
+    border-radius: var(--r-md);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+#create-user-form .utilisateur-dialogue-pied button[type="submit"] {
+    border: 1px solid var(--bouton-plein);
+    background: var(--bouton-plein);
+    color: var(--bouton-plein-texte);
+}
+
+#create-user-form .utilisateur-dialogue-pied button[type="submit"]:hover:not(:disabled) {
+    background: var(--bouton-plein-hover);
+}
+
+#create-user-form .utilisateur-dialogue-pied button[type="submit"]:disabled {
+    opacity: .45;
+    cursor: not-allowed;
 }

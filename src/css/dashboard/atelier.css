@@ -2043,19 +2043,6 @@
     color: var(--accent);
 }
 
-/* La commande de ligne secondaire — « Plans & affectations » : au contour, comme
-   « Refuser » sur la liste, mais dans la couleur du texte puisqu'elle ne refuse rien. */
-.prefa-decision .prefa-ligne-contour {
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--text);
-}
-
-.prefa-decision .prefa-ligne-contour:hover,
-.prefa-decision .prefa-ligne-contour[aria-expanded="true"] {
-    background: var(--hover);
-}
-
 .prefa-ligne-valider.atelier-open-plan-create .icon {
     width: 12px;
     height: 12px;

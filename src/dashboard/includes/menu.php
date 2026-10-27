@@ -49,21 +49,11 @@ function dashboardMenu(): array
             'scripts' => [],
         ],
         [
-            'id' => 'create-user',
-            'rayon' => 'administration',
-            'libelle' => 'Créer un utilisateur',
-            'page' => 'pages/create_users.php',
-            'pour' => [Role::ChargeDeProduction],
-            'icone' => '<circle cx="10" cy="8" r="3.5"/><path d="M3.5 20c.6-3.4 3.2-5.5 6.5-5.5 1.6 0 3 .5 4.1 1.3"/><path d="M18 14v6M15 17h6"/>',
-            'styles' => [],
-            // Plus de script propre à cet écran : son champ « Rôle » est le composant
-            // filtrable commun, et liste-filtrable.js est dans le socle.
-            'scripts' => [],
-        ],
-        [
+            // La liste et la création sont un seul écran : « Nouvel utilisateur » ouvre
+            // une fenêtre sur la liste. L'ancienne entrée « create-user » y mène aussi.
             'id' => 'list-users',
             'rayon' => 'administration',
-            'libelle' => 'Liste des utilisateurs',
+            'libelle' => 'Utilisateurs',
             'page' => 'pages/lists_users.php',
             'pour' => [Role::ChargeDeProduction],
             'icone' => '<circle cx="9.5" cy="8" r="3.5"/><path d="M3 20c.6-3.4 3.2-5.5 6.5-5.5S15.4 16.6 16 20"/><path d="M15.5 4.8a3.5 3.5 0 0 1 0 6.4M18.5 15c1.5.8 2.4 2.5 2.6 5"/>',
@@ -282,6 +272,9 @@ function dashboardRayons(): array
 function dashboardVueDemandee(Utilisateur $utilisateur, ?string $vue): array
 {
     $entrees = dashboardMenuVisible($utilisateur);
+
+    // Les écrans fusionnés gardent leur adresse : un lien vers l'ancien ouvre le nouveau.
+    $vue = ['create-user' => 'list-users'][$vue ?? ''] ?? $vue;
 
     foreach ($entrees as $entree) {
         if ($entree['id'] === $vue) return $entree;

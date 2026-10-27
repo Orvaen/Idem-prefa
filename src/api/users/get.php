@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../../dashboard/includes/prefa_context.php';
-require_once __DIR__ . '/../../dashboard/includes/vue/user_display.php';
+require_once __DIR__ . '/../../dashboard/includes/vue/user_row.php';
 
 if (!$isAdmin) prefaError(403, 'Seul un administrateur peut consulter les comptes.');
 
@@ -15,6 +15,15 @@ if ($q !== '') {
     $conditions[] = '(u.identifiant LIKE :identifiant OR u.name LIKE :name OR u.prenom LIKE :prenom)';
     $params = array_fill_keys(['identifiant', 'name', 'prenom'], '%' . $q . '%');
 }
+// Le compte de chaque onglet de rôle : pris sur la recherche, mais avant le filtre de rôle,
+// pour que l'onglet « Personnel atelier » dise combien il en montrerait.
+$whereRecherche = $conditions ? ' WHERE ' . implode(' AND ', $conditions) : '';
+$parRole = $db->prepare('SELECT u.id_role, COUNT(*) AS n FROM Utilisateur u' . $whereRecherche . ' GROUP BY u.id_role');
+$parRole->execute($params);
+$comptesParRole = [];
+foreach ($parRole->fetchAll(PDO::FETCH_ASSOC) as $ligne) $comptesParRole[(int) $ligne['id_role']] = (int) $ligne['n'];
+$roles = $db->query('SELECT id, name FROM role ORDER BY id')->fetchAll(PDO::FETCH_ASSOC);
+
 if ($roleFilter) {
     $conditions[] = 'u.id_role = :role';
     $params['role'] = $roleFilter;
@@ -28,7 +37,7 @@ $totalPages = max(1, (int) ceil($total / $limit));
 $page = min($page, $totalPages);
 $offset = ($page - 1) * $limit;
 
-$stmt = $db->prepare('SELECT u.*, r.name AS role_name FROM Utilisateur u LEFT JOIN role r ON r.id = u.id_role' . $where . ' ORDER BY u.id ASC LIMIT :limit OFFSET :offset');
+$stmt = $db->prepare('SELECT u.*, r.name AS role_name FROM Utilisateur u LEFT JOIN role r ON r.id = u.id_role' . $where . ' ORDER BY u.prenom, u.name, u.id LIMIT :limit OFFSET :offset');
 foreach ($params as $key => $value) {
     $stmt->bindValue(':' . $key, $value, $key === 'role' ? PDO::PARAM_INT : PDO::PARAM_STR);
 }
@@ -40,61 +49,69 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $pageUrl = static function ($number) use ($q, $roleFilter) {
     return htmlspecialchars('/api/users/get.php?' . http_build_query(['page' => $number, 'q' => $q, 'role' => $roleFilter]), ENT_QUOTES, 'UTF-8');
 };
+$premier = $total ? $offset + 1 : 0;
+$dernier = min($offset + $limit, $total);
 ?>
-<div id="users-results"
+<div id="utilisateurs-resultats"
      hx-get="<?= $pageUrl($page) ?>"
      hx-trigger="usersChanged from:body"
      hx-target="this" hx-swap="outerHTML">
-    <!-- data-selection suffit : le script reconnaît la table, ses lignes à leur data-id,
-         et sait quoi appeler pour l'action en lot. -->
-    <table data-selection
-           data-selection-action="/dashboard/actions/delete_user.php"
-           data-selection-libelle="compte"
-           data-csrf="<?= prefaEscape(Session::jeton()) ?>">
-        <thead>
-            <tr><th>ID</th><th>Nom</th><th>Prénom</th><th>Identifiant</th><th>Rôle</th><th>Date de création</th><th>Actions</th></tr>
-        </thead>
-        <tbody id="search-results">
-        <?php foreach ($users as $user): ?>
-            <?php $cestMoi = (int) $user['id'] === $utilisateur->id; ?>
-            <tr data-id="<?= (int) $user['id'] ?>"
-                data-nom="<?= prefaEscape(trim($user['prenom'] . ' ' . $user['name'])) ?>"
-                <?= $cestMoi
-                    ? 'data-protege title="Votre propre compte : il ne peut être ni sélectionné ni supprimé."'
-                    : 'aria-selected="false"' ?>>
-                <td><?= (int) $user['id'] ?></td>
-                <td><?= htmlspecialchars($user['name'], ENT_QUOTES, 'UTF-8') ?></td>
-                <td><?= htmlspecialchars($user['prenom'], ENT_QUOTES, 'UTF-8') ?></td>
-                <td><?= htmlspecialchars($user['identifiant'], ENT_QUOTES, 'UTF-8') ?></td>
-                <td><?= htmlspecialchars(userRoleLabel($user), ENT_QUOTES, 'UTF-8') ?></td>
-                <td><?= htmlspecialchars(userCreationLabel($user), ENT_QUOTES, 'UTF-8') ?></td>
-                <td class="users-actions">
-                    <button hx-get="/api/users/edit.php?id=<?= (int) $user['id'] ?>"
-                            hx-target="closest tr" hx-swap="outerHTML">Modifier</button>
-                    <?php if ((int) $user['id'] === $utilisateur->id): ?>
-                        <!-- Son propre compte : le bouton reste, éteint, avec la raison.
-                             Le retirer ferait croire à un oubli, et l'action le refuse de
-                             toute façon — autant le dire avant le clic plutôt qu'après. -->
-                        <button type="button" disabled title="Vous ne pouvez pas supprimer votre propre compte.">Supprimer</button>
-                    <?php else: ?>
-                        <button hx-post="/dashboard/actions/delete_user.php"
-                                hx-vals='<?= prefaEscape(json_encode(['id' => (int) $user['id'], 'csrf' => Session::jeton()])) ?>'
-                                hx-confirm="Supprimer <?= prefaEscape(trim($user['prenom'] . ' ' . $user['name'])) ?> ? Cette action est définitive."
-                                hx-target="closest tr" hx-swap="outerHTML">Supprimer</button>
-                    <?php endif; ?>
-                </td>
-            </tr>
-        <?php endforeach; ?>
-        <?php if ($total === 0): ?>
-            <tr><td colspan="7">Aucun utilisateur trouvé.</td></tr>
-        <?php endif; ?>
-        </tbody>
-    </table>
-    <nav class="users-pagination" aria-label="Pagination des utilisateurs">
-        <button hx-get="<?= $pageUrl($page - 1) ?>" hx-target="#users-results" hx-swap="outerHTML"
-                <?= $page <= 1 ? 'disabled' : '' ?>>Précédent</button>
-        <span aria-live="polite">Page <?= $page ?> sur <?= $totalPages ?> — <?= $total ?> utilisateur(s)</span>
-        <button hx-get="<?= $pageUrl($page + 1) ?>" hx-target="#users-results" hx-swap="outerHTML"
-                <?= $page >= $totalPages ? 'disabled' : '' ?>>Suivant</button>
-    </nav>
+
+    <?php // Les rôles en onglets comptés, comme les statuts sur la liste des demandes. Ils
+          // vivent dans les résultats pour que leurs comptes suivent la recherche. ?>
+    <div class="prefa-onglets-barre">
+        <div class="prefa-onglets" role="group" aria-label="Rôle">
+            <button type="button" class="prefa-onglet utilisateurs-onglet" data-role="" aria-pressed="<?= $roleFilter ? 'false' : 'true' ?>">
+                Tous <span class="prefa-onglet-compte"><?= array_sum($comptesParRole) ?></span>
+            </button>
+            <?php foreach ($roles as $role): ?>
+                <button type="button" class="prefa-onglet utilisateurs-onglet" data-role="<?= (int) $role['id'] ?>"
+                        aria-pressed="<?= $roleFilter === (int) $role['id'] ? 'true' : 'false' ?>">
+                    <?= prefaEscape($role['name']) ?>
+                    <span class="prefa-onglet-compte"><?= $comptesParRole[(int) $role['id']] ?? 0 ?></span>
+                </button>
+            <?php endforeach; ?>
+        </div>
+    </div>
+
+    <div class="prefa-table-scroll" role="region" aria-label="Liste des utilisateurs" tabindex="0">
+        <?php // data-selection suffit : le script reconnaît la table, ses lignes à leur
+              // data-id, et sait quoi appeler pour l'action en lot. ?>
+        <table class="prefa-table utilisateurs-table"
+               data-selection
+               data-selection-action="/dashboard/actions/delete_user.php"
+               data-selection-libelle="compte"
+               data-csrf="<?= prefaEscape(Session::jeton()) ?>">
+            <thead>
+                <tr>
+                    <th scope="col">Utilisateur</th>
+                    <th scope="col">Rôle</th>
+                    <th scope="col">Créé le</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            <?php foreach ($users as $user): ?>
+                <?php userRow($user, $utilisateur->id); ?>
+            <?php endforeach; ?>
+            <?php if ($total === 0): ?>
+                <tr><td class="prefa-table-empty" colspan="4">Aucun utilisateur ne correspond.</td></tr>
+            <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+
+    <?php if ($totalPages > 1): ?>
+        <nav class="utilisateurs-pagination" aria-label="Pagination des utilisateurs">
+            <span aria-live="polite"><?= $premier ?>–<?= $dernier ?> sur <?= $total ?></span>
+            <button type="button" aria-label="Page précédente" hx-get="<?= $pageUrl($page - 1) ?>" hx-target="#utilisateurs-resultats" hx-swap="outerHTML"
+                    <?= $page <= 1 ? 'disabled' : '' ?>>
+                <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+            </button>
+            <button type="button" aria-label="Page suivante" hx-get="<?= $pageUrl($page + 1) ?>" hx-target="#utilisateurs-resultats" hx-swap="outerHTML"
+                    <?= $page >= $totalPages ? 'disabled' : '' ?>>
+                <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+            </button>
+        </nav>
+    <?php endif; ?>
 </div>

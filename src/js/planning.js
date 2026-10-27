@@ -572,7 +572,7 @@
         document.getElementById('planning-start').value = iso(addDays(first, -((first.getUTCDay() + 6) % 7)));
         reload('', Number(this.dataset.planningTarget));
     });
-    $(document).on('click', '#planning-create-user', () => $('#btn-create-user').trigger('click'));
+    $(document).on('click', '#planning-create-user', () => $('#btn-list-users').trigger('click'));
     $(document).on('click', '[data-planning-shift]', function () {
         const field = document.getElementById('planning-start');
         const current = date(field.value);
