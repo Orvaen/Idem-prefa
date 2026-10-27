@@ -181,8 +181,11 @@ foreach ($planned as $req) {
     ];
 }
 
-$firstDisplayed = $days[0]['date'];
-$lastDisplayed = $days[count($days) - 1]['date'];
+// Le titre dit la période choisie. Le calendrier est rendu trois fois plus large (une
+// période de marge de chaque côté, pour le glisser) : lire ses bornes donnait « 3 octobre —
+// 25 décembre » pour quatre semaines affichées.
+$firstDisplayed = $start;
+$lastDisplayed = $end;
 $rangeLabel = $firstDisplayed->format('j') . ' ' . $months[(int) $firstDisplayed->format('n')] . ' — ' . $lastDisplayed->format('j') . ' ' . $months[(int) $lastDisplayed->format('n')] . ' ' . $lastDisplayed->format('Y');
 
 $outside = array_values(array_filter($visible, static fn($r) => $r['date_debut_planifiee'] && $r['date_fin_planifiee'] && ($r['date_debut_planifiee'] > $end->format('Y-m-d') || $r['date_fin_planifiee'] < $start->format('Y-m-d'))));
@@ -207,13 +210,21 @@ $initialSelectedId = null;
             <p class="planning-subtitle">Visualisation et ordonnancement temporel des demandes de préfabrication.</p>
         </div>
         <button type="button" class="planning-button planning-refresh-button" id="planning-refresh">
-            <span>Actualiser</span>
+            <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-2l2 3M4 16l2 3a7 7 0 0 1 12-2" />
+            </svg>
+            Actualiser
         </button>
     </header>
 
-    <form id="planning-filters" class="planning-toolbar">
-        <div class="floating-field floating-always"><label for="planning-request-filter">Numéro de demande</label><input class="floating-control" id="planning-request-filter" type="search" name="request" value="<?= prefaEscape($requestSearch) ?>" placeholder="Ex. : 26-DP-001"></div>
-        <div class="planning-date-nav">
+    <!-- La barre d'outils suit la DA : contrôles de 32 px, libellés courts à côté du champ
+         plutôt qu'étiquettes flottantes de 44 px. -->
+    <form id="planning-filters" class="planning-toolbar" role="search">
+        <div class="filtres-recherche planning-recherche">
+            <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+            <input id="planning-request-filter" type="search" name="request" value="<?= prefaEscape($requestSearch) ?>" placeholder="N° de demande" aria-label="Numéro de demande">
+        </div>
+        <div class="planning-date-nav" role="group" aria-label="Période">
             <button type="button" class="planning-button planning-icon-button" data-planning-shift="-1" aria-label="Période précédente" title="Période précédente">
                 <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                     <path d="m14 6-6 6 6 6" />
@@ -226,16 +237,31 @@ $initialSelectedId = null;
                 </svg>
             </button>
         </div>
-        <div class="floating-field floating-always"><label for="planning-start">Semaine du</label><input class="floating-control" id="planning-start" type="date" name="start" value="<?= $start->format('Y-m-d') ?>" required></div>
-        <div class="floating-field floating-always"><label for="planning-period">Vue</label><select class="floating-control" id="planning-period" name="period">
-                <option value="28" <?= $length === 28 ? 'selected' : '' ?>>4 semaines (Vue standard)</option>
-                <option value="7" <?= $length === 7 ? 'selected' : '' ?>>1 semaine</option>
-                <option value="56" <?= $length === 56 ? 'selected' : '' ?>>8 semaines</option>
-                <option value="84" <?= $length === 84 ? 'selected' : '' ?>>12 semaines</option>
-            </select></div>
-        <div class="floating-field floating-always"><label for="planning-creator-filter">Demandeur</label><select class="floating-control" id="planning-creator-filter" name="creator">
-                <option value="">Tous les demandeurs</option><?php foreach ($creators as $creator): ?><option value="<?= (int) $creator['id'] ?>" <?= $creatorFilter === (int) $creator['id'] ? 'selected' : '' ?>><?= prefaEscape($creator['nom']) ?></option><?php endforeach; ?>
-            </select></div>
+        <div class="planning-champ">
+            <label for="planning-start">Semaine du</label>
+            <input class="planning-controle planning-controle-date" id="planning-start" type="date" name="start" value="<?= $start->format('Y-m-d') ?>" required>
+        </div>
+        <div class="planning-champ">
+            <label for="planning-period">Vue</label>
+            <span class="planning-select">
+                <select class="planning-controle" id="planning-period" name="period">
+                    <option value="7" <?= $length === 7 ? 'selected' : '' ?>>1 semaine</option>
+                    <option value="28" <?= $length === 28 ? 'selected' : '' ?>>4 semaines</option>
+                    <option value="56" <?= $length === 56 ? 'selected' : '' ?>>8 semaines</option>
+                    <option value="84" <?= $length === 84 ? 'selected' : '' ?>>12 semaines</option>
+                </select>
+                <svg class="planning-select-chevron" aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m4.5 6.5 3.5 3.5 3.5-3.5" /></svg>
+            </span>
+        </div>
+        <div class="planning-champ">
+            <label for="planning-creator-filter">Demandeur</label>
+            <span class="planning-select">
+                <select class="planning-controle" id="planning-creator-filter" name="creator">
+                    <option value="">Tous</option><?php foreach ($creators as $creator): ?><option value="<?= (int) $creator['id'] ?>" <?= $creatorFilter === (int) $creator['id'] ? 'selected' : '' ?>><?= prefaEscape($creator['nom']) ?></option><?php endforeach; ?>
+                </select>
+                <svg class="planning-select-chevron" aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m4.5 6.5 3.5 3.5 3.5-3.5" /></svg>
+            </span>
+        </div>
     </form>
     <p id="planning-page-message" class="planning-feedback" role="status" aria-live="polite"></p>
 
@@ -243,7 +269,7 @@ $initialSelectedId = null;
         <h2><?= prefaEscape($rangeLabel) ?></h2>
     </div>
     <?php if ($nextRequest): ?>
-        <div class="planning-outside-period"><span><?= count($outside) ?> demande(s) planifiée(s) hors période</span><button type="button" class="planning-button" data-planning-go-to="<?= prefaEscape($nextRequest['date_debut_planifiee']) ?>" data-planning-target="<?= (int) $nextRequest['id'] ?>">Voir le <?= prefaEscape(prefaFormatDate($nextRequest['date_debut_planifiee'])) ?></button></div>
+        <div class="planning-outside-period"><span><?= count($outside) ?> demande<?= count($outside) > 1 ? 's planifiées' : ' planifiée' ?> hors de cette période</span><button type="button" class="planning-button planning-button-discret" data-planning-go-to="<?= prefaEscape($nextRequest['date_debut_planifiee']) ?>" data-planning-target="<?= (int) $nextRequest['id'] ?>">Voir le <?= prefaEscape(prefaFormatDate($nextRequest['date_debut_planifiee'])) ?></button></div>
     <?php endif; ?>
 
     <div class="gantt-outer-container">
@@ -284,7 +310,9 @@ $initialSelectedId = null;
                             <div class="gantt-bg-col <?= $day['weekend'] ? 'is-weekend' : 'is-workday' ?> <?= $day['today'] ? 'is-today' : '' ?>"></div>
                         <?php endforeach; ?>
                         <?php if ($todayCol !== null): ?>
-                            <div class="gantt-today-line" style="grid-column: <?= $todayCol ?>;" title="Aujourd’hui"></div>
+                            <!-- « / span 1 » : un élément absolu dont la colonne n'a pas de fin s'étend jusqu'au
+                                 bout de la grille, et le trait se centrait 27 jours plus loin. -->
+                            <div class="gantt-today-line" style="grid-column: <?= $todayCol ?> / span 1;" title="Aujourd’hui"></div>
                         <?php endif; ?>
                     </div>
 
@@ -435,7 +463,8 @@ $initialSelectedId = null;
     <?php if ($unplanned): ?>
         <details class="planning-backlog" id="planning-backlog-section">
             <summary class="planning-backlog-summary">
-                <strong>Demandes en attente de planification</strong> <span class="planning-badge-count"><?= count($unplanned) ?></span>
+                <svg class="icon planning-backlog-chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+                <span>Demandes en attente de planification</span> <span class="planning-badge-count"><?= count($unplanned) ?></span>
             </summary>
             <div class="planning-backlog-list">
                 <?php foreach ($unplanned as $request): ?>

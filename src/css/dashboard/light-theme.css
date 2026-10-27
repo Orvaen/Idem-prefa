@@ -100,7 +100,6 @@ body[data-theme="light"],
 [data-theme="light"] .page.prefa-simple,
 [data-theme="light"] .settings-page,
 [data-theme="light"] .atelier-page,
-[data-theme="light"] .planning-page,
 [data-theme="light"] .plans-iso-page,
 [data-theme="light"] .affaires-page,
 [data-theme="light"] .accueil,
@@ -185,14 +184,12 @@ body[data-theme="light"],
 /* ===== BARRE D'OUTILS & HEADER ===== */
 
 /* ===== CARTES & SECTIONS ===== */
-
 [data-theme="light"] .settings-card,
 [data-theme="light"] .prefa-section,
 [data-theme="light"] .prefa-card,
 [data-theme="light"] .atelier-card,
 [data-theme="light"] .atelier-element-card,
-[data-theme="light"] .plans-iso-card,
-[data-theme="light"] .planning-card {
+[data-theme="light"] .plans-iso-card {
     background: var(--carte) !important;
     border-color: var(--border) !important;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
@@ -317,12 +314,10 @@ body[data-theme="light"],
 }
 
 /* ===== BOUTONS ===== */
-
 [data-theme="light"] button.settings-btn-primary,
 [data-theme="light"] button.btn-primary,
 [data-theme="light"] button.prefa-btn-primary,
 [data-theme="light"] button.atelier-btn-primary,
-[data-theme="light"] button.planning-btn-primary,
 [data-theme="light"] .btn-apply-theme[data-theme="light"],
 [data-theme="light"] input[type="submit"] {
     background: var(--bouton-plein) !important;
@@ -336,7 +331,6 @@ body[data-theme="light"],
 [data-theme="light"] button.btn-primary:hover,
 [data-theme="light"] button.prefa-btn-primary:hover,
 [data-theme="light"] button.atelier-btn-primary:hover,
-[data-theme="light"] button.planning-btn-primary:hover,
 [data-theme="light"] input[type="submit"]:hover {
     background: var(--bouton-plein-hover) !important;
 }
@@ -588,49 +582,6 @@ body[data-theme="light"],
     border-color: #cfe3ee !important;
 }
 
-/* ===== PLANNING & GANTT ===== */
-
-[data-theme="light"] .planning-matrix-table th {
-    background: #fafafa !important;
-    color: #3f4247 !important;
-    border-color: var(--border) !important;
-}
-
-[data-theme="light"] .planning-matrix-table td {
-    background: #ffffff !important;
-    border-color: var(--border) !important;
-}
-
-[data-theme="light"] .planning-matrix-table td.status-ras {
-    background: #efeff0 !important;
-    color: var(--text-muted) !important;
-}
-
-[data-theme="light"] .gantt-outer-container {
-    background: #ffffff !important;
-    border-color: var(--border) !important;
-}
-
-[data-theme="light"] .gantt-header-row,
-[data-theme="light"] .gantt-header-corner,
-[data-theme="light"] .gantt-weeks-header {
-    background: #fafafa !important;
-    border-color: var(--border) !important;
-    color: #3f4247 !important;
-}
-
-[data-theme="light"] .gantt-label-col {
-    background: #ffffff !important;
-    border-color: var(--border) !important;
-    color: var(--text) !important;
-}
-
-[data-theme="light"] .gantt-row {
-    border-color: var(--border) !important;
-}
-
-/* gantt-row:hover désactivé pour éviter l'effet "tout change" sur tableau */
-
 /* ===== DIALOGS / POPUPS ===== */
 
 [data-theme="light"] dialog {
@@ -649,252 +600,7 @@ body[data-theme="light"],
     background: rgba(15, 23, 42, 0.45);
 }
 
-/* ==========================================================================
-   PLANNING & GANTT - CORRECTIONS THÈME CLAIR
-   ========================================================================== */
-
-/* ===== PAGE DE PLANNING ===== */
-[data-theme="light"] .planning-page {
-    color: var(--text) !important;
-}
-
-/* ===== BOUTONS PLANNING ===== */
-[data-theme="light"] .planning-page .planning-button {
-    background: #ffffff !important;
-    border-color: #e4e6e7 !important;
-    color: #3f4247 !important;
-}
-
-[data-theme="light"] .planning-page .planning-button:hover {
-    background: #efeff0 !important;
-    border-color: #c4c6c8 !important;
-    color: var(--text) !important;
-}
-
-[data-theme="light"] .planning-page .planning-primary {
-    background: #006399 !important;
-    border-color: #006399 !important;
-    color: #ffffff !important;
-}
-
-[data-theme="light"] .planning-page .planning-primary:hover {
-    background: #00527f !important;
-}
-
-/* ===== GANTT - EN-TÊTE ===== */
-[data-theme="light"] .gantt-header-corner {
-    background: #fafafa !important;
-    color: var(--text-muted) !important;
-    border-right-color: var(--border) !important;
-}
-
-[data-theme="light"] .gantt-weeks-header {
-    background: #fafafa !important;
-    border-bottom-color: var(--border) !important;
-}
-
-[data-theme="light"] .gantt-week-cell {
-    background: #efeff0 !important;
-    color: #3f4247 !important;
-    border-right-color: var(--border) !important;
-    font-weight: 700;
-}
-
-[data-theme="light"] .gantt-day-number.is-today {
-    font-weight: 800;
-}
-
-/* ===== GANTT - GRILLE D'ARRIÈRE-PLAN ===== */
-[data-theme="light"] .gantt-bg-col {
-    border-right-color: rgba(203, 213, 225, 0.5) !important;
-}
-
-/* ===== GANTT - LIGNES ===== */
-
-/* ===== GANTT - BADGE AFFAIRES ===== */
-[data-theme="light"] .gantt-affaire-badge {
-    background: #fafafa !important;
-    border-color: var(--border) !important;
-    color: var(--text) !important;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
-}
-
-[data-theme="light"] .gantt-row.is-selected .gantt-affaire-badge {
-    border-color: #3d8cb4 !important;
-}
-
-/* ===== GANTT - BARRES ===== */
-/* Mêmes teintes, échelonnées pour la surface claire. */
-[data-theme="light"] .planning-page {
-    --person-a: #006399;
-    --person-b: #eb6834;
-    --person-c: #1baf7a;
-    --person-other: #6b7280;
-}
-
-/* ===== BLOCS INFÉRIEURS DU PLANNING (4 CARTES) ===== */
-[data-theme="light"] .planning-card {
-    background: #ffffff !important;
-    border-color: var(--border) !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
-}
-
-[data-theme="light"] .planning-card-header {
-    background: #fafafa !important;
-    color: var(--text) !important;
-    border-bottom-color: var(--border) !important;
-}
-
-[data-theme="light"] .planning-card-body {
-    background: #ffffff !important;
-    color: var(--text) !important;
-}
-
-[data-theme="light"] .planning-card-footer {
-    background: #fafafa !important;
-    border-top-color: var(--border) !important;
-}
-
-/* ===== INFOS GÉNÉRALES (carte 1) ===== */
-[data-theme="light"] .planning-info-item {
-    border-bottom-color: rgba(203, 213, 225, 0.7) !important;
-}
-
-[data-theme="light"] .planning-info-item dt {
-    color: var(--text-muted) !important;
-}
-
-[data-theme="light"] .planning-info-item dd {
-    color: var(--text) !important;
-}
-
-/* ===== MATRICE AVANCEMENT (carte 2) ===== */
-[data-theme="light"] .planning-matrix-table th {
-    background: #fafafa !important;
-    color: #3f4247 !important;
-    border-color: var(--border) !important;
-}
-
-[data-theme="light"] .planning-matrix-table td {
-    background: #ffffff !important;
-    color: #3f4247 !important;
-    border-color: var(--border) !important;
-}
-
-[data-theme="light"] .planning-matrix-table td.step-label {
-    background: #fafafa !important;
-    color: #3f4247 !important;
-}
-
-/* ===== COMMENTAIRES (carte 3) ===== */
-[data-theme="light"] .comment-item {
-    background: #fafafa !important;
-    border-left-color: #3d8cb4 !important;
-    border-top-color: var(--border) !important;
-    border-right-color: var(--border) !important;
-    border-bottom-color: var(--border) !important;
-}
-
-[data-theme="light"] .comment-text {
-    color: var(--text) !important;
-}
-
-/* ===== LIVRAISON (carte 4) ===== */
-[data-theme="light"] .planning-delivery-info p {
-    color: var(--text-muted) !important;
-}
-
-[data-theme="light"] .planning-delivery-info strong {
-    color: var(--text) !important;
-}
-
-/* ===== BACKLOG ===== */
-[data-theme="light"] .planning-backlog {
-    background: #ffffff !important;
-    border-color: var(--border) !important;
-}
-
-[data-theme="light"] .planning-backlog-summary {
-    background: #fafafa !important;
-    color: var(--text) !important;
-    border-bottom: 1px solid var(--border);
-}
-
-[data-theme="light"] .planning-backlog-summary:hover {
-    background: #efeff0 !important;
-}
-
-[data-theme="light"] .planning-urgent-badge {
-    border-color: #fca5a5 !important;
-}
-
-/* ===== DIALOG DE PLANIFICATION ===== */
-[data-theme="light"] dialog.planning-dialog,
-[data-theme="light"] dialog#planning-dialog {
-    background: #ffffff !important;
-    border-color: var(--border) !important;
-    color: var(--text) !important;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12) !important;
-}
-
-[data-theme="light"] dialog.planning-dialog::backdrop,
-[data-theme="light"] dialog#planning-dialog::backdrop {
-    background: rgba(15, 23, 42, 0.4) !important;
-    backdrop-filter: blur(4px) !important;
-}
-
-[data-theme="light"] .planning-dialog-badge {
-    border-color: color-mix(in srgb, var(--accent) 25%, transparent) !important;
-}
-
-[data-theme="light"] .planning-dialog-close {
-    background: #efeff0 !important;
-    border-color: var(--border) !important;
-    color: var(--text-muted) !important;
-}
-
-[data-theme="light"] .planning-meta-chip {
-    background: #fafafa !important;
-    border-color: var(--border) !important;
-}
-
-[data-theme="light"] .planning-meta-chip .meta-label {
-    color: var(--text-muted) !important;
-}
-
-[data-theme="light"] .planning-date-input {
-    background: #fafafa !important;
-    border-color: #e4e6e7 !important;
-    color: var(--text) !important;
-}
-
-[data-theme="light"] .planning-date-input:focus {
-    border-color: var(--accent) !important;
-}
-
-[data-theme="light"] .planning-preview {
-    background: #fafafa !important;
-    border-color: #e4e6e7 !important;
-}
-
-[data-theme="light"] .planning-preview-badge {
-    border-color: color-mix(in srgb, var(--accent) 30%, transparent) !important;
-}
-
-[data-theme="light"] .planning-dialog-actions {
-    border-top-color: var(--border) !important;
-}
-
-[data-theme="light"] .planning-btn-remove {
-    border-color: rgba(239, 68, 68, 0.25) !important;
-}
-
-[data-theme="light"] .planning-btn-cancel {
-    background: #fafafa !important;
-    border-color: var(--border) !important;
-    color: var(--text-muted) !important;
-}
-
+/* ===== PLANS ISO ===== */
 [data-theme="light"] .plans-iso-card.is-urgent {
     border-left-color: #f59e0b !important;
 }
@@ -993,12 +699,6 @@ body[data-theme="light"],
 [data-theme="light"] .floating-field input:focus ~ label,
 [data-theme="light"] .floating-field select:focus ~ label {
     color: #006399 !important;
-}
-
-/* ===== BADGES / COMPTEURS ===== */
-[data-theme="light"] .planning-badge-count {
-    background: #006399 !important;
-    color: #ffffff !important;
 }
 
 [data-theme="light"] .prefa-list-summary strong {
@@ -1345,19 +1045,6 @@ body[data-theme="light"],
     border-color: var(--border-subtle) !important;
 }
 
-[data-theme="light"] .planning-legend {
-    background: #ffffff !important;
-    border-color: var(--border-subtle) !important;
-}
-
-[data-theme="light"] .planning-legend-title {
-    color: var(--text-muted) !important;
-}
-
-[data-theme="light"] .planning-legend-item {
-    color: var(--text) !important;
-}
-
 [data-theme="light"] .nav-theme {
     color: var(--text-muted) !important;
 }
@@ -1398,8 +1085,7 @@ body[data-theme="light"],
 [data-theme="light"] .prefa-list-heading,
 [data-theme="light"] .atelier-page .prefa-heading,
 [data-theme="light"] .settings-header,
-[data-theme="light"] .header-list,
-[data-theme="light"] .planning-heading {
+[data-theme="light"] .header-list {
     padding-top: 14px !important;
     padding-bottom: 14px !important;
 }

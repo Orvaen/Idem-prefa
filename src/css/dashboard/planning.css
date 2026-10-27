@@ -1,39 +1,20 @@
-/* Les couleurs qui n'appartiennent qu'au calendrier. Le reste de l'écran puise dans les
-   jetons de la maison : son texte, son azur, son vert et son rouge sont ceux des autres
-   écrans, et le thème clair n'a plus à les forcer un par un.
-
-   « fond » et « case » remplacent dix gris qui tenaient en deux points d'écart — #141a24,
-   #161c26, #181e28, #19202c, #1a212d, #1a222e, #1b222e, #1e2634, #1f2735 — et que
-   personne n'aurait su distinguer à l'œil.
-
-   Ces gris-là étaient des ardoises bleutées (#1a222e : trois points de bleu de plus que
-   de rouge). À côté des gris strictement neutres de la palette, tout le calendrier tirait
-   au bleu. Ils sont repris sur l'échelle brute — c'est l'un des rares endroits où on a le
-   droit de l'appeler : une sous-palette d'écran *est* une définition, pas une peinture.
-   Le bloc clair, plus bas, redéfinit les mêmes noms. */
-:root {
-    --planning-fond: var(--neutral-200);
-    --planning-case: var(--neutral-300);
-    --planning-chome-fond: var(--neutral-100);
-    --planning-chome-texte: var(--neutral-800);
-    --planning-chome-colonne: var(--alpha-black-400);
-    --planning-ouvre-colonne: rgba(34, 197, 94, 0.04);
-    --voile-fenetre: var(--alpha-black-1000);
-}
-
-[data-theme="light"] {
-    --planning-fond: #f8fafc;
-    --planning-case: #f1f5f9;
-    --planning-chome-fond: #f8fafc;
-    --planning-chome-texte: #94a3b8;
-    --planning-chome-colonne: rgba(241, 245, 249, 0.5);
-    --planning-ouvre-colonne: rgba(240, 253, 244, 0.4);
-    --voile-fenetre: rgba(15, 23, 42, 0.4);
-}
-
 /* ==========================================================================
-   PAGE PLANNING - THEME HARMONISÉ AVEC LE DASHBOARD (Variables globales)
-   ========================================================================== */
+   PLANNING D'ATELIER
+   ==========================================================================
+
+   L'écran suit la DA (docs/direction-artistique.md) et ne définit plus de couleur à lui,
+   à l'exception des teintes des demandeurs, qui sont une donnée et non une peinture.
+
+   - Le calendrier est un tableau : il vit à même la surface, structuré par ses filets
+     (§ 8). Plus de cadre, plus d'ombre, plus de vert sur les jours ouvrés — c'est le
+     week-end qui se distingue, d'une teinte sourde, et le jour courant, en accent.
+   - Les en-têtes sont en casse normale (§ 7 bis), à 12px / 500 (§ 5).
+   - Les contrôles prennent l'échelle commune : 32px pour la barre d'outils, 24px pour la
+     barre d'une ligne (§ 4) ; rayons 6 pour un contrôle, 8 pour une carte, 12 pour la
+     fenêtre (§ 3).
+   - Les blocs de détail et la liste d'attente sont des cartes : layer-1, filet
+     border-subtle-1, rayon 8, sans ombre (§ 1, § 8).
+   - Le bouton plein reste noir (§ 6). */
 
 .planning-page {
     height: 100%;
@@ -42,75 +23,119 @@
        défilement rétrécit la page de ~15 px, la timeline se redessine, la hauteur
        retombe, la barre disparaît… et le bas de la page oscille sans fin. */
     scrollbar-gutter: stable;
-    /* Les mêmes 18 et 16 pixels que les autres écrans : le titre démarrait douze pixels
-       plus à droite et six plus bas que celui des demandes. */
+    /* Les mêmes 18 et 16 pixels que les autres écrans. */
     padding: 18px 16px 48px;
     background: var(--surface);
     color: var(--text);
     font-family: var(--font, inherit);
+    font-size: 13px;
+
+    /* ===== UNE COULEUR PAR DEMANDEUR =====
+       Trois teintes dont la séparation est vérifiée (vision normale et daltonismes) sur les
+       deux surfaces de l'application, doublées d'une hachure à 45° pour les demandeurs 4 à
+       6. Au-delà de six : gris « Autres ». L'infobulle et la légende nomment toujours la
+       personne, la couleur n'est donc jamais le seul indice. */
+    --person-a: #3987e5;
+    --person-b: #d95926;
+    --person-c: #199e70;
+    --person-other: #64748b;
+    --person-ink: #0b0b0b;
 }
+
+[data-theme="light"] .planning-page {
+    --person-a: #006399;
+    --person-b: #eb6834;
+    --person-c: #1baf7a;
+    --person-other: #6b7280;
+}
+
+.planning-page .icon,
+.planning-page .icon-sm {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+}
+
+/* ===== EN-TÊTE ===== */
 
 .planning-heading {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin-bottom: 18px;
+    margin-bottom: 16px;
 }
 
 .planning-page h1 {
     margin: 0;
-    font-size: 18px;
+    font-size: 20px;
+    line-height: 28px;
     font-weight: 600;
     color: var(--text);
 }
 
 .planning-subtitle {
-    margin: 2px 0 0;
+    margin: 3px 0 0;
     font-size: 13px;
+    line-height: 1.54;
     color: var(--text-muted);
-}
-
-.planning-refresh-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.planning-refresh-button .icon {
-    width: 15px;
-    height: 15px;
 }
 
 .planning-page h2 {
     margin: 0;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--text);
 }
+
+/* ===== BOUTONS ===== */
 
 .planning-page .planning-button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    height: var(--ctrl-sm);
+    gap: 6px;
+    height: var(--h-lg);
     padding: 0 12px;
     margin: 0;
     border: 1px solid var(--border);
-    border-radius: var(--r-sm);
-    background: var(--frame);
+    border-radius: var(--r-md);
+    background: var(--surface);
     color: var(--text);
     font: inherit;
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
     white-space: nowrap;
-    transition: background 0.15s, border-color 0.15s;
+    transition: background 0.12s ease;
 }
 
 .planning-page .planning-button:hover {
     background: var(--hover);
-    border-color: var(--border);
+}
+
+.planning-page .planning-button .icon {
+    width: 14px;
+    height: 14px;
+    flex-basis: 14px;
+}
+
+.planning-page .planning-icon-button {
+    width: var(--h-lg);
+    padding: 0;
+}
+
+/* Un bouton dans une ligne de texte : la hauteur d'un filtre, sans cadre au repos. */
+.planning-page .planning-button-discret {
+    height: var(--h-md);
+    padding: 0 10px;
+    border-color: transparent;
+    background: transparent;
+    color: var(--accent-texte);
+}
+
+.planning-page .planning-button-discret:hover {
+    background: var(--accent-fond);
 }
 
 .planning-page button:focus-visible,
@@ -119,38 +144,28 @@
     outline-offset: 2px;
 }
 
-.planning-page .planning-primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #ffffff;
-}
-
-.planning-page .planning-primary:hover {
-    background: var(--accent-hover);
-}
-
 .planning-page button:disabled {
     opacity: 0.45;
     cursor: not-allowed;
 }
 
-/* Toolbar & Filtres */
+/* ===== BARRE D'OUTILS =====
+   Pas une carte (§ 8) : elle vit à même la surface. Tous ses contrôles à 32px. */
+
 .planning-toolbar {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 16px;
+    gap: 8px 12px;
+    margin-bottom: 8px;
 }
 
-.planning-toolbar > .floating-field {
-    flex: 0 1 180px;
-    width: 180px;
+.planning-recherche {
+    flex: 0 1 200px;
 }
 
-.planning-toolbar > .floating-field:last-child {
-    flex-basis: 220px;
-    width: 220px;
+.planning-recherche input {
+    height: var(--h-lg);
 }
 
 .planning-date-nav {
@@ -158,42 +173,73 @@
     gap: 4px;
 }
 
-.planning-page .planning-icon-button {
-    width: var(--ctrl-sm);
-    padding: 0;
-}
-
-.planning-calendar-heading {
+/* Un libellé court à gauche de son champ : il reste lisible une fois le champ rempli,
+   sans les 44px d'une étiquette flottante. */
+.planning-champ {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
-    flex-wrap: wrap;
+    gap: 8px;
 }
 
-.planning-calendar-heading h2 {
-    color: var(--text-muted);
-    font-size: 13px;
-    font-weight: 500;
-}
-
-.planning-outside-period {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 14px;
-    padding: 8px 14px;
-    background: var(--frame);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
+.planning-champ > label {
     color: var(--text-muted);
     font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.planning-page .planning-controle {
+    height: var(--h-lg);
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+}
+
+.planning-page .planning-controle:hover {
+    border-color: var(--border-fort);
+}
+
+.planning-page .planning-controle:focus {
+    border-color: var(--accent);
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+}
+
+.planning-page .planning-controle-date {
+    width: 150px;
+}
+
+/* La flèche de la liste est dessinée par nous : celle du système change d'un poste à
+   l'autre et ne connaît pas nos couleurs. */
+.planning-select {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.planning-page .planning-select select {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 30px;
+    min-width: 120px;
+    cursor: pointer;
+}
+
+.planning-select-chevron {
+    position: absolute;
+    right: 10px;
+    width: 14px;
+    height: 14px;
+    color: var(--text-muted);
+    pointer-events: none;
 }
 
 .planning-feedback {
-    margin: 4px 0 12px;
+    margin: 0 0 8px;
     font-size: 12px;
     min-height: 16px;
 }
@@ -209,22 +255,48 @@
 #contenaire #planning-page-message.is-removed {
     color: var(--alerte-texte) !important;
     background: var(--alerte-fond);
-    border-left: 3px solid var(--alerte-texte);
-    border-radius: 4px;
-    padding: 10px 12px;
+    border-radius: var(--r-md);
+    padding: 8px 12px;
+}
+
+/* ===== TITRE DE LA PÉRIODE ET DEMANDES HORS PÉRIODE ===== */
+
+.planning-calendar-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.planning-calendar-heading h2 {
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Une ligne d'information, pas un bandeau : texte sourd et lien d'action. */
+.planning-outside-period {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+    color: var(--text-muted);
+    font-size: 12px;
 }
 
 /* ==========================================================================
-   DIAGRAMME GANTT (Disposition fidèle à la maquette - Dark Mode harmonisé)
+   LE GANTT
    ========================================================================== */
 
+/* Un tableau n'est pas une carte (§ 8) : pas de fond, pas de cadre latéral, pas d'ombre.
+   Un filet franc en haut et en bas délimite la zone ; les filets discrets font le reste. */
 .gantt-outer-container {
-    background: var(--frame);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-    margin-bottom: 24px;
+    border-top: 1px solid var(--border-fort);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
 }
 
 .gantt-scroll-wrapper {
@@ -247,14 +319,11 @@
    changement de periode, une classe posee sur lui ne survivrait pas au geste. */
 body.is-panning-gantt .gantt-scroll-wrapper {
     cursor: grabbing;
-    /* Pendant le glissement, la selection de texte et le survol des barres
-       parasiteraient le geste. */
     user-select: none;
 }
 
 body.is-panning-gantt .gantt-bar:hover {
     filter: none;
-    transform: none;
 }
 
 .gantt-layout {
@@ -266,15 +335,15 @@ body.is-panning-gantt .gantt-bar:hover {
     position: relative;
 }
 
-/* En-tête */
-/* Le coin et la colonne des affaires restent visibles quand le calendrier defile.
+/* ----- En-tête -----
+   Le coin et la colonne des affaires restent visibles quand le calendrier defile.
    Ils ne peuvent pas etre des elements de grille pour cela : le rectangle d'adherence
    d'un element de grille se limite a sa propre cellule, soit 210 px, et la colonne
    disparaissait des qu'on defilait au-dela. En flex, le bloc contenant est la ligne
    entiere, qui fait toute la largeur du calendrier. */
 .gantt-header-row {
     display: flex;
-    background: var(--frame);
+    background: var(--surface);
     border-bottom: 1px solid var(--border);
     position: sticky;
     top: 0;
@@ -293,47 +362,44 @@ body.is-panning-gantt .gantt-bar:hover {
     height: 28px;
 }
 
+/* En-tête de colonne : 12px / 500, sourd, en casse normale (§ 5, § 7 bis). */
 .gantt-header-corner {
     flex: 0 0 var(--gantt-label-width);
     position: sticky;
     left: 0;
     z-index: 2;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 600;
-    font-size: 12px;
-    color: var(--text-muted);
-    background: var(--planning-fond);
+    align-items: flex-end;
+    padding: 0 12px 7px;
+    box-sizing: border-box;
+    background: var(--surface);
     border-right: 1px solid var(--border);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
 }
 
-/* Semaines (Ligne 1) */
 .gantt-weeks-header {
     display: grid;
     grid-template-columns: repeat(var(--gantt-days), minmax(0, 1fr));
-    border-bottom: 1px solid var(--border);
-    background: var(--planning-fond);
+    border-bottom: 1px solid var(--border-faint);
 }
 
+/* La semaine se lit à son début, comme un intertitre — pas centrée sur sept cases. */
 .gantt-week-cell {
     display: flex;
     align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 12px;
-    color: var(--text);
+    padding-left: 8px;
     border-right: 1px solid var(--border);
-    background: var(--planning-case);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
 }
 
 .gantt-week-cell:last-child {
     border-right: none;
 }
 
-/* Numéros des jours (Ligne 2) */
 .gantt-days-header {
     display: grid;
     grid-template-columns: repeat(var(--gantt-days), minmax(0, 1fr));
@@ -343,36 +409,46 @@ body.is-panning-gantt .gantt-bar:hover {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
-    font-weight: 600;
-    border-right: 1px solid var(--border);
+    border-right: 1px solid var(--border-faint);
     color: var(--text);
-}
-
-.gantt-day-number.is-workday {
-    background: var(--succes-fond);
-    color: var(--succes-texte);
+    font-size: 12px;
+    font-weight: 450;
+    font-variant-numeric: tabular-nums;
 }
 
 .gantt-day-number.is-weekend {
-    background: var(--planning-chome-fond);
-    color: var(--planning-chome-texte);
+    background: var(--carte);
+    color: var(--text-muted);
 }
 
+/* Le jour courant : une pastille d'accent, pas une case repeinte. */
 .gantt-day-number.is-today {
-    font-weight: 800;
+    position: relative;
     color: var(--accent-texte);
+    font-weight: 600;
+}
+
+.gantt-day-number.is-today::before {
+    content: "";
+    position: absolute;
+    inset: 4px 5px;
+    z-index: -1;
+    border-radius: var(--r-sm);
     background: var(--accent-fond);
 }
 
-/* Corps du Gantt */
+.gantt-day-number.is-today {
+    isolation: isolate;
+}
+
+/* ----- Corps ----- */
+
 .gantt-body {
     position: relative;
     display: flex;
     flex-direction: column;
 }
 
-/* Grille d'arrière-plan avec colonnes */
 .gantt-background-grid {
     position: absolute;
     top: 0;
@@ -385,153 +461,130 @@ body.is-panning-gantt .gantt-bar:hover {
     z-index: 1;
 }
 
+/* Le filet le plus discret : il se répète quatre-vingts fois (§ 2). */
 .gantt-bg-col {
-    border-right: 1px solid rgba(52, 61, 76, 0.4);
+    border-right: 1px solid var(--border-faint);
     height: 100%;
 }
 
-.gantt-bg-col.is-workday {
-    background: var(--planning-ouvre-colonne); /* Vert discret */
-}
-
 .gantt-bg-col.is-weekend {
-    background: var(--planning-chome-colonne); /* Gris week-end */
+    background: var(--carte);
 }
 
-/* Ligne rouge verticale Aujourd'hui */
+/* Aujourd'hui : un trait d'accent de 2px, sans halo. Le rouge est réservé au danger (§ 6).
+   Absolu, il prend la colonne de son jour pour bloc contenant — à condition que le
+   balisage la borne (« N / span 1 ») : sans fin de colonne, la zone courait jusqu'au bout
+   de la grille et le trait sortait au 23 novembre pour le 27 octobre. */
 .gantt-today-line {
     position: absolute;
-    top: -28px;
+    top: 0;
     bottom: 0;
-    width: 3px;
-    background: #ef4444;
+    left: calc(50% - 1px);
+    width: 2px;
+    background: var(--accent);
     z-index: 6;
-    margin-left: calc(50% - 1.5px);
-    box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
 }
 
-/* Lignes des affaires */
+/* ----- Lignes : la hauteur d'une ligne de tableau ----- */
+
 .gantt-row {
     position: relative;
     z-index: 2;
     display: flex;
-    min-height: 48px;
-    border-bottom: 1px solid var(--border);
-    align-items: center;
-    transition: background 0.15s;
+    min-height: var(--ligne-td);
+    border-bottom: 1px solid var(--border-faint);
+    align-items: stretch;
 }
 
 .gantt-row:last-child {
     border-bottom: none;
 }
 
-.gantt-row:hover {
-    background: var(--planning-case);
+.gantt-row:hover .gantt-label-col {
+    background: var(--ligne-survol);
 }
 
-.gantt-row.is-selected {
-    background: var(--accent-fond);
+.gantt-row.is-selected .gantt-label-col {
+    background: var(--selection-fond);
 }
 
-/* Colonne étiquette d'affaire à gauche */
+/* Colonne des affaires : du texte, pas des boutons encadrés. */
 .gantt-label-col {
     flex: 0 0 var(--gantt-label-width);
-    padding: 6px 12px;
+    box-sizing: border-box;
+    padding: 0 4px;
     border-right: 1px solid var(--border);
-    background: var(--frame);
+    background: var(--surface);
     display: flex;
     align-items: center;
     position: sticky;
     left: 0;
-    /* Au-dessus des barres (3), des barres selectionnees (5) et du trait du jour (6). */
+    /* Au-dessus des barres (3), des barres sélectionnées (5) et du trait du jour (6). */
     z-index: 7;
 }
 
 .gantt-affaire-badge {
     width: 100%;
-    padding: 7px 10px;
-    background: var(--planning-fond);
-    border: 1px solid var(--border);
-    border-radius: 4px;
+    height: var(--h-md);
+    padding: 0 8px;
+    border: 0;
+    border-radius: var(--r-md);
+    background: transparent;
     color: var(--text);
+    font: inherit;
     font-size: 13px;
-    font-weight: 600;
-    text-align: center;
+    font-weight: 500;
+    text-align: left;
     cursor: pointer;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-    transition: all 0.15s;
 }
 
 .gantt-affaire-badge:hover {
-    border-color: var(--accent-texte);
-    background: var(--accent-fond);
     color: var(--accent-texte);
 }
 
 .gantt-row.is-selected .gantt-affaire-badge {
-    border-color: var(--accent);
-    background: var(--selection-fond);
     color: var(--accent-texte);
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.35);
+    font-weight: 600;
 }
 
-/* Piste de la barre de Gantt */
 .gantt-track {
     flex: 1 1 auto;
     min-width: 0;
     display: grid;
     grid-template-columns: repeat(var(--gantt-days), minmax(0, 1fr));
     align-items: center;
-    height: 100%;
-    padding: 6px 0;
     position: relative;
 }
 
-/* Barres de Gantt */
-/* La barre ne porte plus de texte : son nom est a gauche, sa couleur dit le demandeur
-   et l'infobulle donne le detail. */
+/* La barre ne porte pas de texte : son nom est à gauche, sa couleur dit le demandeur et
+   l'infobulle donne le détail. Hauteur d'un contrôle de ligne (24px), rayon 4, à plat. */
 .gantt-bar {
     position: relative;
     z-index: 3;
-    height: 32px;
+    height: var(--h-sm);
+    margin: 0 1px;
     padding: 0;
-    border-radius: 4px;
+    border: 0;
+    border-radius: var(--r-sm);
     cursor: pointer;
     overflow: hidden;
     background-color: var(--person-fill, var(--person-other));
     background-image: var(--person-hachure, none);
-    border: 1px solid rgb(0 0 0 / 22%);
     color: var(--person-ink);
-    text-overflow: ellipsis;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
-    transition: transform 0.1s, filter 0.15s, box-shadow 0.15s;
+    transition: filter 0.12s ease;
 }
 
 .gantt-bar:hover {
-    filter: brightness(1.15);
-    transform: translateY(-1px);
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.35);
+    filter: brightness(1.08);
 }
 
 .gantt-bar.is-selected {
-    box-shadow: 0 0 0 1px var(--accent), 0 3px 8px rgba(0, 0, 0, 0.25);
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
     z-index: 5;
-}
-
-/* ===== UNE COULEUR PAR DEMANDEUR =====
-   Trois teintes dont la séparation est vérifiée (vision normale et daltonismes) sur les
-   deux surfaces de l'application, doublées d'une hachure à 45° pour les demandeurs 4 à 6.
-   Au-delà de six : gris « Autres ». La barre et l'infobulle nomment toujours la personne,
-   la couleur n'est donc jamais le seul indice. */
-.planning-page {
-    --person-a: #3987e5;
-    --person-b: #d95926;
-    --person-c: #199e70;
-    --person-other: #64748b;
-    --person-ink: #0b0b0b;
 }
 
 .planning-person-1 { --person-fill: var(--person-a); }
@@ -556,6 +609,11 @@ body.is-panning-gantt .gantt-bar:hover {
     outline-offset: -4px;
 }
 
+.gantt-bar.is-urgent.is-selected {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
 .gantt-empty-notice {
     padding: 24px;
     text-align: center;
@@ -563,15 +621,63 @@ body.is-panning-gantt .gantt-bar:hover {
     font-size: 13px;
 }
 
+.gantt-empty-notice p {
+    margin: 0;
+}
+
+/* ===== LÉGENDE =====
+   Une ligne sous le calendrier, pas une carte. */
+
+.planning-legend {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin: 0 0 16px;
+}
+
+.planning-legend-title {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.planning-legend-list {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.planning-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text);
+    font-size: 12px;
+}
+
+.planning-legend-swatch {
+    flex-shrink: 0;
+    width: 16px;
+    height: 10px;
+    border-radius: 2px;
+    background-color: var(--person-fill, var(--person-other));
+    background-image: var(--person-hachure-pastille, none);
+}
+
 /* ==========================================================================
-   PANNEAU INFÉRIEUR : 4 BLOCS HARMONISÉS
+   DÉTAIL DE L'AFFAIRE SÉLECTIONNÉE : 4 CARTES
    ========================================================================== */
 
 .planning-details-panel {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    margin-top: 10px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin: 0 0 16px;
 }
 
 .planning-details-panel[hidden] {
@@ -580,7 +686,7 @@ body.is-panning-gantt .gantt-bar:hover {
 
 @media (max-width: 1024px) {
     .planning-details-panel {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
@@ -590,90 +696,90 @@ body.is-panning-gantt .gantt-bar:hover {
     }
 }
 
-.planning-card {
-    background: var(--frame);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
+/* Une carte : layer-1, filet border-subtle-1, rayon 8, sans ombre (§ 1, § 8). */
+.planning-page .planning-card {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    background: var(--carte);
+    box-shadow: none;
 }
 
 .planning-card-header {
-    background: var(--planning-fond);
+    padding: 12px 14px 0;
     color: var(--text);
     font-size: 13px;
-    font-weight: 700;
-    text-align: center;
-    padding: 9px 12px;
-    border-bottom: 1px solid var(--border);
-    letter-spacing: 0.3px;
+    font-weight: 600;
 }
 
 .planning-card-body {
-    padding: 14px;
     flex: 1;
-    font-size: 13px;
-    overflow-y: auto;
     max-height: 220px;
+    overflow-y: auto;
+    padding: 10px 14px 12px;
     color: var(--text);
+    font-size: 13px;
 }
 
 .planning-card-footer {
-    padding: 8px 12px;
-    background: var(--planning-fond);
-    border-top: 1px solid var(--border);
     display: flex;
     justify-content: flex-end;
     gap: 8px;
+    padding: 0 14px 12px;
 }
 
-/* Bloc 1: Information générale */
+.planning-card-footer .planning-button {
+    height: var(--h-md);
+    padding: 0 10px;
+    font-size: 12px;
+}
+
+/* Bloc 1 : information générale — libellé sourd à gauche, valeur à droite. */
 .planning-info-list {
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 8px;
 }
 
 .planning-info-item {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    gap: 10px;
-    border-bottom: 1px dashed rgba(52, 61, 76, 0.7);
-    padding-bottom: 4px;
+    gap: 12px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border-faint);
 }
 
 .planning-info-item:last-child {
     border-bottom: none;
-    padding-bottom: 0;
 }
 
 .planning-info-item dt {
     color: var(--text-muted);
-    font-weight: 500;
     font-size: 12px;
+    font-weight: 450;
 }
 
 .planning-info-item dd {
     margin: 0;
-    font-weight: 600;
     color: var(--text);
+    font-size: 12px;
+    font-weight: 500;
     text-align: right;
     word-break: break-word;
-    font-size: 12px;
 }
 
 .planning-info-item dd a {
     color: var(--accent-texte);
     text-decoration: underline;
+    text-underline-offset: 2px;
 }
 
-/* Bloc 2: Matrice Avancement */
+/* Bloc 2 : la matrice d'avancement — un tableau, donc des filets de ligne seulement. */
 .planning-table-container {
-    padding: 0;
+    padding: 4px 14px 12px;
     overflow-x: auto;
 }
 
@@ -681,139 +787,181 @@ body.is-panning-gantt .gantt-bar:hover {
     width: 100%;
     border-collapse: collapse;
     font-size: 12px;
-    text-align: center;
 }
 
 .planning-matrix-table th,
 .planning-matrix-table td {
-    border: 1px solid var(--border);
-    padding: 6px 8px;
+    height: 28px;
+    padding: 0 6px;
+    border-bottom: 1px solid var(--border-faint);
+    text-align: center;
     white-space: nowrap;
 }
 
 .planning-matrix-table th {
-    background: var(--planning-fond);
-    font-weight: 600;
-    color: var(--text);
-}
-
-.planning-matrix-table td.step-label {
-    text-align: left;
-    font-weight: 600;
-    background: var(--planning-fond);
-    color: var(--text);
-    padding-left: 10px;
-}
-
-.planning-matrix-table td.status-ok {
-    background: var(--succes-fond);
-    color: var(--succes-texte);
-    font-weight: 700;
-}
-
-.planning-matrix-table td.status-non-ok {
-    background: var(--alerte-fond);
-    color: var(--alerte-texte);
-    font-weight: 700;
-}
-
-.planning-matrix-table td.status-ras {
-    background: var(--planning-case);
+    border-bottom-color: var(--border);
     color: var(--text-muted);
     font-weight: 500;
 }
 
-/* Bloc 3: Commentaires */
+.planning-matrix-table tbody tr:last-child > td {
+    border-bottom: 0;
+}
+
+.planning-matrix-table td.step-label {
+    padding-left: 0;
+    color: var(--text);
+    font-weight: 500;
+    text-align: left;
+}
+
+.planning-matrix-table td.status-ok {
+    color: var(--succes-texte);
+    font-weight: 500;
+}
+
+.planning-matrix-table td.status-non-ok {
+    color: var(--alerte-texte);
+    font-weight: 500;
+}
+
+.planning-matrix-table td.status-ras {
+    color: var(--text-muted);
+}
+
+/* Bloc 3 : commentaires — une liste, séparée par des filets. */
 .planning-comments-container {
     display: flex;
     flex-direction: column;
-    gap: 8px;
 }
 
 .comment-item {
-    padding: 8px 10px;
-    background: var(--planning-fond);
-    border-left: 3px solid var(--accent);
-    border-radius: 3px;
-    border-top: 1px solid rgba(52, 61, 76, 0.4);
-    border-right: 1px solid rgba(52, 61, 76, 0.4);
-    border-bottom: 1px solid rgba(52, 61, 76, 0.4);
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-faint);
+}
+
+.comment-item:first-child {
+    padding-top: 0;
+}
+
+.comment-item:last-child {
+    border-bottom: none;
 }
 
 .comment-meta {
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--accent-texte);
-    margin-bottom: 3px;
+    margin-bottom: 2px;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
 }
 
 .comment-text {
-    font-size: 12px;
-    color: var(--text);
     margin: 0;
-    line-height: 1.4;
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.54;
 }
 
 .planning-empty-text {
+    margin: 16px 0;
     color: var(--text-muted);
-    font-style: italic;
+    font-size: 12px;
     text-align: center;
-    margin: 24px 0;
 }
 
-/* Bloc 4: Livraison */
+/* Bloc 4 : livraison. */
 .planning-delivery-info {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    justify-content: center;
-    height: 100%;
+    gap: 8px;
 }
 
 .planning-delivery-info p {
     margin: 0;
     color: var(--text-muted);
-    font-size: 13px;
+    font-size: 12px;
 }
 
 .planning-delivery-info strong {
+    display: block;
+    margin-top: 2px;
     color: var(--text);
-    font-size: 14px;
+    font-size: 13px;
+    font-weight: 500;
 }
 
-/* Section Backlog (Demandes à planifier) */
-.planning-backlog {
-    margin-top: 24px;
-    background: var(--frame);
+/* ==========================================================================
+   DEMANDES EN ATTENTE DE PLANIFICATION
+   ========================================================================== */
+
+/* Une section repliable : une carte (§ 8). */
+.planning-page .planning-backlog {
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: var(--r-lg);
+    background: var(--carte);
     overflow: hidden;
 }
 
 .planning-backlog-summary {
-    padding: 10px 16px;
-    background: var(--planning-fond);
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text);
-    cursor: pointer;
     display: flex;
     align-items: center;
     gap: 8px;
+    height: 40px;
+    padding: 0 14px;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
 }
 
+.planning-backlog-summary::-webkit-details-marker {
+    display: none;
+}
+
+.planning-backlog-summary:hover {
+    background: var(--hover);
+}
+
+.planning-backlog-summary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+}
+
+.planning-page .planning-backlog-chevron {
+    width: 14px;
+    height: 14px;
+    flex-basis: 14px;
+    color: var(--text-muted);
+    transition: transform 0.12s ease;
+}
+
+.planning-backlog[open] .planning-backlog-chevron {
+    transform: rotate(90deg);
+}
+
+/* Le compteur : une pastille sourde, comme ceux des onglets et de la barre latérale. */
 .planning-badge-count {
-    background: var(--accent);
-    color: #ffffff;
-    padding: 2px 7px;
-    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 18px;
+    padding: 0 6px;
+    box-sizing: border-box;
+    border-radius: 999px;
+    background: var(--hover);
+    color: var(--text-muted);
     font-size: 11px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
 }
 
 .planning-backlog-list {
     max-height: 240px;
     overflow-y: auto;
-    padding: 0 16px;
+    padding: 0 14px;
+    border-top: 1px solid var(--border);
 }
 
 .planning-backlog-item {
@@ -821,12 +969,22 @@ body.is-panning-gantt .gantt-bar:hover {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--border);
+    min-height: var(--ligne-td);
+    border-bottom: 1px solid var(--border-faint);
 }
 
 .planning-backlog-item:last-child {
     border-bottom: none;
+}
+
+.planning-backlog-item > div:first-child {
+    flex: 1;
+    min-width: 0;
+}
+
+.planning-backlog-item strong {
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
 }
 
 .planning-backlog-owner {
@@ -835,67 +993,78 @@ body.is-panning-gantt .gantt-bar:hover {
 }
 
 .planning-backlog-meta {
-    font-size: 12px;
     color: var(--text-muted);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
 }
 
+.planning-backlog-item .planning-button {
+    height: var(--h-sm);
+    padding: 0 8px;
+    font-size: 12px;
+}
+
+/* La pastille « Urgente », la même que dans la liste des demandes. */
 .planning-urgent-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: 6px;
+    padding: 1px 8px;
+    border-radius: var(--r-sm);
     background: var(--alerte-fond);
     color: var(--alerte-texte);
-    border: 1px solid #7f1d1d;
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-size: 10px;
-    font-weight: 700;
-    margin-left: 6px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.planning-urgent-badge::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
 }
 
 /* ==========================================================================
-   MODALE DE PLANIFICATION (Parfaitement centrée & moderne)
+   FENÊTRE DE PLANIFICATION
    ========================================================================== */
-dialog.planning-dialog,
+
+/* Une surface flottante : trois tons — surface, filet, ombre (§ 7 quinquies) — et le
+   rayon 12 d'une boîte de dialogue (§ 3). */
 dialog#planning-dialog {
-    position: fixed !important;
-    inset: 0 !important;
-    top: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    margin: auto !important;
-    transform: none !important;
-    width: 520px !important;
-    max-width: calc(100vw - 32px) !important;
-    height: fit-content !important;
-    max-height: calc(100vh - 40px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 16px;
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    width: 480px;
+    max-width: calc(100vw - 32px);
+    height: fit-content;
+    max-height: calc(100vh - 40px);
     padding: 0;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--r-xl);
     background: var(--surface);
     color: var(--text);
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
-    overflow: hidden;
-    z-index: 99999;
+    box-shadow: 0 1px 2px rgb(15 15 16 / 6%), 0 24px 64px rgb(15 15 16 / 18%);
 }
 
-dialog.planning-dialog::backdrop {
-    background: var(--voile-fenetre);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+dialog#planning-dialog::backdrop {
+    background: rgb(15 15 16 / 16%);
 }
 
 .planning-dialog-form {
-    padding: 26px 28px;
     display: flex;
     flex-direction: column;
     gap: 16px;
+    padding: 20px;
 }
 
 .planning-dialog-heading {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--border);
+    gap: 12px;
 }
 
 .planning-dialog-title-wrap {
@@ -905,40 +1074,33 @@ dialog.planning-dialog::backdrop {
 }
 
 .planning-dialog-badge {
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
-    color: var(--accent-texte);
-    background: var(--accent-fond);
-    border: 1px solid rgba(59, 130, 246, 0.3);
-    padding: 2px 8px;
-    border-radius: 6px;
-    display: inline-block;
-    align-self: flex-start;
-}
-
-.planning-dialog-heading h2 {
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--text);
-    margin: 0;
-    line-height: 1.2;
-}
-
-.planning-dialog-close {
-    background: var(--planning-case);
-    border: 1px solid rgba(255, 255, 255, 0.1);
     color: var(--text-muted);
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.15s;
+    font-size: 12px;
+    font-weight: 450;
+}
+
+.planning-page .planning-dialog-heading h2,
+.planning-dialog-heading h2 {
+    margin: 0;
+    color: var(--text);
+    font-size: 16px;
+    line-height: 1.3;
+    font-weight: 600;
+}
+
+/* Un bouton d'icône : 28px, rayon 4 (§ 3). */
+.planning-dialog-close {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: var(--h-md);
+    height: var(--h-md);
     padding: 0;
+    border: 0;
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
 }
 
 .planning-dialog-close:hover {
@@ -946,38 +1108,40 @@ dialog.planning-dialog::backdrop {
     color: var(--text);
 }
 
+.planning-dialog-close .icon {
+    width: 14px;
+    height: 14px;
+}
+
+/* Les faits de la demande : lignes de propriété, libellé sourd à gauche, valeur à droite. */
 .planning-request-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+    display: grid;
+    gap: 6px;
     margin: 0;
 }
 
 .planning-meta-chip {
-    background: var(--planning-fond);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 6px 12px;
-    font-size: 12px;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    font-size: 13px;
 }
 
 .planning-meta-chip .meta-label {
     color: var(--text-muted);
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .planning-meta-chip .meta-val {
     color: var(--text);
-    font-weight: 600;
+    font-weight: 500;
+    text-align: right;
 }
 
 .planning-dialog-fields {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 14px;
+    gap: 12px;
 }
 
 .planning-field-group {
@@ -987,175 +1151,181 @@ dialog.planning-dialog::backdrop {
 }
 
 .planning-label {
-    font-size: 12px;
-    font-weight: 600;
     color: var(--text-muted);
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
 }
 
+/* Un champ de formulaire : 36px, rayon 6 (§ 3, § 4). */
 .planning-date-input {
-    background: var(--planning-fond);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 10px 12px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 500;
-    width: 100%;
     box-sizing: border-box;
-    outline: none;
-    transition: border-color 0.15s, box-shadow 0.15s;
+    width: 100%;
+    min-width: 0;
+    height: var(--h-xl);
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
 }
 
 .planning-date-input:focus {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
 }
 
 .planning-help-text {
-    font-size: 11px;
-    color: var(--text-muted);
-    line-height: 1.3;
     margin-top: -8px;
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.4;
 }
 
 .planning-preview {
-    background: var(--planning-fond);
-    border: 1px dashed rgba(255, 255, 255, 0.15);
-    border-radius: 10px;
-    padding: 10px 14px;
-    min-height: 42px;
     display: flex;
     align-items: center;
+    min-height: 24px;
 }
 
 .planning-preview-content {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    width: 100%;
     gap: 12px;
+    width: 100%;
 }
 
 .planning-preview-dates {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 8px;
-    font-size: 13px;
     color: var(--text);
-    font-weight: 600;
+    font-size: 12px;
 }
 
 .preview-arrow {
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 12px;
 }
 
 .planning-preview-badge {
-    background: var(--accent-fond);
-    color: var(--accent-texte);
-    border: 1px solid rgba(59, 130, 246, 0.4);
-    padding: 4px 10px;
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 700;
+    color: var(--text-muted);
+    font-size: 12px;
     white-space: nowrap;
 }
 
-.planning-preview-placeholder {
-    color: #64748b;
-    font-size: 12px;
+.planning-preview-placeholder,
+.planning-preview-error {
     display: flex;
     align-items: center;
     gap: 8px;
+    font-size: 12px;
+}
+
+.planning-preview-placeholder {
+    color: var(--text-muted);
 }
 
 .planning-preview-error {
-    color: #f87171;
-    font-size: 12px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    color: var(--alerte-texte);
+    font-weight: 500;
+}
+
+#planning-dialog .icon-sm {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 14px;
+}
+
+#planning-save-message:empty {
+    display: none;
 }
 
 .planning-dialog-actions {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-top: 14px;
-    border-top: 1px solid var(--border);
-    margin-top: 4px;
-    gap: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 4px;
 }
 
 .planning-dialog-actions-right {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     margin-left: auto;
 }
 
-.planning-btn-remove {
-    background: var(--alerte-fond);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    color: var(--alerte-texte);
-    padding: 9px 14px;
-    border-radius: 8px;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
+/* Les trois boutons de la fenêtre : 32px, rayon 6 (§ 3, § 4). */
+.planning-btn-remove,
+.planning-btn-cancel,
+.planning-btn-submit {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    transition: all 0.15s;
+    height: var(--h-lg);
+    padding: 0 12px;
+    border-radius: var(--r-md);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.12s ease;
+}
+
+/* Retirer : une action de danger, en texte, sans plein (§ 6). */
+.planning-btn-remove {
+    margin-left: -12px;
+    border: 0;
+    background: transparent;
+    color: var(--alerte-texte);
 }
 
 .planning-btn-remove:hover {
     background: var(--alerte-fond);
-    border-color: rgba(239, 68, 68, 0.5);
-    color: var(--alerte-texte);
 }
 
 .planning-btn-cancel {
-    background: transparent;
     border: 1px solid var(--border);
-    color: var(--text-muted);
-    padding: 9px 16px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.15s;
+    background: var(--surface);
+    color: var(--text);
 }
 
 .planning-btn-cancel:hover {
     background: var(--hover);
-    color: var(--text);
 }
 
+/* Le bouton plein reste noir (§ 6). */
 .planning-btn-submit {
-    background: linear-gradient(135deg, var(--accent), var(--accent-hover));
-    color: #ffffff;
-    border: none;
-    padding: 9px 20px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
-    transition: all 0.15s;
+    border: 0;
+    background: var(--bouton-plein);
+    color: var(--bouton-plein-texte);
 }
 
 .planning-btn-submit:hover {
-    background: linear-gradient(135deg, var(--accent-texte), var(--accent));
-    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.55);
-    transform: translateY(-1px);
+    background: var(--bouton-plein-hover);
+}
+
+#planning-dialog button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+@media (max-width: 420px) {
+    .planning-dialog-fields {
+        grid-template-columns: 1fr;
+    }
+
+    .planning-preview-content {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
 }
 
 .sr-only {
@@ -1167,240 +1337,4 @@ dialog.planning-dialog::backdrop {
     overflow: hidden;
     clip: rect(0, 0, 0, 0);
     border: 0;
-}
-
-/* ===== PLANNING - THEME ROSE INTENSE (100% PINK EDITION) ===== */
-
-/* Modale de planification en mode Rose */
-
-/* Compact planning form in both themes. */
-.planning-page .icon,
-.planning-page .icon-sm {
-    width: 16px;
-    height: 16px;
-    flex: 0 0 16px;
-}
-
-dialog#planning-dialog {
-    width: 480px !important;
-    border-radius: var(--radius);
-    border-color: var(--border);
-    background: var(--surface);
-    overflow-y: auto;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
-}
-
-dialog#planning-dialog::backdrop {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none;
-}
-
-#planning-dialog .planning-dialog-form {
-    padding: 20px;
-    gap: 16px;
-}
-
-#planning-dialog .planning-dialog-heading {
-    padding-bottom: 12px;
-    border-bottom: 0;
-}
-
-#planning-dialog .planning-dialog-close {
-    background: transparent !important;
-    border: 0;
-    width: 26px;
-    height: 26px;
-    border-radius: 4px;
-}
-
-#planning-dialog .planning-dialog-fields {
-    gap: 14px;
-}
-
-#planning-dialog .planning-field-group {
-    gap: 6px;
-}
-
-#planning-dialog .planning-dialog-badge {
-    background: transparent !important;
-    border: 0;
-    padding: 0;
-    border-radius: 0;
-    text-transform: none;
-    letter-spacing: 0;
-    font-size: 12px;
-    font-weight: 400;
-    color: var(--text-muted) !important;
-}
-
-#planning-dialog .planning-dialog-heading h2 {
-    font-size: 18px;
-    font-weight: 600;
-}
-
-#planning-dialog .planning-request-chips {
-    display: grid;
-    gap: 6px;
-}
-
-#planning-dialog .planning-meta-chip {
-    display: flex;
-    justify-content: space-between;
-    background: transparent !important;
-    border: 0;
-    border-radius: 0;
-    padding: 0;
-    gap: 16px;
-}
-
-#planning-dialog .planning-meta-chip .meta-label {
-    font-size: 12px;
-}
-
-#planning-dialog .planning-meta-chip .meta-val {
-    font-weight: 500;
-    text-align: right;
-}
-
-#planning-dialog .planning-label {
-    white-space: nowrap;
-    font-weight: 400;
-}
-
-#planning-dialog .planning-date-input {
-    min-width: 0;
-    padding: 9px 10px;
-    border-radius: 4px !important;
-    background: var(--frame) !important;
-}
-
-#planning-dialog .planning-preview {
-    border: 0;
-    border-radius: 0;
-    background: transparent !important;
-    padding: 0;
-    min-height: 24px;
-}
-
-#planning-dialog .planning-preview-dates {
-    font-size: 12px;
-    font-weight: 400;
-    flex-wrap: wrap;
-}
-
-#planning-dialog .planning-preview-badge {
-    border: 0;
-    border-radius: 0;
-    background: transparent !important;
-    padding: 0;
-    font-weight: 400;
-}
-
-#planning-save-message:empty {
-    display: none;
-}
-
-#planning-dialog .planning-dialog-actions {
-    margin: 0;
-    padding-top: 14px;
-    border-top: 0;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-#planning-dialog .planning-dialog-actions-right {
-    gap: 8px;
-}
-
-#planning-dialog .planning-dialog-actions button {
-    min-height: 34px;
-    border-radius: 4px;
-    padding: 7px 10px;
-    font-size: 12px;
-    font-weight: 500;
-    white-space: nowrap;
-    box-shadow: none;
-    transform: none;
-}
-
-#planning-dialog .planning-btn-remove {
-    background: transparent !important;
-    border: 0;
-    padding-left: 0;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-}
-
-#planning-dialog .planning-btn-cancel {
-    border: 0;
-    background: transparent !important;
-}
-
-#planning-dialog .planning-btn-submit {
-    background: var(--accent) !important;
-}
-
-#planning-dialog .planning-btn-submit:hover {
-    background: var(--accent-hover) !important;
-}
-
-@media (max-width: 420px) {
-    #planning-dialog .planning-dialog-fields {
-        grid-template-columns: 1fr;
-    }
-
-    #planning-dialog .planning-preview-content {
-        flex-wrap: wrap;
-        gap: 6px;
-    }
-}
-
-/* ===== LÉGENDE DES COULEURS (sous le planning) ===== */
-
-.planning-legend {
-    display: flex;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: 8px 16px;
-    margin-top: 14px;
-    padding: 12px 16px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--frame);
-}
-
-.planning-legend-title {
-    color: var(--text-muted);
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-}
-
-.planning-legend-list {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px 18px;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-}
-
-.planning-legend-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--text);
-    font-size: 12.5px;
-}
-
-.planning-legend-swatch {
-    flex-shrink: 0;
-    width: 24px;
-    height: 13px;
-    border-radius: 3px;
-    background-color: var(--person-fill, var(--person-other));
-    background-image: var(--person-hachure-pastille, none);
-    border: 1px solid rgb(0 0 0 / 22%);
 }
