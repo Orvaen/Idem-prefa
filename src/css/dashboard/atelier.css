@@ -156,6 +156,24 @@
     min-width: 850px;
 }
 
+/* Les travaux suivants d'un même plan : le nom n'est écrit qu'une fois, et le trait qui
+   sépare les plans s'efface entre ses lignes pour qu'elles se lisent comme un bloc. */
+/* Le trait est au bas des cellules : c'est donc la ligne qui précède qui le perd, tant
+   que son détail est fermé. */
+.atelier-page .atelier-assignment-group:has(+ .atelier-meme-plan) > tr:first-child > td,
+.atelier-page .atelier-assignment-group:has(+ .atelier-meme-plan) > tr[hidden] + tr > td {
+    border-bottom-color: transparent;
+}
+
+.atelier-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
 .atelier-page .atelier-time-table {
     min-width: 700px;
 }

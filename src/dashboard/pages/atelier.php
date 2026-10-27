@@ -43,7 +43,11 @@ $recentProgress = $stmt->fetchAll();
             <div><h1 id="atelier-page-title">Mes plans</h1></div>
             <button type="button" class="atelier-refresh prefa-toggle">Actualiser</button>
         </header>
-        <p class="prefa-list-summary"><strong><?= count($assignments) ?></strong> <?= count($assignments) === 1 ? 'affectation' : 'affectations' ?></p>
+        <?php // On compte des plans, pas des affectations : un plan confié pour le montage
+              // et pour le soudage reste un plan, et « 3 affectations » pour deux plans
+              // obligeait à recompter les lignes. ?>
+        <?php $nbPlans = count(array_unique(array_map(static fn ($a) => (int) $a['id_element'], $assignments))); ?>
+        <p class="prefa-list-summary"><strong><?= $nbPlans ?></strong> <?= $nbPlans === 1 ? 'plan' : 'plans' ?></p>
         <div class="prefa-table-scroll" role="region" aria-label="Mes plans" tabindex="0">
             <table class="prefa-table atelier-table">
                 <?php // Le plan d'abord : c'est l'écran de ses plans, pas celui des demandes. Le
@@ -53,8 +57,15 @@ $recentProgress = $stmt->fetchAll();
                       // lequel. ?>
                 <thead><tr><th scope="col">Plan</th><th scope="col">Demande</th><th scope="col">Travail</th><th scope="col">Documents</th><th scope="col">Avancement</th><th scope="col">Actions</th></tr></thead>
                 <?php if (!$assignments): ?><tbody><tr><td colspan="6" class="prefa-table-empty">Aucun élément ne vous est actuellement affecté.</td></tr></tbody><?php endif; ?>
+                <?php $elementPrecedent = null; ?>
                 <?php foreach ($assignments as $assignment):
                     $id = (int) $assignment['id'];
+                    // Un même plan confié pour plusieurs travaux fait plusieurs lignes, qui se
+                    // suivent (la requête les trie par plan). Le nom et la demande ne sont
+                    // écrits que sur la première : les répéter faisait croire à deux plans
+                    // différents portant le même nom.
+                    $memePlan = $elementPrecedent === (int) $assignment['id_element'];
+                    $elementPrecedent = (int) $assignment['id_element'];
                     $progress = (int) $assignment['avancement'];
                     $status = $progress === 100 ? 'Terminé' : ($progress ? 'En cours' : 'À commencer');
                     $statusClass = $progress === 100 ? 'status-2' : ($progress ? 'atelier-status-progress' : 'status-1');
@@ -81,10 +92,15 @@ $recentProgress = $stmt->fetchAll();
                     $historyStmt->execute([$assignment['id_element']]);
                     $stepsHistory = $historyStmt->fetchAll();
                 ?>
-                    <tbody class="atelier-assignment-group">
+                    <tbody class="atelier-assignment-group<?= $memePlan ? ' atelier-meme-plan' : '' ?>">
                         <tr>
-                            <td><strong><?= prefaEscape($assignment['reference']) ?></strong><span class="atelier-row-description"><?= prefaEscape($assignment['libelle']) ?></span></td>
-                            <td><?= prefaEscape(prefaReferenceComplete((int) $assignment['id_demande'])) ?></td>
+                            <?php if ($memePlan): ?>
+                                <td><span class="atelier-sr-only"><?= prefaEscape($assignment['reference']) ?></span></td>
+                                <td><span class="atelier-sr-only"><?= prefaEscape(prefaReferenceComplete((int) $assignment['id_demande'])) ?></span></td>
+                            <?php else: ?>
+                                <td><strong><?= prefaEscape($assignment['reference']) ?></strong><span class="atelier-row-description"><?= prefaEscape($assignment['libelle']) ?></span></td>
+                                <td><?= prefaEscape(prefaReferenceComplete((int) $assignment['id_demande'])) ?></td>
+                            <?php endif; ?>
                             <td><?= $types[$assignment['type_affectation']] ?></td>
                             <td>
                                 <?php if ($docs): ?>
