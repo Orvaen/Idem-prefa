@@ -7,8 +7,8 @@
    que c'est à gauche et portent la commande à droite.
 
    L'en-tête vient de la coque des listes (.prefa-list .prefa-heading) : même titre, même
-   retrait que la liste des demandes. Aucune couleur en dur, sauf dans les aperçus de thème,
-   qui doivent montrer le thème qu'on n'a pas — les jetons, eux, suivent celui qu'on a. */
+   retrait que la liste des demandes. Aucune couleur en dur : trois tons de texte, un
+   filet, et l'accent pour le seul focus. */
 
 /* La coque des listes se serre sur son contenu (« fit-content ») : un tableau tient sa
    largeur. Ici rien ne la tient, on lui rend la largeur de la vue. */
@@ -58,10 +58,12 @@
     font-size: 13px;
 }
 
+/* La carte ne prend pas de teinte : la page en portait déjà trois (cadre, surface, carte),
+   et c'est le filet seul qui délimite le bloc. */
 .reglages-carte {
     border: 1px solid var(--border);
     border-radius: var(--r-lg);
-    background: var(--carte);
+    background: var(--surface);
     overflow: hidden;
 }
 
@@ -77,8 +79,7 @@
     padding: 16px;
 }
 
-.reglage + .reglage,
-.reglage + .reglages-table {
+.reglage + .reglage {
     border-top: 1px solid var(--border-faint);
 }
 
@@ -120,86 +121,101 @@
     gap: 8px;
 }
 
-/* Échelle « lg » de la DA : un contrôle de barre d'outils, 32 px. */
-.settings-page .reglage-nombre,
-.settings-page .reglage-texte-saisie {
+/* ---------- Un seul champ, un seul bouton ----------
+ *
+ * Les trois sections se commandent de la même façon : un champ de même taille, et le même
+ * bouton au contour. Ils étaient quatre styles — un nombre étroit avec son unité, un texte
+ * large, un bouton noir, un bouton au contour — plus trois cartes de thème : on lisait des
+ * différences là où il n'y en a pas.
+ *
+ * La zone de commande a une largeur fixe : les champs commencent tous au même endroit et
+ * finissent au même endroit, d'une section à l'autre. */
+.reglage-controle {
+    width: 300px;
+    max-width: 100%;
+}
+
+.settings-page .reglage-champ {
     box-sizing: border-box;
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
     height: var(--h-lg);
     padding: 0 10px;
     border: 1px solid var(--border);
     border-radius: var(--r-md);
     background: var(--surface);
     color: var(--text);
+    font: inherit;
     font-size: 13px;
 }
 
-.settings-page .reglage-nombre {
-    width: 84px;
-    text-align: right;
+.settings-page .reglage-champ-nombre {
     font-variant-numeric: tabular-nums;
 }
 
-.settings-page .reglage-texte-saisie {
-    width: 240px;
-    max-width: 100%;
-}
-
-.settings-page .reglage-nombre:focus,
-.settings-page .reglage-texte-saisie:focus {
+.settings-page .reglage-champ:focus {
     border-color: var(--accent);
     outline: 1px solid var(--accent);
     outline-offset: -1px;
 }
 
-.reglage-unite {
-    margin-right: 4px;
+/* La liste déroulante prend l'allure des champs : sans « appearance: none », Windows la
+   dessine à sa façon et elle redevient le seul contrôle différent de la page. */
+.reglage-liste {
+    position: relative;
+    display: flex;
+    flex: 1 1 auto;
     color: var(--text-muted);
-    font-size: 13px;
 }
 
-.reglage-bouton-plein,
-.reglage-bouton-contour {
+.settings-page .reglage-liste select {
+    padding-right: 28px;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+}
+
+.reglage-liste svg {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+.reglage-bouton {
     display: inline-flex;
+    flex: none;
     align-items: center;
     justify-content: center;
+    box-sizing: border-box;
+    width: 96px;
     height: var(--h-lg);
     padding: 0 12px;
+    border: 1px solid var(--border);
     border-radius: var(--r-md);
+    background: var(--surface);
+    color: var(--text);
     font-size: 13px;
     font-weight: 500;
     white-space: nowrap;
     cursor: pointer;
 }
 
-/* Le bouton plein reste noir en clair (DA, § 6). */
-.reglage-bouton-plein {
-    border: 1px solid var(--bouton-plein);
-    background: var(--bouton-plein);
-    color: var(--bouton-plein-texte);
-}
-
-.reglage-bouton-plein:hover:not(:disabled) {
-    border-color: var(--bouton-plein-hover);
-    background: var(--bouton-plein-hover);
-}
-
-.reglage-bouton-contour {
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text);
-}
-
-.reglage-bouton-contour:hover:not(:disabled) {
+.reglage-bouton:hover:not(:disabled) {
     background: var(--hover);
 }
 
-.reglage-bouton-plein:disabled,
-.reglage-bouton-contour:disabled {
+.reglage-bouton:disabled {
     opacity: .55;
     cursor: not-allowed;
 }
 
-/* ---------- Les messages ---------- */
+/* ---------- Les messages ----------
+ *
+ * Une confirmation se lit en gris : elle dit que c'est fait, rien de plus. Seule l'erreur
+ * prend une couleur, parce qu'elle demande d'agir. */
 
 .settings-page .prefa-message {
     display: none;
@@ -214,7 +230,7 @@
 
 .settings-page .prefa-message.success,
 [data-theme="light"] .settings-page .prefa-message.success {
-    color: var(--succes-texte) !important;
+    color: var(--text-muted) !important;
 }
 
 .settings-page .prefa-message.error,
@@ -222,7 +238,12 @@
     color: var(--alerte-texte) !important;
 }
 
-/* ---------- La liste des passivations ---------- */
+/* ---------- La liste des passivations ----------
+ *
+ * Des lignes comme les autres réglages : le nom à gauche, au même retrait que les
+ * libellés, et « Modifier » à droite. Le numéro et l'en-tête de colonnes n'apportaient rien
+ * à une liste de quelques noms ; la ligne vient du partiel partagé, on masque donc la
+ * colonne ici plutôt que de la retirer aux autres écrans. */
 
 .reglages-table {
     width: 100%;
@@ -231,39 +252,23 @@
     text-align: left;
 }
 
-.reglages-table th {
-    height: var(--h-xl);
-    padding: 0 16px;
-    border-bottom: 1px solid var(--border-faint);
-    color: var(--text-muted);
-    font-size: 12px;
-    font-weight: 500;
+.reglages-table thead,
+.reglages-table td:first-child {
+    display: none;
 }
 
 .reglages-table td {
     height: var(--h-2xl);
     padding: 4px 16px;
-    border-bottom: 1px solid var(--border-faint);
+    border-top: 1px solid var(--border-faint);
     color: var(--text);
     vertical-align: middle;
-}
-
-.reglages-table tbody tr:last-child td {
-    border-bottom: 0;
 }
 
 .reglages-table tbody tr:not(.passivation-empty):hover td {
     background: var(--hover);
 }
 
-.reglages-table .reglages-col-id,
-.reglages-table td:first-child {
-    width: 48px;
-    color: var(--text-muted);
-    font-variant-numeric: tabular-nums;
-}
-
-.reglages-table .reglages-col-actions,
 .reglages-table td:last-child {
     width: 1%;
     text-align: right;
@@ -271,13 +276,13 @@
 }
 
 .reglages-table .passivation-empty td {
-    padding: 20px 16px;
+    display: table-cell;
+    padding: 16px;
     color: var(--text-muted);
-    text-align: center;
 }
 
-/* Les commandes de ligne (Modifier, Enregistrer, Annuler) : échelle « sm », effacées au
-   repos et rendues au survol, comme sur la liste des demandes. */
+/* Les commandes de ligne (Modifier, Enregistrer, Annuler) : le bouton de la page, en plus
+   petit, effacé au repos et rendu au survol comme sur la liste des demandes. */
 .settings-page .edit-passivation {
     height: var(--h-sm);
     margin-left: 4px;
@@ -323,159 +328,12 @@
     margin: 0;
 }
 
-/* ---------- Le thème ---------- */
-
-.theme-choix-grille {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 12px;
-}
-
-.theme-choix {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 8px 8px 12px;
-    border: 1px solid var(--border);
-    border-radius: var(--r-lg);
-    background: var(--carte);
-    color: var(--text);
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
-}
-
-.theme-choix:hover {
-    border-color: var(--border-fort);
-}
-
-/* Choisi : le filet passe à l'accent et double d'épaisseur sans déplacer le contenu. */
-.theme-choix[aria-pressed="true"] {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 1px var(--accent);
-}
-
-/* L'aperçu : une barre latérale et une vue, aux couleurs du thème qu'il montre. Ces
-   valeurs sont celles des jetons de chaque thème (DA, §§ 1, 2 et 6), recopiées parce que
-   l'aperçu doit montrer l'autre thème que celui qui est appliqué. */
-.theme-apercu {
-    display: flex;
-    height: 84px;
-    border-radius: var(--r-md);
-    overflow: hidden;
-}
-
-.theme-apercu-moitie {
-    display: flex;
-    flex: 1 1 0;
-    gap: 6px;
-    padding: 8px 0 0 8px;
-    background: var(--apercu-cadre);
-}
-
-.theme-apercu-clair {
-    --apercu-cadre: #F7F7F8;
-    --apercu-vue: #FFFFFF;
-    --apercu-filet: #D5D7D9;
-    --apercu-texte: #D5D7D9;
-    --apercu-accent: #006399;
-}
-
-.theme-apercu-sombre {
-    --apercu-cadre: #0F0F10;
-    --apercu-vue: #141415;
-    --apercu-filet: #36393A;
-    --apercu-texte: #36393A;
-    --apercu-accent: #2893CC;
-}
-
-.theme-apercu-light .theme-apercu-sombre,
-.theme-apercu-dark .theme-apercu-clair {
-    display: none;
-}
-
-.apercu-barre {
-    flex: none;
-    width: 18%;
-    margin-bottom: 8px;
-    border-radius: 3px;
-    background: linear-gradient(var(--apercu-accent) 0 6px, transparent 6px);
-    background-position: 0 6px;
-    background-repeat: no-repeat;
-    background-size: 70% 6px;
-}
-
-.apercu-vue {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    gap: 6px;
-    padding: 10px;
-    border: 1px solid var(--apercu-filet);
-    border-right: 0;
-    border-bottom: 0;
-    border-radius: 4px 0 0 0;
-    background: var(--apercu-vue);
-}
-
-.apercu-ligne {
-    height: 5px;
-    border-radius: 3px;
-    background: var(--apercu-texte);
-}
-
-.apercu-courte {
-    width: 60%;
-}
-
-.theme-choix-pied {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 4px 0;
-}
-
-.theme-choix-nom {
-    font-size: 13px;
-    font-weight: 600;
-}
-
-/* La coche se réserve sa place : sans elle, le nom se décalerait au choix. */
-.theme-choix-coche {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 16px;
-    height: 16px;
-    border: 1px solid var(--border-fort);
-    border-radius: 50%;
-    color: transparent;
-}
-
-.theme-choix[aria-pressed="true"] .theme-choix-coche {
-    border-color: var(--accent);
-    background: var(--accent);
-    color: var(--bouton-plein-texte);
-}
-
-.theme-choix-aide {
-    padding: 0 4px;
-    color: var(--text-muted);
-    font-size: 12px;
-}
-
-#theme-status-message {
-    margin-top: 10px;
-}
-
 /* ---------- Sur une tablette d'atelier ---------- */
 
 @media (max-width: 1100px), (pointer: coarse) {
 
-    .reglage-bouton-plein,
-    .reglage-bouton-contour,
-    .settings-page .reglage-nombre,
-    .settings-page .reglage-texte-saisie {
+    .reglage-bouton,
+    .settings-page .reglage-champ {
         height: 44px;
     }
 
@@ -488,10 +346,6 @@
 
     .reglage-controle {
         flex: 1 1 100%;
-    }
-
-    .settings-page .reglage-texte-saisie {
-        flex: 1;
         width: auto;
     }
 }

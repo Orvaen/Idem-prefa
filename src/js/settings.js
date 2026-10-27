@@ -8,29 +8,21 @@
     }
 
     // Le thème. La décision vit dans theme.js ; ici on montre l'état et on transmet le choix.
-    function montrerChoix() {
-        var courant = window.Theme ? window.Theme.choix() : 'auto';
-        document.querySelectorAll('.theme-choix').forEach(function (bouton) {
-            bouton.setAttribute('aria-pressed', String(bouton.dataset.theme === courant));
-        });
-    }
-
     var DITS = {
         auto: 'Le thème suit maintenant celui de votre système.',
         light: 'Thème clair activé.',
         dark: 'Thème sombre activé.'
     };
 
-    $(document).off('click.reglages').on('click.reglages', '.theme-choix', function () {
-        var choix = this.dataset.theme;
-        if (window.Theme) window.Theme.appliquer(choix);
+    var liste = document.getElementById('theme-choix');
+    if (liste) liste.value = window.Theme ? window.Theme.choix() : 'auto';
+
+    $(document).off('change.reglages').on('change.reglages', '#theme-choix', function () {
+        if (window.Theme) window.Theme.appliquer(this.value);
         var message = document.getElementById('theme-status-message');
         if (message) {
             message.className = 'prefa-message success';
-            message.textContent = DITS[choix] || DITS.auto;
+            message.textContent = DITS[this.value] || DITS.auto;
         }
-        montrerChoix();
     });
-
-    montrerChoix();
 })();

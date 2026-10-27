@@ -56,7 +56,7 @@ $version = static fn (string $fichier): string => (string) @filemtime(__DIR__ . 
                         <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
 
                         <div class="reglage-texte">
-                            <label class="reglage-titre" for="duration-days">Temps par pouce ISO</label>
+                            <label class="reglage-titre" for="duration-days">Temps par pouce ISO, en jours</label>
                             <p class="reglage-aide">
                                 Jours de fabrication pour un pouce. Actuellement
                                 <strong class="settings-preview-text"><?= prefaEscape($hoursSettings['formatted']) ?></strong>
@@ -66,10 +66,9 @@ $version = static fn (string $fichier): string => (string) @filemtime(__DIR__ . 
                         </div>
 
                         <div class="reglage-controle">
-                            <input id="duration-days" class="reglage-nombre" name="duree_jours" type="number" inputmode="decimal"
+                            <input id="duration-days" class="reglage-champ reglage-champ-nombre" name="duree_jours" type="number" inputmode="decimal"
                                    min="0.0001" max="100" step="any" value="<?= prefaEscape($hoursSettings['days']) ?>" required>
-                            <span class="reglage-unite">j</span>
-                            <button type="submit" class="reglage-bouton-plein">Enregistrer</button>
+                            <button type="submit" class="reglage-bouton">Enregistrer</button>
                         </div>
                     </form>
                 </div>
@@ -93,9 +92,9 @@ $version = static fn (string $fichier): string => (string) @filemtime(__DIR__ . 
                         </div>
 
                         <div class="reglage-controle">
-                            <input id="passivation-libelle" class="reglage-texte-saisie" name="libelle" maxlength="100"
+                            <input id="passivation-libelle" class="reglage-champ" name="libelle" maxlength="100"
                                    placeholder="Décapage, acide citrique…" required>
-                            <button type="submit" class="reglage-bouton-contour">Ajouter</button>
+                            <button type="submit" class="reglage-bouton">Ajouter</button>
                         </div>
                     </form>
 
@@ -125,39 +124,31 @@ $version = static fn (string $fichier): string => (string) @filemtime(__DIR__ . 
             <section class="reglages-section" id="theme" aria-labelledby="reglages-apparence">
                 <div class="reglages-section-tete">
                     <h2 id="reglages-apparence">Apparence</h2>
-                    <p>Le thème est retenu par ce navigateur : chacun choisit le sien.</p>
+                    <p>Retenue par ce navigateur : chacun choisit la sienne.</p>
                 </div>
 
-                <?php // Trois choix, chacun avec un aperçu dessiné aux couleurs de son thème. ?>
-                <div class="theme-choix-grille" role="group" aria-label="Thème de l’application">
-                    <?php foreach ([
-                        'auto' => ['Système', 'Suit le réglage de l’ordinateur.'],
-                        'light' => ['Clair', 'Fond blanc, texte sombre.'],
-                        'dark' => ['Sombre', 'Fond sombre, texte clair.'],
-                    ] as $valeur => [$nom, $aide]): ?>
-                        <button type="button" class="theme-choix" data-theme="<?= $valeur ?>" aria-pressed="false">
-                            <span class="theme-apercu theme-apercu-<?= $valeur ?>" aria-hidden="true">
-                                <span class="theme-apercu-moitie theme-apercu-clair">
-                                    <span class="apercu-barre"></span>
-                                    <span class="apercu-vue"><span class="apercu-ligne"></span><span class="apercu-ligne apercu-courte"></span><span class="apercu-ligne"></span></span>
-                                </span>
-                                <span class="theme-apercu-moitie theme-apercu-sombre">
-                                    <span class="apercu-barre"></span>
-                                    <span class="apercu-vue"><span class="apercu-ligne"></span><span class="apercu-ligne apercu-courte"></span><span class="apercu-ligne"></span></span>
-                                </span>
+                <?php // Une ligne comme les deux autres sections : un libellé, un champ. Les
+                      // trois cartes à aperçus colorés faisaient de cette section la plus
+                      // bruyante de la page pour le réglage le moins important. ?>
+                <div class="reglages-carte">
+                    <div class="reglage">
+                        <div class="reglage-texte">
+                            <label class="reglage-titre" for="theme-choix">Thème</label>
+                            <p class="reglage-aide">« Système » suit le réglage de l’ordinateur.</p>
+                            <p id="theme-status-message" class="prefa-message" role="status" aria-live="polite"></p>
+                        </div>
+                        <div class="reglage-controle">
+                            <span class="reglage-liste">
+                                <select id="theme-choix" class="reglage-champ">
+                                    <option value="auto">Système</option>
+                                    <option value="light">Clair</option>
+                                    <option value="dark">Sombre</option>
+                                </select>
+                                <svg aria-hidden="true" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m4 6 4 4 4-4" /></svg>
                             </span>
-                            <span class="theme-choix-pied">
-                                <span class="theme-choix-coche" aria-hidden="true">
-                                    <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 8.5 2.5 2.5L12 5.5" /></svg>
-                                </span>
-                                <span class="theme-choix-nom"><?= $nom ?></span>
-                            </span>
-                            <span class="theme-choix-aide"><?= $aide ?></span>
-                        </button>
-                    <?php endforeach; ?>
+                        </div>
+                    </div>
                 </div>
-
-                <p id="theme-status-message" class="prefa-message" role="status" aria-live="polite"></p>
             </section>
 
         </div>
