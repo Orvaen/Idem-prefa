@@ -40,7 +40,7 @@ $recentProgress = $stmt->fetchAll();
 <section class="page prefa-page prefa-list atelier-page" aria-labelledby="atelier-page-title">
     <div class="">
         <header class="prefa-heading prefa-list-heading">
-            <div><h1 id="atelier-page-title">Mes plans</h1><p>Consultez vos plans et mettez à jour l’avancement de vos travaux.</p></div>
+            <div><h1 id="atelier-page-title">Mes plans</h1></div>
             <button type="button" class="atelier-refresh prefa-toggle">Actualiser</button>
         </header>
         <p class="prefa-list-summary"><strong><?= count($assignments) ?></strong> <?= count($assignments) === 1 ? 'affectation' : 'affectations' ?></p>
@@ -95,7 +95,7 @@ $recentProgress = $stmt->fetchAll();
                                         <?php endforeach; ?>
                                     </span>
                                 <?php else: ?>
-                                    <span class="atelier-missing-file">Fichier à associer</span>
+                                    <span class="atelier-missing-file">Pas encore de fichier</span>
                                 <?php endif; ?>
                             </td>
                             <td><span class="prefa-status <?= $statusClass ?>"><?= $progress ?> % · <?= $status ?></span><?php if ($attente): ?><span class="atelier-row-description">déclaré : <?= prefaEscape(avancementPhrase($attente)) ?>, à valider</span><?php endif; ?></td>
@@ -104,13 +104,9 @@ $recentProgress = $stmt->fetchAll();
                         <tr id="atelier-detail-<?= $id ?>" class="prefa-detail-row" hidden>
                             <td colspan="6">
                                 <div class="atelier-detail-content">
-                                    <?php if ($docs): ?>
-                                        <section class="atelier-files"><h2>Documents du plan</h2><div class="atelier-file-links">
-                                            <?php foreach ($docs as $doc): ?><a class="prefa-document-link<?= strtolower(pathinfo($doc['name'], PATHINFO_EXTENSION)) === 'pdf' ? ' prefa-pdf-link' : '' ?>" data-name="<?= prefaEscape($doc['name']) ?>" href="<?= prefaEscape($doc['url']) ?>"><?= prefaEscape($doc['name']) ?></a><?php endforeach; ?>
-                                        </div></section>
-                                    <?php else: ?>
-                                        <p class="atelier-missing-file">Le chef d’atelier ou l’administrateur doit associer le fichier à ce plan pour que vous puissiez le consulter.</p>
-                                    <?php endif; ?>
+                                    <?php // Les documents ne sont plus redits ici : ils s'ouvrent déjà depuis
+                                          // la ligne du plan, juste au-dessus, et « Pas encore de fichier »
+                                          // y dit aussi leur absence. ?>
                                     <div class="atelier-tabs">
                                         <div class="atelier-tablist" role="tablist" aria-label="Suivi de l’affectation">
                                             <button type="button" class="atelier-tab" role="tab" id="atelier-tab-etapes-<?= $id ?>" aria-controls="atelier-pane-etapes-<?= $id ?>" aria-selected="true">Étapes</button>
@@ -118,7 +114,7 @@ $recentProgress = $stmt->fetchAll();
                                         </div>
 
                                         <section class="atelier-detail-panel" role="tabpanel" id="atelier-pane-etapes-<?= $id ?>" aria-labelledby="atelier-tab-etapes-<?= $id ?>">
-                                            <p class="atelier-muted">Ces statuts sont partagés par les personnels affectés à cet élément et affichés dans le planning.</p>
+                                            <p class="atelier-muted">Partagé avec les autres personnes sur ce plan.</p>
                                             <?php $stepState = atelierElementSteps($db, (int) $assignment['id_element']); ?>
                                             <form class="atelier-action prefa-form atelier-grid" data-endpoint="update_atelier.php">
                                                 <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
@@ -175,20 +171,19 @@ $recentProgress = $stmt->fetchAll();
                                                           // entendu parler, et on ne comprend pas pourquoi il n'est pas là. ?>
                                                     <span class="atelier-champ-aide">
                                                         <?php if ($feuillesDuPlan > 0): ?>
-                                                            Aucune liste de soudures n’a encore été lue sur <?= $feuillesDuPlan > 1 ? 'les ' . $feuillesDuPlan . ' feuilles' : 'la feuille' ?> de ce plan : l’avancement se déclare donc en pour cent. Ouvrez une feuille dans « Mes soudures » pour que son tableau soit reconnu.
+                                                            Pour compter en soudures, ouvrez une feuille dans « Mes soudures ».
                                                         <?php else: ?>
-                                                            Aucun fichier ISO n’est rattaché à ce plan : l’avancement se déclare en pour cent.
+                                                            Pas encore de feuille pour ce plan.
                                                         <?php endif; ?>
                                                     </span>
                                                 </div>
                                                 <div class="atelier-wide"><label for="atelier-note-<?= $id ?>"><?= $assignment['type_affectation'] === 'soudage' ? 'Compte rendu du suivi soudage' : 'Compte rendu d’avancement' ?></label><textarea id="atelier-note-<?= $id ?>" name="commentaire" maxlength="2000"><?= prefaEscape($assignment['commentaire'] ?? '') ?></textarea></div>
-                                                <p class="atelier-wide atelier-muted">Votre déclaration part au chef d’atelier : le pourcentage changera quand il l’aura validée.</p>
+                                                <p class="atelier-wide atelier-muted">Le chef d’atelier valide avant que le pourcentage change.</p>
                                                 <div class="atelier-form-actions"><button type="submit">Déclarer l’avancement</button><span class="atelier-message" role="status" aria-live="polite"></span></div>
                                             </form>
                                             <?php endif; ?>
                                             <details class="atelier-saved-history">
                                                 <summary>Historique de l’avancement (<?= count($progressHistory) ?>)</summary>
-                                                <p class="atelier-history-context">Demande <?= prefaEscape(prefaReferenceComplete((int) $assignment['id_demande'])) ?> · <?= prefaEscape($assignment['reference']) ?> · <?= prefaEscape($types[$assignment['type_affectation']]) ?></p>
                                                 <?php if (!$progressHistory): ?><p class="atelier-muted">Aucun avancement enregistré.</p><?php endif; ?>
                                                 <ol class="atelier-saved-history-list">
                                                     <?php foreach ($progressHistory as $entry): ?>
@@ -211,7 +206,7 @@ $recentProgress = $stmt->fetchAll();
         <?php if ($recentProgress): ?>
             <details class="atelier-archive-history">
                 <summary>Historique des anciennes affectations</summary>
-                <p class="atelier-muted">Vos dernières saisies sur les travaux qui ne figurent plus dans vos affectations en cours (100 par catégorie).</p>
+                <p class="atelier-muted">Vos saisies sur les plans qui ne vous sont plus confiés.</p>
                 <div class="atelier-detail-columns">
                     <?php if ($recentProgress): ?>
                         <section class="atelier-detail-panel">
