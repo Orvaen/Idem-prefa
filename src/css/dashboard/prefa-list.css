@@ -408,34 +408,47 @@ body:has(.prefa-detail-row:not([hidden]))::before {
     background: var(--surface) !important;
 }
 
-/* La fiche se pose sur un fond, et ses parties deviennent des cartes. Sur du blanc nu,
-   elle avait l'air d'une page en cours d'écriture : rien ne disait où une partie finissait
-   ni où la suivante commençait.
-
-   L'image est celle de la page de connexion, déjà dans l'application : reprendre la sienne
-   vaut mieux qu'en importer une d'ailleurs, et elle ne coûte rien de plus à charger. Un
-   voile la retient — on vient lire une demande, pas regarder un fond — mais assez léger
-   pour qu'on voie les courbes passer derrière les cartes.
-
-   Le fond est porté par le volet et non par la fiche, et c'est ce qui le fait tenir tout
-   l'écran : le volet est en « fixed inset: 0 », il fait exactement un écran, et c'est lui
-   qui défile. Posée sur la fiche, l'image s'arrêtait à la dernière carte, et sur une fiche
-   de deux ou trois hauteurs d'écran « cover » l'agrandissait d'autant — on n'en voyait
-   plus qu'un coin délavé. (« background-attachment: fixed » n'y pouvait rien : le volet
-   s'ouvre par une animation qui laisse un transform, et un transform au-dessus ramène
-   « fixed » à « scroll ».)
+/* La fiche d'une demande s'ouvre en volet flottant, comme celui des PV : une carte posée
+   à 8 px des bords, à droite, la liste visible derrière sous un voile léger. Elle était en
+   pleine page sur une photo voilée, seule de son espèce. Même largeur que le volet des
+   PV : deux volets côte à côte dans l'application doivent se reconnaître pour le même.
 
    Le « :has » vise les volets qui portent une fiche de demande — ceux des demandes et ceux
-   des plans ISO — et laisse les autres volets au fond uni. */
+   des plans ISO — et laisse les autres volets tels qu'ils sont. */
 .prefa-detail-row:has(> td > .prefa-table-detail) {
-    background:
-        linear-gradient(180deg, rgb(10 22 38 / 74%), rgb(10 22 38 / 86%)),
-        url("../../assets/login-fond.jpg") center / cover no-repeat !important;
+    top: 8px;
+    right: 8px;
+    bottom: 8px;
+    left: auto;
+    width: min(560px, calc(100vw - 16px));
+    border: 1px solid var(--border);
+    border-radius: var(--r-xl);
+    background: var(--surface) !important;
+    box-shadow: 0 1px 2px rgb(15 15 16 / 6%), 0 24px 64px rgb(15 15 16 / 18%);
+    animation: fiche-tiroir 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .prefa-detail-row:has(> td > .prefa-table-detail) > td,
 .prefa-detail-row:has(> td > .prefa-table-detail):hover > td {
     background: transparent !important;
+}
+
+/* Le voile du volet des PV : léger et flouté, la liste reste lisible derrière. « html » en
+   tête pour passer devant le voile générique du thème clair, chargé après. */
+html body:has(.prefa-detail-row:not([hidden]) > td > .prefa-table-detail)::before {
+    background: rgb(15 15 16 / 16%);
+    backdrop-filter: blur(2px);
+}
+
+@keyframes fiche-tiroir {
+    from {
+        opacity: 0;
+        transform: translateX(24px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
 /* ---------- LA LIGNE, DANS LE REGISTRE D'UNE LISTE DE SUIVI ----------
@@ -669,53 +682,39 @@ body:has(.prefa-detail-row:not([hidden]))::before {
 
 .prefa-table-detail {
     width: 100%;
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 32px 32px 56px;
+    margin: 0;
+    padding: 0;
+    color: var(--text);
+    font-size: 13px;
 }
 
-/* La fiche tient sur deux colonnes : à gauche ce que la demande dit d'elle-même, à droite
-   ses pièces. L'une et l'autre se lisent d'un seul coup d'œil, sans faire défiler. */
+/* Dans le volet, une seule colonne : ce que la demande dit d'elle-même, puis ses pièces.
+   Les deux parties ne sont plus des cartes mais des sections, séparées comme celles du
+   volet des PV par un filet pointillé. */
 .fiche-corps {
-    display: grid;
-    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
-    gap: 20px;
-    align-items: start;
+    display: flex;
+    flex-direction: column;
 }
 
-/* Chaque partie est une carte : ce que la demande dit d'elle-même d'un côté, ses pièces de
-   l'autre. Le blanc entre elles ne séparait rien — on lisait une colonne de texte qui
-   s'arrêtait au milieu de la page. */
 .fiche-colonne {
     min-width: 0;
-    padding: 4px 22px 22px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--surface);
+    padding: 0 20px;
 }
 
-/* La colonne des pièces n'a pas de filet au-dessus de sa première rubrique : elle
-   commence en haut, à côté des chiffres, pas à la suite d'eux. */
-.fiche-colonne-documents > .fiche-rubrique:first-child {
-    padding-top: 0;
-}
-
-@media (max-width: 1100px) {
-    .fiche-corps {
-        grid-template-columns: minmax(0, 1fr);
-        gap: 0;
-    }
-
-    .fiche-colonne-documents > .fiche-rubrique:first-child {
-        padding-top: 18px;
-        border-top: 1px solid var(--border-faint);
-    }
+.fiche-colonne + .fiche-colonne {
+    border-top: 1px dashed var(--border);
 }
 
 .fiche-entete {
+    position: sticky;
+    top: 0;
+    z-index: 3;
     align-items: flex-start;
     flex-wrap: nowrap;
-    margin-bottom: 22px;
+    margin: 0;
+    padding: 18px 20px 16px;
+    border-bottom: 1px dashed var(--border);
+    background: var(--surface);
 }
 
 /* L'identité prend la place qui reste, les actions gardent la leur : sans cela, la ligne
@@ -727,43 +726,56 @@ body:has(.prefa-detail-row:not([hidden]))::before {
 
 /* Le surtitre dit ce que c'est ; le titre dit laquelle. Le second n'a pas besoin d'être
    gras pour être vu : il est le plus grand de la page, et le seul en léger. */
+/* En casse normale, comme tout intitulé (DA, § 7 bis). */
 .fiche-entete .fiche-surtitre {
-    margin: 0 0 6px;
+    margin: 0 0 4px;
     color: var(--text-muted);
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: .08em;
-    text-transform: uppercase;
+    font-size: 12px;
+    font-weight: 500;
 }
 
+/* Le titre du volet des PV : 17px, demi-gras, chiffres tabulaires. */
 .fiche-entete .fiche-titre {
     display: flex;
     align-items: baseline;
-    gap: 12px;
+    gap: 8px;
     flex-wrap: wrap;
     margin: 0;
     color: var(--text);
-    font-size: 26px;
-    font-weight: 300;
-    letter-spacing: -.01em;
-    line-height: 1.15;
+    font-size: 17px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.3;
 }
 
 .fiche-entete .fiche-affaire {
     color: var(--text-muted);
-    font-size: 17px;
+    font-size: 13px;
     font-weight: 400;
 }
 
 .fiche-entete .fiche-parcours {
-    margin: 8px 0 0;
+    margin: 4px 0 0;
     color: var(--text-muted);
-    font-size: 13px;
+    font-size: 12px;
 }
 
 .fiche-entete .prefa-detail-actions {
     flex-shrink: 0;
-    gap: 12px;
+    gap: 8px;
+}
+
+/* La fermeture : le cadre d'outils du volet des PV. */
+.fiche-entete .prefa-detail-close {
+    width: var(--h-lg);
+    height: var(--h-lg);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+}
+
+.fiche-entete .prefa-detail-close .icon {
+    width: 14px;
+    height: 14px;
 }
 
 .fiche-entete .prefa-status {
@@ -775,10 +787,10 @@ body:has(.prefa-detail-row:not([hidden]))::before {
 .prefa-request .fiche-chiffres {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px;
-    margin: 0 0 8px;
-    padding: 18px 0;
-    border-bottom: 1px solid var(--border);
+    gap: 12px;
+    margin: 0;
+    padding: 16px 0;
+    border-bottom: 1px dashed var(--border);
 }
 
 .fiche-chiffres > div {
@@ -823,8 +835,8 @@ body:has(.prefa-detail-row:not([hidden]))::before {
 .fiche-chiffres dd {
     margin: 0;
     color: var(--text);
-    font-size: 24px;
-    font-weight: 300;
+    font-size: 20px;
+    font-weight: 400;
     font-variant-numeric: tabular-nums;
     letter-spacing: -.01em;
     line-height: 1.1;
@@ -833,39 +845,44 @@ body:has(.prefa-detail-row:not([hidden]))::before {
 
 /* Une rubrique : un intitulé en capitales espacées, puis ses faits en trois colonnes.
    Pas de cadre — l'espace au-dessus et l'intitulé suffisent à la détacher. */
+/* Une rubrique : un intitulé sourd, en casse normale (DA, § 7 bis), comme les titres de
+   section du volet des PV. */
 .fiche-rubrique {
-    padding: 18px 0 4px;
+    padding: 16px 0 8px;
 }
 
 .fiche-rubrique + .fiche-rubrique {
-    border-top: 1px solid var(--border-faint);
+    border-top: 1px dashed var(--border);
 }
 
 .fiche-eyebrow {
-    margin: 0 0 12px;
+    margin: 0 0 4px;
     color: var(--text-muted);
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: .08em;
-    text-transform: uppercase;
+    font-size: 12px;
+    font-weight: 500;
 }
 
+/* Les faits en lignes de propriété : libellé sourd à gauche, valeur à droite — la
+   grammaire du volet des PV. Trois colonnes ne tenaient pas dans 560 px. */
 .prefa-request .fiche-faits {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 14px 20px;
+    display: flex;
+    flex-direction: column;
     margin: 0;
     font-size: inherit;
 }
 
 .fiche-faits > div {
+    display: grid;
+    grid-template-columns: 148px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
     min-width: 0;
+    min-height: 32px;
 }
 
 .fiche-faits dt {
-    margin-bottom: 3px;
     color: var(--text-muted);
-    font-size: 12px;
+    font-size: 13px;
 }
 
 /* Les valeurs en romain, pas en gras : quand tout est gras, rien ne l'est. Une valeur
@@ -873,9 +890,14 @@ body:has(.prefa-detail-row:not([hidden]))::before {
 .fiche-faits dd {
     margin: 0;
     color: var(--text);
-    font-size: 14px;
-    font-weight: 400;
+    font-size: 13px;
+    font-weight: 500;
+    text-align: right;
     overflow-wrap: anywhere;
+}
+
+.fiche-faits dd.est-vide {
+    font-weight: 400;
 }
 
 .fiche-faits dd.est-vide {
@@ -1271,17 +1293,19 @@ body:has(.prefa-detail-row:not([hidden]))::before {
     position: sticky;
     bottom: 0;
     z-index: 2;
-    margin: 20px 0 0;
-    padding: 16px 22px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
+    margin: 16px 0 0;
+    padding: 14px 20px 16px;
+    border-top: 1px dashed var(--border);
     background: var(--surface);
 }
 
+/* Dans 560 px, le motif et les boutons s'empilent : côte à côte, le champ tombait à la
+   largeur d'un mot. */
 .prefa-review-barre {
     display: flex;
-    align-items: flex-end;
-    gap: 24px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
 }
 
 .prefa-review-motif {
@@ -1310,9 +1334,9 @@ body:has(.prefa-detail-row:not([hidden]))::before {
 .prefa-review-actions {
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: 16px;
     flex-shrink: 0;
-    padding-bottom: 4px;
 }
 
 @media (max-width: 760px) {
@@ -1336,29 +1360,26 @@ body:has(.prefa-detail-row:not([hidden]))::before {
 }
 
 .prefa-decision-comment {
-    margin-top: 22px;
-    padding: 2px 0 2px 14px;
-    border-left: 2px solid var(--accent);
+    margin: 0;
+    padding: 16px 20px;
+    border-top: 1px dashed var(--border);
     font-size: 13px;
 }
 
 .prefa-decision-comment strong {
     display: block;
-    margin-bottom: 4px;
     color: var(--text-muted);
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: .08em;
-    text-transform: uppercase;
+    font-size: 12px;
+    font-weight: 500;
 }
 
-.prefa-decision-comment.is-refusal {
-    border-left-color: var(--danger-texte);
+.prefa-decision-comment.is-refusal strong {
+    color: var(--danger-texte);
 }
 
 .prefa-decision-comment p {
     white-space: pre-wrap;
-    margin: 8px 0 0;
+    margin: 4px 0 0;
 }
 
 body.prefa-viewer-open {
@@ -1450,10 +1471,6 @@ body.prefa-viewer-open {
 @media (max-width: 850px) {
     .prefa-document-groups {
         grid-template-columns: 1fr;
-    }
-
-    .prefa-table-detail {
-        padding: 12px 4px;
     }
 
     .prefa-pdf-toolbar {
@@ -3434,4 +3451,13 @@ summary {
 
 .prefa-list[data-densite="confortable"] .utilisateur-identifiant {
     font-size: 13px;
+}
+
+/* Les avancements à trancher, sous l'en-tête du volet : une section comme les autres. */
+.fiche-a-valider {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px dashed var(--border);
 }

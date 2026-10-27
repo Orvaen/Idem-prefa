@@ -402,30 +402,6 @@ body[data-theme="light"],
     background-color: transparent !important;
 }
 
-/* La fiche reprend le fond de l'application. Elle ne peut pas se contenter de laisser
-   voir celui du panneau : son volet est en « fixed inset: 0 », il couvre aussi la barre
-   latérale. Même image, même voile, donc même fond d'un écran à l'autre. */
-[data-theme="light"] .prefa-detail-row:has(> td > .prefa-table-detail) {
-    background: var(--surface) !important;
-}
-
-/* L'en-tête est le seul texte de la fiche qui ne soit pas sur une carte : il tombe
-   directement sur le fond. Le gris en retrait de la maison passait tout juste sur blanc
-   (4,8:1) ; sur une teinte, il tombait à 2,5:1. Un cran plus foncé le remet à 7:1, et il
-   reste second par rapport au numéro de la demande. */
-[data-theme="light"] .fiche-entete .fiche-surtitre,
-[data-theme="light"] .fiche-entete .fiche-affaire,
-[data-theme="light"] .fiche-entete .fiche-parcours {
-    color: #3f4247;
-}
-
-/* Même raison pour l'état : l'ambre du jeton se lit sur blanc (4,9:1), pas sur le bleu
-   pâle du fond (2,7:1). Celui-ci tire vers le brun, mais il tient à 4,7:1 sur le plus
-   sombre de l'image, et reste un ambre à côté du rouge d'un refus. */
-[data-theme="light"] .fiche-entete .prefa-status.status-1 {
-    color: #713f12;
-}
-
 /* Le cordon de quelqu'un d'autre se lit, ne se reprend pas : son champ est désactivé, et
    il doit en avoir l'air. La règle générale l'encadrait comme un champ à remplir — on
    reprend sa forme, la classe de la ligne en plus, comme pour les tableaux ci-dessus. */

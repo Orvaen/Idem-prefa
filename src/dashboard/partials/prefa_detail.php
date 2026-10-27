@@ -162,7 +162,9 @@ $decisionComment = trim((string) ($row['commentaire_validation'] ?? ''));
                 Voir les affectations ↗
             </button>
         <?php endif; ?>
-        <button type="button" class="prefa-detail-close" data-close-target="prefa-detail-<?= $requestId ?>" aria-label="Fermer le volet">✕</button>
+        <button type="button" class="prefa-detail-close" data-close-target="prefa-detail-<?= $requestId ?>" aria-label="Fermer le volet" title="Fermer">
+            <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg>
+        </button>
     </div>
 </header>
 
@@ -240,8 +242,7 @@ $decisionComment = trim((string) ($row['commentaire_validation'] ?? ''));
     <?php foreach ($documentGroups as $group):
         $famille = $group['cle'];
         // Une famille chargée s'ouvre repliée : cinq certificats dépliés repoussent les
-        // quatre familles suivantes hors de l'écran, et c'est précisément ce qu'on vient
-        // d'éviter en passant la fiche en pleine page.
+        // quatre familles suivantes loin dans le volet.
         $ouverte = count($group['files']) <= FICHE_DOCUMENTS_DEPLIES;
     ?>
         <?php // La classe prefa-document-group reste : c'est elle que le dépôt cherche pour
@@ -311,9 +312,9 @@ $decisionComment = trim((string) ($row['commentaire_validation'] ?? ''));
             ?>
         </strong>
 
-        <p>
-            <?= prefaEscape($decisionComment) ?>
-        </p>
+        <?php // Sur une ligne : le paragraphe est en pre-wrap, et l'indentation du gabarit
+              // s'affichait en tête du commentaire. ?>
+        <p><?= prefaEscape($decisionComment) ?></p>
 
     </div>
 
