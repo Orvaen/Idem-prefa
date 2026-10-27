@@ -117,6 +117,49 @@
     $(document).on('click', '.atelier-close-plan-edit', function () {
         this.closest('dialog')?.close();
     });
+
+    // ===== « Mes plans » : la recherche et les onglets =====
+    // Sur le modèle de « Plans / ISO » (iso.js) : tous les plans confiés sont dans la page,
+    // on filtre sur place. Onglet et recherche se combinent ; un titre de groupe disparaît
+    // avec sa dernière ligne, et chaque compte dit ce qui reste visible.
+    function filtrerMesPlans() {
+        const page = document.getElementById('mes-plans-page');
+        if (!page) return;
+        const recherche = (document.getElementById('mes-plans-recherche')?.value || '').trim().toLowerCase();
+        const onglet = page.querySelector('.mes-plans-onglet[aria-pressed="true"]')?.dataset.groupe || '';
+
+        const parGroupe = {};
+        page.querySelectorAll('.mes-plans-plan').forEach(plan => {
+            const trouve = !recherche || (plan.dataset.cherche || '').includes(recherche);
+            if (trouve) parGroupe[plan.dataset.groupe] = (parGroupe[plan.dataset.groupe] || 0) + 1;
+            plan.hidden = !trouve || (onglet !== '' && plan.dataset.groupe !== onglet);
+        });
+
+        let visibles = 0;
+        page.querySelectorAll('.mes-plans-groupe').forEach(titre => {
+            const nombre = parGroupe[titre.dataset.groupe] || 0;
+            const affiche = nombre > 0 && (onglet === '' || titre.dataset.groupe === onglet);
+            titre.hidden = !affiche;
+            titre.querySelector('.prefa-groupe-compte').textContent = nombre;
+            if (affiche) visibles += nombre;
+        });
+
+        page.querySelectorAll('.mes-plans-onglet').forEach(bouton => {
+            const groupe = bouton.dataset.groupe;
+            const total = groupe === '' ? Object.values(parGroupe).reduce((a, b) => a + b, 0) : (parGroupe[groupe] || 0);
+            bouton.querySelector('.prefa-onglet-compte').textContent = total;
+        });
+
+        const aucun = page.querySelector('.mes-plans-aucun-resultat');
+        if (aucun) aucun.hidden = visibles > 0;
+    }
+    $(document).on('click', '.mes-plans-onglet', function () {
+        document.querySelectorAll('.mes-plans-onglet').forEach(onglet => {
+            onglet.setAttribute('aria-pressed', String(onglet === this));
+        });
+        filtrerMesPlans();
+    });
+    $(document).on('input', '#mes-plans-recherche', filtrerMesPlans);
     $(document).on('click', '.atelier-tab', function () {
         this.closest('.atelier-tablist').querySelectorAll('.atelier-tab').forEach(onglet => {
             const actif = onglet === this;

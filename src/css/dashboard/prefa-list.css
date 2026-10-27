@@ -438,7 +438,8 @@ body:has(.prefa-detail-row:not([hidden]))::before {
    tableau de cordons à neuf colonnes pour l'autre — que 560 px renverraient sur deux
    lignes. */
 .prefa-detail-row.plans-iso-detail,
-.prefa-detail-row.suivi-soudures-detail {
+.prefa-detail-row.suivi-soudures-detail,
+.prefa-detail-row.mes-plans-detail {
     top: 8px;
     right: 8px;
     bottom: 8px;
@@ -455,6 +456,7 @@ body:has(.prefa-detail-row:not([hidden]))::before {
    tête pour passer devant le voile générique du thème clair, chargé après. */
 html body:has(.prefa-detail-row.plans-iso-detail:not([hidden]))::before,
 html body:has(.prefa-detail-row.suivi-soudures-detail:not([hidden]))::before,
+html body:has(.prefa-detail-row.mes-plans-detail:not([hidden]))::before,
 html body:has(.prefa-detail-row:not([hidden]) > td > .prefa-table-detail)::before {
     background: rgb(15 15 16 / 16%);
     backdrop-filter: blur(2px);

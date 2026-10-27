@@ -156,13 +156,6 @@
     min-width: 850px;
 }
 
-/* Les travaux suivants d'un même plan : son nom, sa demande et ses fichiers ne sont
-   écrits qu'une fois, et le trait entre ses lignes s'efface pour qu'elles se lisent comme
-   un bloc. Le trait est au bas des cellules : c'est la ligne qui précède qui le perd. */
-.atelier-page .atelier-assignment-group:has(+ .atelier-meme-plan) > tr:first-child > td {
-    border-bottom-color: transparent;
-}
-
 .atelier-sr-only {
     position: absolute;
     width: 1px;
@@ -1674,7 +1667,8 @@
     color: var(--text);
 }
 
-#refresh-plans-iso {
+#refresh-plans-iso,
+#mes-plans-page .mes-plans-actualiser {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1689,7 +1683,8 @@
     flex-shrink: 0;
 }
 
-#refresh-plans-iso:hover {
+#refresh-plans-iso:hover,
+#mes-plans-page .mes-plans-actualiser:hover {
     background: var(--hover);
 }
 
@@ -2046,7 +2041,8 @@
 
 /* Le même bouton « Actualiser » que la liste : rayon 6, corps 13. Il était à 4, la seule
    commande de la barre à ne pas suivre l'échelle des rayons. */
-#refresh-plans-iso {
+#refresh-plans-iso,
+#mes-plans-page .mes-plans-actualiser {
     height: var(--h-lg);
     border-radius: var(--r-md);
     font-size: 13px;
@@ -2129,74 +2125,6 @@ html .plans-iso-detail .plans-iso-entete h2 span {
     color: var(--text-muted);
     font-size: 13px;
     font-weight: 400;
-}
-
-/* ----- L'en-tête du volet « Mettre à jour » de Mes plans -----
-   Même registre que celui de « Plans & affectations » : le travail en surtitre, le plan
-   en titre, sa demande et ses fichiers dessous, la croix nue à droite. Il reste collé en
-   haut quand le volet défile. */
-
-html .atelier-page .atelier-volet-entete {
-    position: sticky;
-    top: 0;
-    z-index: 4;
-    flex-wrap: nowrap;
-    margin: -16px 0 16px;
-    padding: 18px 0 16px;
-    border-bottom: 1px dashed var(--border);
-    background: var(--surface);
-}
-
-.atelier-volet-identite {
-    min-width: 0;
-}
-
-html .atelier-page .atelier-volet-entete .atelier-volet-surtitre {
-    margin: 0 0 4px;
-    color: var(--text-muted);
-    font-size: 12px;
-    font-weight: 500;
-}
-
-html .atelier-page .atelier-volet-entete h2 {
-    display: flex;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin: 0;
-    color: var(--text);
-    font-size: 17px;
-    font-weight: 600;
-    line-height: 1.3;
-}
-
-html .atelier-page .atelier-volet-entete h2 span {
-    color: var(--text-muted);
-    font-size: 13px;
-    font-weight: 400;
-}
-
-html .atelier-page .atelier-volet-entete .atelier-volet-contexte {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 4px 16px;
-    margin: 6px 0 0;
-    color: var(--text-muted);
-    font-size: 13px;
-}
-
-html .atelier-page .atelier-volet-entete .prefa-detail-close {
-    flex: none;
-    width: var(--h-lg);
-    height: var(--h-lg);
-    border: 0;
-    border-radius: var(--r-md);
-}
-
-html .atelier-page .atelier-volet-entete .prefa-detail-close .icon {
-    width: 16px;
-    height: 16px;
 }
 
 /* La croix nue, comme celle de la fenêtre de modification. */
@@ -2478,7 +2406,8 @@ html .plans-iso-detail .atelier-plan-work .atelier-person-button[aria-expanded="
 }
 
 /* L'état : une pastille de statut, pleine, aux couleurs de sens (DA, § 3, § 6). */
-html .plans-iso-detail .atelier-plan-work .atelier-work-status {
+html .plans-iso-detail .atelier-plan-work .atelier-work-status,
+html .mes-plans-page .atelier-work-status {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -2493,12 +2422,14 @@ html .plans-iso-detail .atelier-plan-work .atelier-work-status {
     white-space: nowrap;
 }
 
-html .plans-iso-detail .atelier-plan-work .atelier-work-status.is-progress {
+html .plans-iso-detail .atelier-plan-work .atelier-work-status.is-progress,
+html .mes-plans-page .atelier-work-status.is-progress {
     background: var(--accent-fond);
     color: var(--accent-texte);
 }
 
-html .plans-iso-detail .atelier-plan-work .atelier-work-status.is-done {
+html .plans-iso-detail .atelier-plan-work .atelier-work-status.is-done,
+html .mes-plans-page .atelier-work-status.is-done {
     background: var(--succes-fond);
     color: var(--succes-texte);
 }
@@ -3099,7 +3030,8 @@ html .suivi-soudures-select select:focus {
 }
 
 /* « Examiner » : une commande de ligne de 24px (DA, § 4). */
-html #suivi-soudures-page .suivi-soudures-plan > tr:first-child .prefa-toggle {
+html #suivi-soudures-page .suivi-soudures-plan > tr:first-child .prefa-toggle,
+html #mes-plans-page .mes-plans-plan > tr:first-child .prefa-toggle {
     height: var(--h-sm);
     padding: 0 8px;
     border: 1px solid var(--border) !important;
@@ -3110,13 +3042,15 @@ html #suivi-soudures-page .suivi-soudures-plan > tr:first-child .prefa-toggle {
     font-weight: 500 !important;
 }
 
-html #suivi-soudures-page .suivi-soudures-plan > tr:first-child .prefa-toggle:hover {
+html #suivi-soudures-page .suivi-soudures-plan > tr:first-child .prefa-toggle:hover,
+html #mes-plans-page .mes-plans-plan > tr:first-child .prefa-toggle:hover {
     background: var(--hover) !important;
 }
 
 /* ----- Le volet ----- */
 
-.suivi-soudures-detail .suivi-soudures-volet {
+.suivi-soudures-detail .suivi-soudures-volet,
+.mes-plans-detail .mes-plans-volet {
     max-width: none;
     margin: 0;
     padding: 0;
@@ -3124,7 +3058,8 @@ html #suivi-soudures-page .suivi-soudures-plan > tr:first-child .prefa-toggle:ho
     font-size: 13px;
 }
 
-.suivi-soudures-detail .suivi-soudures-entete {
+.suivi-soudures-detail .suivi-soudures-entete,
+.mes-plans-detail .mes-plans-entete {
     position: sticky;
     top: 0;
     z-index: 3;
@@ -3135,28 +3070,34 @@ html #suivi-soudures-page .suivi-soudures-plan > tr:first-child .prefa-toggle:ho
     background: var(--surface);
 }
 
-.suivi-soudures-identite {
+.suivi-soudures-identite,
+.mes-plans-identite {
     min-width: 0;
 }
 
 html .suivi-soudures-detail .suivi-soudures-surtitre,
-html .suivi-soudures-detail .suivi-soudures-parcours {
+html .suivi-soudures-detail .suivi-soudures-parcours,
+html .mes-plans-detail .mes-plans-surtitre,
+html .mes-plans-detail .mes-plans-parcours {
     margin: 0;
     color: var(--text-muted) !important;
     font-size: 12px;
 }
 
-html .suivi-soudures-detail .suivi-soudures-surtitre {
+html .suivi-soudures-detail .suivi-soudures-surtitre,
+html .mes-plans-detail .mes-plans-surtitre {
     margin-bottom: 4px;
     font-weight: 500;
 }
 
-html .suivi-soudures-detail .suivi-soudures-parcours {
+html .suivi-soudures-detail .suivi-soudures-parcours,
+html .mes-plans-detail .mes-plans-parcours {
     margin-top: 4px;
     font-variant-numeric: tabular-nums;
 }
 
-.suivi-soudures-detail .suivi-soudures-entete h2 {
+.suivi-soudures-detail .suivi-soudures-entete h2,
+.mes-plans-detail .mes-plans-entete h2 {
     display: flex;
     align-items: baseline;
     flex-wrap: wrap;
@@ -3169,13 +3110,15 @@ html .suivi-soudures-detail .suivi-soudures-parcours {
     line-height: 1.3;
 }
 
-.suivi-soudures-detail .suivi-soudures-entete h2 span {
+.suivi-soudures-detail .suivi-soudures-entete h2 span,
+.mes-plans-detail .mes-plans-entete h2 span {
     color: var(--text-muted);
     font-size: 13px;
     font-weight: 400;
 }
 
-.suivi-soudures-detail .suivi-soudures-entete .prefa-detail-close {
+.suivi-soudures-detail .suivi-soudures-entete .prefa-detail-close,
+.mes-plans-detail .mes-plans-entete .prefa-detail-close {
     flex: none;
     width: var(--h-lg);
     height: var(--h-lg);
@@ -3183,12 +3126,14 @@ html .suivi-soudures-detail .suivi-soudures-parcours {
     border-radius: var(--r-md);
 }
 
-.suivi-soudures-detail .suivi-soudures-entete .prefa-detail-close .icon {
+.suivi-soudures-detail .suivi-soudures-entete .prefa-detail-close .icon,
+.mes-plans-detail .mes-plans-entete .prefa-detail-close .icon {
     width: 16px;
     height: 16px;
 }
 
-.suivi-soudures-section {
+.suivi-soudures-section,
+.mes-plans-section {
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -3196,11 +3141,13 @@ html .suivi-soudures-detail .suivi-soudures-parcours {
     padding: 16px 20px;
 }
 
-.suivi-soudures-section + .suivi-soudures-section {
+.suivi-soudures-section + .suivi-soudures-section,
+.mes-plans-section + .mes-plans-section {
     border-top: 1px dashed var(--border);
 }
 
-.suivi-soudures-titre {
+.suivi-soudures-titre,
+.mes-plans-titre {
     margin: 0;
     color: var(--text-muted);
     font-size: 12px;
@@ -3208,13 +3155,15 @@ html .suivi-soudures-detail .suivi-soudures-parcours {
 }
 
 /* Les lignes de propriété : libellé sourd à gauche, valeur à droite. */
-.suivi-soudures-proprietes {
+.suivi-soudures-proprietes,
+.mes-plans-proprietes {
     display: flex;
     flex-direction: column;
     margin: 0;
 }
 
-.suivi-soudures-proprietes > div {
+.suivi-soudures-proprietes > div,
+.mes-plans-proprietes > div {
     display: grid;
     grid-template-columns: 148px minmax(0, 1fr);
     align-items: center;
@@ -3222,12 +3171,14 @@ html .suivi-soudures-detail .suivi-soudures-parcours {
     min-height: 32px;
 }
 
-.suivi-soudures-proprietes dt {
+.suivi-soudures-proprietes dt,
+.mes-plans-proprietes dt {
     color: var(--text-muted);
     font-size: 13px;
 }
 
-.suivi-soudures-proprietes dd {
+.suivi-soudures-proprietes dd,
+.mes-plans-proprietes dd {
     display: flex;
     align-items: center;
     justify-content: flex-end;
@@ -3237,11 +3188,13 @@ html .suivi-soudures-detail .suivi-soudures-parcours {
     font-variant-numeric: tabular-nums;
 }
 
-.suivi-soudures-proprietes strong {
+.suivi-soudures-proprietes strong,
+.mes-plans-proprietes strong {
     font-weight: 600;
 }
 
-.suivi-soudures-sur {
+.suivi-soudures-sur,
+.mes-plans-sur {
     color: var(--text-muted);
 }
 
@@ -3383,4 +3336,400 @@ html .suivi-soudures-detail .suivi-soudures-vide {
 /* Une valeur absente reste sourde, même dans une cellule que le thème clair noircit. */
 html .suivi-soudures-detail .atelier-soudures-table .suivi-soudures-sur {
     color: var(--text-muted) !important;
+}
+
+/* ==========================================================================
+   MES PLANS — L'ÉCRAN DU PERSONNEL D'ATELIER
+   ==========================================================================
+
+   La grammaire des écrans déjà repris (docs/direction-artistique.md) : recherche,
+   onglets comptés, tableau groupé, un volet flottant par plan. L'en-tête du volet, ses
+   sections et ses lignes de propriété sont ceux du volet « Soudures » ; la pastille
+   d'état est celle du volet « Plans & affectations » ; le contrôle des étapes est l'état
+   en boutons des PV. Ne vit ici que ce qui est propre à l'écran. */
+
+.mes-plans-plan[hidden],
+.mes-plans-groupe[hidden],
+.mes-plans-aucun-resultat[hidden] {
+    display: none !important;
+}
+
+#mes-plans-recherche {
+    width: 100%;
+    min-width: 0;
+}
+
+/* ----- La liste ----- */
+
+/* Comme les lignes de la liste des demandes : seule l'affaire prend la largeur libre, et
+   rien ne se casse ailleurs — un nom de plan coupé en « ISO- / 400- / 01 » ne se lit plus.
+   La description du plan, elle, s'arrête sur des points de suspension. */
+#mes-plans-page .mes-plans-plan > tr:first-child > td:not(.prefa-affaire) {
+    white-space: nowrap;
+}
+
+#mes-plans-page .mes-plans-nom strong {
+    font-weight: 600;
+}
+
+#mes-plans-page .mes-plans-nom .atelier-row-description {
+    margin-left: 22px;
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Un travail, une pastille, sur une ligne. */
+.mes-plans-travaux {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+}
+
+html .mes-plans-page .atelier-work-status {
+    margin: 0;
+}
+
+html .mes-plans-page .atelier-work-status::before {
+    content: "";
+    flex: none;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+/* Les feuilles : un nombre nu ; un tiret sourd quand il n'y en a pas. */
+.mes-plans-aucun {
+    color: var(--text-muted);
+}
+
+.mes-plans-commande {
+    width: 1%;
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* ----- Le volet ----- */
+
+html .mes-plans-detail .mes-plans-aide {
+    margin: -4px 0 0;
+    color: var(--text-muted) !important;
+    font-size: 12px;
+}
+
+/* Les commandes d'une ligne du volet : 24px, au contour (DA, § 4). */
+html .mes-plans-detail .mes-plans-commande-ligne {
+    display: inline-flex;
+    align-items: center;
+    height: var(--h-sm);
+    margin: 0;
+    padding: 0 8px;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--r-md) !important;
+    background: var(--surface) !important;
+    color: var(--text) !important;
+    font-size: 12px;
+    font-weight: 500 !important;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+html .mes-plans-detail .mes-plans-commande-ligne:hover {
+    background: var(--hover) !important;
+}
+
+/* La déclaration en attente : la bande d'attente des volets, sur toute la ligne, sous le
+   chiffre reconnu — et sans les boutons du chef, qui seul la tranche. */
+html .mes-plans-detail .mes-plans-proprietes .mes-plans-attente {
+    grid-column: 1 / -1;
+    display: block;
+    margin: 0 0 6px;
+    padding: 8px 12px;
+    border-left: 2px solid var(--attente-texte);
+    border-radius: 0 var(--r-md) var(--r-md) 0;
+    background: var(--carte);
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+html .mes-plans-detail .mes-plans-attente strong {
+    color: var(--text);
+    font-weight: 600;
+}
+
+/* Les étapes : l'état en boutons côte à côte des PV. Les boutons radio restent dans le
+   balisage — le clavier et les lecteurs d'écran les lisent comme un choix exclusif — et
+   seul leur rond est masqué. */
+.mes-plans-segments {
+    display: inline-flex;
+    padding: 2px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+}
+
+.mes-plans-segments label {
+    position: relative;
+    display: inline-flex;
+}
+
+.mes-plans-segments input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.mes-plans-segments span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: var(--h-sm);
+    padding: 0 10px;
+    border-radius: var(--r-sm);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.mes-plans-segments span:hover {
+    color: var(--text);
+}
+
+.mes-plans-segments input:checked + span {
+    background: var(--active);
+    color: var(--text);
+}
+
+.mes-plans-segments input:focus-visible + span {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+/* Le pied d'une section : le message à gauche, le bouton plein à droite. */
+.mes-plans-pied {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+html .mes-plans-pied .atelier-message {
+    flex: 1;
+    margin: 0;
+    color: var(--text-muted) !important;
+    font-size: 12px;
+}
+
+/* Le bouton plein de la DA, noir en clair : la seule commande pleine d'une section. */
+html .mes-plans-page .mes-plans-enregistrer {
+    display: inline-flex;
+    align-items: center;
+    height: var(--h-lg);
+    margin: 0;
+    padding: 0 14px;
+    border: 1px solid var(--bouton-plein) !important;
+    border-radius: var(--r-md) !important;
+    background: var(--bouton-plein) !important;
+    color: var(--bouton-plein-texte) !important;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+html .mes-plans-page .mes-plans-enregistrer:hover:not(:disabled) {
+    background: var(--bouton-plein-hover) !important;
+}
+
+html .mes-plans-page .mes-plans-enregistrer:disabled {
+    opacity: .55;
+    cursor: progress;
+}
+
+/* Les fichiers : le nom, et de quoi l'ouvrir ou le télécharger. */
+.mes-plans-fichiers {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.mes-plans-fichiers li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 32px;
+}
+
+.mes-plans-fichier-nom {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.mes-plans-fichier-commandes {
+    display: inline-flex;
+    flex: none;
+    gap: 6px;
+}
+
+/* Les historiques : un dépliant sourd, en casse normale. */
+html .mes-plans-page .mes-plans-historique summary {
+    width: fit-content;
+    padding: 4px 0;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.mes-plans-historique ol {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 8px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.mes-plans-historique li {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 13px;
+}
+
+.mes-plans-note {
+    color: var(--text);
+    white-space: pre-line;
+}
+
+.mes-plans-anciennes {
+    margin: 24px 16px 0;
+}
+
+/* ----- La fenêtre « Déclarer l'avancement » : celle de « Nouvel utilisateur » ----- */
+
+.mes-plans-dialogue {
+    width: min(460px, calc(100vw - 32px));
+    margin: auto;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--r-xl);
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 6%), 0 16px 48px rgb(0 0 0 / 18%);
+}
+
+.mes-plans-dialogue::backdrop {
+    background: rgb(15 15 16 / 38%);
+}
+
+.mes-plans-dialogue-tete {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px 0;
+}
+
+html .mes-plans-dialogue-tete h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+html .mes-plans-dialogue-tete .mes-plans-dialogue-fermer {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--h-md);
+    height: var(--h-md);
+    padding: 0;
+    border: 0 !important;
+    border-radius: var(--r-md);
+    background: transparent !important;
+    color: var(--text-muted) !important;
+    cursor: pointer;
+}
+
+html .mes-plans-dialogue-tete .mes-plans-dialogue-fermer:hover {
+    background: var(--hover) !important;
+    color: var(--text) !important;
+}
+
+.mes-plans-dialogue-tete .icon {
+    width: 16px;
+    height: 16px;
+}
+
+.mes-plans-dialogue-corps {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 16px 20px 20px;
+}
+
+html .mes-plans-dialogue .mes-plans-dialogue-cible {
+    margin: 0;
+    color: var(--text) !important;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+html .mes-plans-dialogue .mes-plans-dialogue-aide,
+html .mes-plans-dialogue .atelier-message {
+    margin: 0;
+    color: var(--text-muted) !important;
+    font-size: 12px;
+}
+
+html .mes-plans-dialogue .atelier-message:empty {
+    display: none;
+}
+
+.mes-plans-facultatif {
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.mes-plans-dialogue-pied {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 20px;
+    border-top: 1px solid var(--border-faint);
+}
+
+html .mes-plans-dialogue-pied .prefa-ligne-contour {
+    display: inline-flex;
+    align-items: center;
+    height: var(--h-lg);
+    margin: 0;
+    padding: 0 12px;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--r-md) !important;
+    background: transparent !important;
+    color: var(--text) !important;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+html .mes-plans-dialogue-pied .prefa-ligne-contour:hover {
+    background: var(--hover) !important;
+}
+
+/* Sur une tablette d'atelier, comme les PV : 44px sous le doigt. */
+@media (max-width: 1100px), (pointer: coarse) {
+
+    .mes-plans-segments span,
+    html .mes-plans-page .mes-plans-enregistrer,
+    html .mes-plans-detail .mes-plans-commande-ligne,
+    html .mes-plans-dialogue-pied .prefa-ligne-contour {
+        min-height: 44px;
+    }
 }
