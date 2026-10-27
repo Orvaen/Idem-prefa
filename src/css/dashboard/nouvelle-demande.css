@@ -964,7 +964,9 @@
     font-size: 13px;
 }
 
-/* La fermeture, à l'angle : un bouton d'icône de 32px, rayon 6. */
+/* La fermeture, à l'angle : une croix nue, sans cadre. Le fond n'apparaît qu'au survol ;
+   au repos il reprend celui de la fenêtre, pour que le texte qui défile dessous ne se
+   lise pas au travers. */
 .prefa-edition-fermer {
     position: absolute;
     top: 16px;
@@ -975,11 +977,12 @@
     width: var(--h-lg);
     height: var(--h-lg);
     padding: 0;
-    border: 1px solid var(--border);
+    border: 0;
     border-radius: var(--r-md);
     background: var(--surface);
     color: var(--text-muted);
     cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
 }
 
 .prefa-edition-fermer:hover {
@@ -993,8 +996,8 @@
 }
 
 .prefa-edition-fermer .icon {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
 }
 
 /* La page du formulaire, ramenée aux dimensions de la fenêtre. « [data-theme] » repris
