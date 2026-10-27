@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/prefa_visibilite.php';
+require_once __DIR__ . '/pv.php';
 require_once __DIR__ . '/../atelier/avancement.php';
 // Pour accueilIcone() : pages/accueil.php n'ouvre pas le menu, lui.
 require_once __DIR__ . '/../menu.php';
@@ -137,13 +138,10 @@ function accueilIcone(?string $ouvre): string
     return $icones[preg_replace('/^btn-/', '', $ouvre)] ?? '';
 }
 
-/** Les PV encore à faire : quatre par demande validée, moins ceux déjà tranchés. */
+/** Les PV encore à faire : la même règle que l'écran des PV, écrite une seule fois. */
 function accueilPvAFaire(PDO $db): int
 {
-    return (int) $db->query("SELECT
-            (SELECT COUNT(*) FROM demande_prefabrication WHERE id_statut = 2) * 4
-          - (SELECT COUNT(*) FROM pv_prefabrication p JOIN demande_prefabrication d ON d.id = p.id_demande
-             WHERE d.id_statut = 2 AND p.statut <> 'a_faire')")->fetchColumn();
+    return pvAFaireTotal($db);
 }
 
 /**

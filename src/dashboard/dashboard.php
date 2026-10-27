@@ -84,15 +84,8 @@ if ($isAdmin) {
     $urgentPending = (int) $db->query('SELECT COUNT(*) FROM demande_prefabrication WHERE urgent = 1 AND id_statut = 1')->fetchColumn();
 }
 
-// PV restant à renseigner : quatre par demande validée, moins ceux déjà tranchés.
-// Une demande jamais touchée n'a aucune ligne, d'où le calcul par soustraction.
-$pvAFaire = 0;
-if ($isAdmin || $isWorkshopChief) {
-    $pvAFaire = (int) $db->query("SELECT
-            (SELECT COUNT(*) FROM demande_prefabrication WHERE id_statut = 2) * 4
-          - (SELECT COUNT(*) FROM pv_prefabrication p JOIN demande_prefabrication d ON d.id = p.id_demande
-             WHERE d.id_statut = 2 AND p.statut <> 'a_faire')")->fetchColumn();
-}
+// PV restant à renseigner : la même règle que l'écran des PV et que l'accueil.
+$pvAFaire = ($isAdmin || $isWorkshopChief) ? pvAFaireTotal($db) : 0;
 ?>
 
 <!DOCTYPE html>

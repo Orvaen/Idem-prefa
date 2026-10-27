@@ -190,7 +190,7 @@ function dashboardMenu(): array
         [
             'id' => 'pv',
             'rayon' => 'atelier',
-            'libelle' => 'Avancement préfabrication',
+            'libelle' => 'PV de préfabrication',
             'page' => 'pages/pv.php',
             'pour' => [Role::ChargeDeProduction, Role::ChefDAtelier, Role::ChargeDAffaire],
             'icone' => '<path d="M9 4.5H6.5A1.5 1.5 0 0 0 5 6v13a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19V6a1.5 1.5 0 0 0-1.5-1.5H15"/><rect x="9" y="3" width="6" height="3" rx="1"/><path d="M8.5 16.5h2l1.5-3 1.5 4 1.5-2.5h.5"/>',

@@ -32,7 +32,7 @@ passe sont décidés à un seul endroit.
 ## `migrations/` — pour une base déjà remplie
 
 **Sur une base neuve, il n'y a rien à lancer ici.** `db/schema.sql` contient déjà le
-résultat de toutes ces migrations : 35 tables, 274 colonnes et 54 clés étrangères,
+résultat de toutes ces migrations : 35 tables, 275 colonnes et 54 clés étrangères,
 vérifiées identiques à la base en service. Installez le schéma, c'est tout.
 
 Ces scripts ne servent qu'à **rattraper une base créée avant un changement** — typiquement
@@ -45,11 +45,11 @@ Deux propriétés les rendent maniables :
 - **ils sont relançables** — chacun vérifie ce qui existe déjà et le dit (« Colonne X déjà
   là »). Les relancer tous, dans l'ordre, sur une base à jour ne refait pas le travail.
 
-Pour autant, ils ne sont pas tous inoffensifs : huit d'entre eux réécrivent des données, et
+Pour autant, ils ne sont pas tous inoffensifs : neuf d'entre eux réécrivent des données, et
 deux en suppriment. La liste est juste en dessous — lisez-la avant de tout lancer sur une
 base en service.
 
-### Huit d'entre elles touchent aux données
+### Neuf d'entre elles touchent aux données
 
 Le mot « migration » laisse croire qu'on ne change que la forme des tables. Ce n'est pas
 vrai de toutes : celles-ci réécrivent aussi ce qu'elles contiennent, et il vaut mieux
@@ -65,6 +65,7 @@ savoir laquelle avant de la lancer sur une base en service.
 | `2026-10-13_affaire_charge` | Confie chaque affaire existante à un chargé d'affaire |
 | `2026-10-13_evenements` | **Supprime les événements de plus de sept jours** |
 | `2026-10-14_plan_numeros_de_ligne` | Relit les plans qui n'ont aucun numéro de ligne — plusieurs secondes par plan |
+| `2026-10-27_pv_refonte` | **Fusionne le PV « Conformité » dans « Fin de fabrication »** de la même demande : documents déplacés (lignes et fichiers), commentaires mis bout à bout, état fusionné. Ajoute la catégorie « photo » aux documents |
 
 Les vingt autres ne font qu'ajouter des tables et des colonnes.
 

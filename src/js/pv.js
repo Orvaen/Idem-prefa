@@ -1,6 +1,26 @@
 (() => {
-    // Le volet ouvert est rouvert après rechargement : on enregistre PV par PV et il
-    // serait pénible de rouvrir la demande à chaque fois.
+    // ===== Le volet d'une demande =====
+    // Un volet par demande, ouvert par « Renseigner » ou « Voir ». Un seul ouvert à la fois,
+    // comme sur les autres listes.
+    $(document).on('click', '.pv-ouvrir', function () {
+        const volet = document.getElementById(this.getAttribute('aria-controls'));
+        if (!volet) return;
+        const ouvrir = volet.hidden;
+        if (ouvrir) {
+            document.querySelectorAll('.prefa-detail-row:not([hidden])').forEach(autre => { autre.hidden = true; });
+            document.querySelectorAll('[aria-controls][aria-expanded="true"]').forEach(b => b.setAttribute('aria-expanded', 'false'));
+        }
+        volet.hidden = !ouvrir;
+        this.setAttribute('aria-expanded', String(ouvrir));
+    });
+
+    $(document).on('click', '#pv-page .prefa-detail-close', function () {
+        const cible = this.dataset.closeTarget;
+        document.querySelectorAll(`[aria-controls="${cible}"]`).forEach(b => b.setAttribute('aria-expanded', 'false'));
+    });
+
+    // Le volet ouvert est rouvert après rechargement : on enregistre PV par PV, et il serait
+    // pénible de rouvrir la demande à chaque fois.
     const ouverts = () => Array.from(document.querySelectorAll('#pv-page .prefa-detail-row:not([hidden])')).map(ligne => ligne.id);
 
     function recharger(deplies = []) {
@@ -12,135 +32,76 @@
             deplies.forEach(id => {
                 const ligne = document.getElementById(id);
                 if (ligne) ligne.hidden = false;
-                document.querySelectorAll('.prefa-toggle[aria-controls="' + id + '"]').forEach(bouton => bouton.setAttribute('aria-expanded', 'true'));
+                document.querySelectorAll(`[aria-controls="${id}"]`).forEach(b => b.setAttribute('aria-expanded', 'true'));
             });
         });
     }
 
     $(document).on('click', '.pv-refresh', () => recharger(ouverts()));
 
-    // Filtrage sans aller-retour serveur : les quatre PV de chaque demande sont deja
-    // dans la page, il n'y a qu'a masquer les lignes qui ne correspondent pas.
+    // ===== Les onglets et la recherche =====
+    // Toutes les demandes sont dans la page : on filtre sur place. Onglet et recherche se
+    // combinent ; un titre de groupe disparaît avec sa dernière ligne, et chaque compte dit
+    // ce qui reste visible.
     function filtrer() {
-        const texte = (document.getElementById('pv-filtre-recherche')?.value || '').trim().toLowerCase();
-        const avancement = document.getElementById('pv-filtre-avancement')?.value || '';
-        const demandeur = document.getElementById('pv-filtre-demandeur')?.value || '';
-        let visibles = 0;
-        document.querySelectorAll('#pv-page .pv-ligne').forEach(ligne => {
-            const restants = Number(ligne.dataset.restants || 0);
-            const garder = (!texte || (ligne.dataset.recherche || '').includes(texte))
-                && (!demandeur || ligne.dataset.demandeur === demandeur)
-                && (avancement !== 'restants' || restants > 0)
-                && (avancement !== 'complets' || restants === 0);
+        const page = document.getElementById('pv-page');
+        if (!page) return;
+        const texte = (document.getElementById('pv-recherche')?.value || '').trim().toLowerCase();
+        const onglet = page.querySelector('.pv-onglet[aria-pressed="true"]')?.dataset.groupe || '';
+
+        const parGroupe = {};
+        page.querySelectorAll('.pv-ligne').forEach(ligne => {
+            const trouvee = !texte || (ligne.dataset.recherche || '').includes(texte);
+            if (trouvee) parGroupe[ligne.dataset.groupe] = (parGroupe[ligne.dataset.groupe] || 0) + 1;
+            const garder = trouvee && (onglet === '' || ligne.dataset.groupe === onglet);
             ligne.hidden = !garder;
-            // Un volet laisse ouvert sur une ligne masquee resterait affiche tout seul.
-            if (!garder) {
-                ligne.querySelectorAll('.prefa-detail-row').forEach(volet => { volet.hidden = true; });
-                ligne.querySelectorAll('.prefa-toggle[aria-expanded="true"]').forEach(bouton => bouton.setAttribute('aria-expanded', 'false'));
-            }
-            if (garder) visibles++;
+            // Un volet laissé ouvert sur une ligne masquée resterait affiché tout seul.
+            if (!garder) ligne.querySelectorAll('.prefa-detail-row').forEach(volet => { volet.hidden = true; });
         });
-        const compte = document.getElementById('pv-compte');
-        if (compte) compte.textContent = visibles;
-        const libelle = document.getElementById('pv-compte-libelle');
-        if (libelle) libelle.textContent = visibles === 1 ? 'demande affichée' : 'demandes affichées';
+
+        let visibles = 0;
+        page.querySelectorAll('.pv-groupe').forEach(titre => {
+            const nombre = parGroupe[titre.dataset.groupe] || 0;
+            const affiche = nombre > 0 && (onglet === '' || titre.dataset.groupe === onglet);
+            titre.hidden = !affiche;
+            titre.querySelector('.prefa-groupe-compte').textContent = nombre;
+            if (affiche) visibles += nombre;
+        });
+
+        page.querySelectorAll('.pv-onglet').forEach(bouton => {
+            const groupe = bouton.dataset.groupe;
+            const total = groupe === '' ? Object.values(parGroupe).reduce((a, b) => a + b, 0) : (parGroupe[groupe] || 0);
+            bouton.querySelector('.prefa-onglet-compte').textContent = total;
+        });
+
+        const aucune = page.querySelector('.pv-aucune');
+        if (aucune) aucune.hidden = visibles > 0;
     }
 
-    $(document).on('input', '#pv-filtre-recherche', filtrer);
-    $(document).on('change', '#pv-filtre-avancement, #pv-filtre-demandeur', filtrer);
+    $(document).on('input', '#pv-recherche', filtrer);
+    $(document).on('click', '.pv-onglet', function () {
+        document.querySelectorAll('.pv-onglet').forEach(o => o.setAttribute('aria-pressed', String(o === this)));
+        filtrer();
+    });
 
+    // ===== L'enregistrement =====
     function envoyer(donnees, message, boutons, deplies) {
         boutons.prop('disabled', true);
-        message.text('Enregistrement…');
+        message.removeClass('error').text('Enregistrement…');
         $.ajax({ url: 'actions/pv.php', method: 'POST', data: donnees, processData: false, contentType: false, dataType: 'json' })
-            .done(reponse => { message.text(reponse.message || 'Enregistré.'); recharger(deplies); })
-            .fail(xhr => message.text(xhr.responseJSON?.message || 'Enregistrement impossible. Réessayez.'))
-            .always(() => boutons.prop('disabled', false));
+            .done(reponse => {
+                if (window.toast) window.toast(reponse.message || 'Enregistré.');
+                recharger(deplies);
+            })
+            .fail(xhr => {
+                message.addClass('error').text(xhr.responseJSON?.message || 'Enregistrement impossible. Réessayez.');
+                boutons.prop('disabled', false);
+            });
     }
 
     $(document).on('submit', '.pv-form', function (event) {
         event.preventDefault();
-        envoyer(new FormData(this), $(this).find('.atelier-message'), $(this).find('button'), ouverts());
-    });
-
-    // L'aperçu d'un document déposé, déplié sur place. Le fichier n'est demandé qu'au
-    // premier dépli : une liste de cinq PDF les chargerait tous avec la page, pour des
-    // aperçus que personne n'a encore ouverts.
-    $(document).on('click', '.pv-apercu-bascule', function () {
-        const zone = this.closest('.pv-document').querySelector('.pv-apercu');
-        const ouvert = this.getAttribute('aria-expanded') === 'true';
-
-        if (!ouvert && !zone.firstElementChild) {
-            if (this.dataset.image === '1') {
-                const image = document.createElement('img');
-                image.src = this.dataset.src;
-                image.alt = this.dataset.nom;
-                zone.appendChild(image);
-            } else {
-                const cadre = document.createElement('iframe');
-                cadre.src = this.dataset.src;
-                cadre.title = 'Aperçu de ' + this.dataset.nom;
-                zone.appendChild(cadre);
-            }
-        }
-
-        zone.hidden = ouvert;
-        this.setAttribute('aria-expanded', ouvert ? 'false' : 'true');
-        this.textContent = ouvert ? 'Aperçu' : 'Masquer';
-    });
-
-    // La zone de dépôt remplace l'input natif : c'est à elle d'annoncer ce qui est sélectionné.
-    // Elle montre aussi ce qui vient d'être choisi : sans cela on dépose un bon de commande
-    // et rien ne confirme que c'est le bon fichier avant de l'avoir enregistré.
-    $(document).on('change', '.pv-fichiers-input', function () {
-        const zone = this.closest('.pv-fichiers');
-        const texte = zone.querySelector('.pv-fichiers-texte');
-        const fichiers = Array.from(this.files || []);
-        if (!fichiers.length) {
-            texte.textContent = 'Ajouter des documents';
-        } else if (fichiers.length === 1) {
-            texte.textContent = fichiers[0].name;
-        } else {
-            texte.textContent = fichiers.length + ' fichiers sélectionnés';
-        }
-
-        // La liste se pose après la zone de dépôt, pas dedans : « .pv-depot » est une grille
-        // à deux colonnes — le champ et le bouton « Enregistrer » — et un troisième enfant
-        // s'y retrouverait coincé sur une demi-largeur.
-        const depot = zone.closest('.pv-depot');
-        const formulaire = this.closest('.pv-form');
-
-        // Les adresses de la sélection précédente sont révoquées : le navigateur garde
-        // sinon chaque fichier en mémoire jusqu'au rechargement de la page.
-        let choisis = formulaire.querySelector('.pv-choisis');
-        if (choisis) {
-            choisis.querySelectorAll('[data-objet]').forEach(el => URL.revokeObjectURL(el.dataset.objet));
-            choisis.remove();
-        }
-        if (!fichiers.length) return;
-
-        choisis = document.createElement('ul');
-        choisis.className = 'pv-choisis';
-        fichiers.forEach(fichier => {
-            const item = document.createElement('li');
-            const nom = document.createElement('span');
-            nom.className = 'pv-choisi-nom';
-            nom.textContent = fichier.name;
-            item.appendChild(nom);
-
-            const adresse = URL.createObjectURL(fichier);
-            const vue = fichier.type === 'application/pdf'
-                ? document.createElement('iframe')
-                : (fichier.type.startsWith('image/') ? document.createElement('img') : null);
-            if (vue) {
-                vue.dataset.objet = adresse;
-                vue.src = adresse;
-                if (vue.tagName === 'IMG') vue.alt = fichier.name; else vue.title = 'Aperçu de ' + fichier.name;
-                item.appendChild(vue);
-            }
-            choisis.appendChild(item);
-        });
-        depot.insertAdjacentElement('afterend', choisis);
+        envoyer(new FormData(this), $(this).find('.pv-message'), $(this).find('.pv-enregistrer'), ouverts());
     });
 
     $(document).on('click', '.pv-retirer-document', function () {
@@ -152,6 +113,67 @@
         donnees.set('demande', this.dataset.demande);
         donnees.set('type', this.dataset.type);
         donnees.set('document', this.dataset.document);
-        envoyer(donnees, $(form).find('.atelier-message'), $(this), ouverts());
+        envoyer(donnees, $(form).find('.pv-message'), $(this), ouverts());
+    });
+
+    // ===== L'aperçu d'un document déposé =====
+    // Déplié sur place, et demandé au premier dépli seulement : une liste de cinq PDF les
+    // chargerait tous avec la page, pour des aperçus que personne n'a encore ouverts.
+    $(document).on('click', '.pv-apercu-bascule', function () {
+        const zone = this.closest('.pv-document').querySelector('.pv-apercu');
+        const ouvert = this.getAttribute('aria-expanded') === 'true';
+
+        if (!ouvert && !zone.firstElementChild) {
+            const vue = document.createElement(this.dataset.image === '1' ? 'img' : 'iframe');
+            vue.src = this.dataset.src;
+            if (vue.tagName === 'IMG') vue.alt = this.dataset.nom; else vue.title = 'Aperçu de ' + this.dataset.nom;
+            zone.appendChild(vue);
+        }
+
+        zone.hidden = ouvert;
+        this.setAttribute('aria-expanded', ouvert ? 'false' : 'true');
+        this.textContent = ouvert ? 'Aperçu' : 'Masquer';
+    });
+
+    // ===== Ce qu'on vient de choisir =====
+    // Le bouton dit ce qui est sélectionné, et la liste des fichiers choisis s'affiche
+    // dessous — avec une vignette pour les photos : rien ne confirme sinon qu'on a pris le
+    // bon fichier avant d'avoir enregistré.
+    $(document).on('change', '.pv-ajout-input', function () {
+        const ajout = this.closest('.pv-ajout');
+        const texte = ajout.querySelector('.pv-ajout-texte');
+        const photos = this.name === 'photos[]';
+        const fichiers = Array.from(this.files || []);
+        texte.textContent = !fichiers.length
+            ? (photos ? 'Ajouter des photos' : 'Ajouter des documents')
+            : (fichiers.length === 1 ? fichiers[0].name : fichiers.length + ' fichiers choisis');
+
+        // Les adresses de la sélection précédente sont révoquées : le navigateur garde sinon
+        // chaque fichier en mémoire jusqu'au rechargement de la page.
+        let choisis = ajout.nextElementSibling?.classList.contains('pv-choisis') ? ajout.nextElementSibling : null;
+        if (choisis) {
+            choisis.querySelectorAll('[data-objet]').forEach(el => URL.revokeObjectURL(el.dataset.objet));
+            choisis.remove();
+        }
+        if (!fichiers.length) return;
+
+        choisis = document.createElement('ul');
+        choisis.className = 'pv-choisis';
+        fichiers.forEach(fichier => {
+            const item = document.createElement('li');
+            if (fichier.type.startsWith('image/')) {
+                const adresse = URL.createObjectURL(fichier);
+                const image = document.createElement('img');
+                image.dataset.objet = adresse;
+                image.src = adresse;
+                image.alt = '';
+                item.appendChild(image);
+            }
+            const nom = document.createElement('span');
+            nom.textContent = fichier.name;
+            item.appendChild(nom);
+            choisis.appendChild(item);
+        });
+        ajout.insertAdjacentElement('afterend', choisis);
     });
 })();

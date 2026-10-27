@@ -553,6 +553,7 @@ CREATE TABLE `pv_document` (
   `id_pv` int NOT NULL,
   `cle` varchar(255) NOT NULL,
   `nom` varchar(190) NOT NULL,
+  `categorie` enum('document','photo') NOT NULL DEFAULT 'document',
   `taille` int unsigned NOT NULL DEFAULT '0',
   `depose_par` int DEFAULT NULL,
   `date_depot` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
