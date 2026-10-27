@@ -139,25 +139,6 @@
         envoyer(donnees, $(form).find('.pv-message'), $(this), ouverts());
     });
 
-    // ===== L'aperçu d'un document déposé =====
-    // Déplié sur place, et demandé au premier dépli seulement : une liste de cinq PDF les
-    // chargerait tous avec la page, pour des aperçus que personne n'a encore ouverts.
-    $(document).on('click', '.pv-apercu-bascule', function () {
-        const zone = this.closest('.pv-document').querySelector('.pv-apercu');
-        const ouvert = this.getAttribute('aria-expanded') === 'true';
-
-        if (!ouvert && !zone.firstElementChild) {
-            const vue = document.createElement(this.dataset.image === '1' ? 'img' : 'iframe');
-            vue.src = this.dataset.src;
-            if (vue.tagName === 'IMG') vue.alt = this.dataset.nom; else vue.title = 'Aperçu de ' + this.dataset.nom;
-            zone.appendChild(vue);
-        }
-
-        zone.hidden = ouvert;
-        this.setAttribute('aria-expanded', ouvert ? 'false' : 'true');
-        this.textContent = ouvert ? 'Aperçu' : 'Masquer';
-    });
-
     // ===== Ce qu'on vient de choisir =====
     // Le bouton dit ce qui est sélectionné, et la liste des fichiers choisis s'affiche
     // dessous — avec une vignette pour les photos : rien ne confirme sinon qu'on a pris le

@@ -101,110 +101,271 @@
     height: 13px;
 }
 
-/* ---------- Le volet ---------- */
+/* ==========================================================================
+   LE VOLET — un panneau flottant, façon fiche
+   ==========================================================================
+
+   Une carte posée à 8 px des bords, arrondie, la liste visible derrière sous un voile
+   léger. Dedans, une seule grammaire : des sections séparées par un filet pointillé, un
+   titre sourd en casse normale (DA, § 7 bis : jamais en capitales), et des lignes de
+   propriétés — icône et libellé à gauche, valeur ou champ à droite. */
+
+#pv-page .prefa-detail-row {
+    top: 8px;
+    right: 8px;
+    bottom: 8px;
+    left: auto;
+    width: min(560px, calc(100vw - 16px));
+    border: 1px solid var(--border);
+    border-radius: var(--r-xl);
+    box-shadow: 0 1px 2px rgb(15 15 16 / 6%), 0 24px 64px rgb(15 15 16 / 18%);
+    animation: pv-tiroir 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+body:has(#pv-page .prefa-detail-row:not([hidden]))::before {
+    background: rgb(15 15 16 / 16%);
+    backdrop-filter: blur(2px);
+}
+
+@keyframes pv-tiroir {
+    from {
+        opacity: 0;
+        transform: translateX(24px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+#pv-page .prefa-detail-row > td {
+    padding: 0;
+    border: 0;
+}
+
+.prefa-detail-row > td > .pv-volet {
+    max-width: none;
+    margin: 0;
+}
 
 .pv-volet {
-    padding: 8px 24px 40px;
+    color: var(--text);
+    font-size: 13px;
 }
 
-.pv-sections {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
+/* ---------- L'en-tête ---------- */
 
-.pv-section {
-    border: 1px solid var(--border);
-    border-radius: var(--r-lg);
-    background: var(--surface);
-}
-
-.pv-section-tete {
+.pv-volet-tete {
+    position: sticky;
+    top: 0;
+    z-index: 2;
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 16px;
-    padding: 14px 16px;
+    gap: 12px;
+    padding: 18px 20px 16px;
+    border-bottom: 1px dashed var(--border);
+    background: var(--surface);
 }
 
-.pv-section-tete h3 {
+.pv-volet-tete h2 {
     margin: 0;
     color: var(--text);
-    font-size: 15px;
+    font-size: 17px;
     font-weight: 600;
+    font-variant-numeric: tabular-nums;
 }
 
-.pv-section-tete p {
-    margin: 2px 0 0;
+.pv-volet-tete p {
+    margin: 4px 0 0;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+/* Les commandes de l'en-tête, groupées dans un même cadre comme sur la référence. */
+.pv-volet-outils {
+    display: inline-flex;
+    padding: 2px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+}
+
+.pv-volet-outils button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--h-sm);
+    height: var(--h-sm);
+    padding: 0;
+    border: 0;
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 0;
+    cursor: pointer;
+}
+
+.pv-volet-outils button:hover {
+    background: var(--hover);
+    color: var(--text);
+}
+
+.pv-volet-outils .icon {
+    width: 14px;
+    height: 14px;
+}
+
+/* ---------- Les sections ---------- */
+
+.pv-volet-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px 20px;
+}
+
+.pv-volet-section + .pv-volet-section {
+    border-top: 1px dashed var(--border);
+}
+
+.pv-volet-titre {
+    margin: 0;
     color: var(--text-muted);
     font-size: 12px;
-}
-
-.pv-section-tete p strong {
-    color: var(--text);
     font-weight: 500;
 }
 
-.pv-section-tete .pv-etat {
-    flex: none;
-    margin-top: 2px;
-}
-
-.pv-section-corps {
+.pv-volet-titre-rang {
     display: flex;
-    flex-direction: column;
-    gap: 16px;
-    margin: 0;
-    padding: 16px;
-    border-top: 1px solid var(--border-faint);
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
 }
 
-.pv-section-note {
+/* Les sections de PV portent leur nom en titre lisible : c'est ce qu'on cherche en
+   parcourant le volet. */
+.pv-volet-titre-rang .pv-volet-titre {
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.pv-volet-note {
     margin: 0;
-    padding: 0 16px 14px;
     color: var(--text-muted);
     font-size: 12px;
 }
 
-.pv-section-corps .pv-section-note {
-    padding: 0;
+/* ---------- Les lignes de propriétés ---------- */
+
+/* « .pv-volet » en tête : la fiche d'une demande pose sur tout « .prefa-request dl » une
+   grille à deux colonnes, qui rangeait ici les lignes deux par deux et écrasait les
+   valeurs en colonnes d'une lettre. */
+.pv-volet .pv-proprietes {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 0;
+    font-size: 13px;
 }
 
-.pv-section-note strong {
+.pv-proprietes > div {
+    display: grid;
+    grid-template-columns: 148px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    min-height: 36px;
+}
+
+.pv-proprietes dt {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.pv-proprietes dt label {
+    color: inherit;
+    font: inherit;
+}
+
+[data-theme="light"] .pv-proprietes dt label {
+    color: var(--text-muted) !important;
+}
+
+.pv-proprietes dt .icon {
+    flex: none;
+    width: 16px;
+    height: 16px;
+}
+
+.pv-volet .pv-proprietes dd {
+    display: flex;
+    white-space: normal;
+    justify-content: flex-end;
+    margin: 0;
     color: var(--text);
-    font-weight: 600;
+    font-weight: 500;
+    text-align: right;
+}
+
+.pv-proprietes dd.pv-propriete-texte {
+    font-weight: 400;
+    white-space: normal;
+}
+
+.pv-proprietes .prefa-personne {
+    font-weight: 500;
+}
+
+/* ---------- Les puces d'état ---------- */
+
+.pv-puce {
+    display: inline-flex;
+    align-items: center;
+    height: var(--h-xs);
+    padding: 0 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.pv-puce-a_faire {
+    background: var(--attente-fond);
+    color: var(--attente-texte);
+}
+
+.pv-puce-fait {
+    background: var(--succes-fond);
+    color: var(--succes-texte);
+}
+
+.pv-puce-sans_objet {
+    background: var(--hover);
+    color: var(--text-muted);
 }
 
 /* ---------- Les champs ---------- */
 
-.pv-rang {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    gap: 16px 24px;
-}
-
-.pv-champ {
+.pv-volet-bloc {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
 }
 
-.pv-champ label,
-.pv-segments legend {
-    padding: 0;
-    color: var(--text);
+.pv-volet-etiquette {
+    color: var(--text-muted);
     font-size: 12px;
     font-weight: 500;
 }
 
-.pv-facultatif {
-    color: var(--text-muted);
+.pv-volet-etiquette span {
     font-weight: 400;
 }
 
-.pv-champ input[type="date"],
-.pv-champ textarea {
+.pv-volet .pv-volet-champ {
     box-sizing: border-box;
     border: 1px solid var(--border);
     border-radius: var(--r-md);
@@ -214,40 +375,29 @@
     font-size: 13px;
 }
 
-.pv-champ input[type="date"] {
-    width: 180px;
+.pv-volet input.pv-volet-champ {
+    width: 168px;
     height: var(--h-lg);
     padding: 0 10px;
 }
 
-.pv-champ textarea {
+.pv-volet textarea.pv-volet-champ {
     width: 100%;
-    min-height: 60px;
+    min-height: 64px;
     padding: 8px 10px;
     resize: vertical;
 }
 
-.pv-champ input:focus,
-.pv-champ textarea:focus {
+.pv-volet .pv-volet-champ:focus {
     border-color: var(--accent);
     outline: 1px solid var(--accent);
     outline-offset: -1px;
 }
 
-/* L'état en trois boutons côte à côte. Les boutons radio restent dans le balisage — le
+/* L'état en trois boutons côte à côte : les boutons radio restent dans le balisage — le
    clavier et les lecteurs d'écran les lisent comme un choix exclusif — et seul leur rond
-   est masqué : c'est le bouton entier qui s'allume. */
+   est masqué. */
 .pv-segments {
-    margin: 0;
-    padding: 0;
-    border: 0;
-}
-
-.pv-segments legend {
-    margin-bottom: 6px;
-}
-
-.pv-segments-boutons {
     display: inline-flex;
     padding: 2px;
     border: 1px solid var(--border);
@@ -268,11 +418,12 @@
 .pv-segments span {
     display: inline-flex;
     align-items: center;
-    height: var(--h-md);
-    padding: 0 12px;
+    height: var(--h-sm);
+    padding: 0 10px;
     border-radius: var(--r-sm);
     color: var(--text-muted);
-    font-size: 13px;
+    font-size: 12px;
+    font-weight: 500;
     cursor: pointer;
 }
 
@@ -283,7 +434,6 @@
 .pv-segments input:checked + span {
     background: var(--active);
     color: var(--text);
-    font-weight: 500;
 }
 
 .pv-segments input:focus-visible + span {
@@ -291,24 +441,117 @@
     outline-offset: 1px;
 }
 
-/* ---------- Photos, documents, dépôt ---------- */
+/* ---------- Pièces jointes et photos ---------- */
 
-.pv-bloc {
+/* Les pièces jointes en puces : un trombone, le nom, la taille en sourd. */
+.pv-documents {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
     gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
 }
 
-.pv-bloc h4 {
-    margin: 0;
+.pv-document {
+    position: relative;
+    display: inline-flex;
+    max-width: 100%;
+}
+
+.pv-document .prefa-document-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    max-width: 100%;
+    height: var(--h-lg);
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface);
     color: var(--text);
-    font-size: 12px;
-    font-weight: 500;
+    font-size: 13px;
+    text-decoration: none;
+}
+
+.pv-document .prefa-document-link:hover {
+    background: var(--hover);
+}
+
+.pv-document .prefa-document-link .icon {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    color: var(--text-muted);
+}
+
+.pv-document-nom {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pv-document-taille {
+    flex: none;
+    color: var(--text-muted);
+}
+
+/* La croix se pose sur le coin de la puce, au survol. */
+.pv-document .pv-retirer-document,
+.pv-photo-retirer {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text-muted);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity .12s ease;
+}
+
+.pv-photo-retirer {
+    top: 4px;
+    right: 4px;
+}
+
+.pv-document:hover .pv-retirer-document,
+.pv-document .pv-retirer-document:focus-visible,
+.pv-photo:hover .pv-photo-retirer,
+.pv-photo-retirer:focus-visible {
+    opacity: 1;
+}
+
+.pv-document .pv-retirer-document:hover,
+.pv-photo-retirer:hover {
+    color: var(--alerte-texte);
+}
+
+@media (hover: none) {
+    .pv-document .pv-retirer-document,
+    .pv-photo-retirer {
+        opacity: 1;
+    }
+}
+
+.pv-document .pv-retirer-document .icon,
+.pv-photo-retirer .icon {
+    width: 10px;
+    height: 10px;
 }
 
 .pv-photos {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
     gap: 8px;
     margin: 0;
     padding: 0;
@@ -335,128 +578,10 @@
     object-fit: cover;
 }
 
-.pv-photo-retirer {
-    position: absolute;
-    top: 4px;
-    right: 4px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--h-sm);
-    height: var(--h-sm);
-    padding: 0;
-    border: 1px solid var(--border);
-    border-radius: var(--r-sm);
-    background: var(--surface);
-    color: var(--text);
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity .12s ease;
-}
-
-.pv-photo:hover .pv-photo-retirer,
-.pv-photo-retirer:focus-visible {
-    opacity: 1;
-}
-
-@media (hover: none) {
-    .pv-photo-retirer {
-        opacity: 1;
-    }
-}
-
-.pv-photo-retirer .icon {
-    width: 12px;
-    height: 12px;
-}
-
-.pv-documents {
-    display: flex;
-    flex-direction: column;
-    margin: 0;
-    padding: 0;
-    border: 1px solid var(--border-faint);
-    border-radius: var(--r-md);
-    list-style: none;
-}
-
-.pv-document + .pv-document {
-    border-top: 1px solid var(--border-faint);
-}
-
-.pv-document-rang {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-height: var(--h-2xl);
-    padding: 0 8px 0 12px;
-}
-
-.pv-document-rang .prefa-document-link {
-    display: inline-flex;
-    flex: 1;
-    align-items: center;
-    gap: 8px;
-    min-width: 0;
-    color: var(--text);
-    font-size: 13px;
-    text-decoration: none;
-    overflow-wrap: anywhere;
-}
-
-.pv-document-rang .prefa-document-link:hover {
-    color: var(--accent-texte);
-}
-
-.pv-document-rang .prefa-document-link .icon {
-    flex: none;
-    width: 15px;
-    height: 15px;
-    color: var(--text-muted);
-}
-
-.pv-documents .pv-apercu-bascule,
-.pv-documents .pv-retirer-document {
-    height: var(--h-sm);
-    padding: 0 8px;
-    border: 1px solid var(--border);
-    border-radius: var(--r-md);
-    background: var(--surface);
-    color: var(--text);
-    font-size: 12px;
-    cursor: pointer;
-}
-
-.pv-documents .pv-apercu-bascule:hover,
-.pv-documents .pv-retirer-document:hover {
-    background: var(--hover);
-}
-
-.pv-apercu {
-    padding: 0 12px 12px;
-}
-
-.pv-apercu iframe,
-.pv-apercu img {
-    display: block;
-    width: 100%;
-    max-height: 520px;
-    border: 1px solid var(--border-faint);
-    border-radius: var(--r-md);
-    object-fit: contain;
-}
-
-.pv-apercu iframe {
-    height: 520px;
-}
-
-/* Le dépôt : un bouton au contour qui dit ce qu'il ajoute, et l'aide à côté. Le champ
-   natif est masqué, pas retiré : c'est lui que le formulaire envoie. */
+/* L'ajout : une puce pointillée « + », à la suite des pièces jointes. Le champ natif est
+   masqué, pas retiré : c'est lui que le formulaire envoie. */
 .pv-ajout {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px 10px;
 }
 
 .pv-ajout-input {
@@ -473,16 +598,17 @@
     gap: 6px;
     max-width: 100%;
     height: var(--h-lg);
-    padding: 0 12px;
+    padding: 0 10px;
     border: 1px dashed var(--border-fort);
     border-radius: var(--r-md);
-    color: var(--text);
+    color: var(--text-muted);
     font-size: 13px;
     cursor: pointer;
 }
 
 .pv-ajout-bouton:hover {
     background: var(--hover);
+    color: var(--text);
 }
 
 .pv-ajout-input:focus-visible + .pv-ajout-bouton {
@@ -492,9 +618,8 @@
 
 .pv-ajout-bouton .icon {
     flex: none;
-    width: 15px;
-    height: 15px;
-    color: var(--text-muted);
+    width: 14px;
+    height: 14px;
 }
 
 .pv-ajout-texte {
@@ -503,15 +628,10 @@
     white-space: nowrap;
 }
 
-.pv-ajout-aide {
-    color: var(--text-muted);
-    font-size: 12px;
-}
-
 .pv-choisis {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -522,16 +642,16 @@
     align-items: center;
     gap: 6px;
     max-width: 100%;
-    padding: 4px 8px 4px 4px;
-    border: 1px solid var(--border-faint);
+    padding: 3px 8px 3px 3px;
     border-radius: var(--r-md);
+    background: var(--hover);
     color: var(--text-muted);
     font-size: 12px;
 }
 
 .pv-choisis img {
-    width: 32px;
-    height: 32px;
+    width: 26px;
+    height: 26px;
     border-radius: var(--r-sm);
     object-fit: cover;
 }
@@ -540,22 +660,13 @@
 
 .pv-pied {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
     justify-content: flex-end;
-    gap: 8px 12px;
-    padding-top: 14px;
-    border-top: 1px solid var(--border-faint);
-}
-
-.pv-signature {
-    flex: 1 1 auto;
-    margin: 0;
-    color: var(--text-muted);
-    font-size: 12px;
+    gap: 12px;
 }
 
 .pv-message {
+    flex: 1;
     margin: 0;
     color: var(--text-muted);
     font-size: 12px;
@@ -566,7 +677,7 @@
     color: var(--alerte-texte) !important;
 }
 
-/* Le bouton plein de la DA : noir en clair. C'est la seule commande pleine du volet. */
+/* Le bouton plein de la DA : noir en clair. La seule commande pleine d'une section. */
 .pv-enregistrer {
     display: inline-flex;
     align-items: center;
@@ -590,28 +701,81 @@
     cursor: progress;
 }
 
-/* ---------- En lecture seule ---------- */
+/* ---------- L'historique, en frise ----------
+ *
+ * Un rond par événement, relié au suivant par un trait pointillé ; le titre, une phrase,
+ * la date en sourd. Le rond porte le genre : coche pour ce qui est fait ou validé,
+ * trombone pour un fichier, pointillé pour le reste. */
+.pv-historique {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
 
-.pv-lecture {
+.pv-historique li {
+    position: relative;
     display: grid;
-    grid-template-columns: max-content 1fr;
-    gap: 8px 24px;
-    margin: 0;
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 12px;
+    padding-bottom: 18px;
 }
 
-.pv-lecture div {
-    display: contents;
+.pv-historique li:not(:last-child)::before {
+    content: "";
+    position: absolute;
+    top: 30px;
+    bottom: 2px;
+    left: 13.5px;
+    border-left: 1px dashed var(--border-fort);
 }
 
-.pv-lecture dt {
+.pv-historique-signe {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
     color: var(--text-muted);
-    font-size: 12px;
 }
 
-.pv-lecture dd {
-    margin: 0;
+.pv-historique-signe .icon {
+    width: 14px;
+    height: 14px;
+}
+
+.pv-historique-fait .pv-historique-signe,
+.pv-historique-validation .pv-historique-signe {
+    color: var(--succes-texte);
+}
+
+.pv-historique-a_faire .pv-historique-signe {
+    color: var(--attente-texte);
+}
+
+.pv-historique strong {
+    display: block;
+    padding-top: 4px;
     color: var(--text);
     font-size: 13px;
+    font-weight: 500;
+}
+
+.pv-historique p {
+    margin: 2px 0 0;
+    color: var(--text-muted);
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+
+.pv-historique time {
+    display: block;
+    margin-top: 4px;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
 }
 
 /* ---------- Sur une tablette d'atelier ---------- */
@@ -619,24 +783,31 @@
 @media (max-width: 1100px), (pointer: coarse) {
 
     .pv-segments span,
-    .pv-champ input[type="date"],
+    .pv-volet input.pv-volet-champ,
     .pv-ajout-bouton,
     .pv-enregistrer,
-    .pv-documents .pv-apercu-bascule,
-    .pv-documents .pv-retirer-document {
+    .pv-document .prefa-document-link {
         min-height: 44px;
+    }
+
+    .pv-volet-outils button {
+        width: 36px;
+        height: 36px;
     }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 560px) {
 
-    .pv-volet {
-        padding: 8px 12px 32px;
+    #pv-page .prefa-detail-row {
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 100vw;
+        border-radius: 0;
     }
 
-    .pv-section-tete {
-        flex-direction: column;
-        gap: 8px;
+    .pv-proprietes > div {
+        grid-template-columns: 120px minmax(0, 1fr);
     }
 }
 
@@ -708,35 +879,18 @@
 .pv-etat-menu .pv-etat-choix.pv-etat-fait .pv-etat-icone { color: var(--succes-texte); }
 .pv-etat-menu .pv-etat-choix.pv-etat-sans_objet .pv-etat-icone { color: var(--text-muted); }
 
-/* ---------- Le volet : un panneau sur le côté ----------
- *
- * Les autres volets couvrent tout l'écran. Pour les PV, c'était quitter la liste à chaque
- * saisie : on ne voyait plus la demande d'à côté, ni ce qu'on venait de changer. Le volet
- * glisse donc depuis la droite et la liste reste visible derrière, sous un voile léger —
- * comme un ticket ouvert sur Linear. Un clic sur la liste, ou Échap, le referme. */
-#pv-page .prefa-detail-row {
-    left: auto;
-    width: min(680px, 100vw);
-    border-left: 1px solid var(--border-fort);
-    box-shadow: -16px 0 48px rgb(15 15 16 / 14%);
-    animation: pv-tiroir 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+
+/* Les blocs d'une section respirent autant que ses lignes de propriétés. */
+.pv-volet .pv-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin: 0;
 }
 
-body:has(#pv-page .prefa-detail-row:not([hidden]))::before {
-    background: rgb(15 15 16 / 12%);
-}
-
-@keyframes pv-tiroir {
-    from {
-        opacity: 0;
-        transform: translateX(24px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-.prefa-detail-row > td > .pv-volet {
-    max-width: none;
+/* Le nom d'une pièce jointe est du texte, pas un lien bleu : c'est la puce entière qui
+   s'ouvre. Le thème clair peint tout lien à l'accent, en !important. */
+.pv-volet .pv-document .prefa-document-link,
+[data-theme="light"] .pv-volet .pv-document .prefa-document-link {
+    color: var(--text) !important;
 }

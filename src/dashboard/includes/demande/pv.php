@@ -88,7 +88,10 @@ function pvParDemande(PDO $db, int $idDemande, bool $avecPassivation = true): ar
 
     if ($ids) {
         $places = implode(',', array_fill(0, count($ids), '?'));
-        $docs = $db->prepare("SELECT * FROM pv_document WHERE id_pv IN ($places) ORDER BY date_depot, id");
+        // Le nom de qui a déposé : l'historique du volet le raconte.
+        $docs = $db->prepare("SELECT d.*, u.prenom AS depose_prenom, u.name AS depose_nom
+            FROM pv_document d LEFT JOIN Utilisateur u ON u.id = d.depose_par
+            WHERE d.id_pv IN ($places) ORDER BY d.date_depot, d.id");
         $docs->execute(array_keys($ids));
         foreach ($docs->fetchAll() as $document) {
             $rangement = ($document['categorie'] ?? 'document') === 'photo' ? 'photos' : 'documents';
@@ -137,4 +140,56 @@ function pvAFaireTotal(PDO $db): int
         WHERE d.id_statut = 2
           AND COALESCE(p.statut, 'a_faire') = 'a_faire'
           AND NOT (t.type = 'passivation' AND d.id_passivation IS NULL)")->fetchColumn();
+}
+
+/** La taille d'un fichier, comme on la dit : « 4 Mo », « 320 Ko ». */
+function pvTaille(int $octets): string
+{
+    if ($octets >= 1024 * 1024) return number_format($octets / 1024 / 1024, $octets >= 10 * 1024 * 1024 ? 0 : 1, ',', ' ') . ' Mo';
+    return max(1, (int) round($octets / 1024)) . ' Ko';
+}
+
+/**
+ * L'historique d'une demande côté PV, du plus récent au plus ancien : la validation de la
+ * demande, la dernière saisie de chaque PV, chaque fichier déposé. La table ne garde que la
+ * dernière saisie d'un PV — l'historique dit donc où l'on en est, pas chaque retouche.
+ *
+ * @return list<array{quand:string, titre:string, texte:string, genre:string}>
+ */
+function pvHistorique(array $demande, array $pvs): array
+{
+    $nom = static fn (?string $prenom, ?string $famille): string => trim((string) $prenom . ' ' . (string) $famille) ?: 'quelqu’un';
+    $evenements = [];
+
+    foreach ($pvs as $pv) {
+        if ($pv['date_maj']) {
+            $evenements[] = [
+                'quand' => (string) $pv['date_maj'],
+                'titre' => $pv['libelle'] . ' : ' . mb_strtolower(pvStatuts()[$pv['statut']]),
+                'texte' => 'Renseigné par ' . $nom($pv['auteur_prenom'], $pv['auteur_nom']) . '.',
+                'genre' => $pv['statut'],
+            ];
+        }
+        foreach (array_merge($pv['documents'], $pv['photos']) as $fichier) {
+            $photo = ($fichier['categorie'] ?? '') === 'photo';
+            $evenements[] = [
+                'quand' => (string) $fichier['date_depot'],
+                'titre' => ($photo ? 'Photo ajoutée' : 'Document ajouté') . ' · ' . $pv['libelle'],
+                'texte' => $fichier['nom'] . ', par ' . $nom($fichier['depose_prenom'] ?? null, $fichier['depose_nom'] ?? null) . '.',
+                'genre' => 'fichier',
+            ];
+        }
+    }
+
+    if (!empty($demande['date_validation'])) {
+        $evenements[] = [
+            'quand' => (string) $demande['date_validation'],
+            'titre' => 'Demande validée',
+            'texte' => 'Par ' . $nom($demande['valideur_prenom'] ?? null, $demande['valideur_nom'] ?? null) . ' : les PV sont ouverts.',
+            'genre' => 'validation',
+        ];
+    }
+
+    usort($evenements, static fn (array $a, array $b): int => strcmp($b['quand'], $a['quand']));
+    return array_slice($evenements, 0, 10);
 }

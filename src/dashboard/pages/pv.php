@@ -12,9 +12,11 @@ $pvLectureSeule = !$canFillPv;
 
 // Le demandeur ne voit que ses propres affaires ; l'atelier voit tout le parc.
 $sql = 'SELECT d.id, d.nom_affaire, d.urgent, d.id_passivation, tp.libelle AS passivation_libelle,
-        u.prenom AS demandeur_prenom, u.name AS demandeur_nom
+        d.date_validation, u.prenom AS demandeur_prenom, u.name AS demandeur_nom,
+        v.prenom AS valideur_prenom, v.name AS valideur_nom
     FROM demande_prefabrication d
     LEFT JOIN Utilisateur u ON u.id = d.idUsers
+    LEFT JOIN Utilisateur v ON v.id = d.valide_par
     LEFT JOIN type_passivation tp ON tp.id = d.id_passivation
     WHERE d.id_statut = 2';
 $parametres = [];
@@ -266,158 +268,7 @@ $signature = static function (array $pv): string {
                             </td>
                         </tr>
 
-                        <tr id="pv-detail-<?= $id ?>" class="prefa-detail-row" hidden>
-                            <td colspan="7">
-                                <div class="pv-volet">
-                                    <div class="prefa-detail-heading">
-                                        <div>
-                                            <h2>PV <span><?= prefaEscape(prefaReferenceComplete($id)) ?></span></h2>
-                                            <p><?= prefaEscape($demandeurNom ?: 'Demandeur inconnu') ?> · <?= $avancement['faits'] ?> sur <?= $avancement['applicables'] ?> PV fait<?= $avancement['faits'] > 1 ? 's' : '' ?></p>
-                                        </div>
-                                        <button type="button" class="prefa-detail-close" data-close-target="pv-detail-<?= $id ?>" aria-label="Fermer le volet">✕</button>
-                                    </div>
-
-                                    <div class="pv-sections">
-                                    <?php foreach ($types as $type => $libelle): $pv = $pvs[$type]; $cle = $id . '-' . $type; ?>
-                                        <section class="pv-section" aria-labelledby="pv-titre-<?= prefaEscape($cle) ?>">
-                                            <header class="pv-section-tete">
-                                                <div>
-                                                    <h3 id="pv-titre-<?= prefaEscape($cle) ?>"><?= prefaEscape($libelle) ?></h3>
-                                                    <p><?= prefaEscape($descriptions[$type]) ?>
-                                                        <?php if ($type === 'passivation' && $demande['passivation_libelle']): ?>
-                                                            Demandée : <strong><?= prefaEscape($demande['passivation_libelle']) ?></strong>.
-                                                        <?php endif; ?>
-                                                    </p>
-                                                </div>
-                                                <span class="pv-etat pv-etat-<?= prefaEscape($pv['statut']) ?>"><?= $iconeEtat($pv['statut']) ?><?= prefaEscape($statuts[$pv['statut']]) ?></span>
-                                            </header>
-
-                                            <?php if ($pv['auto']): ?>
-                                                <p class="pv-section-note">Aucune passivation n’est demandée sur cette affaire : ce PV est sans objet.</p>
-
-                                            <?php elseif ($pvLectureSeule): ?>
-                                                <div class="pv-section-corps">
-                                                    <dl class="pv-lecture">
-                                                        <div><dt>Date du PV</dt><dd><?= $pv['date_pv'] ? prefaEscape(prefaFormatDate($pv['date_pv'])) : '—' ?></dd></div>
-                                                        <div><dt>Commentaire</dt><dd><?= $pv['commentaire'] ? nl2br(prefaEscape($pv['commentaire'])) : '—' ?></dd></div>
-                                                    </dl>
-                                                    <?php if ($type === 'reception_materiel'):
-                                                        $commandes = commandesDeLaDemande($db, $id); ?>
-                                                        <?php if ($commandes): ?>
-                                                            <div class="pv-bloc">
-                                                                <h4>Commandes fournisseur</h4>
-                                                                <?php require __DIR__ . '/../partials/commandes_table.php'; ?>
-                                                            </div>
-                                                        <?php endif; ?>
-                                                    <?php endif; ?>
-                                                    <?php if ($pv['photos']): ?>
-                                                        <div class="pv-bloc">
-                                                            <h4>Photos</h4>
-                                                            <?php $modifiable = false; require __DIR__ . '/../partials/pv_photos.php'; ?>
-                                                        </div>
-                                                    <?php endif; ?>
-                                                    <?php if ($pv['documents']): ?>
-                                                        <div class="pv-bloc">
-                                                            <h4>Documents</h4>
-                                                            <?php $modifiable = false; require __DIR__ . '/../partials/pv_documents.php'; ?>
-                                                        </div>
-                                                    <?php endif; ?>
-                                                    <p class="pv-signature"><?= prefaEscape($signature($pv) ?: 'Pas encore renseigné par l’atelier.') ?></p>
-                                                </div>
-
-                                            <?php else: ?>
-                                                <form class="pv-form pv-section-corps" data-cle="pv-form-<?= prefaEscape($cle) ?>" enctype="multipart/form-data">
-                                                    <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
-                                                    <input type="hidden" name="demande" value="<?= $id ?>">
-                                                    <input type="hidden" name="type" value="<?= prefaEscape($type) ?>">
-                                                    <input type="hidden" name="operation" value="save">
-                                                    <input type="hidden" name="revision" value="<?= (int) $pv['revision'] ?>">
-
-                                                    <div class="pv-rang">
-                                                        <?php // L'état en trois boutons côte à côte : un choix exclusif qui se
-                                                              // lit d'un coup d'œil, au lieu de trois cercles à cocher. ?>
-                                                        <fieldset class="pv-segments">
-                                                            <legend>État</legend>
-                                                            <div class="pv-segments-boutons">
-                                                                <?php foreach ($statuts as $valeur => $texte): ?>
-                                                                    <label>
-                                                                        <input type="radio" name="statut" value="<?= prefaEscape($valeur) ?>" <?= $pv['statut'] === $valeur ? 'checked' : '' ?>>
-                                                                        <span><?= prefaEscape($texte) ?></span>
-                                                                    </label>
-                                                                <?php endforeach; ?>
-                                                            </div>
-                                                        </fieldset>
-                                                        <div class="pv-champ">
-                                                            <label for="pv-date-<?= prefaEscape($cle) ?>">Date du PV</label>
-                                                            <input id="pv-date-<?= prefaEscape($cle) ?>" name="date_pv" type="date" value="<?= prefaEscape((string) ($pv['date_pv'] ?? '')) ?>">
-                                                        </div>
-                                                    </div>
-
-                                                    <?php if ($type === 'fin_fabrication'): ?>
-                                                        <?php // Le PV se signe en sachant où en est la production : un rappel, pas
-                                                              // un verrou — le suivi soudage n'a pas toujours toutes ses feuilles lues. ?>
-                                                        <p class="pv-section-note">
-                                                            Suivi de production :
-                                                            <strong><?= (int) ($prod['plans'] ?? 0) ?></strong> plan<?= ($prod['plans'] ?? 0) > 1 ? 's' : '' ?>,
-                                                            <strong><?= (int) ($prod['soudures'] ?? 0) ?></strong> soudure<?= ($prod['soudures'] ?? 0) > 1 ? 's' : '' ?> saisie<?= ($prod['soudures'] ?? 0) > 1 ? 's' : '' ?>.
-                                                        </p>
-                                                    <?php endif; ?>
-
-                                                    <?php if ($type === 'reception_materiel'):
-                                                        $commandes = commandesDeLaDemande($db, $id); ?>
-                                                        <?php require __DIR__ . '/../partials/commandes_form.php'; ?>
-                                                    <?php endif; ?>
-
-                                                    <div class="pv-champ">
-                                                        <label for="pv-commentaire-<?= prefaEscape($cle) ?>">Commentaire <span class="pv-facultatif"><?= $type === 'reception_materiel' ? 'si besoin' : 'facultatif' ?></span></label>
-                                                        <textarea id="pv-commentaire-<?= prefaEscape($cle) ?>" name="commentaire" maxlength="1000" rows="2"><?= prefaEscape((string) ($pv['commentaire'] ?? '')) ?></textarea>
-                                                    </div>
-
-                                                    <?php if ($type === 'fin_fabrication'): ?>
-                                                        <div class="pv-bloc">
-                                                            <h4>Photos de la préfa</h4>
-                                                            <?php if ($pv['photos']): ?>
-                                                                <?php $modifiable = true; require __DIR__ . '/../partials/pv_photos.php'; ?>
-                                                            <?php endif; ?>
-                                                            <div class="pv-ajout">
-                                                                <input id="pv-photos-<?= prefaEscape($cle) ?>" class="pv-ajout-input" name="photos[]" type="file" accept=".png,.jpg,.jpeg" multiple>
-                                                                <label class="pv-ajout-bouton" for="pv-photos-<?= prefaEscape($cle) ?>">
-                                                                    <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="9" cy="10" r="1.6" /><path d="m21 16-5-5-8 8" /></svg>
-                                                                    <span class="pv-ajout-texte">Ajouter des photos</span>
-                                                                </label>
-                                                                <span class="pv-ajout-aide">PNG ou JPEG</span>
-                                                            </div>
-                                                        </div>
-                                                    <?php endif; ?>
-
-                                                    <div class="pv-bloc">
-                                                        <h4>Documents</h4>
-                                                        <?php if ($pv['documents']): ?>
-                                                            <?php $modifiable = true; require __DIR__ . '/../partials/pv_documents.php'; ?>
-                                                        <?php endif; ?>
-                                                        <div class="pv-ajout">
-                                                            <input id="pv-fichiers-<?= prefaEscape($cle) ?>" class="pv-ajout-input" name="documents[]" type="file" accept=".pdf,.png,.jpg,.jpeg" multiple>
-                                                            <label class="pv-ajout-bouton" for="pv-fichiers-<?= prefaEscape($cle) ?>">
-                                                                <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4" /><path d="m7 9 5-5 5 5" /><path d="M20 16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2" /></svg>
-                                                                <span class="pv-ajout-texte">Ajouter des documents</span>
-                                                            </label>
-                                                            <span class="pv-ajout-aide">PDF, PNG ou JPEG — 50 Mo maximum</span>
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="pv-pied">
-                                                        <p class="pv-signature"><?= prefaEscape($signature($pv)) ?></p>
-                                                        <p class="atelier-message pv-message" role="status" aria-live="polite"></p>
-                                                        <button type="submit" class="pv-enregistrer">Enregistrer</button>
-                                                    </div>
-                                                </form>
-                                            <?php endif; ?>
-                                        </section>
-                                    <?php endforeach; ?>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
+                        <?php require __DIR__ . '/../partials/pv_volet.php'; ?>
                     </tbody>
                 <?php endforeach; ?>
                 <?php endforeach; ?>
