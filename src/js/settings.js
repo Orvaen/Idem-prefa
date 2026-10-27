@@ -1,44 +1,17 @@
 (function () {
-    var tabs = document.querySelectorAll('.settings-tab-btn');
-    var panes = document.querySelectorAll('.settings-pane');
-
-    function show(name) {
-        tabs.forEach(function (t) {
-            var on = t.dataset.tab === name;
-            t.classList.toggle('is-active', on);
-            t.setAttribute('aria-selected', on);
-        });
-        panes.forEach(function (p) {
-            var on = p.id === 'panel-' + name;
-            p.classList.toggle('is-active', on);
-            p.hidden = !on;
-        });
+    // Les anciennes adresses visaient un onglet (#hours, #passivation, #theme). Les onglets
+    // sont devenus des sections de la même page : on y descend.
+    var cible = location.hash.slice(1);
+    if (cible === 'hours' || cible === 'passivation' || cible === 'theme') {
+        var section = document.getElementById(cible);
+        if (section) section.scrollIntoView({ block: 'start' });
     }
-    tabs.forEach(function (t) {
-        t.addEventListener('click', function () {
-            show(t.dataset.tab);
-            history.replaceState(null, '', location.pathname + location.search + '#' + t.dataset.tab);
-        });
-    });
-    var start = location.hash.slice(1);
-    if (start === 'hours' || start === 'passivation' || start === 'theme') show(start);
 
-    // Gestion du sélecteur de thème. La décision vit dans theme.js ; ici on montre l'état
-    // et on transmet le choix.
-    function updateThemeSelectionUI() {
-        var cur = window.Theme ? window.Theme.choix() : 'auto';
-        document.querySelectorAll('.theme-card').forEach(function (card) {
-            var val = card.dataset.themeVal;
-            var isCur = val === cur;
-            if (val === 'light') {
-                card.style.borderColor = isCur ? '#0D79A8' : '#cbd5e1';
-                card.style.boxShadow = isCur ? '0 0 0 3px #0D79A8, 0 6px 16px rgba(13, 121, 168, 0.25)' : 'none';
-            } else {
-                card.style.borderColor = isCur ? 'var(--accent)' : 'var(--border)';
-                card.style.boxShadow = isCur ? '0 0 0 2px var(--accent)' : 'none';
-            }
-            var check = card.querySelector('.theme-check');
-            if (check) check.textContent = isCur ? '✓' : '';
+    // Le thème. La décision vit dans theme.js ; ici on montre l'état et on transmet le choix.
+    function montrerChoix() {
+        var courant = window.Theme ? window.Theme.choix() : 'auto';
+        document.querySelectorAll('.theme-choix').forEach(function (bouton) {
+            bouton.setAttribute('aria-pressed', String(bouton.dataset.theme === courant));
         });
     }
 
@@ -48,25 +21,16 @@
         dark: 'Thème sombre activé.'
     };
 
-    function applyTheme(themeName) {
-        if (window.Theme) window.Theme.appliquer(themeName);
-        var msg = document.getElementById('theme-status-message');
-        if (msg) {
-            msg.className = 'prefa-message success';
-            msg.textContent = DITS[themeName] || DITS.auto;
-            msg.style.display = 'block';
+    $(document).off('click.reglages').on('click.reglages', '.theme-choix', function () {
+        var choix = this.dataset.theme;
+        if (window.Theme) window.Theme.appliquer(choix);
+        var message = document.getElementById('theme-status-message');
+        if (message) {
+            message.className = 'prefa-message success';
+            message.textContent = DITS[choix] || DITS.auto;
         }
-        updateThemeSelectionUI();
-    }
+        montrerChoix();
+    });
 
-    $(document).off('click', '.btn-apply-theme, .theme-card')
-        .on('click', '.btn-apply-theme', function (e) {
-            e.stopPropagation();
-            applyTheme(this.dataset.theme);
-        })
-        .on('click', '.theme-card', function () {
-            applyTheme(this.dataset.themeVal);
-        });
-
-    updateThemeSelectionUI();
+    montrerChoix();
 })();

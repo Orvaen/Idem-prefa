@@ -1,419 +1,497 @@
 /* ==========================================================================
-   PAGE PARAMÈTRES (Design unifié, compact et espacé)
-   ========================================================================== */
+   PAGE PARAMÈTRES — façon Linear / GitHub
+   ==========================================================================
 
-.settings-page {
-    width: 100%;
+   Une seule page, trois sections empilées. Chaque section est un titre et une phrase, puis
+   une carte (DA, § 8 : « un bloc de paramètres » est une carte) dont les lignes disent ce
+   que c'est à gauche et portent la commande à droite.
+
+   L'en-tête vient de la coque des listes (.prefa-list .prefa-heading) : même titre, même
+   retrait que la liste des demandes. Aucune couleur en dur, sauf dans les aperçus de thème,
+   qui doivent montrer le thème qu'on n'a pas — les jetons, eux, suivent celui qu'on a. */
+
+/* La coque des listes se serre sur son contenu (« fit-content ») : un tableau tient sa
+   largeur. Ici rien ne la tient, on lui rend la largeur de la vue. */
+.page.prefa-list.settings-page {
+    width: auto;
     height: 100%;
-    padding: 0;
-    background: var(--surface);
     overflow-y: auto;
 }
 
-.settings-shell {
-    width: 100%;
-    max-width: 960px;
+.settings-page .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.reglages {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    max-width: 760px;
+    padding: 4px 16px 48px;
+}
+
+/* ---------- Une section ---------- */
+
+.reglages-section-tete {
+    margin-bottom: 12px;
+}
+
+.reglages-section-tete h2 {
     margin: 0;
-    padding: 24px 28px 48px;
-    box-sizing: border-box;
-}
-
-/* En-tête */
-.settings-header {
-    margin-bottom: 24px;
-}
-
-.settings-header h1 {
-    font-size: 20px;
-    font-weight: 600;
     color: var(--text);
-    margin: 0 0 6px 0;
+    font-size: 16px;
+    font-weight: 600;
     line-height: 1.3;
 }
 
-.settings-header p {
-    font-size: 13px;
-    color: var(--text-muted);
-    margin: 0;
-}
-
-/* Onglets horizontaux */
-.settings-tabs-bar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 28px;
-}
-
-.settings-tab-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 16px;
-    border: 0;
-    border-bottom: 2px solid transparent;
-    background: transparent;
+.reglages-section-tete p {
+    margin: 4px 0 0;
     color: var(--text-muted);
     font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: color 0.15s ease, border-color 0.15s ease;
-    margin-bottom: -1px;
 }
 
-.settings-tab-btn .icon {
-    width: 16px;
-    height: 16px;
-    color: currentColor;
-}
-
-.settings-tab-btn:hover {
-    color: var(--text);
-    background: transparent;
-}
-
-.settings-tab-btn.is-active {
-    color: var(--accent-texte);
-    border-bottom-color: var(--accent-texte);
-    font-weight: 600;
-}
-
-/* Panneaux */
-.settings-pane {
-    display: block;
-}
-
-.settings-pane[hidden] {
-    display: none !important;
-}
-
-/* Carte de contenu */
-.settings-card {
-    background: var(--surface);
+.reglages-carte {
     border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 28px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
-}
-
-.settings-card-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--text);
-    margin: 0 0 6px 0;
-}
-
-.settings-card-desc {
-    font-size: 13px;
-    color: var(--text-muted);
-    margin: 0 0 24px 0;
-    line-height: 1.45;
-}
-
-/* Formulaires */
-.settings-form,
-.settings-page .settings-form,
-.settings-page .passivation-form {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 0 !important;
-    margin: 0 0 28px 0 !important;
-    padding: 0 !important;
-    border: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
-}
-
-.settings-control-group {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin: 0;
-}
-
-.settings-control-group label {
-    display: block;
-    font-size: 13.5px;
-    font-weight: 500;
-    color: var(--text);
-    margin: 0;
-}
-
-.settings-inline-action {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-
-/* Champs de saisie */
-.settings-page input[type="text"],
-.settings-page input[type="search"],
-.settings-page input[type="number"],
-.settings-page input[name="libelle"] {
-    height: 32px !important;
-    min-height: 32px !important;
-    max-height: 32px !important;
-    padding: 0 12px !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 4px !important;
-    background: var(--surface) !important;
-    color: var(--text) !important;
-    font-size: 13px !important;
-    outline: none !important;
-    box-sizing: border-box !important;
-    line-height: 32px !important;
-}
-
-.settings-page input[name="libelle"] {
-    width: 320px !important;
-    max-width: 100% !important;
-}
-
-.settings-page input:focus {
-    border-color: var(--accent) !important;
-    outline: 1px solid var(--accent) !important;
-    outline-offset: -1px;
-}
-
-/* Saisie avec unité (ex : "j") */
-.settings-page .input-unit {
-    display: inline-flex;
-    align-items: center;
-    height: 32px !important;
-    min-height: 32px !important;
-    max-height: 32px !important;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    background: var(--surface);
-    box-sizing: border-box;
+    border-radius: var(--r-lg);
+    background: var(--carte);
     overflow: hidden;
 }
 
-.settings-page .input-unit input[type="number"] {
-    width: 76px !important;
-    height: 100% !important;
-    border: 0 !important;
-    border-radius: 0 !important;
+/* ---------- Une ligne de réglage ---------- */
+
+.reglage {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 24px;
+    margin: 0;
+    padding: 16px;
+}
+
+.reglage + .reglage,
+.reglage + .reglages-table {
+    border-top: 1px solid var(--border-faint);
+}
+
+.reglage-texte {
+    flex: 1 1 280px;
+    min-width: 0;
+}
+
+.reglage-titre {
+    display: block;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* La règle générale du thème clair peint toute étiquette en gris sourd, en !important. Le
+   titre d'un réglage n'est pas une étiquette de champ : il se lit d'abord. */
+[data-theme="light"] .settings-page label.reglage-titre {
+    color: var(--text) !important;
+}
+
+.reglage-aide {
+    margin: 2px 0 0;
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.54;
+}
+
+.reglage-aide strong {
+    color: var(--text);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.reglage-controle {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Échelle « lg » de la DA : un contrôle de barre d'outils, 32 px. */
+.settings-page .reglage-nombre,
+.settings-page .reglage-texte-saisie {
+    box-sizing: border-box;
+    height: var(--h-lg);
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 13px;
+}
+
+.settings-page .reglage-nombre {
+    width: 84px;
     text-align: right;
     font-variant-numeric: tabular-nums;
-    padding: 0 8px !important;
-    font-size: 13px !important;
 }
 
-.settings-page .input-unit-suffix {
-    padding: 0 10px 0 4px;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-muted);
-    background: transparent;
-    user-select: none;
+.settings-page .reglage-texte-saisie {
+    width: 240px;
+    max-width: 100%;
 }
 
-.settings-page .input-unit:focus-within {
+.settings-page .reglage-nombre:focus,
+.settings-page .reglage-texte-saisie:focus {
     border-color: var(--accent);
     outline: 1px solid var(--accent);
     outline-offset: -1px;
 }
 
-/* Boutons principaux unifiés (Enregistrer / Ajouter) */
-.settings-btn-primary {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    height: 32px !important;
-    min-height: 32px !important;
-    max-height: 32px !important;
-    padding: 0 12px !important;
-    width: auto !important;
-    max-width: fit-content !important;
-    background: var(--bouton-plein) !important;
-    color: var(--bouton-plein-texte) !important;
-    border: 0 !important;
-    border-radius: var(--r-sm) !important;
-    font-size: 13px !important;
-    font-weight: 500 !important;
-    line-height: var(--ctrl-sm) !important;
-    cursor: pointer !important;
-    white-space: nowrap !important;
-    box-sizing: border-box !important;
-    text-decoration: none !important;
-    transition: background-color 0.15s ease !important;
+.reglage-unite {
+    margin-right: 4px;
+    color: var(--text-muted);
+    font-size: 13px;
 }
 
-.settings-btn-primary:hover:not(:disabled) {
-    background: var(--bouton-plein-hover) !important;
-}
-
-.settings-btn-primary:disabled {
-    opacity: 0.55 !important;
-    cursor: not-allowed !important;
-}
-
-/* Boutons secondaires (Modifier, Annuler) */
-.settings-btn-secondary,
-.settings-page .edit-passivation,
-.settings-page #cancel-passivation {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    height: 26px !important;
-    min-height: 26px !important;
-    max-height: 26px !important;
-    padding: 0 12px !important;
-    width: auto !important;
-    background: var(--surface) !important;
-    color: var(--text) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 4px !important;
-    font-size: 12px !important;
-    font-weight: 400 !important;
-    cursor: pointer !important;
-    line-height: 24px !important;
-    white-space: nowrap !important;
-    box-sizing: border-box !important;
-    transition: background-color 0.15s ease, border-color 0.15s ease !important;
-}
-
-.settings-btn-secondary:hover:not(:disabled),
-.settings-page .edit-passivation:hover,
-.settings-page #cancel-passivation:hover {
-    background: var(--hover) !important;
-    border-color: var(--border) !important;
-}
-
-.settings-btn-secondary.btn-sm,
-.settings-btn-primary.btn-sm {
-    height: 26px !important;
-    min-height: 26px !important;
-    max-height: 26px !important;
-    padding: 0 10px !important;
-    font-size: 12px !important;
-    line-height: 24px !important;
-}
-
-/* Badge de prévisualisation (Valeur actuelle) */
-.settings-preview-box {
+.reglage-bouton-plein,
+.reglage-bouton-contour {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    margin-top: 8px;
+    justify-content: center;
+    height: var(--h-lg);
+    padding: 0 12px;
+    border-radius: var(--r-md);
     font-size: 13px;
-    color: var(--text-muted);
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
 }
 
-.settings-preview-text {
-    font-weight: 600;
-    color: var(--accent-texte);
+/* Le bouton plein reste noir en clair (DA, § 6). */
+.reglage-bouton-plein {
+    border: 1px solid var(--bouton-plein);
+    background: var(--bouton-plein);
+    color: var(--bouton-plein-texte);
 }
 
-/* Tableaux de paramètres */
-.settings-table-card {
-    margin-top: 28px;
+.reglage-bouton-plein:hover:not(:disabled) {
+    border-color: var(--bouton-plein-hover);
+    background: var(--bouton-plein-hover);
+}
+
+.reglage-bouton-contour {
     border: 1px solid var(--border);
-    border-radius: 6px;
-    overflow: hidden;
     background: var(--surface);
-}
-
-.settings-data-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-    text-align: left;
-}
-
-.settings-data-table th {
-    background: var(--frame);
-    color: var(--text-muted);
-    font-size: 12px;
-    font-weight: 600;
-    padding: 10px 16px;
-    border-bottom: 1px solid var(--border);
-}
-
-.settings-data-table td {
-    padding: 9px 16px;
-    border-bottom: 1px solid var(--border);
     color: var(--text);
-    vertical-align: middle;
 }
 
-.settings-data-table tbody tr:last-child td {
-    border-bottom: 0;
-}
-
-.settings-data-table tbody tr:hover td {
+.reglage-bouton-contour:hover:not(:disabled) {
     background: var(--hover);
 }
 
-.settings-data-table .col-id {
-    width: 60px;
-    color: var(--text-muted);
-    font-variant-numeric: tabular-nums;
+.reglage-bouton-plein:disabled,
+.reglage-bouton-contour:disabled {
+    opacity: .55;
+    cursor: not-allowed;
 }
 
-/* Actions alignées strictement à droite */
-.settings-data-table .col-actions,
-.settings-data-table th.col-actions,
-.settings-data-table td.col-actions,
-.settings-data-table th:last-child,
-.settings-data-table td:last-child {
-    text-align: right !important;
-    padding-right: 18px !important;
-    white-space: nowrap !important;
-}
+/* ---------- Les messages ---------- */
 
-.settings-data-table td.col-actions .settings-btn-secondary,
-.settings-data-table td:last-child .settings-btn-secondary,
-.settings-data-table td:last-child .edit-passivation {
-    margin-left: auto !important;
-}
-
-.settings-data-table .passivation-empty td {
-    text-align: center !important;
-    padding: 24px 14px;
-    color: var(--text-muted);
-    font-style: italic;
-}
-
-/* Formulaire d'édition inline dans le tableau */
-.settings-inline-edit-form {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-}
-
-.settings-inline-edit-form input {
-    flex: 1;
-    max-width: 260px;
-}
-
-/* Messages */
 .settings-page .prefa-message {
     display: none;
-    margin: 10px 0 0 0;
-    padding: 6px 12px;
-    border-radius: 4px;
+    margin: 6px 0 0;
     font-size: 12px;
     line-height: 1.4;
-    width: fit-content;
 }
 
 .settings-page .prefa-message:not(:empty) {
     display: block;
 }
 
-.settings-page .prefa-message.success {
-    background: var(--succes-fond);
-    color: var(--succes-texte);
-    border: 1px solid var(--succes-bord);
+.settings-page .prefa-message.success,
+[data-theme="light"] .settings-page .prefa-message.success {
+    color: var(--succes-texte) !important;
 }
 
-.settings-page .prefa-message.error {
-    background: var(--alerte-fond);
-    color: var(--alerte-texte);
-    border: 1px solid var(--alerte-bord);
+.settings-page .prefa-message.error,
+[data-theme="light"] .settings-page .prefa-message.error {
+    color: var(--alerte-texte) !important;
+}
+
+/* ---------- La liste des passivations ---------- */
+
+.reglages-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    text-align: left;
+}
+
+.reglages-table th {
+    height: var(--h-xl);
+    padding: 0 16px;
+    border-bottom: 1px solid var(--border-faint);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.reglages-table td {
+    height: var(--h-2xl);
+    padding: 4px 16px;
+    border-bottom: 1px solid var(--border-faint);
+    color: var(--text);
+    vertical-align: middle;
+}
+
+.reglages-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.reglages-table tbody tr:not(.passivation-empty):hover td {
+    background: var(--hover);
+}
+
+.reglages-table .reglages-col-id,
+.reglages-table td:first-child {
+    width: 48px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.reglages-table .reglages-col-actions,
+.reglages-table td:last-child {
+    width: 1%;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.reglages-table .passivation-empty td {
+    padding: 20px 16px;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+/* Les commandes de ligne (Modifier, Enregistrer, Annuler) : échelle « sm », effacées au
+   repos et rendues au survol, comme sur la liste des demandes. */
+.settings-page .edit-passivation {
+    height: var(--h-sm);
+    margin-left: 4px;
+    padding: 0 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.settings-page .edit-passivation:hover {
+    background: var(--hover);
+}
+
+@media (hover: hover) {
+    .reglages-table tbody tr:not(:has(form)) .edit-passivation {
+        opacity: 0;
+        transition: opacity .12s ease;
+    }
+
+    .reglages-table tbody tr:hover .edit-passivation,
+    .reglages-table tbody tr:focus-within .edit-passivation {
+        opacity: 1;
+    }
+}
+
+.reglages-table .passivation-name input {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 280px;
+    height: var(--h-md);
+    padding: 0 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 13px;
+}
+
+.reglages-table .passivation-name form {
+    margin: 0;
+}
+
+/* ---------- Le thème ---------- */
+
+.theme-choix-grille {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+}
+
+.theme-choix {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    background: var(--carte);
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.theme-choix:hover {
+    border-color: var(--border-fort);
+}
+
+/* Choisi : le filet passe à l'accent et double d'épaisseur sans déplacer le contenu. */
+.theme-choix[aria-pressed="true"] {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+}
+
+/* L'aperçu : une barre latérale et une vue, aux couleurs du thème qu'il montre. Ces
+   valeurs sont celles des jetons de chaque thème (DA, §§ 1, 2 et 6), recopiées parce que
+   l'aperçu doit montrer l'autre thème que celui qui est appliqué. */
+.theme-apercu {
+    display: flex;
+    height: 84px;
+    border-radius: var(--r-md);
+    overflow: hidden;
+}
+
+.theme-apercu-moitie {
+    display: flex;
+    flex: 1 1 0;
+    gap: 6px;
+    padding: 8px 0 0 8px;
+    background: var(--apercu-cadre);
+}
+
+.theme-apercu-clair {
+    --apercu-cadre: #F7F7F8;
+    --apercu-vue: #FFFFFF;
+    --apercu-filet: #D5D7D9;
+    --apercu-texte: #D5D7D9;
+    --apercu-accent: #006399;
+}
+
+.theme-apercu-sombre {
+    --apercu-cadre: #0F0F10;
+    --apercu-vue: #141415;
+    --apercu-filet: #36393A;
+    --apercu-texte: #36393A;
+    --apercu-accent: #2893CC;
+}
+
+.theme-apercu-light .theme-apercu-sombre,
+.theme-apercu-dark .theme-apercu-clair {
+    display: none;
+}
+
+.apercu-barre {
+    flex: none;
+    width: 18%;
+    margin-bottom: 8px;
+    border-radius: 3px;
+    background: linear-gradient(var(--apercu-accent) 0 6px, transparent 6px);
+    background-position: 0 6px;
+    background-repeat: no-repeat;
+    background-size: 70% 6px;
+}
+
+.apercu-vue {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px;
+    border: 1px solid var(--apercu-filet);
+    border-right: 0;
+    border-bottom: 0;
+    border-radius: 4px 0 0 0;
+    background: var(--apercu-vue);
+}
+
+.apercu-ligne {
+    height: 5px;
+    border-radius: 3px;
+    background: var(--apercu-texte);
+}
+
+.apercu-courte {
+    width: 60%;
+}
+
+.theme-choix-pied {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 4px 0;
+}
+
+.theme-choix-nom {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* La coche se réserve sa place : sans elle, le nom se décalerait au choix. */
+.theme-choix-coche {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--border-fort);
+    border-radius: 50%;
+    color: transparent;
+}
+
+.theme-choix[aria-pressed="true"] .theme-choix-coche {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--bouton-plein-texte);
+}
+
+.theme-choix-aide {
+    padding: 0 4px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+#theme-status-message {
+    margin-top: 10px;
+}
+
+/* ---------- Sur une tablette d'atelier ---------- */
+
+@media (max-width: 1100px), (pointer: coarse) {
+
+    .reglage-bouton-plein,
+    .reglage-bouton-contour,
+    .settings-page .reglage-nombre,
+    .settings-page .reglage-texte-saisie {
+        height: 44px;
+    }
+
+    .settings-page .edit-passivation {
+        height: 36px;
+    }
+}
+
+@media (max-width: 640px) {
+
+    .reglage-controle {
+        flex: 1 1 100%;
+    }
+
+    .settings-page .reglage-texte-saisie {
+        flex: 1;
+        width: auto;
+    }
 }

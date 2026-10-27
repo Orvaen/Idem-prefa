@@ -301,7 +301,7 @@ Par ordre de visibilité. Rien n'est fait tant que ce document n'est pas validé
 | 4 | L'échelle des contrôles divergeait entre les thèmes | **fait** — six barreaux `--h-*`, communs |
 | 5 | Les rayons : le 10px n'appartenait à aucune échelle | **fait** — `--r-lg` 8, `--r-xl` 12 |
 | 2 | La liste des demandes | en cours — la pastille « Urgente » est unifiée ; le statut passe en onglets comptés, chaque groupe s'ouvre sur le signe de son statut, l'échéance n'alerte qu'en retard (« 20 j de retard »), et une demande en attente se valide ou se refuse depuis sa ligne |
-| 6 | Les autres cartes (`.settings-card`, `.prefa-section`) en blanc codé en dur | à faire — mais les 30 gris sourds en dur sont repris |
+| 6 | Les autres cartes (`.settings-card`, `.prefa-section`) en blanc codé en dur | en cours — les 30 gris sourds en dur sont repris ; Paramètres est refait sur les jetons (sections empilées, cartes `--carte`, plus aucun style en ligne) ; reste `.prefa-section` |
 | 7 | Les 14 autres écrans, un par un | à faire — Plans / ISO suit maintenant la liste des demandes (recherche, onglets « À préparer / En préparation », groupes, échéance, menu d'actions) |
 | 8 | « Nouvelle demande » avait sa palette à elle — sépia et terre cuite | **fait** — ses jetons `--nd-*` pointent sur ceux de la DA, un seul bloc au lieu de deux |
 | 9 | L'entrée active de la barre latérale en terre cuite | **fait** — azur, 7,27:1 en clair |

@@ -177,7 +177,7 @@ $(document).on('submit', '#prefa-settings-form', function (event) {
         success: function (response) {
             message.addClass('success').text(response.message);
             if (response.formatted) {
-                form.find('.settings-preview-text').text('Actuellement : ' + response.formatted);
+                form.find('.settings-preview-text').text(response.formatted);
             }
         },
         error: function (xhr) { message.addClass('error').text(xhr.responseJSON?.message || 'Enregistrement impossible. Réessayez.'); },
