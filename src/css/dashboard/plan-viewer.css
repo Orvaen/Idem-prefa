@@ -21,7 +21,9 @@
 
 .plan-viewer-entete h4 {
     margin: 0;
-    font-size: 0.95rem;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
 }
 
 .plan-viewer-boutons {
@@ -33,6 +35,9 @@
 
 /* Le label porte l'apparence : le champ de fichier natif est masqué, parce qu'il ne
    se met pas aux couleurs du tableau de bord. */
+/* Les commandes d'une ligne : la hauteur d'un filtre (28px), le rayon d'un bouton (6),
+   en texte neutre — l'accent est réservé aux liens et aux états (DA, § 3, § 4, § 6).
+   Elles étaient en pastilles bleues, comme des étiquettes. */
 .plan-viewer-deposer,
 .plan-viewer-remplacer,
 .plan-viewer-supprimer,
@@ -40,14 +45,18 @@
 .plan-viewer-ouvrir {
     display: inline-flex;
     align-items: center;
-    padding: 6px 12px;
+    height: var(--h-md);
+    padding: 0 10px;
     border: 1px solid var(--border);
-    border-radius: 999px;
-    background: transparent;
-    color: var(--accent-texte);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    color: var(--text);
     font: inherit;
     font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
     cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
 }
 
 .plan-viewer-deposer:hover,
@@ -60,13 +69,17 @@
 /* Même langage que la suppression d'un plan dans le volet : la commande reste en retrait
    et ne prend sa couleur d'alerte qu'au survol, pour ne pas crier sur une ligne qu'on ne
    fait que lire. */
+/* Supprimer : une action de danger, en texte, sans cadre ; sa teinte d'alerte ne vient
+   qu'au survol, pour ne pas crier sur une ligne qu'on ne fait que lire. */
 .plan-viewer-supprimer {
+    border-color: transparent;
+    background: transparent;
     color: var(--text-muted);
 }
 
 .plan-viewer-supprimer:hover:not([disabled]) {
-    color: #b42318;
-    border-color: #b42318;
+    background: var(--alerte-fond);
+    color: var(--alerte-texte);
 }
 
 .plan-viewer-supprimer[disabled] {
@@ -98,7 +111,7 @@
 
 .plan-viewer-resume {
     margin: 0.4rem 0 0;
-    font-size: 0.85rem;
+    font-size: 12px;
     color: var(--text-muted);
 }
 
@@ -942,21 +955,24 @@
 .plan-viewer-vide,
 .plan-viewer-depot-message {
     margin: 0.5rem 0 0;
-    font-size: 0.85rem;
+    font-size: 12px;
     color: var(--text-muted);
 }
 
 .plan-viewer-depot-message.is-error {
-    color: #d93025;
+    color: var(--alerte-texte);
 }
 
+/* Une ligne de liste : le filet le plus discret, il se répète autant qu'il y a de
+   feuilles (DA, § 2). */
 .plan-viewer-ligne {
     display: flex;
     align-items: center;
-    gap: 0.8rem;
+    gap: 12px;
     flex-wrap: wrap;
-    padding: 0.45rem 0;
-    border-bottom: 1px solid var(--border);
+    min-height: 44px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border-faint);
 }
 
 /* ---------- Choisir plusieurs feuilles ----------
@@ -989,18 +1005,20 @@
 }
 
 .plan-viewer-supprimer-lot {
-    padding: 5px 11px;
-    border: 1px solid #b42318;
-    border-radius: 999px;
-    background: transparent;
-    color: #b42318;
+    height: var(--h-md);
+    padding: 0 10px;
+    border: 0;
+    border-radius: var(--r-md);
+    background: var(--alerte-fond);
+    color: var(--alerte-texte);
     font: inherit;
     font-size: 12px;
+    font-weight: 500;
     cursor: pointer;
 }
 
 .plan-viewer-supprimer-lot:hover:not([disabled]) {
-    background: rgba(180, 35, 24, 0.12);
+    background: color-mix(in srgb, var(--alerte-texte) 16%, var(--alerte-fond));
 }
 
 .plan-viewer-supprimer-lot[disabled] {
@@ -1018,8 +1036,9 @@
 .plan-viewer-nom {
     flex: 1 1 14rem;
     min-width: 0;
-    font-size: 0.88rem;
-    font-weight: 600;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
     overflow-wrap: anywhere;
 }
 
@@ -1032,7 +1051,7 @@
 .plan-viewer-ligne .plan-viewer-boutons {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 6px;
     margin-left: auto;
 }
 

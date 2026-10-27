@@ -2047,3 +2047,701 @@
     width: 12px;
     height: 12px;
 }
+
+/* ==========================================================================
+   PLANS & AFFECTATIONS — LE VOLET
+   ==========================================================================
+
+   Le volet suit la DA (docs/direction-artistique.md) et la grammaire des deux autres
+   volets, celui des PV et la fiche d'une demande : en-tête collant, sections séparées
+   par un filet pointillé, intitulés sourds en casse normale, contrôles de 28px au rayon
+   6, et plus aucune pastille pour un bouton.
+
+   Tout est rangé sous « html .plans-iso-detail », la ligne qui porte le volet. Le thème
+   clair pose sur « .prefa-toggle », « .atelier-person-button » et sur tout « p »,
+   partout dans l'application, des fonds, des cadres et un gris en « !important » : le
+   « html » en tête donne à ces règles le cran de spécificité qui leur manquait, et les
+   propriétés concernées portent elles aussi « !important ». Les surcharges du thème clair
+   propres à ce volet ont été retirées. */
+
+/* ----- L'en-tête, comme celui de la fiche ----- */
+
+html .plans-iso-detail .plans-iso-body {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    color: var(--text);
+    font-size: 13px;
+}
+
+html .plans-iso-detail .plans-iso-entete {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    flex-wrap: nowrap;
+    margin: 0;
+    padding: 18px 20px 16px;
+    border-bottom: 1px dashed var(--border);
+    background: var(--surface);
+}
+
+.plans-iso-identite {
+    min-width: 0;
+}
+
+.plans-iso-surtitre {
+    margin: 0 0 4px !important;
+    color: var(--text-muted);
+    font-size: 12px !important;
+    font-weight: 500;
+}
+
+html .plans-iso-detail .plans-iso-entete h2 {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    color: var(--text);
+    font-size: 17px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.3;
+}
+
+html .plans-iso-detail .plans-iso-entete h2 span {
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 400;
+}
+
+/* La croix nue, comme celle de la fenêtre de modification. */
+html .plans-iso-detail .plans-iso-entete .prefa-detail-close {
+    flex: none;
+    width: var(--h-lg);
+    height: var(--h-lg);
+    border: 0;
+    border-radius: var(--r-md);
+}
+
+html .plans-iso-detail .plans-iso-entete .prefa-detail-close .icon {
+    width: 16px;
+    height: 16px;
+}
+
+/* ----- Le corps ----- */
+
+html .plans-iso-detail .atelier-section {
+    padding: 0 20px 24px;
+}
+
+html .plans-iso-detail .atelier-plan-list {
+    gap: 0;
+}
+
+/* Les onglets des plans, collés sous l'en-tête : 13px, souligné d'accent. */
+html .plans-iso-detail .atelier-tablist {
+    gap: 0;
+    margin: 0;
+    border-bottom: 1px solid var(--border) !important;
+}
+
+html .plans-iso-detail .atelier-tab {
+    padding: 12px 12px 10px;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+}
+
+html .plans-iso-detail .atelier-tab[aria-selected="true"] {
+    color: var(--text) !important;
+    border-bottom-color: var(--accent) !important;
+}
+
+/* Un plan : chaque partie sur toute la largeur. La grille à deux colonnes n'est là que
+   pour poser les deux commandes du plan à côté de son nom ; le reste se rangeait de
+   lui-même dans la colonne de droite — « Autres documents » flottait à côté des feuilles. */
+html .plans-iso-detail .atelier-plan-block {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0;
+    padding: 0;
+}
+
+html .plans-iso-detail .atelier-plan-block > * {
+    grid-column: 1 / -1;
+}
+
+html .plans-iso-detail .atelier-plan-block > .atelier-plan-identity {
+    grid-column: 1;
+    grid-row: 1;
+    padding: 16px 0;
+}
+
+html .plans-iso-detail .atelier-plan-block > .atelier-plan-actions-area {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: start;
+    padding-top: 14px;
+}
+
+html .plans-iso-detail .atelier-plan-identity h3 {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.3;
+    font-variant-numeric: tabular-nums;
+}
+
+html .plans-iso-detail .atelier-plan-identity .atelier-row-description {
+    display: block;
+    margin-top: 2px;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+/* Un manque, pas une alerte : la teinte d'attente, en pastille de rayon 4. */
+html .plans-iso-detail .atelier-plan-identity .atelier-missing-file {
+    display: inline-flex;
+    margin-top: 8px;
+    padding: 2px 8px;
+    border: 0;
+    border-radius: var(--r-sm);
+    background: var(--attente-fond);
+    color: var(--attente-texte);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* ----- Les commandes : 28px, rayon 6 ----- */
+
+html .plans-iso-detail .atelier-plan-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+html .plans-iso-detail .atelier-plan-actions form {
+    display: contents;
+}
+
+html .plans-iso-detail .prefa-toggle,
+html .plans-iso-detail .atelier-edit-progress,
+html .plans-iso-detail .atelier-vers-suivi-soudures {
+    display: inline-flex;
+    align-items: center;
+    height: var(--h-md);
+    margin: 0;
+    padding: 0 10px;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--r-md) !important;
+    background: var(--surface) !important;
+    color: var(--text) !important;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500 !important;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+html .plans-iso-detail .prefa-toggle:hover,
+html .plans-iso-detail .atelier-edit-progress:hover,
+html .plans-iso-detail .atelier-vers-suivi-soudures:hover {
+    background: var(--hover) !important;
+}
+
+/* « Saisir l'avancement » et « Voir les cordons » sont des actions de ligne : en texte,
+   le cadre ne vient qu'au survol. Trois boutons encadrés par plan faisaient une colonne
+   de boîtes. */
+html .plans-iso-detail .atelier-edit-progress,
+html .plans-iso-detail .atelier-vers-suivi-soudures {
+    border-color: transparent !important;
+    background: transparent !important;
+    color: var(--accent-texte) !important;
+}
+
+html .plans-iso-detail .atelier-edit-progress:hover,
+html .plans-iso-detail .atelier-vers-suivi-soudures:hover {
+    background: var(--accent-fond) !important;
+}
+
+/* Supprimer le plan : danger, en texte (DA, § 6). */
+html .plans-iso-detail .prefa-toggle.atelier-plan-delete-button {
+    border-color: transparent !important;
+    background: transparent !important;
+    color: var(--text-muted) !important;
+}
+
+html .plans-iso-detail .prefa-toggle.atelier-plan-delete-button:hover {
+    background: var(--alerte-fond) !important;
+    color: var(--alerte-texte) !important;
+}
+
+html .plans-iso-detail .prefa-toggle:focus-visible,
+html .plans-iso-detail .atelier-edit-progress:focus-visible,
+html .plans-iso-detail .atelier-vers-suivi-soudures:focus-visible,
+html .plans-iso-detail .atelier-person-button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* ----- Les intitulés de section : sourds, en casse normale (DA, § 7 bis) ----- */
+
+html .plans-iso-detail .atelier-plan-titre-section,
+html .plans-iso-detail .plan-viewer-entete h4 {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: normal;
+    text-transform: none;
+}
+
+html .plans-iso-detail h4.atelier-plan-titre-section {
+    padding: 16px 0 4px;
+    border-top: 1px dashed var(--border);
+}
+
+/* ----- Les trois postes : une liste, pas une carte ----- */
+
+html .plans-iso-detail .atelier-plan-work-grid {
+    border: 0;
+    border-radius: 0;
+    overflow: visible;
+}
+
+html .plans-iso-detail .atelier-plan-work {
+    grid-template-columns: 120px minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 8px 12px;
+    min-height: 44px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border-faint);
+    background: transparent !important;
+}
+
+html .plans-iso-detail .atelier-plan-work:last-child {
+    border-bottom: 0;
+}
+
+/* Le libellé du poste à gauche, comme une ligne de propriété. */
+html .plans-iso-detail .atelier-plan-work h4 {
+    grid-column: 1;
+    margin: 0;
+    color: var(--text-muted) !important;
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: normal;
+    text-transform: none;
+}
+
+html .plans-iso-detail .atelier-plan-work .atelier-person-button,
+html .plans-iso-detail .atelier-plan-work > span:not(.atelier-work-status) {
+    grid-column: 2;
+    justify-self: start;
+}
+
+html .plans-iso-detail .atelier-plan-work .atelier-work-status {
+    grid-column: 3;
+    justify-self: end;
+}
+
+html .plans-iso-detail .atelier-plan-work .atelier-edit-progress {
+    grid-column: 4;
+    justify-self: end;
+}
+
+html .plans-iso-detail .atelier-plan-work .atelier-work-report,
+html .plans-iso-detail .atelier-plan-work .atelier-declaration {
+    grid-column: 1 / -1;
+}
+
+/* La personne : un contrôle de ligne de 28px, rayon 6. Affectée, c'est son nom, en
+   texte ; à affecter, un cadre pointillé l'annonce comme une case à remplir. */
+html .plans-iso-detail .atelier-plan-work .atelier-person-button {
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+    height: var(--h-md);
+    padding: 0 10px;
+    border: 1px dashed var(--border-fort) !important;
+    border-radius: var(--r-md) !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: var(--accent-texte) !important;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500 !important;
+    line-height: 1.2;
+    cursor: pointer;
+}
+
+html .plans-iso-detail .atelier-plan-work .atelier-person-button.is-assigned {
+    margin-left: -10px;
+    border-color: transparent !important;
+    color: var(--text) !important;
+}
+
+html .plans-iso-detail .atelier-plan-work .atelier-person-button.is-assigned::before {
+    content: none;
+}
+
+html .plans-iso-detail .atelier-plan-work .atelier-person-button:hover {
+    background: var(--hover) !important;
+}
+
+html .plans-iso-detail .atelier-plan-work .atelier-person-button[aria-expanded="true"] {
+    border-style: solid !important;
+    border-color: var(--accent) !important;
+}
+
+/* L'état : une pastille de statut, pleine, aux couleurs de sens (DA, § 3, § 6). */
+html .plans-iso-detail .atelier-plan-work .atelier-work-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: var(--h-xs);
+    padding: 0 8px;
+    border-radius: 999px;
+    background: var(--hover);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+html .plans-iso-detail .atelier-plan-work .atelier-work-status.is-progress {
+    background: var(--accent-fond);
+    color: var(--accent-texte);
+}
+
+html .plans-iso-detail .atelier-plan-work .atelier-work-status.is-done {
+    background: var(--succes-fond);
+    color: var(--succes-texte);
+}
+
+html .plans-iso-detail .atelier-plan-work .atelier-work-status::before {
+    opacity: 1;
+}
+
+/* Le compte rendu : un dépliant sourd, et la note sans cadre. */
+html .plans-iso-detail .atelier-work-report summary,
+html .plans-iso-detail .atelier-section .atelier-plan-information summary,
+html .plans-iso-detail .atelier-section .atelier-legacy summary {
+    width: fit-content;
+    padding: 4px 0;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+html .plans-iso-detail .atelier-work-report summary:hover,
+html .plans-iso-detail .atelier-section .atelier-plan-information summary:hover {
+    color: var(--text);
+}
+
+html .plans-iso-detail .atelier-work-report .atelier-note {
+    margin: 2px 0 6px;
+    padding: 0 0 0 10px;
+    border: 0;
+    border-left: 2px solid var(--border);
+    border-radius: 0;
+    background: transparent !important;
+    color: var(--text) !important;
+    font-size: 13px;
+    line-height: 1.54;
+}
+
+/* ----- L'avancement déclaré : une bande d'attente, en casse normale ----- */
+
+html .plans-iso-detail .atelier-declaration {
+    margin: 2px 0 6px;
+    padding: 10px 12px;
+    border: 0;
+    border-left: 2px solid var(--attente-texte);
+    border-radius: 0 var(--r-md) var(--r-md) 0;
+    background: var(--carte);
+}
+
+html .plans-iso-detail .atelier-declaration-titre {
+    color: var(--attente-texte) !important;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: normal;
+    text-transform: none;
+}
+
+html .plans-iso-detail .atelier-declaration-chiffre {
+    color: var(--text) !important;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+html .plans-iso-detail .atelier-declaration .atelier-muted {
+    color: var(--text-muted) !important;
+    font-size: 12px;
+}
+
+/* Valider : le bouton plein, noir (DA, § 6). Refuser : secondaire. 28px, rayon 6. */
+html .plans-iso-detail .atelier-declaration-actions button {
+    height: var(--h-md);
+    padding: 0 10px;
+    border-radius: var(--r-md);
+    background: var(--bouton-plein);
+    color: var(--bouton-plein-texte);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+html .plans-iso-detail .atelier-declaration-actions button:hover:not(:disabled) {
+    background: var(--bouton-plein-hover);
+}
+
+html .plans-iso-detail .atelier-declaration-actions button.bouton-discret {
+    border-color: var(--border);
+    background: var(--surface);
+    color: var(--text);
+}
+
+html .plans-iso-detail .atelier-declaration-actions button.bouton-discret:hover:not(:disabled) {
+    border-color: var(--border);
+    background: var(--alerte-fond);
+    color: var(--alerte-texte);
+}
+
+/* ----- Les soudures du plan : une ligne de propriété ----- */
+
+html .plans-iso-detail .atelier-soudures-renvoi {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    margin: 0;
+    padding: 12px 0;
+    border: 0;
+    border-top: 1px dashed var(--border);
+}
+
+html .plans-iso-detail .atelier-soudures-renvoi .atelier-plan-titre-section {
+    width: 120px;
+    padding: 0;
+    border: 0;
+    font-size: 13px;
+    font-weight: 400;
+}
+
+html .plans-iso-detail .atelier-soudures-renvoi strong {
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+html .plans-iso-detail .atelier-soudures-renvoi .atelier-muted {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+html .plans-iso-detail .atelier-soudures-renvoi .atelier-vers-suivi-soudures {
+    margin-left: auto;
+}
+
+/* ----- Les feuilles ISO ----- */
+
+html .plans-iso-detail .plan-viewer-plans {
+    margin: 0;
+    padding: 12px 0 0;
+    border-top: 1px dashed var(--border);
+}
+
+html .plans-iso-detail .plan-viewer-entete {
+    min-height: var(--h-md);
+}
+
+html .plans-iso-detail .plan-viewer {
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+html .plans-iso-detail .plan-viewer:last-child .plan-viewer-ligne {
+    border-bottom: 0;
+}
+
+/* ----- Autres documents, historique : des dépliants sous un filet pointillé ----- */
+
+html .plans-iso-detail .atelier-plan-information,
+html .plans-iso-detail .atelier-legacy {
+    margin: 0;
+    padding: 8px 0;
+    border: 0;
+    border-top: 1px dashed var(--border);
+    background: transparent;
+}
+
+html .plans-iso-detail .atelier-plan-block > .atelier-assignment-history {
+    padding-top: 8px;
+    border-top: 1px dashed var(--border);
+}
+
+html .plans-iso-detail .atelier-plan-files-inline .prefa-document-link {
+    border: 1px solid var(--border) !important;
+    border-radius: var(--r-md) !important;
+    background: var(--surface) !important;
+    color: var(--text) !important;
+    font-size: 12px;
+}
+
+html .plans-iso-detail .atelier-plan-files-inline .prefa-document-link:hover {
+    background: var(--hover) !important;
+}
+
+html .plans-iso-detail .atelier-document-edit {
+    max-width: none;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    background: var(--carte) !important;
+}
+
+/* ----- Affecter une personne : une carte posée sous les postes ----- */
+
+html .plans-iso-detail .atelier-plan-block .atelier-manage-panel {
+    margin: 4px 0 12px;
+    padding: 14px 16px;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--r-lg);
+    background: var(--carte) !important;
+}
+
+html .plans-iso-detail .atelier-manage-title {
+    margin: 0 0 10px;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+html .plans-iso-detail .atelier-manage-form label {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+html .plans-iso-detail .atelier-manage-form select {
+    height: var(--h-lg);
+    border-radius: var(--r-md);
+}
+
+html .plans-iso-detail .atelier-manage-form .atelier-form-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+html .plans-iso-detail .atelier-manage-form .atelier-form-actions button {
+    height: var(--h-lg);
+    padding: 0 12px;
+    border-radius: var(--r-md) !important;
+    font-size: 13px;
+    font-weight: 500 !important;
+}
+
+html .plans-iso-detail .atelier-manage-form .atelier-cancel-assignment {
+    border: 1px solid var(--border) !important;
+    background: var(--surface) !important;
+    color: var(--text) !important;
+}
+
+html .plans-iso-detail .atelier-manage-form .atelier-remove-assignment {
+    border: 0 !important;
+    background: transparent !important;
+    color: var(--alerte-texte) !important;
+}
+
+html .plans-iso-detail .atelier-manage-form .atelier-remove-assignment:hover:not(:disabled) {
+    background: var(--alerte-fond) !important;
+}
+
+/* ----- Les fenêtres du volet (plan, avancement) : rayon 12, contrôles de l'échelle ----- */
+
+.atelier-plan-dialog {
+    border-radius: var(--r-xl);
+    box-shadow: 0 1px 2px rgb(15 15 16 / 6%), 0 24px 64px rgb(15 15 16 / 18%);
+}
+
+.atelier-plan-dialog-heading h2 {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.atelier-plan-dialog .modal-close {
+    display: grid;
+    place-items: center;
+    width: var(--h-lg);
+    height: var(--h-lg);
+    padding: 0;
+    border: 0;
+    border-radius: var(--r-md);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.atelier-plan-dialog .modal-close:hover {
+    background: var(--hover);
+    color: var(--text);
+}
+
+.atelier-plan-dialog .modal-close .icon {
+    width: 16px;
+    height: 16px;
+}
+
+/* ----- Téléphone : le libellé du poste coiffe sa ligne ----- */
+
+@media (max-width: 600px) {
+    html .plans-iso-detail .atelier-plan-work {
+        grid-template-columns: minmax(0, 1fr) auto auto;
+    }
+
+    html .plans-iso-detail .atelier-plan-work h4 {
+        grid-column: 1 / -1;
+    }
+
+    html .plans-iso-detail .atelier-plan-work .atelier-person-button,
+    html .plans-iso-detail .atelier-plan-work > span:not(.atelier-work-status) {
+        grid-column: 1;
+    }
+
+    html .plans-iso-detail .atelier-plan-work .atelier-work-status {
+        grid-column: 2;
+    }
+
+    html .plans-iso-detail .atelier-plan-work .atelier-edit-progress {
+        grid-column: 3;
+    }
+}
+
+/* Les envois des formulaires du volet : le bouton plein, noir (DA, § 6), 32px, rayon 6. */
+html .plans-iso-detail .atelier-action.prefa-form button[type="submit"]:not(.bouton-discret):not(.atelier-remove-assignment):not(.atelier-plan-delete-button) {
+    height: var(--h-lg);
+    padding: 0 12px;
+    border: 0 !important;
+    border-radius: var(--r-md) !important;
+    background: var(--bouton-plein) !important;
+    color: var(--bouton-plein-texte) !important;
+    font-size: 13px;
+    font-weight: 500 !important;
+}
+
+html .plans-iso-detail .atelier-action.prefa-form button[type="submit"]:not(.bouton-discret):not(.atelier-remove-assignment):not(.atelier-plan-delete-button):hover:not(:disabled) {
+    background: var(--bouton-plein-hover) !important;
+}
+
+/* Le poste dans l'historique : une précision, pas un lien. */
+html .plans-iso-detail .atelier-history-kind {
+    color: var(--text-muted);
+    font-size: 12px;
+}

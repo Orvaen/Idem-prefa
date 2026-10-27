@@ -312,12 +312,18 @@ $iconeGroupeIso = static function (string $groupe): string {
                         </tr>
                         <tr id="plans-iso-detail-<?= $requestId ?>" class="plans-iso-detail prefa-detail-row" hidden><td colspan="6">
                             <div class="plans-iso-body">
-                                <div class="prefa-detail-heading">
-                                    <div>
-                                        <h2>Plans &amp; affectations <span><?= prefaEscape(prefaReferenceComplete($requestId)) ?></span></h2>
-                                        <p><?= prefaEscape($row['nom_affaire'] ?: 'Demande sans nom') ?></p>
+                                <?php // L'en-tête du volet, sur le modèle de la fiche : ce que c'est, laquelle,
+                                      // de quelle affaire. Le titre redisait l'affaire, puis la ligne du
+                                      // dessous la redisait encore. ?>
+                                <div class="prefa-detail-heading plans-iso-entete">
+                                    <div class="plans-iso-identite">
+                                        <p class="plans-iso-surtitre">Plans &amp; affectations</p>
+                                        <h2><?= prefaEscape(prefaReference($requestId)) ?>
+                                            <span><?= prefaEscape($row['nom_affaire'] ?: 'Demande sans nom') ?></span></h2>
                                     </div>
-                                    <button type="button" class="prefa-detail-close" data-close-target="plans-iso-detail-<?= $requestId ?>" aria-label="Fermer le volet">✕</button>
+                                    <button type="button" class="prefa-detail-close" data-close-target="plans-iso-detail-<?= $requestId ?>" aria-label="Fermer le volet" title="Fermer">
+                                        <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg>
+                                    </button>
                                 </div>
 
                                 <?php require __DIR__ . '/../partials/atelier_request.php'; ?>

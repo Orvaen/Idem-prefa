@@ -433,8 +433,25 @@ body:has(.prefa-detail-row:not([hidden]))::before {
     background: transparent !important;
 }
 
+/* « Plans & affectations » prend la même forme, un peu plus large : c'est un poste de
+   travail — trois affectations, des feuilles ISO, leurs commandes en ligne — et 560 px
+   renverraient chaque ligne de feuille sur deux. */
+.prefa-detail-row.plans-iso-detail {
+    top: 8px;
+    right: 8px;
+    bottom: 8px;
+    left: auto;
+    width: min(720px, calc(100vw - 16px));
+    border: 1px solid var(--border);
+    border-radius: var(--r-xl);
+    background: var(--surface) !important;
+    box-shadow: 0 1px 2px rgb(15 15 16 / 6%), 0 24px 64px rgb(15 15 16 / 18%);
+    animation: fiche-tiroir 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 /* Le voile du volet des PV : léger et flouté, la liste reste lisible derrière. « html » en
    tête pour passer devant le voile générique du thème clair, chargé après. */
+html body:has(.prefa-detail-row.plans-iso-detail:not([hidden]))::before,
 html body:has(.prefa-detail-row:not([hidden]) > td > .prefa-table-detail)::before {
     background: rgb(15 15 16 / 16%);
     backdrop-filter: blur(2px);
