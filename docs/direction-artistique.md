@@ -28,10 +28,16 @@ ombres.
 
 | Rôle Propel | Ce que c'est ici | Clair | Sombre |
 |---|---|---|---|
-| `bg-canvas` | `#contenaire` : le cadre, qui porte la barre latérale | `#F2F2F3` | `#0F0F10` |
+| `bg-canvas` | `#contenaire` : le cadre, qui porte la barre latérale | `#F7F7F8` ¹ | `#0F0F10` |
 | `bg-surface-1` | `#right-panel` : la grande vue arrondie | `#FFFFFF` | `#141415` |
 | `bg-layer-1` | une carte posée dessus : tuile, section, volet | `#F9F9F9` | `#181A1B` |
 | `bg-layer-3` | une carte dans une carte, un en-tête de groupe | `#F2F2F3` | `#222425` |
+
+¹ Propel pose son `bg-canvas` clair à `#F2F2F3`. On l'éclaircit à `#F7F7F8` parce que la
+barre latérale n'a plus de fond propre : ce gris ne borde plus les cartes sur huit pixels,
+il couvre toute la colonne de gauche, et à cette surface il pesait trop. La séparation est
+tenue par le filet `--border-fort` (`#D5D7D9`, 1,44:1 sur blanc), pas par le fond — c'est
+ce qui permet de l'éclaircir sans perdre la carte.
 
 **Règle.** Un écran ne peint rien lui-même : il laisse voir `bg-surface-1`. Ce sont ses
 cartes qui portent `bg-layer-1`. Un tableau n'est **pas** une carte — il vit à même la
@@ -196,6 +202,38 @@ Même mécanique pour les formes : le rayon des boutons était posé à `--r-sm`
 partagée de `prefa-form.css`, et aucune feuille d'écran ne pouvait le rattraper sans un
 sélecteur plus fort. Corrigé à la source, donc partout.
 
+## 7 quinquies. Deux surfaces flottantes, une seule gouttière
+
+La barre latérale et la grande vue sont deux cartes sœurs. Elles portaient chacune sa
+marge et son rayon — `12px 0 12px 12px` / rayon 14 pour l'une, `8px` / rayon 12 pour
+l'autre — et rien ne tombait au même endroit.
+
+**Règle.** La gouttière appartient au **conteneur**, jamais aux cartes. `#contenaire` porte
+`padding: 8px`, les cartes ont `margin: 0`, et l'écart entre elles est tenu par `#drag`,
+la poignée de redimensionnement, à qui l'on a donné la largeur de la gouttière.
+
+Ce dernier point vaut d'être noté : large de zéro et placée entre deux éléments flex, la
+poignée recevait une gouttière **de chaque côté** — seize pixels entre les cartes contre
+huit autour. Lui donner `width: 8px` règle l'écart *et* lui donne enfin une prise à la
+souris, là où il fallait viser un trait sans épaisseur.
+
+Mesuré après coup : 8 à gauche, 8 entre les cartes, 8 à droite, 8 en haut.
+
+### Une carte flottante demande trois tons
+
+Le cadre, la surface, le filet. Retirer l'un des trois et plus rien ne flotte.
+
+`barre-laterale.css` forçait `#contenaire` à `var(--surface)`, pour éviter « une bande
+d'une autre teinte qui découpe l'écran en trois ». L'intention se défendait quand la barre
+latérale était la seule carte. Avec deux cartes, elle se retourne : mesuré au navigateur,
+le cadre **et** la vue de contenu sortaient tous deux à `rgb(255,255,255)` en clair, et
+tous deux à `rgb(20,20,21)` en sombre. La carte avait exactement la couleur de ce qui
+l'entoure ; seul son filet la signalait encore.
+
+**Et deux cartes sœurs portent le même fond et le même filet.** Elles divergeaient —
+`#FAF9F5` / `#EEEBE3` pour l'une, `#FFFFFF` / `#D5D7D9` pour l'autre — ce qui se lisait
+comme deux matériaux différents plutôt que comme deux fois le même.
+
 ## 8. Ce qui est une carte, et ce qui n'en est pas
 
 C'est la règle qui manquait le plus, et celle qui a produit l'incohérence actuelle.
@@ -207,6 +245,48 @@ l'accueil, une section de fiche, un volet de détail, un bloc de paramètres.
 d'écran. Ces éléments vivent à même la surface et se structurent par leurs filets. Un
 tableau posé dans une carte donne deux cadres concentriques et mange 32px de largeur pour
 rien.
+
+---
+
+## 9. Le champ date : le natif porte la valeur, nous portons le calendrier
+
+Onze champs de date dans l'application — le planning, les PV, les soudures, les bons de
+livraison, la nouvelle demande. Chacun ouvrait la fenêtre du système, qui ne connaît ni nos
+jetons ni notre échelle de rayons : en thème clair, un calendrier gris Windows au milieu
+d'une page blanche.
+
+**Le partage.** Le champ reste un `input type="date"`. Il garde son `name`, sa valeur au
+format `AAAA-MM-JJ` que le serveur attend, son `required` que le validateur lit avec
+`checkValidity()`, et ses segments `jj/mm/aaaa` qu'on remplit au clavier sans quitter la
+ligne. Nous ne reprenons que la glyphe — masquée par
+`::-webkit-calendar-picker-indicator { display: none }` — et la fenêtre.
+
+Un champ caché doublé d'un champ texte aurait coûté les trois : jQuery ignore les champs
+cachés dans `:input[required]:visible`, et le serveur aurait reçu `26/10/2026`.
+
+**Le champ garde l'habillage de son écran.** `champ-date.css` ne pose ni fond ni bordure sur
+le champ : seulement la place du déclencheur. La nouvelle demande a ses fonds sépia, le
+planning les siens. Un seul calendrier, onze habillages.
+
+**Le calendrier, lui, ne suit personne.** Il est posé sur `document.body` — un parent en
+`overflow: hidden`, cellule de tableau ou volet de planning, le coupait en deux — et prend
+donc les jetons de la DA, jamais ceux qu'un écran redéfinit sur son conteneur. Surface
+`--surface`, filet `--border`, ombre : les trois tons d'une carte flottante. Jour choisi
+`--accent`, jour courant cerclé de `--border-fort`.
+
+**Six semaines toujours**, même quand cinq suffisent : sans quoi le calendrier change de
+hauteur d'un mois à l'autre et le pied se déplace sous le curseur.
+
+**Le clavier.** Le déclencheur est une commodité pour la souris : `tabindex="-1"` et
+`aria-hidden`, pour ne pas ajouter un second arrêt de tabulation par date. Le clavier ouvre
+par `Alt+Flèche bas`, comme une liste déroulante, puis navigue aux flèches, `PageUp`/
+`PageDown` par mois, `Maj` pour l'année, `Échap` pour refermer en rendant le focus.
+
+**Un bouton posé dans un formulaire porte `bouton-discret`.** La règle de `prefa-form.css`
+peint en plein tout `button` d'un `.prefa-form` qui ne porte pas ce marqueur : le
+déclencheur en sortait à `rgb(184, 84, 51)` avec sa glyphe en blanc — un bouton d'envoi au
+bout d'un champ de date. Le marqueur est la voie prévue ; il ne décrit pas une apparence,
+seulement un refus de celle-là.
 
 ---
 
@@ -223,6 +303,20 @@ Par ordre de visibilité. Rien n'est fait tant que ce document n'est pas validé
 | 2 | La liste des demandes | en cours — la pastille « Urgente » est unifiée |
 | 6 | Les autres cartes (`.settings-card`, `.prefa-section`) en blanc codé en dur | à faire — mais les 30 gris sourds en dur sont repris |
 | 7 | Les 14 autres écrans, un par un | à faire |
+| 8 | « Nouvelle demande » avait sa palette à elle — sépia et terre cuite | **fait** — ses jetons `--nd-*` pointent sur ceux de la DA, un seul bloc au lieu de deux |
+| 9 | L'entrée active de la barre latérale en terre cuite | **fait** — azur, 7,27:1 en clair |
+| 10 | « Nouvelle demande » charge encore Inter et Source Serif 4 | à faire — 302 Ko de polices, contre la décision « pile système » ci-dessous |
+
+**Au passage :** « Nouvelle demande » se lit maintenant dans une seule colonne bornée à
+780px, en-tête compris. Les deux colonnes se parcouraient en zigzag — on déposait un plan à
+gauche, on datait à droite, on revenait à gauche pour le QMOS. Les deux blocs
+`.nd-colonne` du balisage subsistent et deviennent deux sections empilées : la décision est
+dans la feuille, pas dans le PHP.
+
+**Au passage :** le texte du bouton plein s'inverse maintenant avec le thème. Il était
+écrit `#ffffff` en dur dans `prefa-form.css` : sur l'azur clair du thème sombre, cela ne
+faisait que 3,42:1. `--bouton-plein-texte` vaut `#FFFFFF` en clair — rien n'y change — et
+`#171717` en sombre, soit 5,24:1. L'ancienne terre cuite y était à 3,12:1.
 
 **Au passage :** la grande vue arrondie est descendue dans `dashboard-base.css` — elle
 valait pour le seul thème clair, ce qui n'avait aucune raison d'être. Le thème sombre l'a

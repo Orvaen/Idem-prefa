@@ -6,7 +6,7 @@ html[data-theme="light"],
 body[data-theme="light"],
 [data-theme="light"] {
     color-scheme: light;
-    --frame: #F2F2F3;
+    --frame: #F7F7F8;
     --surface: #FFFFFF;
     /* « bg-card » de la palette : une carte posee sur la surface, un cran en retrait. */
     --carte: #F9F9F9;
@@ -17,6 +17,8 @@ body[data-theme="light"],
     --border-faint: #EAEBEC;
     --text: #0F0F10;
     --text-muted: #494D50;
+    /* Voir le commentaire du même jeton dans dashboard-base.css. 6,18:1 sur blanc. */
+    --placeholder: #5D6265;
     --hover: #F2F2F3;
     --active: #EAEBEC;
     --ligne-survol: #F2F2F3;
@@ -122,8 +124,8 @@ body[data-theme="light"],
     color: var(--text-muted) !important;
 }
 
-/* Le fond de la barre était hérité du conteneur : posé ici, il ne peut plus rester celui
-   du thème précédent quand on bascule. */
+/* La barre est sur le cadre, dehors, et en prend la teinte. Posé ici et non hérité, le
+   fond ne peut pas rester celui du thème précédent quand on bascule. */
 [data-theme="light"] #left-panel {
     background: var(--frame) !important;
 }
@@ -133,11 +135,11 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .nav-rayon-titre:hover {
-    color: #171717 !important;
+    color: var(--text) !important;
 }
 
 [data-theme="light"] #left-panel .nav-btn:hover {
-    color: #171717 !important;
+    color: var(--text) !important;
 }
 
 [data-theme="light"] #left-panel .nav-btn.is-active {
@@ -163,7 +165,7 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .nav-subfooter .title {
-    color: #171717 !important;
+    color: var(--text) !important;
     font-weight: 600;
 }
 
@@ -181,11 +183,6 @@ body[data-theme="light"],
 }
 
 /* ===== BARRE D'OUTILS & HEADER ===== */
-
-[data-theme="light"] .dashboard-toolbar {
-    background: #ffffff !important;
-    border-bottom: 1px solid var(--border) !important;
-}
 
 /* ===== CARTES & SECTIONS ===== */
 
@@ -210,7 +207,7 @@ body[data-theme="light"],
 [data-theme="light"] .prefa-heading h1,
 [data-theme="light"] .settings-card-title,
 [data-theme="light"] .atelier-heading h1 {
-    color: #171717 !important;
+    color: var(--text) !important;
 }
 
 [data-theme="light"] p,
@@ -223,7 +220,7 @@ body[data-theme="light"],
 
 /* Dans la fiche, un document est une ligne, pas une carte : la règle générale ci-dessous
    lui donne un fond et un cadre, ce qui refaisait cinq boîtes dans un volet qui n'en veut
-   plus. Le survol suffit à montrer qu'''on peut cliquer, comme en thème sombre. */
+   plus. Le survol suffit à montrer qu'on peut cliquer, comme en thème sombre. */
 [data-theme="light"] .fiche-famille .prefa-document-link {
     background: transparent !important;
     border-color: transparent !important;
@@ -258,7 +255,7 @@ body[data-theme="light"],
 [data-theme="light"] .plans-iso-summary {
     background: #fafafa !important;
     border-bottom: 1px solid var(--border-subtle);
-    color: #171717 !important;
+    color: var(--text) !important;
 }
 
 [data-theme="light"] .plans-iso-summary:hover {
@@ -308,7 +305,7 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .settings-tab-btn:hover {
-    color: #171717 !important;
+    color: var(--text) !important;
     background: #efeff0 !important;
 }
 
@@ -360,7 +357,7 @@ body[data-theme="light"],
 [data-theme="light"] button.prefa-btn-secondary:hover,
 [data-theme="light"] .prefa-toggle:hover {
     background: #efeff0 !important;
-    color: #171717 !important;
+    color: var(--text) !important;
     border-color: #c4c6c8 !important;
 }
 
@@ -384,23 +381,25 @@ body[data-theme="light"],
 /* « background » et non « background-color » effaçait aussi background-image : les
    listes déroulantes qui dessinent leur propre flèche — celle du système ne suit aucun
    thème — perdaient la leur en thème clair, et rien n'indiquait plus qu'elles s'ouvrent. */
+/* Le filet était écrit en dur à #e4e6e7, un cran plus pâle que « --border » (#E1E2E3) :
+   le même champ n'avait donc pas le même cadre d'un thème à l'autre, et le jeton ne
+   servait à rien là où il comptait le plus. */
 [data-theme="light"] input:not([type="checkbox"]):not([type="radio"]),
 [data-theme="light"] select,
 [data-theme="light"] textarea {
     background-color: #ffffff !important;
-    border: 1px solid #e4e6e7 !important;
-    color: #171717 !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text) !important;
 }
 
 /* Les contrôles posés dans une ligne de tableau échappent à la règle ci-dessus : là-bas,
    une ligne est du texte, et le cadre n'arrive qu'au survol. La règle générale les
    encadrait tous, en permanence, parce qu'elle vise « input » et « select » sans distinguer
    un formulaire d'un tableau — et son !important ne laissait rien passer. */
-/* Les deux :not() de la règle générale la font peser plus lourd que « .affaires-table
-   input » : on reprend donc sa forme exacte, la classe du tableau en plus, sinon seules
-   les listes déroulantes étaient corrigées et les champs gardaient leur cadre. */
-[data-theme="light"] .affaires-table input:not([type="checkbox"]):not([type="radio"]),
-[data-theme="light"] .affaires-table select,
+/* Les deux :not() de la règle générale la font peser plus lourd qu'un simple
+   « .affaire-carte input » : on reprend donc sa forme exacte, la classe en plus, sinon
+   seules les listes déroulantes étaient corrigées et les champs gardaient leur cadre. */
+[data-theme="light"] .affaire-carte input:not([type="checkbox"]):not([type="radio"]),
 [data-theme="light"] .commandes-editable input:not([type="checkbox"]):not([type="radio"]),
 [data-theme="light"] .commandes-editable select,
 [data-theme="light"] .commande-articles-table input:not([type="checkbox"]):not([type="radio"]),
@@ -449,10 +448,8 @@ body[data-theme="light"],
     background-color: #ffffff !important;
 }
 
-[data-theme="light"] .affaires-table tbody tr:hover input:not([type="checkbox"]),
-[data-theme="light"] .affaires-table tbody tr:hover select,
-[data-theme="light"] .affaires-table tbody tr:focus-within input:not([type="checkbox"]),
-[data-theme="light"] .affaires-table tbody tr:focus-within select,
+[data-theme="light"] .affaire-carte:hover input:not([type="checkbox"]),
+[data-theme="light"] .affaire-carte:focus-within input:not([type="checkbox"]),
 [data-theme="light"] .commandes-editable tbody tr:hover input:not([type="checkbox"]),
 [data-theme="light"] .commandes-editable tbody tr:hover select,
 [data-theme="light"] .commandes-editable tbody tr:focus-within input:not([type="checkbox"]),
@@ -463,20 +460,30 @@ body[data-theme="light"],
     background-color: #ffffff !important;
 }
 
-[data-theme="light"] .affaires-table tbody tr input:not([type="checkbox"]):focus,
-[data-theme="light"] .affaires-table tbody tr select:focus,
+[data-theme="light"] .affaire-carte input:not([type="checkbox"]):focus,
 [data-theme="light"] .commandes-editable tbody tr input:not([type="checkbox"]):focus,
 [data-theme="light"] .commandes-editable tbody tr select:focus,
 [data-theme="light"] .commande-articles-table tbody tr input:not([type="checkbox"]):focus {
     border-color: #006399 !important;
 }
 
-[data-theme="light"] input:focus,
+/* Le focus se dit par le cadre, et rien d'autre — comme en thème sombre. Il portait ici,
+   et ici seulement, un halo de 3 px : le même champ changeait de langage selon le thème,
+   et c'est le genre d'écart qu'on ne voit pas en développant un thème à la fois.
+   La couleur est reprise du jeton et non réécrite : « --accent » vaut déjà #006399 en
+   clair, et deux écritures de la même couleur finissent toujours par diverger.
+
+   **Les deux :not() ne sont pas décoratifs.** La règle générale des champs, plus haut, les
+   porte — elle pèse donc (0,3,1) quand ce bloc n'en pesait que (0,2,1), et son
+   « border: 1px solid var(--border) !important » l'emportait *même au focus* : le cadre ne
+   changeait jamais de couleur en thème clair. On reprend sa forme exacte, « :focus » en
+   plus, pour passer devant. C'est le troisième endroit de cette feuille où ce piège se
+   referme ; les deux autres portent déjà le même commentaire. */
+[data-theme="light"] input:not([type="checkbox"]):not([type="radio"]):focus,
 [data-theme="light"] select:focus,
 [data-theme="light"] textarea:focus {
-    border-color: #006399 !important;
+    border-color: var(--accent) !important;
     outline: none !important;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
 }
 
 /* La règle générale ci-dessus impose sa bordure grise avec !important, et ses deux :not()
@@ -492,12 +499,12 @@ body[data-theme="light"],
 
 [data-theme="light"] input::placeholder,
 [data-theme="light"] textarea::placeholder {
-    color: #c4c6c8 !important;
+    color: var(--placeholder) !important;
 }
 
 [data-theme="light"] option {
     background: #ffffff !important;
-    color: #171717 !important;
+    color: var(--text) !important;
 }
 
 [data-theme="light"] input[type="checkbox"],
@@ -507,7 +514,7 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] input:autofill {
-    -webkit-text-fill-color: #171717 !important;
+    -webkit-text-fill-color: var(--text) !important;
     box-shadow: inset 0 0 0 1000px #ffffff !important;
 }
 
@@ -524,7 +531,7 @@ body[data-theme="light"],
 [data-theme="light"] .prefa-table td,
 [data-theme="light"] .atelier-plans-table td {
     background: #ffffff !important;
-    color: #171717 !important;
+    color: var(--text) !important;
 }
 
 /* La règle ci-dessus repeint en blanc, et en !important, toutes les cellules de
@@ -615,7 +622,7 @@ body[data-theme="light"],
 [data-theme="light"] .gantt-label-col {
     background: #ffffff !important;
     border-color: var(--border) !important;
-    color: #171717 !important;
+    color: var(--text) !important;
 }
 
 [data-theme="light"] .gantt-row {
@@ -628,7 +635,7 @@ body[data-theme="light"],
 
 [data-theme="light"] dialog {
     background: #ffffff !important;
-    color: #171717 !important;
+    color: var(--text) !important;
     border: 1px solid var(--border) !important;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
 }
@@ -648,7 +655,7 @@ body[data-theme="light"],
 
 /* ===== PAGE DE PLANNING ===== */
 [data-theme="light"] .planning-page {
-    color: #171717 !important;
+    color: var(--text) !important;
 }
 
 /* ===== BOUTONS PLANNING ===== */
@@ -661,7 +668,7 @@ body[data-theme="light"],
 [data-theme="light"] .planning-page .planning-button:hover {
     background: #efeff0 !important;
     border-color: #c4c6c8 !important;
-    color: #171717 !important;
+    color: var(--text) !important;
 }
 
 [data-theme="light"] .planning-page .planning-primary {
@@ -708,7 +715,7 @@ body[data-theme="light"],
 [data-theme="light"] .gantt-affaire-badge {
     background: #fafafa !important;
     border-color: var(--border) !important;
-    color: #171717 !important;
+    color: var(--text) !important;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
 }
 
@@ -734,13 +741,13 @@ body[data-theme="light"],
 
 [data-theme="light"] .planning-card-header {
     background: #fafafa !important;
-    color: #171717 !important;
+    color: var(--text) !important;
     border-bottom-color: var(--border) !important;
 }
 
 [data-theme="light"] .planning-card-body {
     background: #ffffff !important;
-    color: #171717 !important;
+    color: var(--text) !important;
 }
 
 [data-theme="light"] .planning-card-footer {
@@ -758,7 +765,7 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .planning-info-item dd {
-    color: #171717 !important;
+    color: var(--text) !important;
 }
 
 /* ===== MATRICE AVANCEMENT (carte 2) ===== */
@@ -789,7 +796,7 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .comment-text {
-    color: #171717 !important;
+    color: var(--text) !important;
 }
 
 /* ===== LIVRAISON (carte 4) ===== */
@@ -798,7 +805,7 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .planning-delivery-info strong {
-    color: #171717 !important;
+    color: var(--text) !important;
 }
 
 /* ===== BACKLOG ===== */
@@ -809,7 +816,7 @@ body[data-theme="light"],
 
 [data-theme="light"] .planning-backlog-summary {
     background: #fafafa !important;
-    color: #171717 !important;
+    color: var(--text) !important;
     border-bottom: 1px solid var(--border);
 }
 
@@ -826,7 +833,7 @@ body[data-theme="light"],
 [data-theme="light"] dialog#planning-dialog {
     background: #ffffff !important;
     border-color: var(--border) !important;
-    color: #171717 !important;
+    color: var(--text) !important;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12) !important;
 }
 
@@ -837,7 +844,7 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .planning-dialog-badge {
-    border-color: rgba(37, 99, 235, 0.25) !important;
+    border-color: color-mix(in srgb, var(--accent) 25%, transparent) !important;
 }
 
 [data-theme="light"] .planning-dialog-close {
@@ -858,11 +865,11 @@ body[data-theme="light"],
 [data-theme="light"] .planning-date-input {
     background: #fafafa !important;
     border-color: #e4e6e7 !important;
-    color: #171717 !important;
+    color: var(--text) !important;
 }
 
 [data-theme="light"] .planning-date-input:focus {
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+    border-color: var(--accent) !important;
 }
 
 [data-theme="light"] .planning-preview {
@@ -871,7 +878,7 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .planning-preview-badge {
-    border-color: rgba(37, 99, 235, 0.3) !important;
+    border-color: color-mix(in srgb, var(--accent) 30%, transparent) !important;
 }
 
 [data-theme="light"] .planning-dialog-actions {
@@ -911,7 +918,7 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .atelier-plans-table .atelier-person-button.is-assigned {
-    color: #171717 !important;
+    color: var(--text) !important;
 }
 
 [data-theme="light"] .atelier-plans-table .atelier-person-button:hover,
@@ -950,7 +957,7 @@ body[data-theme="light"],
 /* ===== DROPDOWN / SELECT GÉNÉRAL ===== */
 [data-theme="light"] select option {
     background: #ffffff !important;
-    color: #171717 !important;
+    color: var(--text) !important;
 }
 
 /* ===== PREFA DETAIL SECTION (résumé demande) ===== */
@@ -961,7 +968,7 @@ body[data-theme="light"],
 
 [data-theme="light"] .prefa-section h2,
 [data-theme="light"] .prefa-section h3 {
-    color: #171717 !important;
+    color: var(--text) !important;
 }
 
 [data-theme="light"] .prefa-fact-label {
@@ -969,7 +976,7 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .prefa-fact-value {
-    color: #171717 !important;
+    color: var(--text) !important;
 }
 
 [data-theme="light"] .prefa-request {
@@ -995,7 +1002,7 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .prefa-list-summary strong {
-    color: #171717 !important;
+    color: var(--text) !important;
 }
 
 /* ===== PLANNING ISO - CARD URGENTE ===== */
@@ -1066,7 +1073,7 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .plans-iso-page .atelier-document-edit .atelier-checkbox {
-    color: #171717 !important;
+    color: var(--text) !important;
     cursor: pointer;
 }
 
@@ -1100,7 +1107,7 @@ body[data-theme="light"],
 [data-theme="light"] .plans-iso-page .atelier-plan-work .atelier-person-button.is-assigned {
     background: #ffffff !important;
     border: 1px solid var(--border-subtle) !important;
-    color: #171717 !important;
+    color: var(--text) !important;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
 }
 
@@ -1119,7 +1126,7 @@ body[data-theme="light"],
 [data-theme="light"] .plans-iso-page .atelier-plan-work .atelier-person-button[aria-expanded="true"],
 [data-theme="light"] .plans-iso-page .atelier-plan-work .atelier-person-button[aria-expanded="true"]:hover {
     border: 1px solid #006399 !important;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
 }
 
 [data-theme="light"] .plans-iso-page .atelier-plan-work .atelier-work-status {
@@ -1244,7 +1251,7 @@ body[data-theme="light"],
 [data-theme="light"] .account-add,
 [data-theme="light"] .account-manage,
 [data-theme="light"] .account-menu .account-logout {
-    color: #171717 !important;
+    color: var(--text) !important;
 }
 
 [data-theme="light"] .account-identity span {
@@ -1299,7 +1306,7 @@ body[data-theme="light"],
 
 [data-theme="light"] .account-dialog-footer .account-dialog-close:hover {
     background: #efeff0 !important;
-    color: #171717 !important;
+    color: var(--text) !important;
 }
 
 [data-theme="light"] .account-dialog-footer .account-submit {
@@ -1325,7 +1332,7 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .atelier-tab:hover {
-    color: #171717 !important;
+    color: var(--text) !important;
 }
 
 [data-theme="light"] .atelier-tab[aria-selected="true"] {
@@ -1348,7 +1355,7 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .planning-legend-item {
-    color: #171717 !important;
+    color: var(--text) !important;
 }
 
 [data-theme="light"] .nav-theme {
@@ -1358,7 +1365,7 @@ body[data-theme="light"],
 [data-theme="light"] .nav-theme:hover,
 [data-theme="light"] .nav-theme[aria-expanded="true"] {
     background: #efeff0 !important;
-    color: #171717 !important;
+    color: var(--text) !important;
 }
 
 [data-theme="light"] .theme-swatch {
@@ -1403,18 +1410,20 @@ body[data-theme="light"],
     padding-bottom: 16px !important;
 }
 
-/* Le focus prenait la teinte du navigateur, qui ne suit aucun thème. Un halo d'azur, le
-   même partout, et le cadre qui s'affirme : sur un poste d'atelier on navigue au clavier
-   plus souvent qu'on ne le croit. */
-[data-theme="light"] input:focus-visible,
-[data-theme="light"] select:focus-visible,
-[data-theme="light"] textarea:focus-visible,
+/* L'anneau de focus est pour ce qui n'est pas un champ. Un bouton n'a pas de cadre à
+   changer de couleur : il lui faut l'anneau, et c'est celui de la DA — 2 px pleins à
+   l'accent, décalés de 2.
+
+   Les champs n'y sont plus. Un champ de texte satisfait « :focus-visible » même cliqué à
+   la souris : l'anneau paraissait donc à chaque clic, en plus du cadre, et c'est ce qui
+   alourdissait le thème clair. Leur focus se lit maintenant sur leur cadre, comme en
+   sombre. L'ancien anneau était en outre posé à 35 % d'opacité, quand le sombre le pose
+   plein : deux dialectes pour un même geste. */
 [data-theme="light"] button:focus-visible,
 [data-theme="light"] .nav-btn:focus-visible,
 [data-theme="light"] .filtre-declencheur:focus-visible {
-    outline: 2px solid rgb(0 99 153 / 35%) !important;
-    outline-offset: 1px !important;
-    border-color: var(--accent) !important;
+    outline: 2px solid var(--accent) !important;
+    outline-offset: 2px !important;
 }
 
 /* La grande vue arrondie est dans dashboard-base.css : elle vaut pour les deux thèmes. */

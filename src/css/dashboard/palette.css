@@ -1,0 +1,199 @@
+/* ===== LA PALETTE =====
+ *
+ * Ctrl+K, on tape, on entre. Une boîte flottante posée haut dans l'écran — et non centrée :
+ * on la lit en même temps qu'on tape, et le regard n'a pas à redescendre.
+ *
+ * C'est un <dialog> modal, pas un calque à nous : le piège à focus, le fond et la touche
+ * Échap viennent avec, et la boîte passe au-dessus de tout sans course au z-index.
+ */
+
+.palette {
+    width: 560px;
+    max-width: calc(100vw - 32px);
+    /* Posée au premier tiers : centrée, elle tombait sous le regard une fois la liste
+       déroulée, et la boîte sautait en hauteur à chaque frappe. */
+    margin: 12vh auto auto;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--r-xl);
+    background: var(--surface);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 6%), 0 16px 48px rgb(0 0 0 / 18%);
+    color: var(--text);
+    font-family: var(--font);
+    overflow: hidden;
+}
+
+:root:not([data-theme="light"]) .palette {
+    box-shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 20px 56px rgb(0 0 0 / 60%);
+}
+
+.palette::backdrop {
+    background: rgb(15 15 16 / 38%);
+}
+
+:root:not([data-theme="light"]) .palette::backdrop {
+    background: rgb(0 0 0 / 58%);
+}
+
+/* ---------- Le champ ---------- */
+
+.palette-champ {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 14px;
+    border-bottom: 1px solid var(--border-faint);
+}
+
+.palette-loupe {
+    display: inline-flex;
+    flex: 0 0 auto;
+    color: var(--text-muted);
+}
+
+/* Le champ n'a ni cadre ni fond : c'est la boîte entière qui est le champ, et le focus y
+   est acquis — il n'y a rien d'autre à atteindre dans une palette.
+ *
+ * Les « !important » répondent à « [data-theme="light"] input:focus », qui pose bordure,
+ * contour et halo sur tout champ de l'application, les trois en !important. Mesuré sans
+ * eux : bordure 1px, contour 2px et un halo de 3px autour de la saisie.
+ *
+ * Le sélecteur porte « .palette » en plus : à « .palette-saisie:focus » seul — (0,2,0) —
+ * la règle de focus l'emportait encore, ses (0,2,1) pesant plus lourd malgré le
+ * « !important » des deux côtés.
+ *
+ * La bordure vient d'ailleurs et pèse plus lourd encore :
+ * « [data-theme="light"] input:not([type="checkbox"]):not([type="radio"]) », soit
+ * (0,3,1). On reprend sa forme exacte avec la classe en plus — (0,4,1) — plutôt que
+ * d'empiler des parents au hasard. */
+.palette input.palette-saisie:not([type="checkbox"]):not([type="radio"]) {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 52px;
+    padding: 0;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: var(--text);
+    font: 400 15px/1 var(--font);
+}
+
+.palette .palette-saisie:focus,
+.palette .palette-saisie:focus-visible {
+    border: 0 !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.palette .palette-saisie::placeholder {
+    color: var(--text-muted);
+}
+
+/* L'étiquette de la touche dit comment sortir. Elle n'est pas un bouton : on ne clique
+   pas « Échap », on l'appuie. */
+.palette-touche {
+    flex: 0 0 auto;
+    padding: 3px 6px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    color: var(--text-muted);
+    font: 500 11px/1 var(--font);
+}
+
+/* ---------- La liste ---------- */
+
+.palette-liste {
+    max-height: min(52vh, 420px);
+    margin: 0;
+    padding: 6px;
+    list-style: none;
+    overflow-y: auto;
+}
+
+.palette-entree {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: var(--h-2xl);
+    padding: 0 10px;
+    border-radius: var(--r-md);
+    cursor: pointer;
+}
+
+/* Une seule entrée visée à la fois, au clavier comme à la souris : le survol déplace la
+   visée au lieu de poser un second repère, sinon deux lignes paraissaient choisies et
+   Entrée n'allait pas où l'œil regardait. */
+.palette-entree.est-visee {
+    background: var(--accent-fond);
+    color: var(--accent-texte);
+}
+
+.palette-icone {
+    display: inline-flex;
+    flex: 0 0 auto;
+    color: var(--text-muted);
+}
+
+.palette-entree.est-visee .palette-icone {
+    color: inherit;
+}
+
+.palette-icone svg {
+    width: 16px;
+    height: 16px;
+}
+
+.palette-libelle {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 14px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Le rayon d'où vient l'écran — « Atelier », « Affaires & demandes ». Il situe sans
+   disputer la ligne au libellé. */
+.palette-famille {
+    flex: 0 0 auto;
+    color: var(--text-muted);
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.palette-entree.est-visee .palette-famille {
+    color: inherit;
+    opacity: .75;
+}
+
+/* L'écran où l'on est déjà se signale, pour qu'on ne cherche pas à y retourner. */
+.palette-entree.est-courante .palette-libelle::after {
+    content: "·  ici";
+    margin-left: 8px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.palette-entree.est-visee.est-courante .palette-libelle::after {
+    color: inherit;
+    opacity: .75;
+}
+
+.palette-vide {
+    margin: 0;
+    padding: 18px 16px 22px;
+    color: var(--text-muted);
+    font-size: 13px;
+    text-align: center;
+}
+
+@media (max-width: 560px) {
+    .palette {
+        margin-top: 8vh;
+    }
+
+    /* Le rayon passe à la trappe avant le libellé : c'est lui le moins utile des deux. */
+    .palette-famille {
+        display: none;
+    }
+}

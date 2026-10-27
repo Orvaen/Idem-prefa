@@ -81,11 +81,13 @@
 
     // ---------------------------------------------------------------- cocher
 
-    document.addEventListener('change', evenement => {
-        const option = evenement.target.closest?.('.filtre-option input');
-        if (!option) return;
-        prevenir(option.closest('.filtre'));
-    });
+    // Rien à faire quand on coche à la souris : l'événement « change » de la case remonte
+    // déjà jusqu'au formulaire, et c'est lui que l'écran écoute. On prévenait en plus, ce
+    // qui déclenchait deux rechargements par clic — mesuré à deux requêtes pour une case.
+    //
+    // « prevenir » reste indispensable plus bas : « Tout sélectionner », « Effacer » et
+    // « Tout effacer » cochent par programme, et affecter « checked » n'émet aucun
+    // événement natif.
 
     document.addEventListener('click', evenement => {
         // « Tout sélectionner » bascule : tout coché, le même bouton décoche.

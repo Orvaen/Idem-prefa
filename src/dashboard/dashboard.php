@@ -118,88 +118,13 @@ if ($isAdmin || $isWorkshopChief) {
 
 <body>
     <div id="contenaire">
-        <!-- Navigation de gauche -->
-        <nav id="left-panel">
-            <div class="sidebar-mobile-header">
-                <strong>Navigation</strong>
-                <button id="close-sidebar" type="button" aria-label="Fermer le menu">×</button>
-            </div>
-            <?php
-            // La marque, en tête de barre. Le fichier est cherché sur le disque : déposez
-            // logo-idem.svg (ou .png, .webp) dans src/assets/ et il remplace le mot, sans
-            // qu'il y ait une ligne à changer ici. Tant qu'il n'y est pas, le nom s'écrit
-            // en toutes lettres — mieux qu'un cadre vide ou qu'un logo approximatif.
-            $logo = null;
-            foreach (['svg', 'png', 'webp'] as $extension) {
-                if (is_file(__DIR__ . '/../assets/logo-idem.' . $extension)) {
-                    $logo = '../assets/logo-idem.' . $extension;
-                    break;
-                }
-            }
-            ?>
-            <div class="nav-marque">
-                <?php if ($logo): ?>
-                    <img src="<?= htmlspecialchars($logo) ?>?v=<?= filemtime(__DIR__ . '/../assets/' . basename($logo)) ?>" alt="IDEM">
-                <?php else: ?>
-                    <span class="nav-marque-mot">IDEM</span>
-                <?php endif; ?>
-                <?php // Un repère permanent : on ne doit jamais croire qu'''on est en production
-                      // alors qu'''on ne l'''est pas. Il ne paraît qu'''en développement. ?>
-                <?php if (Environnement::estDev()): ?>
-                    <span class="nav-marque-dev" title="APP_ENV=dev — les commodités de développement sont ouvertes">dev</span>
-                <?php endif; ?>
-            </div>
-
-            <div class="nav-header">
-                <!-- Le menu est déclaré dans includes/menu.php : qui voit quoi, quelle page
-                     chaque entrée ouvre, de quoi cet écran a besoin, et sous quel rayon il se
-                     range. La barre n'a plus qu'à le parcourir — pas un if de rôle ici.
-
-                     data-page porte l'adresse : la navigation la lit ici même, au lieu de
-                     tenir sa propre table d'identifiants dans un autre fichier. -->
-
-                <!-- L'action qu'on vient faire en arrivant, au-dessus des rayons. -->
-                <?php foreach ($entrees['avant'] as $entree): ?>
-                    <?php $libelle = is_callable($entree['libelle']) ? ($entree['libelle'])($utilisateur) : $entree['libelle']; ?>
-                    <button id="btn-<?= $entree['id'] ?>" class="nav-btn nav-btn-avant<?= $entree['id'] === $vue['id'] ? ' is-active' : '' ?>" type="button" data-page="<?= htmlspecialchars($entree['page'], ENT_QUOTES, 'UTF-8') ?>"<?= $entree['id'] === $vue['id'] ? ' aria-current="page"' : '' ?>>
-                        <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><?= $entree['icone'] ?></svg>
-                        <span><?= htmlspecialchars($libelle, ENT_QUOTES, 'UTF-8') ?></span>
-                    </button>
-                <?php endforeach; ?>
-
-                <?php foreach ($entrees['rayons'] as $cle => $rayon): ?>
-                    <section class="nav-rayon" data-rayon="<?= $cle ?>">
-                        <!-- L'intitulé est le bouton de repli : toute la ligne se clique, et
-                             le chevron dit seulement dans quel sens ça va. -->
-                        <button type="button" class="nav-rayon-titre" aria-expanded="true" aria-controls="rayon-<?= $cle ?>">
-                            <span><?= htmlspecialchars($rayon['libelle'], ENT_QUOTES, 'UTF-8') ?></span>
-                            <svg class="nav-rayon-chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="m6 9 6 6 6-6" />
-                            </svg>
-                        </button>
-                        <div class="nav-rayon-corps" id="rayon-<?= $cle ?>">
-                            <?php foreach ($rayon['entrees'] as $entree): ?>
-                        <?php $libelle = is_callable($entree['libelle']) ? ($entree['libelle'])($utilisateur) : $entree['libelle']; ?>
-                        <button id="btn-<?= $entree['id'] ?>" class="nav-btn<?= $entree['id'] === $vue['id'] ? ' is-active' : '' ?>" type="button" data-page="<?= htmlspecialchars($entree['page'], ENT_QUOTES, 'UTF-8') ?>"<?= $entree['id'] === $vue['id'] ? ' aria-current="page"' : '' ?>>
-                            <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><?= $entree['icone'] ?></svg>
-                            <span><?= htmlspecialchars($libelle, ENT_QUOTES, 'UTF-8') ?></span>
-                            <?= dashboardBadge($entree['id'], $utilisateur, $urgentPending, $pvAFaire) ?>
-                        </button>
-                            <?php endforeach; ?>
-                        </div>
-                    </section>
-                <?php endforeach; ?>
-            </div>
-
-        </nav>
-
-        <!-- Utilitaires -->
-        <button id="sidebar-backdrop" type="button" aria-label="Fermer le menu" tabindex="-1" hidden></button>
-        <div id="drag"></div>
-
-        <!-- Navigation de droite -->
-        <div id="right-panel">
-            <div class="dashboard-toolbar">
+        <!-- La barre du haut, posée sur le cadre et non dans la vue : elle tient toute la
+             largeur de l'écran, au-dessus de la carte de travail. C'est la forme des outils
+             de suivi modernes, et elle a une raison — la marque, le compte et le thème ne
+             dépendent pas de l'écran ouvert, ils ne doivent donc pas vivre dans le panneau
+             qui, lui, change à chaque navigation. -->
+        <header class="barre-haut">
+            <div class="barre-haut-zone barre-haut-gauche">
                 <button id="btn-hide" type="button" aria-label="Afficher ou masquer le menu" aria-controls="left-panel" aria-expanded="true">
                     <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -208,50 +133,155 @@ if ($isAdmin || $isWorkshopChief) {
                     <span>Menu</span>
                 </button>
 
+                <?php
+                // La marque, en tête de barre. Le fichier est cherché sur le disque : déposez
+                // logo-idem.svg (ou .png, .webp) dans src/assets/ et il remplace le mot, sans
+                // qu'il y ait une ligne à changer ici. Tant qu'il n'y est pas, le nom s'écrit
+                // en toutes lettres — mieux qu'un cadre vide ou qu'un logo approximatif.
+                $logo = null;
+                foreach (['svg', 'png', 'webp'] as $extension) {
+                    if (is_file(__DIR__ . '/../assets/logo-idem.' . $extension)) {
+                        $logo = '../assets/logo-idem.' . $extension;
+                        break;
+                    }
+                }
+                ?>
+                <div class="nav-marque">
+                    <?php if ($logo): ?>
+                        <img src="<?= htmlspecialchars($logo) ?>?v=<?= filemtime(__DIR__ . '/../assets/' . basename($logo)) ?>" alt="IDEM">
+                    <?php else: ?>
+                        <span class="nav-marque-mot">IDEM</span>
+                    <?php endif; ?>
+                    <?php // Un repère permanent : on ne doit jamais croire qu'on est en production
+                    // alors qu'on ne l'est pas. Il ne paraît qu'en développement. 
+                    ?>
+                    <?php if (Environnement::estDev()): ?>
+                        <span class="nav-marque-dev" title="APP_ENV=dev — les commodités de développement sont ouvertes">dev</span>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <div class="barre-haut-zone barre-haut-centre">
+            <!-- La recherche, au centre, comme chez les outils de suivi. Ce n'est pas un
+                 champ : c'est le déclencheur de la palette, qui existait déjà et ne
+                 s'ouvrait qu'au clavier — un raccourci que personne ne devine. Il en porte
+                 la forme pour qu'on sache où cliquer, et la touche pour qu'on l'apprenne. -->
+            <button type="button" id="barre-recherche" class="barre-recherche" aria-label="Rechercher un écran">
+                <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round">
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="m20 20-3.6-3.6" />
+                </svg>
+                <span class="barre-recherche-texte">Rechercher un écran…</span>
+                <kbd class="barre-recherche-touche">Ctrl K</kbd>
+            </button>
+            </div>
+
+            <div class="barre-haut-zone barre-haut-droite">
                 <!-- Le compte, le thème et la déconnexion : en haut à droite, là où on les
                      cherche, et non au pied de la barre de navigation où ils se confondaient
                      avec les rubriques. -->
                 <div class="toolbar-compte">
-                <button type="button" id="account-menu-button" class="account-trigger" aria-haspopup="menu" aria-expanded="false" aria-controls="account-menu">
-                    <span class="user-avatar"><?= htmlspecialchars($initial) ?></span>
+                    <button type="button" id="account-menu-button" class="account-trigger" aria-haspopup="menu" aria-expanded="false" aria-controls="account-menu">
+                        <span class="user-avatar"><?= htmlspecialchars($initial) ?></span>
 
-                    <span class="nav-subfooter">
-                        <span class="title"><?= htmlspecialchars($name . ' ' . $prenom) ?></span>
-                        <span class="subtitle"><?= htmlspecialchars($role) ?></span>
-                        <?php if ($complement = roleComplement($roleId)): ?>
-                            <span class="subtitle subtitle-metier"><?= htmlspecialchars($complement) ?></span>
-                        <?php endif; ?>
-                    </span>
+                        <span class="nav-subfooter">
+                            <span class="title"><?= htmlspecialchars($name . ' ' . $prenom) ?></span>
+                            <span class="subtitle"><?= htmlspecialchars($role) ?></span>
+                            <?php if ($complement = roleComplement($roleId)): ?>
+                                <span class="subtitle subtitle-metier"><?= htmlspecialchars($complement) ?></span>
+                            <?php endif; ?>
+                        </span>
 
-                    <svg class="icon account-chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="m6 9 6 6 6-6" />
-                    </svg>
-                </button>
+                        <svg class="icon account-chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m6 9 6 6 6-6" />
+                        </svg>
+                    </button>
 
-                <button type="button" id="theme-menu-button" class="nav-theme" aria-haspopup="menu" aria-expanded="false" aria-controls="theme-menu" title="Thème" aria-label="Changer de thème">
-                    <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="13.5" cy="6.5" r=".75" fill="currentColor" />
-                        <circle cx="17.5" cy="10.5" r=".75" fill="currentColor" />
-                        <circle cx="8.5" cy="7.5" r=".75" fill="currentColor" />
-                        <circle cx="6.5" cy="12.5" r=".75" fill="currentColor" />
-                        <path d="M12 2a10 10 0 0 0 0 20 2 2 0 0 0 2-2v-1a2 2 0 0 1 2-2h2a4 4 0 0 0 4-4 10 10 0 0 0-10-11Z" />
-                    </svg>
-                </button>
+                    <button type="button" id="theme-menu-button" class="nav-theme" aria-haspopup="menu" aria-expanded="false" aria-controls="theme-menu" title="Thème" aria-label="Changer de thème">
+                        <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="13.5" cy="6.5" r=".75" fill="currentColor" />
+                            <circle cx="17.5" cy="10.5" r=".75" fill="currentColor" />
+                            <circle cx="8.5" cy="7.5" r=".75" fill="currentColor" />
+                            <circle cx="6.5" cy="12.5" r=".75" fill="currentColor" />
+                            <path d="M12 2a10 10 0 0 0 0 20 2 2 0 0 0 2-2v-1a2 2 0 0 1 2-2h2a4 4 0 0 0 4-4 10 10 0 0 0-10-11Z" />
+                        </svg>
+                    </button>
 
-                <a class="nav-logout" href="../auth/logout.php" title="Se déconnecter" aria-label="Se déconnecter">
-                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                        <path d="M16 17l5-5-5-5M21 12H9" />
-                    </svg>
-                </a>
+                    <a class="nav-logout" href="../auth/logout.php" title="Se déconnecter" aria-label="Se déconnecter">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                            <path d="M16 17l5-5-5-5M21 12H9" />
+                        </svg>
+                    </a>
                 </div>
             </div>
+        </header>
 
-            <!-- data-vue dit au navigateur quel écran est déjà là : il ne le recharge pas
-                 par-dessus. L'accueil passe par sa vue et non par pages/accueil.php, parce
-                 que ses chiffres sont déjà lus plus haut. -->
-            <div id="content" data-vue="<?= htmlspecialchars($vue['id'], ENT_QUOTES, 'UTF-8') ?>">
-                <?php require __DIR__ . '/' . ($vue['id'] === 'accueil' ? 'includes/vue/accueil_vue.php' : $vueFichier); ?>
+        <!-- La vue : une seule carte, qui tient la navigation et le travail. Les deux
+             étaient deux cartes séparées par une gouttière ; elles n'ont jamais été deux
+             objets, mais un seul, séparé par un filet. -->
+        <div class="vue">
+            <!-- Navigation de gauche -->
+            <nav id="left-panel">
+                <div class="sidebar-mobile-header">
+                    <strong>Navigation</strong>
+                    <button id="close-sidebar" type="button" aria-label="Fermer le menu">×</button>
+                </div>
+                <div class="nav-header">
+                    <!-- Le menu est déclaré dans includes/menu.php : qui voit quoi, quelle page
+                         chaque entrée ouvre, de quoi cet écran a besoin, et sous quel rayon il se
+                         range. La barre n'a plus qu'à le parcourir — pas un if de rôle ici.
+
+                         data-page porte l'adresse : la navigation la lit ici même, au lieu de
+                         tenir sa propre table d'identifiants dans un autre fichier. -->
+
+                    <!-- L'action qu'on vient faire en arrivant, au-dessus des rayons. -->
+                    <?php foreach ($entrees['avant'] as $entree): ?>
+                        <?php $libelle = is_callable($entree['libelle']) ? ($entree['libelle'])($utilisateur) : $entree['libelle']; ?>
+                        <button id="btn-<?= $entree['id'] ?>" class="nav-btn nav-btn-avant<?= $entree['id'] === $vue['id'] ? ' is-active' : '' ?>" type="button" data-page="<?= htmlspecialchars($entree['page'], ENT_QUOTES, 'UTF-8') ?>" <?= $entree['id'] === $vue['id'] ? ' aria-current="page"' : '' ?>>
+                            <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><?= $entree['icone'] ?></svg>
+                            <span><?= htmlspecialchars($libelle, ENT_QUOTES, 'UTF-8') ?></span>
+                        </button>
+                    <?php endforeach; ?>
+
+                    <?php foreach ($entrees['rayons'] as $cle => $rayon): ?>
+                        <section class="nav-rayon" data-rayon="<?= $cle ?>">
+                            <!-- L'intitulé est le bouton de repli : toute la ligne se clique, et
+                                 le chevron dit seulement dans quel sens ça va. -->
+                            <button type="button" class="nav-rayon-titre" aria-expanded="true" aria-controls="rayon-<?= $cle ?>">
+                                <span><?= htmlspecialchars($rayon['libelle'], ENT_QUOTES, 'UTF-8') ?></span>
+                                <svg class="nav-rayon-chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="m6 9 6 6 6-6" />
+                                </svg>
+                            </button>
+                            <div class="nav-rayon-corps" id="rayon-<?= $cle ?>">
+                                <?php foreach ($rayon['entrees'] as $entree): ?>
+                                    <?php $libelle = is_callable($entree['libelle']) ? ($entree['libelle'])($utilisateur) : $entree['libelle']; ?>
+                                    <button id="btn-<?= $entree['id'] ?>" class="nav-btn<?= $entree['id'] === $vue['id'] ? ' is-active' : '' ?>" type="button" data-page="<?= htmlspecialchars($entree['page'], ENT_QUOTES, 'UTF-8') ?>" <?= $entree['id'] === $vue['id'] ? ' aria-current="page"' : '' ?>>
+                                        <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><?= $entree['icone'] ?></svg>
+                                        <span><?= htmlspecialchars($libelle, ENT_QUOTES, 'UTF-8') ?></span>
+                                        <?= dashboardBadge($entree['id'], $utilisateur, $urgentPending, $pvAFaire) ?>
+                                    </button>
+                                <?php endforeach; ?>
+                            </div>
+                        </section>
+                    <?php endforeach; ?>
+                </div>
+
+            </nav>
+
+            <!-- Utilitaires -->
+            <button id="sidebar-backdrop" type="button" aria-label="Fermer le menu" tabindex="-1" hidden></button>
+            <div id="drag"></div>
+
+            <!-- Navigation de droite -->
+            <div id="right-panel">
+                <!-- data-vue dit au navigateur quel écran est déjà là : il ne le recharge pas
+                     par-dessus. L'accueil passe par sa vue et non par pages/accueil.php, parce
+                     que ses chiffres sont déjà lus plus haut. -->
+                <div id="content" data-vue="<?= htmlspecialchars($vue['id'], ENT_QUOTES, 'UTF-8') ?>">
+                    <?php require __DIR__ . '/' . ($vue['id'] === 'accueil' ? 'includes/vue/accueil_vue.php' : $vueFichier); ?>
+                </div>
             </div>
         </div>
     </div>
@@ -259,51 +289,31 @@ if ($isAdmin || $isWorkshopChief) {
     <!-- Comptes connectés sur cet appareil : bascule sans ressaisir le mot de passe -->
     <div id="account-menu" class="account-menu" role="menu" aria-labelledby="account-menu-button" data-csrf="<?= htmlspecialchars(Session::jeton()) ?>" hidden>
         <div class="account-menu-group">
-        <p class="account-menu-title">Comptes connectés</p>
+            <p class="account-menu-title">Comptes connectés</p>
 
-        <ul class="account-list">
-            <?php foreach ($comptes as $compte):
-                $estActif = $compte['identifiant'] === $utilisateur->identifiant;
-                $nomComplet = trim($compte['name'] . ' ' . $compte['prenom']);
-            ?>
-                <li class="account-row">
-                    <button type="button" class="account-item<?= $estActif ? ' is-current' : '' ?>" role="menuitemradio" aria-checked="<?= $estActif ? 'true' : 'false' ?>" data-compte="<?= htmlspecialchars($compte['identifiant']) ?>">
-                        <span class="account-avatar">
-                            <span class="user-avatar"><?= htmlspecialchars(mb_strtoupper(mb_substr(trim($compte['name']), 0, 1))) ?></span>
-                        </span>
-                        <span class="account-identity">
-                            <strong><?= htmlspecialchars($nomComplet) ?></strong>
-                            <span><?= htmlspecialchars($compte['role_name']) ?><?php if ($metier = roleComplement((int) $compte['id_role'])): ?> · <?= htmlspecialchars($metier) ?><?php endif; ?></span>
-                        </span>
-                    </button>
-                    <button type="button" class="account-remove" data-compte="<?= htmlspecialchars($compte['identifiant']) ?>" data-nom="<?= htmlspecialchars($nomComplet) ?>" aria-label="Retirer le compte <?= htmlspecialchars($nomComplet) ?>">Retirer</button>
-                </li>
-            <?php endforeach; ?>
-        </ul>
+            <ul class="account-list">
+                <?php foreach ($comptes as $compte):
+                    $estActif = $compte['identifiant'] === $utilisateur->identifiant;
+                    $nomComplet = trim($compte['name'] . ' ' . $compte['prenom']);
+                ?>
+                    <li class="account-row">
+                        <button type="button" class="account-item<?= $estActif ? ' is-current' : '' ?>" role="menuitemradio" aria-checked="<?= $estActif ? 'true' : 'false' ?>" data-compte="<?= htmlspecialchars($compte['identifiant']) ?>">
+                            <span class="account-avatar">
+                                <span class="user-avatar"><?= htmlspecialchars(mb_strtoupper(mb_substr(trim($compte['name']), 0, 1))) ?></span>
+                            </span>
+                            <span class="account-identity">
+                                <strong><?= htmlspecialchars($nomComplet) ?></strong>
+                                <span><?= htmlspecialchars($compte['role_name']) ?><?php if ($metier = roleComplement((int) $compte['id_role'])): ?> · <?= htmlspecialchars($metier) ?><?php endif; ?></span>
+                            </span>
+                        </button>
+                        <button type="button" class="account-remove" data-compte="<?= htmlspecialchars($compte['identifiant']) ?>" data-nom="<?= htmlspecialchars($nomComplet) ?>" aria-label="Retirer le compte <?= htmlspecialchars($nomComplet) ?>">Retirer</button>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
         </div>
 
         <div class="account-menu-separator"></div>
 
-        <div class="account-menu-group">
-        <button type="button" class="account-add" role="menuitem">
-            <span class="account-action-icon" aria-hidden="true">
-                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 5v14M5 12h14" />
-                </svg>
-            </span>
-            Ajouter un compte
-        </button>
-
-        <button type="button" class="account-manage" role="menuitem" aria-pressed="false">
-            <span class="account-action-icon" aria-hidden="true">
-                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1" />
-                    <circle cx="12" cy="12" r="3.5" />
-                </svg>
-            </span>
-            <span class="account-manage-label">Gérer les comptes</span>
-        </button>
-        </div>
 
         <?php if ($comptesDev): ?>
             <div class="account-menu-separator"></div>
@@ -322,7 +332,7 @@ if ($isAdmin || $isWorkshopChief) {
                     ?>
                         <li class="account-row">
                             <button type="button" class="account-item account-devenir" role="menuitem"
-                                    data-compte="<?= htmlspecialchars($autre['identifiant']) ?>">
+                                data-compte="<?= htmlspecialchars($autre['identifiant']) ?>">
                                 <span class="account-avatar">
                                     <span class="user-avatar"><?= htmlspecialchars(mb_strtoupper(mb_substr(trim($autre['name']), 0, 1))) ?></span>
                                 </span>
@@ -340,51 +350,72 @@ if ($isAdmin || $isWorkshopChief) {
         <div class="account-menu-separator"></div>
 
         <div class="account-menu-group">
-        <a class="account-logout" role="menuitem" href="../auth/logout.php">
-            <!-- Le même gabarit que « Ajouter un compte » et « Gérer les comptes » : sans lui,
+            <button type="button" class="account-add" role="menuitem">
+                <span class="account-action-icon" aria-hidden="true">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 5v14M5 12h14" />
+                    </svg>
+                </span>
+                Ajouter un compte
+            </button>
+
+            <button type="button" class="account-manage" role="menuitem" aria-pressed="false">
+                <span class="account-action-icon" aria-hidden="true">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1" />
+                        <circle cx="12" cy="12" r="3.5" />
+                    </svg>
+                </span>
+                <span class="account-manage-label">Gérer les comptes</span>
+            </button>
+        </div>
+
+        <div class="account-menu-group">
+            <a class="account-logout" role="menuitem" href="../auth/logout.php">
+                <!-- Le même gabarit que « Ajouter un compte » et « Gérer les comptes » : sans lui,
                  son icône s'étirait sur 32 px au lieu de tenir dans le rail, et la ligne ne
                  s'alignait avec aucune des deux autres. -->
-            <span class="account-action-icon" aria-hidden="true">
-                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                    <path d="M16 17l5-5-5-5M21 12H9" />
-                </svg>
-            </span>
-            Se déconnecter
-        </a>
+                <span class="account-action-icon" aria-hidden="true">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                        <path d="M16 17l5-5-5-5M21 12H9" />
+                    </svg>
+                </span>
+                Se déconnecter
+            </a>
         </div>
     </div>
 
     <!-- Choix du thème : la valeur active est relue de localStorage au chargement -->
     <div id="theme-menu" class="account-menu theme-menu" role="menu" aria-labelledby="theme-menu-button" hidden>
         <div class="account-menu-group">
-        <p class="account-menu-title">Thème</p>
+            <p class="account-menu-title">Thème</p>
 
-        <!-- « Système » d'abord : c'est l'état de départ, et le seul moyen d'y revenir
+            <!-- « Système » d'abord : c'est l'état de départ, et le seul moyen d'y revenir
              une fois qu'on a tranché. -->
-        <button type="button" class="account-item theme-option" role="menuitemradio" aria-checked="false" data-theme-val="auto">
-            <span class="theme-swatch theme-swatch-auto" aria-hidden="true"></span>
-            <span class="account-identity"><strong>Système</strong></span>
-            <svg class="icon account-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" hidden>
-                <path d="m5 13 4 4 10-10" />
-            </svg>
-        </button>
+            <button type="button" class="account-item theme-option" role="menuitemradio" aria-checked="false" data-theme-val="auto">
+                <span class="theme-swatch theme-swatch-auto" aria-hidden="true"></span>
+                <span class="account-identity"><strong>Système</strong></span>
+                <svg class="icon account-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" hidden>
+                    <path d="m5 13 4 4 10-10" />
+                </svg>
+            </button>
 
-        <button type="button" class="account-item theme-option" role="menuitemradio" aria-checked="false" data-theme-val="dark">
-            <span class="theme-swatch theme-swatch-default" aria-hidden="true"></span>
-            <span class="account-identity"><strong>Sombre</strong></span>
-            <svg class="icon account-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" hidden>
-                <path d="m5 13 4 4 10-10" />
-            </svg>
-        </button>
+            <button type="button" class="account-item theme-option" role="menuitemradio" aria-checked="false" data-theme-val="dark">
+                <span class="theme-swatch theme-swatch-default" aria-hidden="true"></span>
+                <span class="account-identity"><strong>Sombre</strong></span>
+                <svg class="icon account-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" hidden>
+                    <path d="m5 13 4 4 10-10" />
+                </svg>
+            </button>
 
-        <button type="button" class="account-item theme-option" role="menuitemradio" aria-checked="false" data-theme-val="light">
-            <span class="theme-swatch theme-swatch-light" aria-hidden="true"></span>
-            <span class="account-identity"><strong>Clair</strong></span>
-            <svg class="icon account-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" hidden>
-                <path d="m5 13 4 4 10-10" />
-            </svg>
-        </button>
+            <button type="button" class="account-item theme-option" role="menuitemradio" aria-checked="false" data-theme-val="light">
+                <span class="theme-swatch theme-swatch-light" aria-hidden="true"></span>
+                <span class="account-identity"><strong>Clair</strong></span>
+                <svg class="icon account-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" hidden>
+                    <path d="m5 13 4 4 10-10" />
+                </svg>
+            </button>
         </div>
     </div>
 

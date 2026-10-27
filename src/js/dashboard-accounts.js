@@ -81,7 +81,7 @@
 
     const ouvrirMenu = ouvert => menuComptes.ouvrir(ouvert);
 
-    /** Le menu n'''écrit que par deux actions : celle des comptes, et celle du développement. */
+    /** Le menu n'écrit que par deux actions : celle des comptes, et celle du développement. */
     async function envoyer(donnees, bouton, action = 'comptes.php') {
         bouton.disabled = true;
         try {

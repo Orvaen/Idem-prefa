@@ -96,27 +96,53 @@ $complements = [
 <?php // La page a sa propre apparence — ivoire en thème clair, brun chaud en sombre — et ses
       // propres polices : voir css/dashboard/nouvelle-demande.css. data-static-fields
       // tient floating-fields.js à l'écart : ici l'étiquette se pose au-dessus du champ. ?>
+<?php
+// La demande se rattache à une affaire ouverte, elle n'en crée pas une : c'est le chargé de
+// production qui ouvre le chantier et désigne qui le suit. On ne choisit donc que parmi les
+// siennes, et sans issue « Autre ».
+//
+// Le calcul est remonté ici parce que l'écran entier en dépend, et non la seule liste
+// déroulante : sans affaire, il n'y a pas de demande à faire.
+$affairesOuvertes = Affaire::pour($db, $utilisateur);
+?>
+
+<?php if (!$editing && !$affairesOuvertes): ?>
+    <?php // Rien à rattacher, donc rien à remplir. On montrait le formulaire entier —
+          // plans, documents, planning, matière, contrôles — et son bouton d'envoi, pour
+          // une demande qui ne pouvait pas partir : la personne remplissait tout avant de
+          // l'apprendre. L'écran se tient maintenant à ce qu'il y a à dire. ?>
+    <section class="page prefa-page prefa-nouvelle">
+        <header class="nd-entete">
+            <div class="nd-titre">
+                <button type="button" class="prefa-retour nd-retour bouton-discret"><span aria-hidden="true">&larr;</span> Demandes</button>
+                <h1>Nouvelle demande</h1>
+                <p>Une demande se rattache à une affaire ouverte à votre nom.</p>
+            </div>
+        </header>
+        <div class="nd-sans-affaire">
+            <p>Aucune affaire ne vous est confiée pour l’instant.</p>
+            <p class="nd-discret">Demandez au chargé de production d’en ouvrir une à votre nom :
+                vous pourrez alors y déposer vos demandes.</p>
+        </div>
+    </section>
+<?php else: ?>
+
 <section class="page prefa-page prefa-nouvelle">
-    <form id="prefa-form" class="prefa-form nd-form" novalidate enctype="multipart/form-data" data-static-fields data-hours-per-inch="<?= prefaEscape($hoursPerInch) ?>">
+    <?php // Tant qu'aucune affaire n'est choisie, le reste du formulaire n'a pas lieu d'être :
+      // une demande se rattache à une affaire, et on remplissait plans, documents, planning
+      // et contrôles sans savoir à quoi ils se rapportaient. Le marqueur est posé ici, le
+      // script le retire dès que le choix est fait. En modification, l'affaire est connue. ?>
+<form id="prefa-form" class="prefa-form nd-form<?= (!$editing && empty($request['id_affaire'])) ? ' nd-attend-affaire' : '' ?>" novalidate enctype="multipart/form-data" data-static-fields data-hours-per-inch="<?= prefaEscape($hoursPerInch) ?>">
         <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
         <?php if ($editing): ?><input type="hidden" name="id" value="<?= (int) $request['id'] ?>"><?php endif; ?>
 
-        <?php // L'envoi est en haut, à côté du titre : le formulaire tient sur un écran, et on
-              // n'a plus à le parcourir jusqu'en bas pour trouver le bouton. ?>
         <header class="nd-entete">
             <div class="nd-titre">
                 <button type="button" class="prefa-retour nd-retour bouton-discret"><span aria-hidden="true">&larr;</span> Demandes</button>
                 <!-- « Nouvelle demande » et non « Nouvelle affaire » : c'est le chargé de
                      production qui ouvre l'affaire, et on en dépose plusieurs sur la même. -->
                 <h1><?= $editing ? 'Modifier la demande ' . prefaEscape(prefaReferenceComplete((int) $request['id'])) : 'Nouvelle demande' ?></h1>
-                <p><?= $editing ? 'Après modification, la demande repassera en attente de validation.' : 'Rattachez-la à l’une de vos affaires, puis transmettez-la pour validation.' ?></p>
-            </div>
-            <div class="nd-envoi">
-                <label class="nd-urgent"><input type="checkbox" name="urgent" value="1" <?= !empty($request['urgent']) ? 'checked' : '' ?>> Demande urgente</label>
-                <div class="nd-boutons prefa-actions">
-                    <button type="button" class="cancel-prefa-edit nd-annuler bouton-discret">Annuler</button>
-                    <button type="submit" class="nd-envoyer"><?= $editing ? 'Enregistrer' : 'Envoyer la demande' ?></button>
-                </div>
+                <p><?= $editing ? 'Après modification, la demande repassera en attente de validation.' : 'Une affaire peut porter plusieurs demandes.' ?></p>
             </div>
         </header>
 
@@ -126,19 +152,13 @@ $complements = [
 
             <!-- À gauche : de quoi il s'agit — l'affaire et ses documents. -->
             <div class="nd-colonne">
-                <?php
-                // La demande se rattache à une affaire ouverte, elle n'en crée pas une :
-                // c'est le chargé de production qui ouvre le chantier et désigne qui le
-                // suit. On ne choisit donc que parmi les siennes, et sans issue « Autre ».
-                $affairesOuvertes = Affaire::pour($db, $utilisateur);
-                ?>
                 <?php if ($affairesOuvertes): ?>
                     <?= listeFiltrableRendu('affaire', 'Affaire',
                         array_map(static fn (Affaire $a): array => ['id' => $a->id, 'libelle' => $a->nom], $affairesOuvertes),
                         $request['id_affaire'] ?? null,
                         ['vide' => 'Choisissez l’affaire…', 'aucun' => 'Aucune affaire de ce nom.',
                          'obligatoire' => true, 'chercher' => 'Rechercher parmi vos affaires…',
-                         'aide' => 'Une affaire peut porter plusieurs demandes.']) ?>
+                         'aide' => '']) ?>
                 <?php else: ?>
                     <!-- Sans affaire, rien à déposer : on le dit plutôt que de montrer une
                          liste vide dont on ne saurait pas quoi faire. -->
@@ -274,5 +294,31 @@ $complements = [
             </div>
 
         </div>
+
+        <?php // L'envoi est en bas, collé au bord de la fenêtre. Il était en haut, à côté du
+              // titre, du temps où le formulaire tenait sur un écran : en une seule colonne
+              // il n'y tient plus, et il fallait tout remonter pour trouver le bouton. La
+              // barre reste donc lisible où qu'on en soit — même principe que la décision
+              // d'une fiche de demande.
+              ?>
+        <div class="nd-barre">
+            <div class="nd-envoi">
+                <label class="nd-urgent"><input type="checkbox" name="urgent" value="1" <?= !empty($request['urgent']) ? 'checked' : '' ?>> Demande urgente</label>
+                <div class="nd-boutons prefa-actions">
+                    <button type="button" class="cancel-prefa-edit nd-annuler bouton-discret">Annuler</button>
+                    <button type="submit" class="nd-envoyer"><?= $editing ? 'Enregistrer' : 'Envoyer la demande' ?></button>
+                </div>
+            </div>
+        </div>
+
+        <?php // « Haut de page » se tient sur le côté, au bord droit et à mi-hauteur : posé
+              // dans la barre, puis juste au-dessus d'elle, il suivait la barre et restait
+              // donc en bas. Il ne paraît qu'une fois qu'on a défilé — en haut de page, il
+              // n'aurait rien à proposer. ?>
+        <button type="button" class="nd-haut bouton-discret" aria-label="Revenir en haut de la page" title="Haut de page" hidden>
+            <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 12.5v-9M3.5 8 8 3.5 12.5 8"/></svg>
+        </button>
     </form>
 </section>
+
+<?php endif; ?>

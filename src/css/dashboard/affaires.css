@@ -1,4 +1,4 @@
-/* L'écran des affaires : un formulaire d'ouverture, puis la liste des chantiers ouverts.
+/* L'écran des affaires : la liste des chantiers ouverts, et un bouton qui ouvre le suivant.
    Les classes communes — users-page, header-list, form-group — viennent du socle ; seul ce
    qui est propre à cet écran est ici. */
 
@@ -10,69 +10,83 @@
     background: var(--surface);
 }
 
-.affaires-intro {
-    margin: 2px 0 0;
-    font-size: 13px;
-    color: var(--text-muted);
-}
-
-/* Le formulaire tient sur une ligne tant que la fenêtre est large : ouvrir une affaire,
-   c'est un nom et une personne, pas un dossier à remplir. */
-/* Le formulaire et le tableau reprennent les 16 px du bandeau : ils étaient collés au
-   bord gauche, deux pixels à gauche du titre qui les annonce. */
-.affaire-form {
-    display: flex;
-    align-items: flex-end;
+/* ---------- Le bandeau ----------
+   Le titre à gauche, l'action à droite. « .users-page .header-list » empile ses enfants en
+   colonne — c'est ce qu'il fallait quand le chapeau suivait le titre et rien d'autre ; il
+   faut ici deux blocs côte à côte, et le chapeau sous le seul titre. */
+.affaires-page .header-list.affaires-entete {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
     gap: 16px;
-    flex-wrap: wrap;
-    margin: 0 0 16px;
-    padding: 0 16px;
 }
 
-.affaire-form .form-group {
-    flex: 1 1 16rem;
-    min-width: 12rem;
-    margin: 0;
+.affaires-titre {
+    min-width: 0;
 }
 
-/* Le bouton ne se laisse pas rogner : il garde sa taille et passe à la ligne si les deux
-   champs ont pris toute la largeur.
- *
- * Il prend la hauteur des champs — c'est l'échelle des formulaires — et non celle des
- * barres d'outils : mesuré à 144-176 contre 128-172 pour les champs, il commençait seize
- * pixels plus bas et finissait quatre pixels plus bas qu'eux.
- *
- * Les quatre pixels de marge ne sont pas une retouche à l'œil : un champ à étiquette
- * flottante réserve ce bas sous son cadre, et « align-items: flex-end » alignait le bouton
- * sur le bas de ce groupe, pas sur le champ. */
-.affaire-form > button {
+/* L'action de l'écran, en bouton encadré : un filet et le fond de la page, pas un pavé
+   plein. Le plein inverse la valeur du fond — presque blanc en sombre, noir en clair — et
+   sur 140 px dans un bandeau par ailleurs vide, il devient la tache la plus lumineuse de
+   l'écran pour une action qu'on fait trois fois par jour. Le filet la signale sans la
+   crier ; c'est le registre du « Annuler » de la fenêtre, plus bas dans cette feuille.
+   Le plein reste à « Ouvrir l'affaire », où il est la seule action attendue.
+
+   Barreau « lg », 32 px : c'est la hauteur d'un bouton de barre d'outils, et il siège dans
+   le bandeau. Il ne se laisse pas rogner par le chapeau qui s'allonge à sa gauche. */
+.affaire-nouvelle {
+    /* La hauteur est tenue par un réglage local, parce que deux déclarations en dépendent :
+       la hauteur elle-même et le calage sur la ligne du titre. Sur tablette elle passe à
+       44 px, et le calage doit suivre sans qu'on le recalcule à la main. */
+    --bouton-h: var(--h-lg);
     flex: none;
-    height: var(--ctrl-md);
-    margin-bottom: 4px;
-    padding: 0 16px;
-    border: 1px solid var(--accent);
-    border-radius: var(--r-sm);
-    background: var(--accent);
-    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: var(--bouton-h);
+    padding: 0 12px;
+    /* Il répond au titre, donc il se cale sur la ligne du titre — pas sur le bloc. Les deux
+       partent du haut du bandeau, mais le h1 fait 24 px de haut (18/24) et le bouton 32 :
+       laissé tel quel, le bouton descend de 4 px sous la ligne et le bandeau paraissait de
+       travers. Centrer le bandeau entier ne vaut pas mieux — le bouton tomberait entre le
+       titre et son chapeau, aligné sur ni l'un ni l'autre. */
+    margin-top: calc((24px - var(--bouton-h)) / 2);
+    /* Le filet franc, pas celui des cartes : posé à même la surface de l'écran, --border
+       ne fait que 1,25:1 en clair — le bouton n'aurait pas de bord. */
+    border: 1px solid var(--border-fort);
+    border-radius: var(--r-md);
+    background: transparent;
+    color: var(--text);
     font: inherit;
     font-size: 13px;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
     cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease;
 }
 
-.affaire-form > button:hover {
-    filter: brightness(1.08);
+/* Au survol, c'est le fond qui se lève, pas le filet qui s'allume : le bouton garde son
+   poids dans la page, il ne clignote pas. */
+.affaire-nouvelle:hover {
+    background: var(--hover);
 }
 
-/* Le message prend toute la largeur restante : il passe à la ligne plutôt que d'écraser
-   les champs. */
-.affaire-form .prefa-message {
-    flex: 1 1 100%;
-    margin: 0;
-    font-size: 13px;
+.affaire-nouvelle:active {
+    background: var(--active);
 }
 
-.affaire-form .prefa-message.is-error {
-    color: var(--danger, #dc2626);
+.affaire-nouvelle:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* 14 px, et le dessin plus sourd que son libellé : la croix dit où cliquer, c'est
+   « Nouvelle affaire » qui dit quoi. */
+.affaire-nouvelle .icon {
+    width: 14px;
+    height: 14px;
+    color: var(--text-muted);
 }
 
 .affaires-note {
@@ -82,214 +96,580 @@
     color: var(--text-muted);
 }
 
-.affaires-table-scroll {
-    overflow-x: auto;
-    padding: 0 16px;
+/* La barre de recherche de l'écran, sous le bandeau. Le compte se tient à côté d'elle :
+   c'est lui qui répond quand on tape, avant même qu'on lise la grille. */
+.affaires-filtres {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px 12px;
 }
 
-/* Le même tableau que partout ailleurs. Celui-ci était écrit en rem — et comme la racine
-   du document est à 13 px et non à 16, « 0.75rem » valait 9,75 px : son en-tête était
-   illisible, ses cellules à 11,7 px, et ses lignes faisaient 40, 43,5 ou 44 px selon ce
-   qu'elles contenaient. */
-.affaires-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
+.affaires-filtres .filtres-recherche {
+    flex: 0 1 300px;
 }
 
-.affaires-table th,
-.affaires-table td {
-    padding: 0 12px;
-    text-align: left;
-    vertical-align: middle;
+/* ---------- LA LISTE, EN CARTES ----------
+   Une grille qui se remplit toute seule : les cartes font 260 px au minimum et se
+   partagent ce qui reste, donc trois par rangée sur un portable et cinq sur l'écran de
+   l'atelier, sans media query. */
+.affaires-grille {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+    padding: 0 16px 16px;
 }
 
-.affaires-table th {
-    height: var(--ligne-th);
-    border-bottom: 1px solid var(--border);
-    color: var(--text-muted);
-    font-size: 12px;
-    font-weight: 500;
-    white-space: nowrap;
+/* La carte. Elle se détache au survol par son filet et une ombre basse — pas par sa
+   teinte : sur une grille de vingt, vingt fonds qui s'allument font une guirlande. */
+.affaire-carte {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    background: var(--carte);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
-.affaires-table td {
-    height: var(--ligne-td);
-    border-bottom: 1px solid var(--border-faint);
-}
-
-.affaires-table tbody tr:hover > td,
-.affaires-table tbody tr:focus-within > td {
-    background: var(--ligne-survol);
-}
-
-.affaires-table tbody tr:last-child > td {
-    border-bottom: 0;
-}
-
-/* ---------- Les contrôles dans le tableau ----------
-   Une ligne est du texte. Celle-ci portait quatre rectangles — un champ encadré, une liste
-   encadrée, un bouton bleu plein et un bouton encadré — soit vingt boîtes sur cinq lignes :
-   on lisait la grille des contrôles avant les affaires.
-
-   Le cadre n'arrive qu'au survol et à la saisie, et c'est la ligne entière qui le
-   déclenche : elle devient modifiable d'un coup, au lieu que chaque cellule s'allume sous
-   le curseur. Au clavier, entrer dans la ligne la révèle de la même façon — sans quoi on
-   tabulerait dans un tableau qui ne montre rien. */
-.affaires-table input,
-.affaires-table select {
-    width: 100%;
-    height: var(--ctrl-xs);
-    padding: 0 8px;
-    border: 1px solid transparent;
-    border-radius: var(--r-sm);
-    background-color: transparent;
-    color: var(--text);
-    font: inherit;
-    font-size: 13px;
-    text-overflow: ellipsis;
-    transition: background-color 0.12s ease, border-color 0.12s ease;
-}
-
-.affaires-table select {
-    /* La flèche est dessinée ici : celle du système ne suit aucun thème. Elle ne paraît
-       qu'avec le cadre — au repos, le nom du chargé d'affaire se lit comme du texte. */
-    appearance: none;
-    padding-right: 24px;
-    background-image: none;
-    background-position: calc(100% - 13px) center, calc(100% - 8px) center;
-    background-size: 5px 5px, 5px 5px;
-    background-repeat: no-repeat;
-}
-
-.affaires-table tbody tr:hover input,
-.affaires-table tbody tr:hover select,
-.affaires-table tbody tr:focus-within input,
-.affaires-table tbody tr:focus-within select {
-    border-color: var(--border);
-    background-color: var(--surface);
-}
-
-.affaires-table tbody tr:hover select,
-.affaires-table tbody tr:focus-within select {
-    background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
-                      linear-gradient(135deg, currentColor 50%, transparent 50%);
-}
-
-/* La cellule où l'on écrit porte l'accent, la ligne révélée se contente du filet gris :
-   sans cela, entrer dans une ligne au clavier l'allumait en entier sans dire dans quelle
-   cellule on se trouvait. Le sélecteur passe par tbody tr pour peser autant que la règle
-   de la ligne — et il la suit, donc il gagne. */
-.affaires-table tbody tr input:focus,
-.affaires-table tbody tr select:focus {
-    border-color: var(--accent);
-    outline: none;
-}
-
-/* C'est la ligne qui révèle, pas la cellule : la croix d'effacement du chargé d'affaire
-   paraît en même temps que le cadre des champs et les boutons d'action. */
-.affaires-table tbody tr:hover .liste-filtrable-effacer,
-.affaires-table tbody tr:focus-within .liste-filtrable-effacer {
-    opacity: 1;
-}
-
-/* Le nom se corrige sur place : c'est la seule donnée qu'on retouche souvent, et ouvrir
-   une fenêtre pour une faute de frappe n'en vaut pas la peine. */
-.affaires-table .affaire-nom {
-    min-width: 12rem;
-}
-
-/* Les commandes d'une ligne restent lisibles au repos, et ne prennent leur cadre qu'au
-   survol — le même traitement que la liste des demandes.
- *
-   Elles étaient d'abord complètement effacées (opacity: 0). C'était une erreur : sur cet
-   écran, « Supprimer » est l'une des deux seules actions, et un tableau dont rien ne dépasse
-   a l'air de ne rien proposer. On ne cache une commande que lorsque la ligne reste utile
-   sans elle, et qu'une autre porte déjà l'action principale. */
-.affaire-actions button {
-    height: var(--ctrl-xs);
-    padding: 0 10px;
-    border: 1px solid transparent;
-    border-radius: var(--r-sm);
-    background: transparent;
-    color: var(--text-muted);
-    font: inherit;
-    font-size: 13px;
-    cursor: pointer;
-    transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
-}
-
-.affaires-table tbody tr:hover .affaire-actions button,
-.affaires-table tbody tr:focus-within .affaire-actions button {
-    border-color: var(--border);
-    color: var(--text);
-}
-
-.affaire-actions button:hover:not([disabled]) {
-    background: var(--active);
-}
-
-/* « Enregistrer » ne sert qu'une fois la ligne touchée : avant, il n'y a rien à
-   enregistrer. Il restait pourtant en bleu plein sur chaque ligne — cinq appels à l'action
-   pour une page où l'on ne modifie rien la plupart du temps. */
-.affaire-enregistrer {
+/* Une carte que la recherche écarte sort de la grille : masquée par « visibility », elle
+   y garderait sa place et laisserait un trou. */
+.affaire-carte.est-masquee {
     display: none;
 }
 
-.affaires-table tbody tr.est-modifiee .affaire-enregistrer {
-    display: inline-flex;
-    align-items: center;
-    opacity: 1;
-    border-color: var(--accent);
-    color: var(--accent-texte);
+/* Toute la carte mène aux demandes de l'affaire — sauf ses commandes, qui gardent leur
+   geste et leur curseur. Une affaire sans demande ne mène nulle part : elle n'annonce
+   donc rien, et c'est le bouton du pied qui en décide, posé par le serveur. */
+.affaire-carte:has(button.affaire-demandes) {
+    cursor: pointer;
 }
 
-.affaires-table tbody tr.est-modifiee .affaire-enregistrer:hover {
-    background: var(--accent);
-    color: #ffffff;
+.affaire-carte:hover,
+.affaire-carte:focus-within {
+    border-color: var(--border-fort);
+    box-shadow: 0 2px 4px -1px rgb(0 0 0 / 10%), 0 4px 6px -1px rgb(0 0 0 / 8%);
+}
+
+.affaire-carte-haut {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+/* Deux lettres dans un carré, à la place du visuel de couverture qu'on n'a pas. */
+.affaire-monogramme {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--r-md);
+    background: var(--active);
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+/* ---------- La saisie sur place ----------
+   Les deux champs sont nus au repos — on lit une carte, pas un formulaire — et prennent
+   leur cadre au survol, puis l'accent au clavier. La marge négative rattrape leur marge
+   intérieure : le texte tombe alors sur le bord de la carte, aligné avec tout le reste,
+   alors que le cadre, lui, déborde de huit pixels de chaque côté. */
+.affaire-carte .affaire-nom,
+.affaire-carte .liste-filtrable-champ {
+    width: calc(100% + 16px);
+    margin: 0 -8px;
+    height: var(--h-lg);
+    padding: 0 8px;
+    border: 1px solid transparent;
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+}
+
+.affaire-carte .affaire-nom {
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.affaire-carte .liste-filtrable-champ {
+    /* La croix d'effacement a besoin de sa place à droite. */
+    width: calc(100% + 16px);
+    padding-right: 30px;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.affaire-carte:hover .affaire-nom,
+.affaire-carte:hover .liste-filtrable-champ,
+.affaire-carte:focus-within .affaire-nom,
+.affaire-carte:focus-within .liste-filtrable-champ {
+    border-color: var(--border);
+}
+
+.affaire-carte .affaire-nom:focus,
+.affaire-carte .liste-filtrable-champ:focus {
+    border-color: var(--accent);
+    background: var(--surface);
+    color: var(--text);
+    outline: none;
+}
+
+.affaire-carte .liste-filtrable {
+    width: 100%;
+    margin: 0;
+}
+
+.affaire-carte .liste-filtrable-effacer {
+    right: 0;
+}
+
+/* ---------- Le pied ----------
+   Le compte à gauche, l'enregistrement à droite, un filet entre le corps et eux : c'est le
+   pied d'une carte de projet, et il sert ici à la même chose — dire son état d'un coup
+   d'œil sans ouvrir. */
+.affaire-carte-pied {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: var(--h-md);
+    margin-top: 4px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-faint);
+}
+
+.affaire-demandes {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    height: var(--h-sm);
+    padding: 0 6px 0 8px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: var(--accent-fond);
+    color: var(--accent-texte);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: border-color 0.12s ease;
+}
+
+/* Le chevron dit que ça mène quelque part. Il n'avance qu'au survol de la carte : au
+   repos, c'est un compte ; sous la main, c'est un chemin. */
+.affaire-demandes .icon {
+    width: 13px;
+    height: 13px;
+    transform: translateX(-2px);
+    transition: transform 0.12s ease;
+}
+
+.affaire-carte:hover .affaire-demandes .icon {
+    transform: none;
+}
+
+.affaire-demandes:hover {
+    border-color: var(--filtre-bord);
+}
+
+.affaire-demandes:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* Une affaire sans demande ne mène nulle part : le compte redevient un simple état, et
+   la teinte de l'accent n'a plus de raison d'être. */
+.affaire-demandes.est-vide {
+    padding: 0 8px;
+    background: var(--active);
+    color: var(--text-muted);
+    cursor: default;
+}
+
+/* ---------- Les commandes ----------
+   « Enregistrer » n'existe que si quelque chose a changé : tant qu'on n'a rien touché, il
+   n'y a rien à enregistrer, et un bouton éteint dans chaque carte ferait vingt boutons
+   pour rien. Il ne prend pas de place au repos — le pied garde sa hauteur par son
+   « min-height », donc rien ne saute quand il paraît. */
+.affaire-enregistrer {
+    display: none;
+    align-items: center;
+    height: var(--h-md);
+    padding: 0 10px;
+    border: 1px solid transparent;
+    border-radius: var(--r-md);
+    background: var(--bouton-plein);
+    color: var(--bouton-plein-texte);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.affaire-carte.est-modifiee .affaire-enregistrer {
+    display: inline-flex;
+}
+
+.affaire-enregistrer:hover {
+    background: var(--bouton-plein-hover);
+}
+
+/* La corbeille ne paraît qu'au survol, comme les commandes d'une ligne de la liste des
+   demandes. Sous un doigt, il n'y a pas de survol : la media query la rend toujours
+   visible, sans quoi elle serait inatteignable sur la tablette de l'atelier. */
+.affaire-supprimer {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--h-md);
+    height: var(--h-md);
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: var(--r-md);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: opacity 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+
+.affaire-supprimer .icon {
+    width: 15px;
+    height: 15px;
+}
+
+@media (hover: hover) {
+
+    .affaire-supprimer {
+        opacity: 0;
+    }
+
+    .affaire-carte:hover .affaire-supprimer,
+    .affaire-carte:focus-within .affaire-supprimer {
+        opacity: 1;
+    }
 }
 
 .affaire-supprimer:hover:not([disabled]) {
-    border-color: var(--danger, #dc2626);
-    background: transparent;
-    color: var(--danger, #dc2626);
+    border-color: var(--danger-bord);
+    color: var(--danger-texte);
 }
 
-/* Le nombre de demandes se lit d'un coup d'œil : c'est lui qui dit si l'affaire se
-   supprime encore. Chiffres à chasse fixe, pour qu'ils s'alignent d'une ligne à l'autre. */
-.affaire-demandes {
-    font-variant-numeric: tabular-nums;
-}
-
-/* La cellule est une boîte flexible : elle perd donc le « vertical-align: middle » du
-   tableau, et son contenu se calait en haut. Le bouton fait 28 px dans une ligne de 40 —
-   il arrivait douze pixels au-dessus de son propre texte de ligne.
- *
-   L'écart est en pixels et non en rem : la racine du document est à 13 px, « 0.4rem » y
-   valait 5,2 px et non les 6,4 qu'on croit écrire. */
-.affaire-actions {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    white-space: nowrap;
+.affaire-supprimer:focus-visible,
+.affaire-enregistrer:focus-visible {
+    opacity: 1;
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
 }
 
 /* Une affaire qui porte des demandes ne se ferme pas : le bouton reste là, éteint, parce
-   que son absence ferait croire qu'on a oublié de l'écrire.
- *
-   Éteint, pas effacé : il porte une information — pourquoi on ne peut pas — et son infobulle
-   la donne. Une opacité de 0,4 posée sur une couleur déjà sourde rendait les deux illisibles
-   l'une par l'autre. */
-.affaires-table tbody tr:hover .affaire-supprimer[disabled],
-.affaires-table tbody tr:focus-within .affaire-supprimer[disabled],
+   que son absence ferait croire qu'on a oublié de l'écrire. */
 .affaire-supprimer[disabled] {
-    border-color: transparent;
     color: var(--text-muted);
     cursor: not-allowed;
 }
 
-.affaires-vide td {
-    height: auto;
-    padding: 20px 12px;
+.affaires-vide {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding: 24px 0;
     color: var(--text-muted);
+    text-align: center;
+}
+
+/* ---------- LA FENÊTRE D'OUVERTURE ----------
+   Les trois tons d'une surface flottante : le fond, le filet, l'ombre. Rayon 12 — l'échelle
+   de la DA donne ce barreau à une boîte de dialogue, comme à la palette et à la grande vue.
+
+   Large et basse, comme la fenêtre de création d'un outil de suivi : la saisie y tient sur
+   une ligne de titre, et le reste se choisit dessous. 420 puis 480 px faisaient une vignette
+   — une boîte haute et étroite pour deux questions.
+
+   La marge n'est plus posée sur la boîte mais sur chacune de ses trois zones : l'en-tête,
+   la saisie et le pied. C'est ce qui permet au filet du pied d'aller d'un bord à l'autre
+   au lieu de s'arrêter à 28 px de chaque côté. */
+.affaire-dialog {
+    width: min(640px, calc(100vw - 32px));
+    /* Posée au premier tiers, pas au centre. Une fenêtre centrée verticalement oblige
+       l'œil à redescendre chercher le titre, et elle bouge d'un écran à l'autre selon sa
+       hauteur ; posée en haut, elle s'ouvre toujours au même endroit, sous le regard —
+       c'est là que les outils de suivi la mettent. */
+    margin: 10vh auto auto;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--r-xl);
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--font);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 6%), 0 16px 48px rgb(0 0 0 / 18%);
+    /* ---------- L'ouverture et la fermeture ----------
+       Une fenêtre modale apparaît et disparaît par « display », qui ne s'interpole pas :
+       c'est pour ça qu'un <dialog> saute à l'écran. « allow-discrete » lève l'obstacle —
+       le navigateur retient l'affichage et la couche du dessus le temps de la transition,
+       et la fermeture s'anime donc sans une ligne de script.
+
+       16 centièmes : assez pour qu'on voie d'où vient la boîte, assez court pour qu'on ne
+       l'attende pas. Le mouvement est de huit pixels vers le bas — elle tombe de là où on
+       a cliqué, pas du bord de l'écran. */
+    opacity: 0;
+    transform: translateY(-8px) scale(0.985);
+    transition:
+        opacity 0.16s ease,
+        transform 0.16s ease,
+        display 0.16s allow-discrete,
+        overlay 0.16s allow-discrete;
+    /* Le volet du champ filtrable se pose sous le champ, en absolu. Le navigateur donne
+       « overflow: auto » à tout <dialog> : la liste des chargés d'affaire s'y serait
+       enroulée dans une barre de défilement au lieu de dépasser le cadre. Deux champs et un
+       pied ne passent pas sous le bord de l'écran, la fenêtre n'a rien à faire défiler. */
+    overflow: visible;
+}
+
+.affaire-dialog[open] {
+    opacity: 1;
+    transform: none;
+}
+
+/* L'état d'où part l'ouverture. Sans cette règle, le navigateur n'a aucune valeur de
+   départ à interpoler — l'élément vient de naître — et il pose directement l'état
+   ouvert : la fermeture s'animerait, l'ouverture non. */
+@starting-style {
+    .affaire-dialog[open] {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.985);
+    }
+}
+
+:root:not([data-theme="light"]) .affaire-dialog {
+    box-shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 20px 56px rgb(0 0 0 / 60%);
+}
+
+/* Le fond se fond, lui aussi. On anime son opacité et non sa couleur : les deux thèmes
+   lui donnent une teinte différente, et il n'y en a qu'une à écrire de cette façon. */
+.affaire-dialog::backdrop {
+    background: rgb(15 15 16 / 38%);
+    opacity: 0;
+    transition:
+        opacity 0.16s ease,
+        display 0.16s allow-discrete,
+        overlay 0.16s allow-discrete;
+}
+
+.affaire-dialog[open]::backdrop {
+    opacity: 1;
+}
+
+@starting-style {
+    .affaire-dialog[open]::backdrop {
+        opacity: 0;
+    }
+}
+
+/* Qui a demandé moins de mouvement l'obtient : la fenêtre paraît et disparaît, sans
+   glisser. Elle reste visible — c'est l'animation qu'on retire, pas la boîte. */
+@media (prefers-reduced-motion: reduce) {
+
+    .affaire-dialog,
+    .affaire-dialog::backdrop {
+        transition: none;
+    }
+
+    .affaire-dialog {
+        transform: none;
+    }
+}
+
+:root:not([data-theme="light"]) .affaire-dialog::backdrop {
+    background: rgb(0 0 0 / 58%);
+}
+
+/* Les trois zones se touchent : chacune porte sa marge, et le filet du pied court d'un
+   bord à l'autre. */
+.affaire-dialog .affaire-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+}
+
+/* ---------- La saisie ----------
+   Le nom s'écrit en grand et sans étiquette : dans une fenêtre qui s'appelle « Nouvelle
+   affaire », un champ qui dit « Nom de l'affaire » n'a pas besoin qu'on l'annonce une
+   seconde fois au-dessus de lui. */
+/* L'écart est le même partout dans la fenêtre : 24 px au bord, 20 sous le titre, 12 entre
+   les deux champs. Un champ qui en suit un autre est plus proche de lui que du titre — ils
+   forment un bloc, et c'est ce que l'œil doit lire. */
+.affaire-dialog-corps {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px 24px 24px;
+}
+
+/* Les deux champs sont le même objet, écrit une fois : même hauteur, même corps, même
+   cadre, pleine largeur tous les deux.
+ *
+   Le chargé d'affaire arrivait en pastille de 230 px sur 32, à côté d'une ligne de titre
+   de 40 — deux contrôles de deux familles différentes dans une fenêtre qui n'en compte
+   que deux. La rangée de pastilles avait un sens chez Plane, où elle en aligne huit ;
+   avec une seule, elle ne dit rien et se voit. */
+.affaire-nom-champ,
+.affaire-dialog .liste-filtrable-champ {
+    width: 100%;
+    height: var(--h-2xl);
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 15px;
+}
+
+.affaire-nom-champ:focus,
+.affaire-dialog .liste-filtrable-champ:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+
+.affaire-dialog .liste-filtrable {
+    width: 100%;
+    margin: 0;
+}
+
+/* Seule différence entre les deux champs, et elle est due : la croix d'effacement demande
+   sa place à droite. */
+.affaire-dialog .liste-filtrable-champ {
+    padding-right: 38px;
+}
+
+/* Le « × » se montre dès qu'il y a quelqu'un à retirer, et pas avant. Le mode sans
+   étiquette ne le révèle qu'au survol, et le taille pour une ligne de tableau — c'est bon
+   là où cinq croix alignées feraient une colonne, pas dans une fenêtre où elle est seule
+   dans un champ de 40 px. « visibility » et non « opacity » pour le vide : ça la sort
+   aussi du parcours au clavier. */
+.affaire-dialog .liste-filtrable-tableau .liste-filtrable-effacer {
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    opacity: 1;
+}
+
+.affaire-dialog .liste-filtrable-tableau .liste-filtrable-effacer .icon {
+    width: 14px;
+    height: 14px;
+}
+
+.affaire-dialog .liste-filtrable-champ:placeholder-shown ~ .liste-filtrable-effacer {
+    visibility: hidden;
+}
+
+.affaire-dialog-entete {
+    padding: 24px 24px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.affaire-dialog-entete h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+/* Le message s'intercale entre le dernier champ et le pied — là où le regard revient après
+   avoir pressé le bouton. Vide, il ne pousse pas le pied de seize pixels. */
+.affaire-dialog .prefa-message {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.affaire-dialog .prefa-message:empty {
+    display: none;
+}
+
+.affaire-dialog .prefa-message.is-error {
+    color: var(--danger-texte);
+}
+
+.affaire-dialog-pied {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 16px 24px;
+    /* Le filet d'une carte, pas celui d'une ligne de tableau : il sépare deux zones de la
+       fenêtre. À « --border-faint », il disparaissait sur la surface sombre. */
+    border-top: 1px solid var(--border);
+}
+
+.affaire-dialog-pied button {
+    display: inline-flex;
+    align-items: center;
+    height: var(--h-lg);
+    padding: 0 12px;
+    border: 1px solid transparent;
+    border-radius: var(--r-md);
+    font: inherit;
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.affaire-dialog-pied button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* Annuler sort de la fenêtre sans rien écrire : un bouton encadré, pas un second appel à
+   l'action. */
+.affaire-dialog-pied .affaire-dialog-fermer {
+    border-color: var(--border);
+    background: var(--surface);
+    color: var(--text);
+}
+
+.affaire-dialog-pied .affaire-dialog-fermer:hover {
+    background: var(--hover);
+}
+
+.affaire-dialog-pied .affaire-ouvrir {
+    background: var(--bouton-plein);
+    color: var(--bouton-plein-texte);
+    font-weight: 500;
+}
+
+.affaire-dialog-pied .affaire-ouvrir:hover {
+    background: var(--bouton-plein-hover);
+}
+
+/* Sur une tablette d'atelier, la cible fait 44 px : c'est la règle des autres fenêtres. */
+@media (max-width: 1100px), (pointer: coarse) {
+
+    /* Un seul réglage : la hauteur sert aussi au calage sur la ligne du titre. */
+    .affaire-nouvelle {
+        --bouton-h: 44px;
+    }
+
+    .affaire-dialog-pied button {
+        height: 44px;
+    }
+
+    /* La ligne de titre et la pastille suivent : une cible de 32 px ne se vise pas avec un
+       gant d'atelier. */
+    .affaire-nom-champ,
+    .affaire-dialog .liste-filtrable-champ {
+        height: 44px;
+    }
 }

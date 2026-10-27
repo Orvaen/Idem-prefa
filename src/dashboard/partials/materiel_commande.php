@@ -23,7 +23,7 @@ foreach ($commandes as $commande) $articlesEnTout += count($commande['articles']
 
     <?php // « Réception matériel », et non « Matériel commandé » : le bloc du dessus porte
           // ce que le bon commande, celui-ci ce que l'atelier a vu arriver. Deux noms
-          // voisins pour deux choses différentes, c'''était une question par semaine. ?>
+          // voisins pour deux choses différentes, c'était une question par semaine. ?>
     <summary class="fiche-famille-titre">
         <span class="fiche-famille-nom">Réception matériel</span>
         <span class="prefa-document-compte"><?= $articlesEnTout ?></span>

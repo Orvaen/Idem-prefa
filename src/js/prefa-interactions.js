@@ -44,13 +44,21 @@ function refreshPrefaList() {
     prefaListRequest = request;
     request.always(function () { if (prefaListRequest === request) prefaListRequest = null; });
 }
-$(document).on('input', '#prefa-search', function () {
+// Le même délai pour la frappe et pour les filtres : cocher trois cases d'affilée ne doit
+// pas partir en trois allers-retours, pas plus que taper trois lettres. « Tout
+// sélectionner » bascule d'ailleurs toutes les cases d'un coup — sans ce délai, il partait
+// autant de fois qu'il y a d'options.
+const PREFA_DELAI_FILTRE = 350;
+
+function differerRafraichissement() {
     clearTimeout(prefaFilterTimer);
-    prefaFilterTimer = setTimeout(refreshPrefaList, 350);
-});
+    prefaFilterTimer = setTimeout(refreshPrefaList, PREFA_DELAI_FILTRE);
+}
+
+$(document).on('input', '#prefa-search', differerRafraichissement);
 // Le formulaire émet « change » quand la barre de filtres bouge — c'est elle qui prévient,
 // elle n'appelle pas le rechargement : c'est l'écran qui sait comment se recharger.
-$(document).on('change', '#prefa-filters', refreshPrefaList);
+$(document).on('change', '#prefa-filters', differerRafraichissement);
 $(document).on('click', '#refresh-prefa', refreshPrefaList);
 $(document).on('input', '#controles', function () {
     $('#controles-value').val(this.value).prop('required', true).get(0).setCustomValidity('');
@@ -319,7 +327,7 @@ $(document).on('change', '.prefa-depot-champ', function () {
             const liste = zone.querySelector('.prefa-document-list');
             liste.insertAdjacentHTML('beforeend', corps.html);
             liste.hidden = false;
-            // Une famille repliée s'''ouvre : déposer sans rien voir arriver laisse croire
+            // Une famille repliée s'ouvre : déposer sans rien voir arriver laisse croire
             // que le dépôt a échoué.
             zone.open = true;
             zone.querySelector('.prefa-no-document').hidden = true;
@@ -823,3 +831,103 @@ $(document).on('input change', '#controles-pt-value', function (event) {
 
     window.addEventListener('resize', () => fermerTout(null));
 }());
+
+
+/* ---------- Le formulaire s'ouvre quand l'affaire est choisie ----------
+ *
+ * Une demande se rattache à une affaire : avant ce choix, les plans, les documents, le
+ * planning et les contrôles n'ont rien à quoi se rapporter. Le serveur pose le marqueur
+ * « nd-attend-affaire » au premier rendu ; on le retire dès qu'une affaire est retenue, et
+ * on le remet si on l'efface.
+ *
+ * C'est le champ caché qui annonce le choix, pas celui où l'on tape : on peut écrire trois
+ * lettres d'un nom d'affaire sans en avoir retenu aucune.
+ */
+$(document).on('change', '#prefa-form [data-liste-filtrable="affaire"] input[type="hidden"]',
+    function () {
+        const form = $(this).closest('#prefa-form');
+        const choisie = String(this.value || '').trim() !== '';
+        form.toggleClass('nd-attend-affaire', !choisie);
+    });
+
+// « Haut de page » : une fois en bas du formulaire, rien ne ramenait à l'affaire ni aux
+// plans. La zone qui défile est « .page » — elle porte l'overflow — et non la fenêtre :
+// window.scrollTo() n'aurait rien bougé.
+//
+// Le bouton se tient sur le côté, mais il ne paraît qu'une fois qu'on a défilé : en haut
+// de page, il proposait de remonter là où l'on était déjà.
+//
+// L'écoute se fait en phase de capture, parce que « scroll » ne remonte pas : l'écran
+// arrive par AJAX, et un écouteur posé au chargement n'aurait trouvé personne.
+document.addEventListener('scroll', function (evenement) {
+    const page = evenement.target;
+    if (!(page instanceof HTMLElement) || !page.classList.contains('page')) return;
+    const bouton = page.querySelector('.nd-haut');
+    // 80px, et non 240 : à 240 il fallait descendre bien trop bas pour le voir arriver.
+    // Assez haut tout de même pour qu'un micro-défilement ne le fasse pas papilloter.
+    if (bouton) bouton.hidden = page.scrollTop < 80;
+}, true);
+
+$(document).on('click', '.nd-haut', function () {
+    const page = this.closest('.page');
+    if (page) page.scrollTo({top: 0, behavior: 'smooth'});
+});
+
+// La densité du tableau : deux façons de lire la même liste. Ce n'est pas un filtre — rien
+// n'entre ni ne sort — donc rien ne part au serveur : c'est une préférence de lecture, elle
+// reste dans le navigateur de la personne.
+//
+// Le rendu pose déjà « data-densite="confortable" ». Le script ne corrige que si l'autre a
+// été retenue, pour que la page ne se resserre pas sous les yeux après coup.
+const PREFA_DENSITES = ['confortable', 'compact'];
+
+function prefaDensiteRetenue() {
+    try {
+        const retenue = localStorage.getItem('prefa-densite');
+        return PREFA_DENSITES.includes(retenue) ? retenue : 'confortable';
+    } catch (erreur) {
+        // Navigation privée, stockage refusé : le confortable, comme au premier jour.
+        return 'confortable';
+    }
+}
+
+function prefaPoserDensite(section, densite) {
+    section.dataset.densite = densite;
+    section.querySelectorAll('.prefa-densite-choix').forEach(choix => {
+        choix.setAttribute('aria-pressed', String(choix.dataset.densite === densite));
+    });
+}
+
+// L'écran arrive par AJAX : un parcours unique au chargement ne trouverait rien.
+function prefaAppliquerDensite(racine) {
+    if (!racine || racine.nodeType !== 1) return;
+    const densite = prefaDensiteRetenue();
+    if (racine.matches('.prefa-list')) prefaPoserDensite(racine, densite);
+    racine.querySelectorAll('.prefa-list').forEach(s => prefaPoserDensite(s, densite));
+}
+
+$(document).on('click', '.prefa-densite-choix', function () {
+    const densite = this.dataset.densite;
+    if (!PREFA_DENSITES.includes(densite)) return;
+    try {
+        localStorage.setItem('prefa-densite', densite);
+    } catch (erreur) {
+        // Le choix vaudra pour cette page : on ne refuse pas le geste parce qu'on ne sait
+        // pas le retenir.
+    }
+    document.querySelectorAll('.prefa-list').forEach(s => prefaPoserDensite(s, densite));
+});
+
+(() => {
+    const demarrer = () => {
+        prefaAppliquerDensite(document.body);
+        new MutationObserver(mutations => {
+            mutations.forEach(m => m.addedNodes.forEach(prefaAppliquerDensite));
+        }).observe(document.body, {childList: true, subtree: true});
+    };
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', demarrer);
+    } else {
+        demarrer();
+    }
+})();

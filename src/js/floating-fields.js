@@ -7,7 +7,11 @@
 
             const wrapper = document.createElement('div');
             wrapper.className = 'floating-field';
-            const unit = field.closest('.input-unit');
+            // « .ctrl-date » compte comme « .input-unit » : le champ y arrive avec le
+            // déclencheur de son calendrier, et c'est l'ensemble qui tient la place du
+            // contrôle. Sans ce regard, l'étiquette flottante emportait le champ seul et
+            // laissait la glyphe en arrière, dans une enveloppe devenue vide.
+            const unit = field.closest('.input-unit, .ctrl-date');
             const control = unit || field;
             control.before(wrapper);
             wrapper.append(control, label);

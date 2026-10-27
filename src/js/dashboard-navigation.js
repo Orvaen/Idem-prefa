@@ -66,8 +66,15 @@ function vueDeLAdresse() {
     return new URLSearchParams(window.location.search).get('vue');
 }
 
-function ouvrirVue(bouton, { historique = 'pousser' } = {}) {
-    const page = bouton.dataset.page;
+/**
+ * Ouvre l'écran d'une entrée du menu.
+ *
+ * « page » permet d'ouvrir cet écran avec un filtre que le menu ne porte pas — une
+ * affaire qu'on clique ouvre la liste des demandes sur son nom. C'est bien l'entrée du
+ * menu qu'on passe quand même : c'est elle qui se marque active, et c'est son identifiant
+ * qui part dans l'adresse.
+ */
+function ouvrirVue(bouton, { historique = 'pousser', page = bouton.dataset.page } = {}) {
     if (!page) return;
 
     $('#content').load(page, function (response, status, xhr) {

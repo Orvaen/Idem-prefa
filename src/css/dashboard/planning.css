@@ -4,15 +4,21 @@
 
    « fond » et « case » remplacent dix gris qui tenaient en deux points d'écart — #141a24,
    #161c26, #181e28, #19202c, #1a212d, #1a222e, #1b222e, #1e2634, #1f2735 — et que
-   personne n'aurait su distinguer à l'œil. */
+   personne n'aurait su distinguer à l'œil.
+
+   Ces gris-là étaient des ardoises bleutées (#1a222e : trois points de bleu de plus que
+   de rouge). À côté des gris strictement neutres de la palette, tout le calendrier tirait
+   au bleu. Ils sont repris sur l'échelle brute — c'est l'un des rares endroits où on a le
+   droit de l'appeler : une sous-palette d'écran *est* une définition, pas une peinture.
+   Le bloc clair, plus bas, redéfinit les mêmes noms. */
 :root {
-    --planning-fond: #1a222e;
-    --planning-case: #1b222e;
-    --planning-chome-fond: #141922;
-    --planning-chome-texte: #64748b;
-    --planning-chome-colonne: rgba(15, 23, 42, 0.35);
+    --planning-fond: var(--neutral-200);
+    --planning-case: var(--neutral-300);
+    --planning-chome-fond: var(--neutral-100);
+    --planning-chome-texte: var(--neutral-800);
+    --planning-chome-colonne: var(--alpha-black-400);
     --planning-ouvre-colonne: rgba(34, 197, 94, 0.04);
-    --voile-fenetre: rgba(8, 12, 20, 0.75);
+    --voile-fenetre: var(--alpha-black-1000);
 }
 
 [data-theme="light"] {

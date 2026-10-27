@@ -1,36 +1,100 @@
 :root {
     color-scheme: dark;
-    --frame: #0F0F10;
-    --surface: #141415;
-    /* « bg-card » de la palette : une carte posee sur la surface, un cran en retrait. */
-    --carte: #181A1B;
-    --border: #2C2E30;
+
+    /* ---------- L'échelle brute, relevée sur Plane ----------
+       Prise le 27 octobre 2026 sur app.plane.so, thème sombre, et gardée **en OKLCH**
+       plutôt que convertie en hexadécimal. Ce n'est pas une coquetterie : dans cet espace,
+       le premier nombre est la clarté perçue. Deux teintes à 30 % y pèsent le même poids à
+       l'œil, ce que « #2C2E30 » et « #501D01 » ne disent pas — et c'est ce qui permet de
+       voir, en lisant la feuille, qu'un filet à 34 % se détache d'une surface à 21 %.
+
+       Ces noms ne se peignent jamais directement : « neutral-400 » ne dit pas à quoi il
+       sert. Ce sont les jetons d'emploi, plus bas, qui les nomment une fois pour toutes.
+
+       Les barreaux vont du plus sombre au plus clair. Le grand saut est entre 700 et 800 :
+       en dessous c'est de la structure, au-dessus c'est du texte. */
+    --neutral-black: oklch(16.89% 0.0021 286.18);
+    --neutral-100: oklch(19.17% 0.002 286.21);
+    --neutral-200: oklch(21.58% 0.0025 230.82);
+    --neutral-300: oklch(23.78% 0.0029 230.83);
+    --neutral-400: oklch(25.93% 0.0033 230.84);
+    --neutral-500: oklch(30.11% 0.0041 230.85);
+    --neutral-600: oklch(34.15% 0.0049 230.86);
+    --neutral-700: oklch(39.99% 0.0059 230.87);
+    --neutral-800: oklch(59.89% 0.0096 230.88);
+    --neutral-900: oklch(68.35% 0.0074 230.81);
+    --neutral-1000: oklch(76.55% 0.0054 230.76);
+    --neutral-1100: oklch(84.55% 0.0035 230.72);
+    --neutral-1200: oklch(92.35% 0.0017 230.68);
+
+    /* L'azur de Plane, à la place de l'azur IDEM « #2893CC » : même famille, un cran plus
+       vif. Le « 700 » est le barreau clair, celui qui porte un lien sur fond sombre ; le
+       « default » est le plein, celui d'un fond qui porte du texte. */
+    --brand-200: oklch(25.13% 0.0418 234.6);
+    --brand-300: oklch(32.08% 0.058 236.44);
+    --brand-default: oklch(63.11% 0.1263 238.01);
+    --brand-700: oklch(70.08% 0.1145 235.29);
+
+    /* Les couleurs de sens. Trois barreaux chacune : le fond sourd, son filet, et le ton
+       clair qui porte le texte. */
+    --green-100: oklch(29.82% 0.0631 150.55);
+    --green-200: oklch(40.03% 0.0918 149.37);
+    --green-700: oklch(77.85% 0.1398 151.07);
+    --amber-100: oklch(30.42% 0.0853 45.16);
+    --amber-200: oklch(41.49% 0.1126 45.88);
+    --amber-600: oklch(77.24% 0.1728 65.37);
+    --red-50: oklch(24.37% 0.0729 27.55);
+    --red-200: oklch(34.49% 0.1141 28.77);
+    --red-500: oklch(59.54% 0.1956 28.51);
+    --red-800: oklch(79.1% 0.0874 23.59);
+
+    /* Du blanc transparent. Chez Plane, c'est ce qui sert à survoler ce qui n'a pas de
+       fond à soi — une ligne de tableau, une entrée de menu : la même teinte ne peut pas
+       marquer un survol sur le cadre à 17 % et sur une carte à 22 %, alors qu'un voile
+       blanc le fait sur les deux. Et la barre de défilement, qui passe sur les trois. */
+    --alpha-black-400: oklch(14.82% 0.0034 196.79 / 0.2);
+    --alpha-black-1000: oklch(14.82% 0.0034 196.79 / 0.8);
+    --alpha-white-100: oklch(100% 0 0 / 0.05);
+    --alpha-white-200: oklch(100% 0 0 / 0.07);
+    --alpha-white-400: oklch(100% 0 0 / 0.2);
+    --alpha-white-500: oklch(100% 0 0 / 0.3);
+
+    /* ---------- Les jetons d'emploi ---------- */
+    --frame: var(--neutral-black);
+    --surface: var(--neutral-100);
+    /* « bg-layer-1 » de Plane : une carte posée sur la surface, un cran au-dessus. */
+    --carte: var(--neutral-200);
+    --border: var(--neutral-500);
     /* Le filet qui sépare deux lignes d'un tableau. Plus discret que la bordure d'un cadre :
        sur quarante lignes, une bordure franche fait une grille, et c'est la grille qu'on
        lit au lieu des données. */
-    --border-faint: #222425;
-    --text: #E4E6E7;
-    --text-muted: #AFB3B6;
-    --hover: #222425;
-    --active: #2C2E30;
-    /* L'azur d'IDEM PROCESS, relevé sur le logo. Deux intensités, parce qu'une seule ne
-       peut pas faire les deux métiers : « accent » est le plein, qui doit porter du texte
-       blanc ; « accent-texte » est le trait, qui doit se lire sur le fond de la page.
-       L'ancien bleu #2563eb tenait les boutons mais ne faisait que 3:1 en lien sur fond
-       sombre — sous le minimum lisible. */
-    --accent: #2893CC;
-    --accent-hover: #3FA3D9;
-    --accent-texte: #2893CC;
+    --border-faint: var(--neutral-400);
+    --text: var(--neutral-1200);
+    --text-muted: var(--neutral-1000);
+    /* Le texte d'attente d'un champ. Il lui fallait son propre barreau : à « --text-muted »
+       il se lisait comme une valeur déjà saisie, et le thème clair, lui, l'avait écrit en
+       dur à #C4C6C8 — 1,71:1 sur blanc, invisible. C'est le « txt-placeholder » de Plane,
+       un cran sous le texte sourd, à 6,5:1 des deux côtés. */
+    --placeholder: var(--neutral-900);
+    --hover: var(--alpha-white-100);
+    --active: var(--alpha-white-200);
+    /* Deux intensités, parce qu'une seule ne peut pas faire les deux métiers : « accent »
+       est le plein, qui doit porter du texte ; « accent-texte » est le trait, qui doit se
+       lire sur le fond de la page — d'où le barreau clair, le « txt-link-primary » de
+       Plane. */
+    --accent: var(--brand-default);
+    --accent-hover: var(--brand-700);
+    --accent-texte: var(--brand-700);
     /* La surface de l'accent, comme « succes-fond » l'est du vert : le bandeau d'un plan,
        le fond d'un bloc qu'on veut rattacher à l'azur sans le peindre en plein. */
-    --accent-fond: #0A2533;
+    --accent-fond: var(--brand-200);
 
     /* Le bouton plein n'est plus peint de l'accent : il porte sa propre
        valeur, inversee par rapport au fond. C'est ce que fait la palette
        fournie, ou « button-primary » est noir en clair et presque blanc ici. */
-    --bouton-plein: #F5F5F5;
-    --bouton-plein-hover: #E2E2E2;
-    --bouton-plein-texte: #171717;
+    --bouton-plein: var(--neutral-1200);
+    --bouton-plein-hover: var(--neutral-1100);
+    --bouton-plein-texte: var(--neutral-black);
     --radius: 8px;
 
     /* ---------- L'échelle des contrôles ----------
@@ -66,7 +130,7 @@
     /* Le filet le plus franc de Propel (border-strong) : le bord de la grande vue et la
        séparation de deux zones, rien d'autre. Posé sur les 240 emplois de --border, il
        aurait fait une grille de toute l'application. */
-    --border-fort: #36393A;
+    --border-fort: var(--neutral-600);
 
     /* Le rayon croît avec la surface : 4 une pastille, 6 un bouton, 8 une carte,
        12 la grande vue. Le 10px utilisé jusqu'ici n'appartenait à aucune échelle. */
@@ -95,39 +159,41 @@
 
     /* La ligne retenue dans une sélection. Plus franche que le survol : on doit distinguer
        « je la pointe » de « je l'ai prise ». */
-    --selection-fond: #0A2533;
-    --selection-filet: #14455C;
+    --selection-fond: var(--brand-200);
+    --selection-filet: var(--brand-300);
 
     /* La pastille d'un filtre posé : assez teintée pour se distinguer des filtres vides
        de la même barre, assez sobre pour ne pas crier à côté du tableau. */
-    --filtre-fond: #0A2533;
-    --filtre-bord: #14455C;
+    --filtre-fond: var(--brand-200);
+    --filtre-bord: var(--brand-300);
 
     /* Le rouge des suppressions, nommé une fois. */
-    --danger-texte: #DB3E33;
-    --danger-bord: #6B1E18;
-    --danger-fond: #BF2C22;
+    --danger-texte: var(--red-800);
+    --danger-bord: var(--red-200);
+    --danger-fond: var(--red-500);
 
     /* Les bandeaux de résultat — « enregistré », « impossible ». Leurs couleurs étaient
        écrites en dur dans quatre feuilles, pensées pour le fond sombre : sur le thème clair,
        un succès s'affichait en vert foncé sur blanc. Nommées ici, les deux thèmes les
        redéfinissent au même endroit. */
-    --succes-texte: #36AB57;
-    --succes-fond: #11361C;
-    --succes-bord: #1F5B31;
-    --alerte-texte: #DB3E33;
-    --alerte-fond: #3C0E0B;
-    --alerte-bord: #6B1E18;
+    --succes-texte: var(--green-700);
+    --succes-fond: var(--green-100);
+    --succes-bord: var(--green-200);
+    --alerte-texte: var(--red-800);
+    --alerte-fond: var(--red-50);
+    --alerte-bord: var(--red-200);
     /* Ce qui n'est pas encore arrivé : un PV à faire, une commande non reçue. L'ambre était
        écrit en dur à deux endroits, et le même ton pensé pour le fond sombre tombait à
        2,3:1 sur du blanc — lisible nulle part en thème clair. */
-    --attente-texte: #FE9A00;
-    --attente-fond: #501D01;
-    --attente-bord: #7A3B0A;
-    --compteur-texte: #1B1403;
+    --attente-texte: var(--amber-600);
+    --attente-fond: var(--amber-100);
+    --attente-bord: var(--amber-200);
+    /* Le texte d'un compteur : il est posé sur l'ambre en plein, donc il est sombre.
+       « txt-inverse » chez Plane. */
+    --compteur-texte: var(--neutral-black);
     --font: -apple-system, "Segoe UI", system-ui, "Noto Sans", "Ubuntu", sans-serif;
-    --scrollbar-thumb: #2C2E30;
-    --scrollbar-thumb-hover: #44484A;
+    --scrollbar-thumb: var(--alpha-white-400);
+    --scrollbar-thumb-hover: var(--alpha-white-500);
 }
 
 * {
@@ -216,9 +282,94 @@ input[type="number"]::-webkit-outer-spin-button {
     -webkit-appearance: none;
 }
 
+/* Le surlignage du texte suit l'azur de la palette, comme le reste : il était à un bleu
+   à lui, cousin de l'ancien accent et de personne d'autre. Le thème clair a sa propre
+   règle, plus bas dans sa feuille. */
+/* ===== LES TOASTS =====
+   En bas à droite, loin du geste qu'on vient de faire et de la barre du haut. La pile
+   empile vers le haut — le dernier arrivé se pose en bas, là où l'œil revient.
+
+   « pointer-events » : la pile couvre un coin de l'écran en permanence. Transparente aux
+   clics, elle ne vole rien à ce qu'il y a dessous ; chaque toast, lui, les reprend, parce
+   qu'on le chasse en le cliquant. */
+.toasts {
+    position: fixed;
+    z-index: 80;
+    right: 16px;
+    bottom: 16px;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.toast {
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: min(380px, calc(100vw - 32px));
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    background: var(--carte);
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.4;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 10%), 0 8px 24px rgb(0 0 0 / 18%);
+    cursor: pointer;
+    animation: toast-entre 0.18s ease-out;
+}
+
+.toast .icon {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    color: var(--succes-texte);
+}
+
+.toast.est-erreur .icon {
+    color: var(--danger-texte);
+}
+
+.toast.est-sortant {
+    animation: toast-sort 0.18s ease-in forwards;
+}
+
+/* Il vient d'en bas, de là où il va se poser. Huit pixels : assez pour qu'on voie qu'il
+   arrive, pas assez pour qu'on le regarde arriver. */
+@keyframes toast-entre {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+}
+
+@keyframes toast-sort {
+    to {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .toast,
+    .toast.est-sortant {
+        animation: none;
+    }
+}
+
+/* Le texte d'attente, une fois pour toute l'application : chaque champ l'écrivait pour
+   son compte, ou pas du tout — et le navigateur en posait alors un gris à lui. */
+input::placeholder,
+textarea::placeholder {
+    color: var(--placeholder);
+}
+
 ::selection {
-    background: #315a88;
-    color: #e2e7ef;
+    background: var(--brand-300);
+    color: var(--text);
 }
 
 .icon {
@@ -258,12 +409,136 @@ input[type="number"]::-webkit-outer-spin-button {
 
 /* ===== LAYOUT ===== */
 
+/* La gouttiere est portee par le conteneur, pas par les marges de chaque carte : c'est ce
+   qui garantit que l'ecart entre la barre laterale et la vue vaut exactement celui qui les
+   borde. Chacune posait la sienne — 12px d'un cote, 8px de l'autre — et rien ne tombait au
+   meme endroit. */
 #contenaire {
     display: flex;
+    /* En colonne : la barre du haut, puis la vue. Elle était en rangée, et la barre
+       d'outils vivait dans le panneau de droite — elle s'arrêtait donc à la gouttière,
+       alors qu'elle ne parle pas de l'écran ouvert mais de l'application. */
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
     width: 100%;
     height: 100vh;
     overflow: hidden;
     background: var(--frame);
+}
+
+/* ===== LA BARRE DU HAUT =====
+   Posée à même le cadre, sans fond ni filet : elle fait partie du châssis, comme la
+   barre de titre d'une application de bureau. Ce qui flotte, c'est la vue, et elle
+   seule. */
+.barre-haut {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 4px;
+}
+
+/* Trois zones de largeur égale : c'est la seule façon de poser la recherche au milieu de
+   l'écran et non au milieu de ce qui reste entre la marque et le compte. Les deux côtés
+   se rétractent sous leur contenu, le centre garde la main. */
+.barre-haut-zone {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+.barre-haut-centre {
+    flex: none;
+    justify-content: center;
+}
+
+.barre-haut-droite {
+    justify-content: flex-end;
+}
+
+/* La recherche. Ce n'est pas un champ mais un bouton qui en a la forme : la palette
+   s'ouvre par-dessus et porte sa propre saisie. Deux champs de recherche l'un sur l'autre
+   feraient douter de celui où l'on tape. */
+.barre-recherche {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: min(360px, 42vw);
+    height: var(--h-md);
+    padding: 0 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--carte);
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+.barre-recherche:hover {
+    border-color: var(--border-fort);
+    background: var(--hover);
+}
+
+.barre-recherche:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.barre-recherche .icon {
+    flex: none;
+    width: 14px;
+    height: 14px;
+}
+
+.barre-recherche-texte {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Le raccourci se lit sans se crier : c'est un rappel, pas une étiquette. */
+.barre-recherche-touche {
+    flex: none;
+    padding: 1px 5px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+/* Sous 900 px, la marque et le compte prennent toute la barre : un champ de recherche de
+   360 px les écraserait. La palette reste au clavier, et la recherche de chaque écran est
+   dans l'écran. */
+@media (max-width: 900px) {
+
+    .barre-haut-centre {
+        display: none;
+    }
+}
+
+/* ===== LA VUE =====
+   La rangée sous la barre du haut : le menu à gauche, à même le cadre, et la carte de
+   travail à droite. Elle ne peint rien et ne porte aucun bord — ce n'est pas une surface,
+   c'est une rangée.
+
+   La carte a d'abord contenu les deux. C'est le balisage de Plane, mais pas ce qu'on voit
+   chez eux : leur rail de navigation est **hors** de l'arrondi, posé sur le fond de la
+   page. Une seule chose flotte, et c'est le travail. */
+.vue {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    overflow: hidden;
 }
 
 /* La barre porte le seul trait de l'écran : c'est lui qui sépare la navigation du travail.
@@ -280,30 +555,22 @@ input[type="number"]::-webkit-outer-spin-button {
     flex-direction: column;
 }
 
-/* La grande vue : une surface posee sur le cadre, decollee des quatre cotes et arrondie,
-   comme le fait un editeur moderne. L'application etait faite de pleins carres colles bord
-   a bord, et c'est ce qui la datait.
+/* La carte de travail : la seule surface qui flotte sur le cadre. Le menu est à côté,
+   dehors, séparé par la gouttière de 8 px que tient « #drag ».
 
-   Aucun calcul de hauteur : #right-panel est un element flex etire dans une rangee, ses
-   marges verticales lui retranchent sa hauteur toutes seules. La marge de gauche laisse
-   aussi sa place a #drag, la poignee de redimensionnement, large de zero.
+   Le filet est nouveau, et il manquait : la carte ne tenait que par son fond, à 1,07:1
+   contre le cadre en thème clair — autant dire rien. C'est « border-strong » de la DA,
+   celui réservé au bord de la grande vue.
 
-   L'« overflow: hidden » etait deja la : c'est lui qui rogne la barre d'outils a l'arrondi. */
+   Aucun calcul de hauteur : c'est un élément flex étiré dans une rangée.
+   L'« overflow: hidden » rogne les écrans à l'arrondi. */
 #right-panel {
     position: relative;
     flex: 1;
     min-width: 200px;
-
-    margin: 8px;
     border: 1px solid var(--border-fort);
     border-radius: var(--r-xl);
     background: var(--surface);
-    /* Deux ombres : la premiere pose la vue sur le cadre, la seconde l'en decolle. Une
-       seule ombre large fait un halo gris ; une seule ombre courte fait un trait. */
-    box-shadow:
-        0 1px 2px rgb(15 15 16 / 5%),
-        0 6px 16px rgb(15 15 16 / 4%);
-
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -313,11 +580,15 @@ input[type="number"]::-webkit-outer-spin-button {
    comptee : la vue reprend toute la largeur. Des coins ronds sur une surface qui touche
    deja les quatre bords ne montrent rien. */
 @media (max-width: 700px) {
+
+    #contenaire {
+        gap: 0;
+        padding: 0;
+    }
+
     #right-panel {
-        margin: 0;
         border: 0;
         border-radius: 0;
-        box-shadow: none;
     }
 }
 
@@ -329,16 +600,15 @@ input[type="number"]::-webkit-outer-spin-button {
 
 /* ===== SIDEBAR ===== */
 
-/* La marque coiffe la barre, à la même hauteur que la barre d'outils d'en face : les deux
-   traits se rejoignent d'un bord à l'autre de l'écran. */
+/* La marque. Elle coiffait la barre latérale, à la hauteur de la barre d'outils d'en
+   face ; elle est maintenant dans la barre du haut, à gauche, et n'a plus de filet à
+   tenir — c'est la carte, en dessous, qui porte le trait. */
 .nav-marque {
     flex: none;
     display: flex;
     align-items: center;
     gap: 8px;
-    min-height: 56px;
-    padding: 10px 14px;
-    border-bottom: 1px solid var(--border);
+    padding: 0 6px;
     overflow: hidden;
 }
 
@@ -350,7 +620,7 @@ input[type="number"]::-webkit-outer-spin-button {
  * le reste ne se lirait pas à cette hauteur. Le cadrage se fait au rapport, pas au pixel,
  * pour qu'il tienne si le fichier est remplacé par une version plus fine. */
 .nav-marque img {
-    height: 45px;
+    height: 30px;
     width: auto;
     flex: none;
     object-fit: cover;
@@ -581,9 +851,13 @@ input[type="number"]::-webkit-outer-spin-button {
 
 /* La poignée n'occupe plus de place : elle se superpose au trait de la barre. Six pixels
    de large, c'était six pixels de vide entre les deux panneaux. */
+/* La poignee EST la gouttiere : large de huit pixels, elle separe les deux cartes de
+   l'ecart exact qui les borde, et offre enfin une prise a la souris. Large de zero, elle
+   recevait une gouttiere de chaque cote — seize pixels entre les cartes contre huit
+   autour — et il fallait viser un trait sans epaisseur pour redimensionner. */
 #drag {
     position: relative;
-    width: 0;
+    width: 8px;
     flex-shrink: 0;
     cursor: col-resize;
     z-index: 2;

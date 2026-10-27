@@ -68,7 +68,12 @@ if ($isWorkshopPersonnel) {
 
 <?php if (!$partial): ?>
 
-    <section class="page prefa-page prefa-list">
+    <?php // « Mes demandes » n'est pas la liste de tout le monde : quatre colonnes au
+          // lieu de neuf, et de la place pour les lire. La classe sert de crochet. ?>
+    <?php // La densité est posée dès le rendu, et non par le script au chargement : sinon
+          // la page s'affichait en confortable puis se resserrait sous les yeux. Le script
+          // ne corrige que si la personne a retenu l'autre. ?>
+    <section class="page prefa-page prefa-list<?= $vueParAffaire ? ' prefa-mes-demandes' : '' ?>" data-densite="confortable">
 
         <div class="prefa-shell">
 
@@ -80,7 +85,33 @@ if ($isWorkshopPersonnel) {
                     <p><?= prefaEscape($pageDescription) ?></p>
                 </div>
 
-                <button type="button" id="refresh-prefa">
+                <?php // Deux façons de lire le même tableau. Ce n'est pas un filtre — rien
+                      // n'entre ni ne sort de la liste — donc le choix vit hors du formulaire
+                      // de recherche, à côté d'« Actualiser » : ce sont tous deux des
+                      // commandes de la vue, pas du contenu. ?>
+                <div class="prefa-vue-outils">
+
+                    <div class="prefa-densite" role="group" aria-label="Densité du tableau">
+                        <button type="button" class="prefa-densite-choix" data-densite="confortable"
+                                aria-pressed="true" aria-label="Lignes confortables" title="Lignes confortables">
+                            <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true">
+                                <rect x="2" y="3" width="12" height="2.6" rx="1" />
+                                <rect x="2" y="6.7" width="12" height="2.6" rx="1" />
+                                <rect x="2" y="10.4" width="12" height="2.6" rx="1" />
+                            </svg>
+                        </button>
+                        <button type="button" class="prefa-densite-choix" data-densite="compact"
+                                aria-pressed="false" aria-label="Lignes compactes" title="Lignes compactes">
+                            <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true">
+                                <rect x="2" y="2.6" width="12" height="1.6" rx=".8" />
+                                <rect x="2" y="5.6" width="12" height="1.6" rx=".8" />
+                                <rect x="2" y="8.6" width="12" height="1.6" rx=".8" />
+                                <rect x="2" y="11.6" width="12" height="1.6" rx=".8" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <button type="button" id="refresh-prefa">
 
                     <svg
                         class="icon"
@@ -94,9 +125,11 @@ if ($isWorkshopPersonnel) {
                         <path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-2l2 3M4 16l2 3a7 7 0 0 1 12-2" />
                     </svg>
 
-                    Actualiser
+                        Actualiser
 
-                </button>
+                    </button>
+
+                </div>
 
             </div>
 
@@ -214,35 +247,38 @@ if ($isWorkshopPersonnel) {
 
                             <?php if (!$vueParAffaire): ?>
                                 <!-- Rangée sous le nom de son affaire, une demande n'a pas
-                                     besoin de le répéter à chaque ligne. -->
-                                <th scope="col">
+                                     besoin de le répéter à chaque ligne.
+
+                                     Cette colonne porte la largeur libre du tableau (voir la
+                                     feuille) : c'est elle qui pousse les mesures contre le
+                                     bord droit et rassemble l'identité à gauche. -->
+                                <th scope="col" class="prefa-affaire">
                                     Affaire
                                 </th>
                             <?php endif; ?>
 
                             <th scope="col">
-                                Création
-                            </th>
-
-                            <th scope="col">
                                 Fin prévue
                             </th>
 
-                            <th scope="col">
-                                Priorité
-                            </th>
+                            <?php // Plus de colonne « Priorité » : elle écrivait « Normale » trois
+                                  // lignes sur quatre pour ne rien annoncer, et l'urgence —
+                                  // la seule information de la colonne — ouvre maintenant la
+                                  // ligne par un signe. Le filtre « Priorité » de la barre,
+                                  // lui, reste : c'est là qu'on la cherche. ?>
+                            <?php if (!$vueParAffaire): ?>
+                                <th scope="col" class="prefa-nombre">
+                                    Pouces
+                                </th>
 
-                            <th scope="col" class="prefa-nombre">
-                                Pouces
-                            </th>
+                                <th scope="col" class="prefa-nombre">
+                                    Temps atelier
+                                </th>
 
-                            <th scope="col" class="prefa-nombre">
-                                Temps atelier
-                            </th>
-
-                            <th scope="col">
-                                Demandeur
-                            </th>
+                                <th scope="col">
+                                    Demandeur
+                                </th>
+                            <?php endif; ?>
 
                             <?php if ($vueParAffaire): ?>
                                 <!-- Rangée par statut, la liste l'annonce dans le titre de
@@ -261,10 +297,13 @@ if ($isWorkshopPersonnel) {
                     </thead>
 
                     <?php
-                    // Neuf colonnes dans les deux rangements : l'affaire disparaît quand elle
-                    // coiffe le groupe, le statut quand c'est lui. Posé avant les deux
-                    // branches : la ligne « aucune demande » et le volet de détail s'en servent.
-                    $colonnes = 9;
+                    // Posé avant les deux branches : la ligne « aucune demande » et le volet
+                    // de détail s'en servent pour leur colspan.
+                    //
+                    // Quatre colonnes sur ses propres demandes — n°, échéance, état, actions —
+                    // contre neuf sur la liste générale, où l'affaire et le demandeur varient
+                    // d'une ligne à l'autre et où l'atelier a besoin des pouces.
+                    $colonnes = $vueParAffaire ? 4 : 7;
                     ?>
 
                     <?php if (!empty($requests)): ?>

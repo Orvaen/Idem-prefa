@@ -6,22 +6,77 @@ $isUrgentPending = !empty($row['urgent']) && $isPending;
 // charge s'offre ici comme sur la page Plans / ISO.
 
 $ownerName = trim($row['prenom'] . ' ' . $row['name']);
+
+// Deux lettres pour le demandeur, comme le monogramme d'une carte d'affaire : la ligne
+// gagne un point d'ancrage, et on retrouve une personne du coin de l'œil sans lire.
+$initiales = mb_strtoupper(mb_substr(trim($row['prenom']), 0, 1) . mb_substr(trim($row['name']), 0, 1));
+
+// Une échéance dépassée sur une demande qui court encore. Refusée, elle ne court plus :
+// elle ne sera pas faite, elle n'est donc pas en retard.
+$enRetard = !empty($row['date_fin_prevue'])
+    && (int) $row['id_statut'] !== 3
+    && $row['date_fin_prevue'] < date('Y-m-d');
 ?>
 <tbody class="prefa-request<?= $isUrgentPending ? ' is-urgent-pending' : '' ?>">
     <tr>
         <?php // Le numéro seul : le chantier est dans la colonne d'à côté quand la liste n'est
               // pas groupée, et dans le titre du groupe quand elle l'est. Le répéter ici
               // allongeait la colonne de deux cents pixels pour redire la voisine. ?>
-        <td class="prefa-reference"><?= prefaEscape(prefaReference($requestId)) ?></td>
+        <?php // L'urgence ouvre la ligne, par un signe et non par un mot. La place lui est
+              // réservée sur toutes les lignes : sans ça, les références des demandes
+              // urgentes se décaleraient de seize pixels et la colonne cesserait d'être
+              // une colonne. ?>
+        <td class="prefa-reference">
+            <span class="prefa-urgence">
+                <?php if (!empty($row['urgent'])): ?>
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                        stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Urgente">
+                        <title>Demande urgente</title>
+                        <path d="M13 3 4.5 13.5H11l-1 7.5 8.5-10.5H12z" />
+                    </svg>
+                <?php endif; ?>
+            </span><?= prefaEscape(prefaReference($requestId)) ?>
+        </td>
         <?php if (!$vueParAffaire): ?>
             <td class="prefa-affaire"><?= prefaEscape($row['nom_affaire'] ?: '—') ?></td>
         <?php endif; ?>
-        <td><?= $row['date_creation'] ? prefaEscape(prefaFormatDate($row['date_creation'])) : '—' ?></td>
-        <td><?= $row['date_fin_prevue'] ? prefaEscape(prefaFormatDate($row['date_fin_prevue'])) : '—' ?></td>
-        <td><?= $row['urgent'] ? '<span class="prefa-urgent">Urgente</span>' : '<span class="prefa-normale">Normale</span>' ?></td>
-        <td class="prefa-nombre"><?= prefaEscape($row['pouces_total_iso']) ?></td>
-        <td class="prefa-nombre"><?= prefaEscape(prefaFormatDays((float) $row['heures_chiffrees'] / 24)) ?></td>
-        <td><?= prefaEscape($ownerName) ?></td>
+        <?php // La date de dépôt a quitté la ligne. Elle ne sert à personne pour décider —
+              // on valide sur l'échéance, pas sur l'ancienneté — et le volet de détail la
+              // porte déjà deux fois : dans sa fiche et dans « Déposée par X le … ».
+              //
+              // « secondaire » : le nom du demandeur situe la ligne, il ne la fait pas lire.
+              // Sans ce retrait, les colonnes arrivaient toutes du même noir. ?>
+        <?php // L'urgence se pose sous l'échéance plutôt que dans une colonne à elle : elle
+              // ne dit quelque chose qu'une fois sur quatre, et « Normale » occupait une
+              // colonne entière pour ne rien annoncer. ?>
+        <?php // L'échéance est la seule donnée de la ligne qui porte un état : elle est
+              // tenue, ou elle est dépassée. C'est ce qui lui vaut une pastille quand les
+              // mesures d'à côté restent des nombres nus — une pastille sur un nombre
+              // empêcherait de le comparer à celui du dessous, qui est tout l'intérêt
+              // d'une colonne de nombres. ?>
+        <td class="prefa-echeance<?= $enRetard ? ' est-en-retard' : '' ?>"<?= $enRetard ? ' title="Échéance dépassée"' : '' ?>>
+            <span class="prefa-propriete">
+                <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="5" width="18" height="16" rx="2" />
+                    <path d="M3 10h18M8 3v4M16 3v4" />
+                </svg>
+                <?= $row['date_fin_prevue'] ? prefaEscape(prefaFormatDate($row['date_fin_prevue'])) : '—' ?>
+            </span>
+            <?php if ($vueParAffaire && $row['urgent']): ?>
+                <span class="prefa-urgent">Urgente</span>
+            <?php endif; ?>
+        </td>
+        <?php if (!$vueParAffaire): ?>
+            <td class="prefa-nombre"><?= prefaEscape($row['pouces_total_iso']) ?></td>
+            <td class="prefa-nombre"><?= prefaEscape(prefaFormatDays((float) $row['heures_chiffrees'] / 24)) ?></td>
+            <td class="prefa-secondaire">
+                <span class="prefa-personne">
+                    <span class="prefa-avatar" aria-hidden="true"><?= prefaEscape($initiales) ?></span>
+                    <?= prefaEscape($ownerName) ?>
+                </span>
+            </td>
+        <?php endif; ?>
         <?php // Rangée par statut, la liste annonce le statut dans le titre du groupe : la
               // colonne ne le répète que là où la liste est rangée par affaire. ?>
         <?php if ($vueParAffaire): ?>

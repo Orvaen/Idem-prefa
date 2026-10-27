@@ -35,53 +35,50 @@
 }
 
 /* ===== LES TEINTES =====
-   Le sombre est la valeur par défaut, comme dans le reste de l'application. */
+ *
+ * L'écran n'a plus de palette à lui. Il en portait une — sépia et terre cuite — qui ne
+ * valait que pour lui : on changeait de famille de couleurs en changeant d'écran, et le
+ * bouton d'envoi ne disait pas la même chose ici qu'ailleurs. Les noms « --nd-* » restent,
+ * comme « --bl-* » pour la barre latérale : ils disent le rôle d'une couleur dans cet
+ * écran. Ce sont leurs valeurs qui rejoignent la DA.
+ *
+ * Un seul bloc, là où il y en avait deux : chaque jeton pointe sur un jeton de la DA, qui
+ * connaît déjà les deux thèmes. Le bloc « [data-theme="light"] » n'avait plus rien à dire.
+ *
+ * La traduction inverse — « --accent: var(--nd-accent) » et ses six voisines — est partie
+ * avec eux. Elle servait à faire adopter la terre cuite aux composants partagés posés dans
+ * cet écran ; elle ferait maintenant un cycle, chaque jeton renvoyant à l'autre.
+ */
 
 .prefa-nouvelle {
-    --nd-fond: #262624;
-    --nd-texte: #F5F4EF;
-    --nd-discret: #A6A39A;
-    --nd-champ: #30302E;
-    --nd-champ-survol: #383835;
-    --nd-champ-bord-survol: #4A4844;
-    --nd-champ-focus: #1F1E1D;
-    --nd-filet: #3A3936;
-    --nd-pointilles: #5A5853;
-    --nd-ligne-survol: #2E2E2B;
-    --nd-accent: #D97757;
-    --nd-accent-survol: #E08A6D;
-    --nd-sur-accent: #1F1E1D;
-    --nd-halo: rgba(217, 119, 87, .22);
-    --nd-manque: rgba(219, 62, 51, .16);
-    --nd-urgent: #E39A7D;
+    --nd-fond: var(--surface);
+    --nd-texte: var(--text);
+    --nd-discret: var(--text-muted);
+    --nd-champ: var(--hover);
+    --nd-champ-survol: var(--active);
+    --nd-champ-bord-survol: var(--border-fort);
+    --nd-champ-focus: var(--surface);
+    --nd-filet: var(--border);
+    --nd-pointilles: var(--border-fort);
+    --nd-ligne-survol: var(--ligne-survol);
+    --nd-accent: var(--accent);
+    --nd-accent-survol: var(--accent-hover);
 
-    --surface: var(--nd-fond);
-    --text: var(--nd-texte);
-    --text-muted: var(--nd-discret);
-    --border: var(--nd-filet);
-    --hover: var(--nd-ligne-survol);
-    --active: var(--nd-champ);
-    --accent: var(--nd-accent);
-    --accent-hover: var(--nd-accent-survol);
-}
+    /* Le texte posé sur l'accent s'inverse avec le thème : blanc sur l'azur sombre du thème
+       clair (6,47:1), presque noir sur l'azur clair du thème sombre (5,4:1). Du blanc des
+       deux côtés ne ferait que 3,42:1 en sombre — moins bien que la terre cuite qu'on
+       remplace. « --bouton-plein-texte » fait déjà cette bascule pour les boutons pleins. */
+    --nd-sur-accent: var(--bouton-plein-texte);
 
-[data-theme="light"] .prefa-nouvelle {
-    --nd-fond: #FAF9F5;
-    --nd-texte: #141413;
-    --nd-discret: #6B6A63;
-    --nd-champ: #F0EEE7;
-    --nd-champ-survol: #ECE9E1;
-    --nd-champ-bord-survol: #DCD8CB;
-    --nd-champ-focus: #FFFFFF;
-    --nd-filet: #ECE9E1;
-    --nd-pointilles: #CFCBBE;
-    --nd-ligne-survol: #F3F1EA;
-    --nd-accent: #B85433;
-    --nd-accent-survol: #9E4729;
-    --nd-sur-accent: #FFFFFF;
-    --nd-halo: rgba(184, 84, 51, .14);
-    --nd-manque: rgba(191, 44, 34, .10);
-    --nd-urgent: #9A3F1F;
+    /* Le halo de focus et le lavis d'un champ manquant se dérivent de leur couleur, plutôt
+       que d'être réécrits en rgba() par thème : une seule source pour l'azur, une pour le
+       rouge. Même forme qu'au halo des filtres. */
+    --nd-halo: color-mix(in srgb, var(--accent) 18%, transparent);
+    --nd-manque: color-mix(in srgb, var(--danger-fond) 12%, transparent);
+
+    /* Urgent reste chaud : l'azur y dirait « sélectionné », pas « à traiter en premier ».
+       C'est l'ambre que la DA nomme pour ce qui attend. */
+    --nd-urgent: var(--attente-texte);
 }
 
 /* ===== LA PAGE ===== */
@@ -90,8 +87,14 @@
 [data-theme="light"] .page.prefa-nouvelle {
     min-height: 100%;
     box-sizing: border-box;
-    padding: 40px 48px 48px;
-    background: var(--nd-fond) !important;
+    /* Aucun creux en bas : c'est la barre d'actions qui le donne. Les 48px qu'il y avait
+       laissaient une bande sous elle — elle ne peut pas descendre plus bas que son
+       conteneur — et le contenu y défilait à découvert. */
+    padding: 40px 48px 0;
+    /* L'écran ne peint pas son fond : il laisse voir la surface du panneau, comme tous les
+       autres. Il posait var(--nd-fond), un sépia qui ne valait que pour lui — l'écran
+       changeait de matière en même temps que de sujet. */
+    background: transparent !important;
     color: var(--nd-texte);
     font-family: "Inter", var(--font);
     font-size: 13px;
@@ -99,7 +102,16 @@
 }
 
 .prefa-nouvelle .nd-form {
-    max-width: 1120px;
+    /* « .page » est un conteneur flex centré (dashboard-forms.css). Sans largeur imposée,
+       le formulaire s'y réduisait à son contenu : réduit au seul champ Affaire, il tombait
+       à 439px et flottait au milieu de l'écran. On lui donne la largeur, le maximum la
+       borne.
+
+       780 et non 1120 : le formulaire tient maintenant dans une seule colonne, et 1120px
+       de large donneraient un champ de saisie d'un bord à l'autre de l'écran. L'en-tête et
+       son bouton d'envoi prennent la même borne, pour que tout tombe sur le même aplomb. */
+    width: 100%;
+    max-width: 780px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
@@ -198,6 +210,94 @@
     gap: 6px;
 }
 
+/* ===== LA BARRE D'ACTIONS =====
+ *
+ * Collée au bas de la zone qui défile — c'est « .page » qui porte l'overflow, pas la
+ * fenêtre, et « sticky » se règle donc sur elle. Envoyer est l'action de cet écran, pas
+ * une note de bas de page : la barre reste lisible où qu'on en soit dans le formulaire.
+ * Même principe que la décision d'une fiche de demande.
+ *
+ * Elle garde la largeur du formulaire plutôt que d'aller d'un bord à l'autre : tout le
+ * contenu tient dans ces 780px, il n'y a rien à masquer au-delà.
+ */
+.prefa-nouvelle .nd-barre {
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    /* Le creux du bas lui revient, puisque la page n'en a plus : sans lui, les boutons
+       touchaient le bord du panneau. */
+    padding: 14px 0 20px;
+    border-top: 1px solid var(--nd-filet);
+    background: var(--surface);
+}
+
+/* L'envoi tient le bord droit, que « Haut de page » soit là ou non : avec le seul
+   « space-between », le bouton masqué en haut de page laissait les actions filer à
+   gauche, et elles changeaient de place dès qu'on défilait. */
+.prefa-nouvelle .nd-barre .nd-envoi {
+    margin-left: auto;
+}
+
+/* ===== REVENIR EN HAUT =====
+ *
+ * Une pastille qui flotte au bord, au-dessus de la barre d'actions. Elle n'est pas dans la
+ * barre : elle y aurait pris une place permanente pour un geste occasionnel, et sa
+ * disparition en haut de page faisait sauter les boutons d'envoi d'un bord à l'autre.
+ *
+ * Le script ne la montre qu'à partir de 240px de défilement — au repos, elle n'aurait rien
+ * à proposer.
+ *
+ * Au bord droit et à mi-hauteur, en permanence. Deux essais l'ont d'abord posée dans la
+ * barre, puis juste au-dessus : dans les deux cas elle suivait la barre, et la barre est
+ * en bas. Elle s'en détache donc complètement.
+ *
+ * « fixed » et non « absolute » : la zone qui défile est « .page », et tout ce qui y est
+ * positionné en absolu défile avec son contenu. On veut l'inverse — qu'elle tienne sa
+ * place pendant que la page bouge sous elle.
+ *
+ * Le script ne la montre qu'une fois la page défilée : en haut, elle proposait de
+ * remonter là où l'on était déjà. */
+.prefa-nouvelle .nd-form .nd-haut {
+    position: fixed;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 4;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 1px solid var(--nd-filet);
+    border-radius: 999px;
+    background: var(--surface);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 6%), 0 6px 16px rgb(0 0 0 / 10%);
+    color: var(--nd-discret);
+    cursor: pointer;
+}
+
+:root:not([data-theme="light"]) .prefa-nouvelle .nd-form .nd-haut {
+    box-shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 8px 20px rgb(0 0 0 / 45%);
+}
+
+@media (hover: hover) {
+    .prefa-nouvelle .nd-form .nd-haut:hover {
+        border-color: var(--accent);
+        color: var(--accent-texte);
+    }
+}
+
+.prefa-nouvelle .nd-form .nd-haut:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
 .prefa-nouvelle .nd-form .nd-annuler {
     height: 36px;
     padding: 0 14px;
@@ -240,15 +340,23 @@
 
 /* ===== DEUX COLONNES ===== */
 
+/* Une seule colonne, dans l'ordre où l'on remplit : l'affaire, les plans, les documents,
+   puis ce qu'on demande à l'atelier. Les deux colonnes se lisaient en zigzag — on déposait
+   un plan à gauche, on datait à droite, on revenait à gauche pour le QMOS.
+
+   Les deux blocs « .nd-colonne » du balisage restent : ils deviennent deux sections
+   empilées. Rien à changer dans le PHP, et le jour où l'on revient à deux colonnes, c'est
+   ici que ça se décide. */
 .prefa-nouvelle .nd-colonnes {
     display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: 40px 72px;
+    flex-direction: column;
+    gap: 36px;
 }
 
 .prefa-nouvelle .nd-colonne {
-    flex: 1 1 380px;
+    /* En colonne, « flex-basis » vaut pour la hauteur : les 380px d'origine auraient donné
+       à chaque section une hauteur plancher qu'elle n'a pas demandée. */
+    flex: 0 0 auto;
     min-width: 0;
     display: flex;
     flex-direction: column;
@@ -290,8 +398,13 @@
 }
 
 @media (max-width: 560px) {
+    /* Au plus étroit, la pastille se serre contre le bord. */
+    .prefa-nouvelle .nd-form .nd-haut {
+        right: 10px;
+    }
+
     .page.prefa-nouvelle {
-        padding: 28px 18px 36px;
+        padding: 28px 18px 0;
     }
 
     .prefa-nouvelle .nd-grille {
@@ -389,10 +502,23 @@
     accent-color: var(--nd-accent);
 }
 
-/* Les erreurs gardent leur rouge, posé sur la bordure qu'on a laissée libre. */
-.prefa-nouvelle .nd-form .champ-invalide:not([type="checkbox"]):not([type="radio"]),
-[data-theme="light"] .prefa-nouvelle .nd-form .champ-invalide:not([type="checkbox"]):not([type="radio"]) {
+/* Les erreurs gardent leur rouge, posé sur la bordure qu'on a laissée libre.
+ *
+ * Le sélecteur porte « input » : sans lui, la règle de base des champs — qui en a un, et
+ * pose « border: 1px solid transparent !important » — gagnait à spécificité supérieure et
+ * effaçait la couleur. Le champ était bien marqué « champ-invalide » par le script, et on
+ * ne voyait rien : mesuré à rgba(0, 0, 0, 0) sur un champ en défaut.
+ *
+ * Le fond reprend la teinte des lignes de document en défaut : un seul rouge pour dire la
+ * même chose, qu'il s'agisse d'un dépôt manquant ou d'une date absente. */
+.prefa-nouvelle .nd-form input.champ-invalide:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+.prefa-nouvelle .nd-form select.champ-invalide,
+.prefa-nouvelle .nd-form textarea.champ-invalide,
+[data-theme="light"] .prefa-nouvelle .nd-form input.champ-invalide:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+[data-theme="light"] .prefa-nouvelle .nd-form select.champ-invalide,
+[data-theme="light"] .prefa-nouvelle .nd-form textarea.champ-invalide {
     border-color: var(--danger-bord) !important;
+    background-color: var(--nd-manque) !important;
 }
 
 /* ===== LA LISTE DÉROULANTE FILTRABLE =====
@@ -521,6 +647,11 @@
 .prefa-nouvelle .nd-complements {
     display: flex;
     flex-direction: column;
+    /* Les lignes se touchaient. Tant qu'elles sont transparentes, leur filet suffit à les
+       séparer ; dès que deux d'entre elles passent en défaut, leurs fonds se rejoignent et
+       ne font plus qu'un seul bloc rouge — on ne lit plus deux documents manquants mais
+       une grande tache. */
+    gap: 4px;
 }
 
 .prefa-nouvelle .nd-complements-entete {
@@ -550,7 +681,7 @@
     gap: 12px;
     min-height: 0;
     margin: 0 -8px;
-    padding: 10px 8px;
+    padding: 12px 8px;
     border: 0;
     border-radius: 6px;
     background: transparent;
@@ -723,4 +854,47 @@
 .prefa-nouvelle input[type="checkbox"]:focus-visible {
     outline: 2px solid var(--nd-accent);
     outline-offset: 2px;
+}
+
+/* ===== SANS AFFAIRE =====
+   Il n'y a rien à remplir tant qu'aucune affaire n'est ouverte à son nom : l'écran se tient
+   à ce qu'il y a à dire, et ne propose pas un formulaire qui ne pourrait pas partir. */
+
+.prefa-nouvelle .nd-sans-affaire {
+    max-width: 460px;
+    padding: 28px 0 0;
+}
+
+.prefa-nouvelle .nd-sans-affaire p {
+    margin: 0 0 6px;
+    font-size: 14px;
+    color: var(--nd-texte);
+}
+
+.prefa-nouvelle .nd-sans-affaire p.nd-discret {
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--nd-discret);
+}
+
+/* ===== TANT QUE L'AFFAIRE N'EST PAS CHOISIE =====
+   Une demande se rattache à une affaire : avant ce choix, les plans, les documents, le
+   planning et les contrôles n'ont rien à quoi se rapporter. On remplissait tout un écran
+   sans savoir pour quel chantier.
+
+   Le marqueur est posé par le serveur et retiré par le script au premier choix, pour que
+   l'écran soit déjà juste au premier rendu — sans ce détour, tout apparaissait puis
+   disparaissait sous les yeux.
+
+   Aucune phrase n'accompagne l'attente : l'en-tête dit déjà « rattachez-la à l'une de vos
+   affaires », et le champ seul au milieu d'un écran vide dit le reste. On l'avait redite
+   trois lignes plus bas, ce qui faisait quatre textes pour une consigne. */
+
+.prefa-nouvelle .nd-form.nd-attend-affaire .nd-haut,
+.prefa-nouvelle .nd-form.nd-attend-affaire .nd-barre,
+.prefa-nouvelle .nd-form.nd-attend-affaire .nd-envoi,
+.prefa-nouvelle .nd-form.nd-attend-affaire .nd-plans,
+.prefa-nouvelle .nd-form.nd-attend-affaire .nd-complements,
+.prefa-nouvelle .nd-form.nd-attend-affaire .nd-colonne:nth-child(2) {
+    display: none;
 }

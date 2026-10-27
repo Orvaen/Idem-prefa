@@ -41,8 +41,124 @@
     background: var(--surface);
 }
 
+/* Pleine largeur, contrairement aux autres écrans. J'avais borné cette coquille à 1120px
+   en pensant que le tableau « nageait » ; à l'usage, c'est l'inverse qui gêne — une liste
+   se parcourt, et la brider lui retire la place dont elle vit. Les colonnes se serrent sur
+   leur contenu, c'est à elles de tenir la largeur, pas à un maximum arbitraire. */
 .prefa-list .prefa-shell {
     max-width: none;
+}
+
+/* ===== « MES DEMANDES » : QUATRE COLONNES =====
+ *
+ * Sur ses propres demandes on suit une échéance et un état, rien d'autre. Les neuf colonnes
+ * de la liste générale ne tenaient qu'au prix d'un corps de 13px et de lignes de 36 : on
+ * lisait un relevé de compte. À quatre colonnes, la place revient — 15px, des lignes de 56,
+ * et le numéro à 16.
+ *
+ * Ce qui en sort n'est pas perdu : la date de dépôt, les pouces, la durée estimée et le
+ * déposant sont dans le volet de détail, à un clic sur la ligne. */
+.prefa-mes-demandes .prefa-table {
+    min-width: 520px;
+}
+
+/* ===== LA DENSITÉ =====
+ *
+ * Deux façons de lire le même tableau, et c'est la personne qui tranche — pas moi. Une
+ * liste suivie toute la journée se parcourt serrée ; la même, consultée trois fois par
+ * semaine, se lit au large. Les deux avis sont justes, et ils ne sont pas les mêmes selon
+ * le métier.
+ *
+ * Tout passe par deux jetons et deux corps de texte : aucune règle de colonne, aucune
+ * marge, rien à reprendre écran par écran. */
+.prefa-list[data-densite="confortable"] {
+    --ligne-td: 52px;
+    --ligne-th: 36px;
+}
+
+.prefa-list[data-densite="compact"] {
+    --ligne-td: 36px;
+    --ligne-th: 32px;
+}
+
+.prefa-list[data-densite="confortable"] .prefa-table {
+    font-size: 15px;
+}
+
+.prefa-list[data-densite="confortable"] .prefa-table th {
+    font-size: 13px;
+}
+
+.prefa-list[data-densite="confortable"] .prefa-reference {
+    font-size: 16px;
+}
+
+.prefa-list[data-densite="compact"] .prefa-table,
+.prefa-list[data-densite="compact"] .prefa-reference {
+    font-size: 13px;
+}
+
+.prefa-list[data-densite="compact"] .prefa-table th {
+    font-size: 12px;
+}
+
+/* ===== LE SÉLECTEUR ===== */
+
+.prefa-vue-outils {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Deux boutons dans un même cadre : c'est un seul réglage à deux positions, pas deux
+   commandes. Séparés, on aurait cru pouvoir les activer tous les deux. */
+.prefa-densite {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+}
+
+.prefa-densite-choix {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--h-md);
+    height: var(--h-md);
+    padding: 0;
+    border: 0;
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+@media (hover: hover) {
+    .prefa-densite-choix:hover {
+        background: var(--hover);
+        color: var(--text);
+    }
+}
+
+.prefa-densite-choix[aria-pressed="true"] {
+    background: var(--active);
+    color: var(--text);
+}
+
+.prefa-densite-choix:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+}
+
+/* L'urgence descend sous l'échéance : une largeur ajustée et « flex » la font passer à la
+   ligne sans casser l'alignement vertical de la cellule, et sans colonne à elle pour une
+   mention qui ne paraît qu'une fois sur quatre. */
+.prefa-mes-demandes .prefa-echeance .prefa-urgent {
+    display: flex;
+    width: fit-content;
+    margin-top: 5px;
 }
 
 .prefa-list .prefa-heading {
@@ -72,8 +188,11 @@
     padding-bottom: 30px;
 }
 
+/* Le seuil de défilement horizontal suit la nouvelle largeur : à 1050 il se déclenchait
+   presque aussitôt que la coquille était bornée. Mesuré, le contenu réel des neuf colonnes
+   demande environ 830px. */
 .prefa-table {
-    min-width: 1050px;
+    min-width: 880px;
 }
 
 .nav-btn .nav-urgent-badge {
@@ -142,10 +261,25 @@
 
 /* La référence est un code, pas une phrase : des chiffres de largeur fixe, pour que la
    colonne reste droite d'une ligne à l'autre. */
+/* La date de dépôt et le nom du demandeur situent la ligne ; ils ne la font pas lire.
+ *
+ * « !important » n'est pas un caprice : light-theme.css pose
+ * « [data-theme="light"] td { color: #171717 !important } » sur toutes les cellules de
+ * l'application. Aucune hiérarchie n'était possible en thème clair — les neuf colonnes
+ * arrivaient du même noir, et c'est ce qui faisait le tableau plat. */
+.prefa-table td.prefa-secondaire,
+[data-theme="light"] .prefa-table td.prefa-secondaire {
+    color: var(--text-muted) !important;
+}
+
+/* Le numéro de demande mène la ligne : c'est par lui qu'on la nomme et qu'on la retrouve.
+   Il était le plus pâle de sa propre ligne — en --text-muted, sous le nom du demandeur et
+   sous les dates. */
 .prefa-reference {
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
-    color: var(--text-muted);
+    color: var(--text);
+    font-weight: 500;
 }
 
 /* Les commandes d'une ligne sont des boutons fantômes : encadrées, elles faisaient trois
@@ -302,6 +436,130 @@ body:has(.prefa-detail-row:not([hidden]))::before {
 .prefa-detail-row:has(> td > .prefa-table-detail) > td,
 .prefa-detail-row:has(> td > .prefa-table-detail):hover > td {
     background: transparent !important;
+}
+
+/* ---------- LA LIGNE, DANS LE REGISTRE D'UNE LISTE DE SUIVI ----------
+
+   Le défaut n'était pas la forme du tableau — une demande se compare à celle du dessous,
+   donc c'est bien un tableau — mais sa répartition. Les colonnes se partageaient les
+   1250 px du panneau à parts égales : la référence tombait à gauche, le demandeur à
+   l'autre bout, et l'œil traversait un désert pour relier deux données de la même ligne.
+
+   Une seule colonne porte désormais la largeur libre — l'affaire. Toutes les autres se
+   réduisent à leur contenu, donc l'identité se rassemble à gauche (urgence, numéro,
+   affaire) et les mesures viennent se serrer contre le bord droit. C'est la disposition
+   d'une liste de suivi, et elle tient dans deux déclarations. */
+
+.prefa-table .prefa-affaire {
+    width: 100%;
+    font-weight: 500;
+}
+
+/* Les autres colonnes ne prennent que ce qu'il leur faut. « white-space: nowrap » est déjà
+   posé plus haut sur les cellules de la première ligne : elles ne se casseront pas. */
+.prefa-table thead th:not(.prefa-affaire),
+.prefa-table .prefa-request > tr:first-child > td:not(.prefa-affaire) {
+    width: 1%;
+}
+
+/* L'en-tête d'une colonne nomme, il ne pèse pas : il passait au même corps que les
+   données qu'il coiffe. */
+.prefa-table thead th {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+/* Une propriété qui porte un état — l'échéance — se lit dans une pastille, avec le dessin
+   qui dit de quoi il s'agit. Les mesures d'à côté restent des nombres nus : une pastille
+   les empêcherait de se comparer d'une ligne à l'autre. */
+.prefa-propriete {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: var(--h-md);
+    padding: 0 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    white-space: nowrap;
+}
+
+.prefa-propriete .icon {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    color: var(--text-muted);
+}
+
+/* Dépassée, la pastille prend le filet et le dessin du danger — mais pas son fond. Dans
+   un atelier en retard, trente pastilles pleines feraient un mur rouge où plus rien ne se
+   distingue : c'est le contraste entre les lignes qui porte l'alerte, pas la quantité. */
+.prefa-table td.prefa-echeance.est-en-retard .prefa-propriete {
+    border-color: var(--danger-bord);
+}
+
+.prefa-table td.prefa-echeance.est-en-retard .prefa-propriete .icon {
+    color: var(--danger-texte);
+}
+
+
+/* L'urgence ouvre la ligne. La place est réservée sur toutes les lignes, vide ou non :
+   c'est ce qui garde la colonne des références alignée. L'en-tête prend le même retrait,
+   sinon c'est lui qui se décale — mesuré à 21 px avant correction. */
+.prefa-table thead th:first-child {
+    padding-left: 34px;
+}
+.prefa-urgence {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
+    vertical-align: -3px;
+    color: var(--attente-texte);
+}
+
+.prefa-urgence .icon {
+    width: 14px;
+    height: 14px;
+}
+
+/* Une échéance dépassée rougit, et c'est tout. Un mot de plus par ligne — « en retard » —
+   ferait une colonne de bruit pour une information que la couleur donne déjà. */
+.prefa-table td.prefa-echeance.est-en-retard {
+    color: var(--danger-texte);
+    font-weight: 500;
+}
+
+/* Le seuil de défilement suit : une colonne de moins, et les mesures serrées à droite
+   demandent moins de largeur qu'avant. */
+.prefa-table {
+    min-width: 760px;
+}
+
+/* Le demandeur avec son monogramme : le même objet que sur une carte d'affaire, en plus
+   petit. C'est lui qui donne son relief à la colonne — un nom nu se lit, un visage se
+   reconnaît. */
+.prefa-personne {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.prefa-avatar {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    background: var(--active);
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
 }
 
 .prefa-table-detail {
@@ -893,7 +1151,7 @@ body:has(.prefa-detail-row:not([hidden]))::before {
     font-size: 12px;
 }
 
-/* Le nombre d'''articles en retard, dans le résumé d'''un bon : l'''ambre des « à faire ». */
+/* Le nombre d'articles en retard, dans le résumé d'un bon : l'ambre des « à faire ». */
 .materiel-retard {
     color: var(--attente-texte);
     white-space: nowrap;
@@ -952,8 +1210,8 @@ body:has(.prefa-detail-row:not([hidden]))::before {
 }
 
 /* Le dépôt, au pied de chaque famille de documents : on le trouve là où on vient de
-   constater que le document manque. Le champ lui-même est masqué — c'''est son étiquette
-   qui fait bouton, seule façon d'''habiller un sélecteur de fichier. */
+   constater que le document manque. Le champ lui-même est masqué — c'est son étiquette
+   qui fait bouton, seule façon d'habiller un sélecteur de fichier. */
 .prefa-depot-document {
     position: absolute;
     top: 2px;
@@ -1007,8 +1265,8 @@ body:has(.prefa-detail-row:not([hidden]))::before {
 
 /* ===== La décision ===== */
 
-/* Valider ou refuser est l'''action de cet écran, pas une note de bas de page : la barre
-   reste collée au bas de la fenêtre, lisible où qu'''on en soit dans la fiche. */
+/* Valider ou refuser est l'action de cet écran, pas une note de bas de page : la barre
+   reste collée au bas de la fenêtre, lisible où qu'on en soit dans la fiche. */
 .prefa-table-detail .prefa-review {
     position: sticky;
     bottom: 0;
@@ -1038,7 +1296,7 @@ body:has(.prefa-detail-row:not([hidden]))::before {
     font-size: 12px;
 }
 
-/* « obligatoire pour un refus » est une précision, pas l'''intitulé du champ. */
+/* « obligatoire pour un refus » est une précision, pas l'intitulé du champ. */
 .prefa-review-motif label span {
     font-size: 11px;
 }
@@ -1376,11 +1634,8 @@ td {
     text-align: left;
 }
 
-/* L'en-tête ne porte pas de fond : un bandeau gris au-dessus d'un tableau clair le coupe
-   en deux. Un filet un peu plus marqué que ceux des lignes suffit à le poser.
- *
- * Il reste collé en haut quand on fait défiler, et doit donc masquer les lignes qui
- * passent dessous : il prend la surface de la page, pas une teinte à lui. */
+/* L'en-tête ne porte pas de teinte à lui : un bandeau gris au-dessus d'un tableau clair le
+   coupe en deux. Un filet un peu plus marqué que ceux des lignes suffit à le poser. */
 th {
     height: var(--ligne-th);
     border-bottom: 1px solid var(--border);
@@ -1826,14 +2081,6 @@ tbody tr:last-child > td {
     display: none;
 }
 
-.dashboard-toolbar {
-    display: flex;
-    align-items: center;
-    flex-shrink: 0;
-    padding: 2px 4px;
-    border-bottom: 1px solid var(--border);
-}
-
 /* Le compte tient la droite de la barre : c'est là qu'on le cherche. */
 .toolbar-compte {
     margin-left: auto;
@@ -2054,7 +2301,10 @@ summary {
     }
 }
 
-@media (max-width: 900px) {
+/* 1080 et non 900 : une tablette en paysage fait 1024 points, et la barre
+   y restait accrochee a 260px -- un quart de l ecran pour quatre entrees.
+   Un portable de 1280 la garde depliee. */
+@media (max-width: 1080px) {
     #left-panel {
         position: fixed;
         inset: 0 auto 0 0;
@@ -2640,6 +2890,37 @@ summary {
     text-align: left;
     white-space: normal;
 }
+
+/* ===== LE NOM DE L'AFFAIRE =====
+ *
+ * Sur « Mes demandes », le groupe est une affaire, et son nom est le seul endroit où elle
+ * paraît — les lignes ne la répètent pas. C'était pourtant le texte le plus discret de
+ * l'écran : 13px au-dessus de lignes à 15. Un titre qui passe derrière ce qu'il annonce.
+ *
+ * Il suit maintenant la densité, comme le reste du tableau. */
+.prefa-list[data-densite="confortable"] .prefa-table .prefa-groupe th {
+    padding-top: 28px;
+    font-size: 16px;
+}
+
+.prefa-list[data-densite="compact"] .prefa-table .prefa-groupe th {
+    font-size: 13px;
+}
+
+.prefa-list[data-densite="confortable"] .prefa-groupe-compte {
+    font-size: 12px;
+}
+
+/* Pas de titre collé, et pas d'en-tête collé non plus — essayé, mesuré, retiré.
+ *
+ * La zone qui défile est « .page », dont le haut est à 50px ; mais « position: sticky » s'y
+ * résout contre un ancêtre situé plus haut, et l'en-tête s'arrêtait à 7px — au-dessus de
+ * « #content », qui porte « overflow: hidden » et le découpait. Résultat mesuré : la ligne
+ * « Demande n° / Fin prévue / Statut » disparaissait purement et simplement dès qu'on
+ * faisait défiler.
+ *
+ * Le besoin reste (sur une longue liste, on perd de vue l'affaire qu'on lit) ; il demande
+ * de reprendre l'empilement des conteneurs du tableau de bord, pas une ligne de CSS ici. */
 
 /* Le premier groupe suit l'en-tête des colonnes : l'écart d'un groupe à l'autre y ferait
    un trou. */

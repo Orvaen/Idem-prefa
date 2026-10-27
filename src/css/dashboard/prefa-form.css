@@ -10,7 +10,7 @@
     margin: 0 auto;
 }
 
-/* La sortie, au-dessus du titre : c'''est le premier endroit où l'''œil la cherche, et elle
+/* La sortie, au-dessus du titre : c'est le premier endroit où l'œil la cherche, et elle
    reste atteignable sans redescendre au pied du formulaire. */
 .prefa-retour {
     display: inline-flex;
@@ -225,7 +225,11 @@
     border: 1px solid transparent;
     border-radius: var(--r-md);
     background: var(--accent);
-    color: #ffffff;
+    /* Le texte s'inverse avec le thème, comme le fond : l'azur du thème clair est sombre et
+       porte du blanc (6,47:1) ; celui du thème sombre est clair, et le blanc n'y faisait que
+       3,42:1. « --bouton-plein-texte » vaut #FFFFFF en clair — rien ne change de ce côté —
+       et #171717 en sombre, soit 5,24:1. */
+    color: var(--bouton-plein-texte);
     font-size: 13px;
     cursor: pointer;
 }
@@ -241,7 +245,7 @@
     cursor: not-allowed;
 }
 
-/* « Refuser » porte « bouton-discret » : c'''est le marqueur prévu pour sortir de la forme
+/* « Refuser » porte « bouton-discret » : c'est le marqueur prévu pour sortir de la forme
    de référence ci-dessus. Sans lui, son sélecteur — quatre classes — écrasait cette règle,
    et les deux décisions sortaient identiques, en bleu plein. Elles ne le sont pas. */
 .prefa-form button.reject {

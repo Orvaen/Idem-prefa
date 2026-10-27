@@ -19,12 +19,12 @@ $optionsCharge = array_map(
 );
 
 /**
- * Le choix du chargé d'affaire sur une ligne : le même champ filtrable que dans le
- * formulaire au-dessus, en version de tableau. C'était une liste déroulante du système,
- * seul vestige de l'ancien écran — et la seule de la page à ne pas ressembler aux autres.
+ * Le choix du chargé d'affaire sur une carte : le même champ filtrable que dans la fenêtre
+ * d'ouverture, dans son mode sans étiquette — l'intitulé part en aria-label, et la carte
+ * n'a pas de colonne pour le porter.
  *
  * Le préfixe porte l'identifiant de l'affaire : le composant en tire les siens, et deux
- * lignes ne peuvent pas partager les mêmes.
+ * cartes ne peuvent pas partager les mêmes.
  */
 $choixCharge = static function (array $options, int $idAffaire, ?int $choisi): string {
     return listeFiltrableRendu('charge-' . $idAffaire, 'Chargé d’affaire', $options, $choisi, [
@@ -36,67 +36,169 @@ $choixCharge = static function (array $options, int $idAffaire, ?int $choisi): s
 };
 ?>
 <section class="users-page affaires-page" data-csrf="<?= prefaEscape(Session::jeton()) ?>">
-    <div class="header-list">
-        <h1 class="list-h1">Affaires</h1>
-        <p class="affaires-intro">Un chantier, un chargé d’affaire. C’est ici qu’une affaire s’ouvre ;
-            le chargé d’affaire y dépose ensuite ses demandes de préfabrication.</p>
+    <div class="header-list affaires-entete">
+        <div class="affaires-titre">
+            <h1 class="list-h1">Affaires</h1>
+        </div>
+        <!-- Ouvrir une affaire est l'action de l'écran, pas une ligne de plus dans la page.
+             Le formulaire tenait le haut de l'écran en permanence pour un geste qu'on fait
+             une fois par chantier ; il tient maintenant dans un bouton, et la saisie dans
+             la fenêtre qu'il ouvre. -->
+        <button type="button" id="affaire-nouvelle" class="affaire-nouvelle">
+            <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 5v14M5 12h14" />
+            </svg>
+            Nouvelle affaire
+        </button>
     </div>
 
-    <form id="affaire-form" class="affaire-form">
-        <div class="form-group">
-            <label for="affaire-nom">Nouvelle affaire</label>
-            <input id="affaire-nom" name="nom" maxlength="255" required placeholder="Ex. : Réseau vapeur — bâtiment A">
+    <!-- La recherche de l'écran. C'est le composant partagé des filtres — même loupe, même
+         hauteur, même cadre que celle de la liste des demandes : deux recherches qui ne se
+         ressemblent pas dans la même application, c'est deux choses différentes pour l'œil.
+
+         Elle filtre dans le navigateur : les affaires tiennent dans une page, et aller
+         demander au serveur de cacher trois cartes serait un aller-retour pour rien. -->
+    <div class="affaires-filtres">
+        <div class="filtres-recherche">
+            <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.75" stroke-linecap="round">
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-3.5-3.5" />
+            </svg>
+            <input id="affaires-search" type="search" autocomplete="off"
+                aria-label="Rechercher une affaire"
+                placeholder="Nom d’affaire ou chargé d’affaire…">
         </div>
-        <?php
-        // Le même champ que « Matière » : on tape pour chercher dans la liste au lieu de
-        // dérouler. Quinze comptes tiennent dans un menu, cinquante n'y tiennent plus, et
-        // c'est le genre de liste qui ne fait que grandir.
-        //
-        // Pas d'issue « Autre » : un chargé d'affaire est un compte, il se crée dans
-        // l'administration, pas en le tapant ici.
-        echo listeFiltrableRendu('charge', 'Chargé d’affaire', $optionsCharge, null, [
-            'vide' => 'Personne pour l’instant',
-            'aucun' => 'Aucun chargé d’affaire à ce nom.',
-            'chercher' => 'Rechercher un chargé d’affaire…',
-        ]);
-        ?>
-        <button type="submit">Ouvrir l’affaire</button>
-        <p class="prefa-message" role="status" aria-live="polite"></p>
-    </form>
+    </div>
 
     <?php if (!$chargesDAffaire): ?>
         <p class="affaires-note">Aucun compte de chargé d’affaire n’existe encore : créez-en un pour
             pouvoir leur confier des affaires.</p>
     <?php endif; ?>
 
-    <div class="affaires-table-scroll">
-        <table class="affaires-table">
-            <thead>
-                <tr>
-                    <th scope="col">Affaire</th>
-                    <th scope="col">Chargé d’affaire</th>
-                    <th scope="col">Demandes</th>
-                    <th scope="col">Actions</th>
-                </tr>
-            </thead>
-            <tbody id="affaires-rows">
-                <?php foreach ($affaires as $affaire): ?>
-                    <tr data-affaire="<?= $affaire->id ?>">
-                        <td><input class="affaire-nom" value="<?= prefaEscape($affaire->nom) ?>" maxlength="255" aria-label="Nom de l’affaire"></td>
-                        <td><?= $choixCharge($optionsCharge, $affaire->id, $affaire->idChargeAffaire) ?></td>
-                        <!-- Le nombre dit pourquoi la suppression est refusée : une affaire qui
-                             porte des demandes ne se ferme pas d'un clic. -->
-                        <td class="affaire-demandes"><?= $affaire->demandes ?></td>
-                        <td class="affaire-actions">
-                            <button type="button" class="affaire-enregistrer">Enregistrer</button>
-                            <button type="button" class="affaire-supprimer"<?= $affaire->demandes > 0 ? ' disabled title="Des demandes y sont rattachées."' : '' ?>>Supprimer</button>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-                <?php if (!$affaires): ?>
-                    <tr class="affaires-vide"><td colspan="4">Aucune affaire ouverte. Ouvrez la première ci-dessus.</td></tr>
-                <?php endif; ?>
-            </tbody>
-        </table>
+    <!-- Une carte par affaire, et non une ligne de tableau. Un tableau range des
+         enregistrements qu'on compare colonne par colonne ; une affaire n'a que trois
+         choses à dire — son nom, qui la porte, combien de demandes y sont déposées — et
+         on ne les compare pas, on les ouvre. La carte donne au nom la place d'un titre,
+         ce qu'une cellule ne fait pas.
+
+         Le nom et le chargé d'affaire restent modifiables sur place : c'est ce que
+         l'écran savait déjà faire, et c'est ce pour quoi on y revient. -->
+    <div class="affaires-grille" id="affaires-rows">
+        <?php foreach ($affaires as $affaire): ?>
+            <?php
+            // Le monogramme tient la place du visuel de couverture des outils de suivi :
+            // nous n'avons pas d'image à poser sur une affaire, et une image prise au
+            // hasard n'en dirait rien. Deux lettres suffisent à distinguer une carte d'une
+            // autre dans une grille qu'on balaie.
+            $monogramme = mb_strtoupper(mb_substr(trim($affaire->nom), 0, 2));
+            ?>
+            <article class="affaire-carte" data-affaire="<?= $affaire->id ?>">
+                <div class="affaire-carte-haut">
+                    <span class="affaire-monogramme" aria-hidden="true"><?= prefaEscape($monogramme) ?></span>
+
+                    <!-- La suppression ne paraît qu'au survol, comme les commandes d'une
+                         ligne de la liste des demandes. Éteinte quand des demandes sont
+                         rattachées : son infobulle dit pourquoi. -->
+                    <button type="button" class="affaire-supprimer" aria-label="Supprimer l’affaire <?= prefaEscape($affaire->nom) ?>"<?= $affaire->demandes > 0 ? ' disabled title="Des demandes y sont rattachées."' : ' title="Supprimer l’affaire"' ?>>
+                        <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" />
+                        </svg>
+                    </button>
+                </div>
+
+                <input class="affaire-nom" value="<?= prefaEscape($affaire->nom) ?>" maxlength="255" aria-label="Nom de l’affaire">
+
+                <?= $choixCharge($optionsCharge, $affaire->id, $affaire->idChargeAffaire) ?>
+
+                <footer class="affaire-carte-pied">
+                    <?php
+                    // Le nombre dit aussi pourquoi la suppression est refusée : une affaire
+                    // qui porte des demandes ne se ferme pas d'un clic.
+                    //
+                    // Quand il y en a, il mène à ces demandes — c'est le chemin annoncé de
+                    // la carte, et le seul qui soit atteignable au clavier. À zéro, il n'y
+                    // a rien à ouvrir : ce n'est plus qu'un état.
+                    ?>
+                    <?php if ($affaire->demandes > 0): ?>
+                        <button type="button" class="affaire-demandes" title="Voir les demandes de cette affaire">
+                            <?= $affaire->demandes ?> demande<?= $affaire->demandes > 1 ? 's' : '' ?>
+                            <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="m9 6 6 6-6 6" />
+                            </svg>
+                        </button>
+                    <?php else: ?>
+                        <span class="affaire-demandes est-vide">Aucune demande</span>
+                    <?php endif; ?>
+                    <button type="button" class="affaire-enregistrer">Enregistrer</button>
+                </footer>
+            </article>
+        <?php endforeach; ?>
+
+        <?php if (!$affaires): ?>
+            <p class="affaires-vide">Aucune affaire ouverte. « Nouvelle affaire » ouvre la première.</p>
+        <?php endif; ?>
+
+        <!-- La réponse de la recherche quand elle ne trouve rien. Elle vit dans la grille,
+             pas ailleurs : c'est là que le regard attend les cartes. -->
+        <p class="affaires-vide" id="affaires-aucune" hidden>Aucune affaire ne porte ce nom.</p>
     </div>
+
+    <!--
+        La fenêtre d'ouverture. Un <dialog> modal, comme la palette et l'ajout de compte :
+        le piège à focus, le fond et la touche Échap viennent avec, et la boîte passe
+        au-dessus de tout sans course au z-index.
+
+        Elle vit dans la page et non dans dashboard.php : l'écran arrive par AJAX dans
+        #content et repart entier à chaque rechargement — la fenêtre suit, avec la liste des
+        chargés d'affaire que le PHP vient d'écrire.
+    -->
+    <dialog id="affaire-dialog" class="affaire-dialog" aria-labelledby="affaire-dialog-titre">
+        <form id="affaire-form" class="affaire-form" method="post">
+            <div class="affaire-dialog-entete">
+                <h2 id="affaire-dialog-titre">Nouvelle affaire</h2>
+                <button type="button" class="affaire-dialog-fermer modal-close" aria-label="Fermer">
+                    <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="m6 6 12 12M18 6 6 18" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- La saisie dans le registre des outils de suivi : pas d'étiquette au-dessus des
+                 champs, chacun porte son intitulé à l'intérieur. Une étiquette flottante par
+                 champ faisait lire deux fois le même mot, une fois en l'air et une fois dans
+                 le champ. Les deux champs sont taillés pareil : voir la feuille. -->
+            <div class="affaire-dialog-corps">
+                <input id="affaire-nom" class="affaire-nom-champ" name="nom" maxlength="255" required
+                    autocomplete="off" aria-label="Nom de l’affaire" placeholder="Nom de l’affaire">
+
+                <?php
+                // Le même champ que « Matière » : on tape pour chercher dans la liste au lieu
+                // de dérouler. Quinze comptes tiennent dans un menu, cinquante n'y tiennent
+                // plus, et c'est le genre de liste qui ne fait que grandir.
+                //
+                // Pas d'issue « Autre » : un chargé d'affaire est un compte, il se crée dans
+                // l'administration, pas en le tapant ici.
+                //
+                // « tableau » n'est pas réservé aux tableaux : c'est le mode sans étiquette du
+                // composant — l'intitulé part en aria-label et le champ tient sur une ligne.
+                // C'est ce qu'il faut ici : les deux champs se ressemblent trait pour trait,
+                // une étiquette au-dessus du second aurait déparé.
+                echo listeFiltrableRendu('charge', 'Chargé d’affaire', $optionsCharge, null, [
+                    'vide' => 'Personne pour l’instant',
+                    'aucun' => 'Aucun chargé d’affaire à ce nom.',
+                    'chercher' => 'Chargé d’affaire',
+                    'tableau' => true,
+                ]);
+                ?>
+
+                <p class="prefa-message" role="status" aria-live="polite"></p>
+            </div>
+
+            <div class="affaire-dialog-pied">
+                <button type="button" class="affaire-dialog-fermer">Annuler</button>
+                <button type="submit" class="affaire-ouvrir">Ouvrir l’affaire</button>
+            </div>
+        </form>
+    </dialog>
 </section>

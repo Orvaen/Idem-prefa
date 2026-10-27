@@ -39,6 +39,7 @@
     height: 15px;
     color: var(--text-muted);
     pointer-events: none;
+    transition: color 0.15s ease;
 }
 
 .filtres-recherche input {
@@ -51,14 +52,7 @@
     color: var(--text);
     font: inherit;
     font-size: 13px;
-}
-
-.filtres-recherche .icon {
-    transition: color .15s ease;
-}
-
-.filtres-recherche input {
-    transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+    transition: border-color 0.15s ease, background 0.15s ease;
 }
 
 /* Le champ répond au survol avant le clic : sans ça, rien ne dit qu'on peut y taper. */
@@ -66,9 +60,11 @@
     border-color: var(--text-muted);
 }
 
+/* Le focus se dit par le cadre, comme partout ailleurs dans l'application. Ce champ-ci
+   portait en plus un halo de 3 px : le seul de la maison, et il faisait de la recherche
+   un contrôle d'une autre famille. */
 .filtres-recherche input:focus {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
     outline: none;
 }
 

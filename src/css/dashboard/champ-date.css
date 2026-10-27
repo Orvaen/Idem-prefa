@@ -1,0 +1,368 @@
+/* ===== LE CHAMP DATE =====
+ *
+ * Onze champs de date dans l'application — le planning, les PV, les soudures, les bons de
+ * livraison, la nouvelle demande — et autant de fenêtres différentes : celle du navigateur,
+ * dessinée par le système, qui ne connaît ni nos couleurs ni notre échelle de rayons. En
+ * thème clair sur un écran de présentation, elle arrivait en gris Windows au milieu d'une
+ * page blanche.
+ *
+ * Ce qu'on reprend à notre charge : la glyphe qui ouvre, et le calendrier. Ce qu'on laisse
+ * au navigateur : la saisie elle-même. Le champ reste un « input type=date » — il garde son
+ * nom, sa valeur au format AAAA-MM-JJ que le serveur attend, son « required » que le
+ * validateur lit avec checkValidity(), et les segments jj/mm/aaaa qu'on remplit au clavier
+ * sans quitter la ligne. C'est la partie que le natif fait bien ; la refaire aurait coûté
+ * l'accessibilité et le format.
+ *
+ * Le champ garde aussi l'habillage de son écran : la nouvelle demande a ses propres fonds
+ * et bordures, le planning les siens. Ce fichier ne pose ni fond ni bordure sur le champ —
+ * seulement la place du déclencheur. Un seul calendrier, onze habillages de champ.
+ */
+
+/* ---------- Le champ ---------- */
+
+.ctrl-date {
+    position: relative;
+    display: block;
+}
+
+/* La glyphe du navigateur s'en va : c'est la nôtre qui ouvre, et deux glyphes côte à côte
+   pour la même chose ne disent plus laquelle répond. */
+.ctrl-date > input[type="date"]::-webkit-calendar-picker-indicator {
+    display: none;
+    -webkit-appearance: none;
+}
+
+.ctrl-date > input[type="date"]::-webkit-inner-spin-button,
+.ctrl-date > input[type="date"]::-webkit-clear-button {
+    display: none;
+    -webkit-appearance: none;
+}
+
+/* Le texte s'arrête avant le déclencheur.
+ *
+ * « !important » parce que la règle de base des champs de la nouvelle demande porte quatre
+ * « :not() » et un type — (0,6,1) — contre (0,2,1) ici : l'ordre des feuilles n'y change
+ * rien, et le padding de 12px laissait la glyphe sur le dernier chiffre de l'année. */
+.ctrl-date > input[type="date"] {
+    padding-right: 32px !important;
+}
+
+/* Un champ vide dit « jj/mm/aaaa » : c'est une invite, pas une date. Le navigateur l'écrit
+   dans la couleur du texte, où elle se lisait comme une valeur saisie. */
+.ctrl-date.est-vide > input[type="date"]::-webkit-datetime-edit {
+    color: var(--text-muted);
+    opacity: .75;
+}
+
+.ctrl-date-ouvrir {
+    /* Posé sur les bords du champ plutôt qu'à une hauteur à lui : le même déclencheur sert
+       un champ de formulaire de 40px et une cellule de tableau de 24px. */
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    bottom: 2px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background-color .12s, color .12s;
+}
+
+@media (hover: hover) {
+    .ctrl-date-ouvrir:hover {
+        background: var(--hover);
+        color: var(--text);
+    }
+}
+
+.ctrl-date-ouvrir:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+.ctrl-date > input[type="date"]:disabled ~ .ctrl-date-ouvrir,
+.ctrl-date > input[type="date"][readonly] ~ .ctrl-date-ouvrir {
+    display: none;
+}
+
+/* ---------- Le calendrier ----------
+ *
+ * Posé sur document.body, et non dans le champ : un parent au « overflow: hidden » — une
+ * cellule de tableau, un volet de planning — le coupait en deux. Il ne récupère donc pas
+ * les jetons que certains écrans redéfinissent sur leur conteneur, et c'est voulu : un seul
+ * calendrier, les jetons de la DA, le même partout. */
+
+.ctrl-calendrier {
+    position: fixed;
+    z-index: 1200;
+    box-sizing: border-box;
+    width: 252px;
+    padding: 8px;
+    border: 1px solid var(--border);
+    /* Le rayon de la grande vue, et non celui d'une carte posée : le calendrier flotte
+       au-dessus de la page, il n'y est pas rangé. */
+    border-radius: var(--r-xl);
+    /* Trois tons pour une carte flottante : sa surface, son filet, son ombre. Sans l'ombre
+       elle se confond avec la page ; sans le filet, elle n'a pas de bord en thème clair. */
+    background: var(--surface);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 10px 28px rgba(0, 0, 0, .14);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    line-height: 1;
+    user-select: none;
+}
+
+:root:not([data-theme="light"]) .ctrl-calendrier {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 12px 32px rgba(0, 0, 0, .5);
+}
+
+.ctrl-calendrier[hidden] {
+    display: none;
+}
+
+/* ---------- L'en-tête ---------- */
+
+.ctrl-cal-tete {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-bottom: 4px;
+}
+
+.ctrl-cal-fleche {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: var(--h-md);
+    height: var(--h-md);
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.ctrl-cal-periode {
+    flex: 1 1 auto;
+    height: var(--h-md);
+    padding: 0 10px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text);
+    font: 500 13px/1 var(--font);
+    /* La période est un bouton : elle ouvre le choix du mois. Sans ce premier plan, aller
+       d'octobre à mars demandait cinq clics sur la flèche. */
+    cursor: pointer;
+    text-align: center;
+}
+
+@media (hover: hover) {
+    .ctrl-cal-fleche:hover,
+    .ctrl-cal-periode:hover {
+        background: var(--hover);
+        color: var(--text);
+    }
+}
+
+.ctrl-cal-fleche:disabled {
+    opacity: .35;
+    cursor: default;
+}
+
+.ctrl-cal-fleche:focus-visible,
+.ctrl-cal-periode:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+}
+
+/* ---------- La grille des jours ---------- */
+
+.ctrl-cal-grille {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+}
+
+.ctrl-cal-jour-nom {
+    height: 24px;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 24px;
+    text-align: center;
+    text-transform: lowercase;
+}
+
+.ctrl-cal-case {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    /* Centrée dans sa colonne : la grille donne 33px de large, la pastille en prend 32 pour
+       être ronde plutôt qu'en gélule. */
+    margin: 0 auto;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text);
+    font: 400 13px/1 var(--font);
+    /* Les chiffres gardent la même largeur d'une ligne à l'autre : sans quoi la colonne du
+       11 paraît plus étroite que celle du 30. */
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+}
+
+/* Le survol prend l'azur plein : la pastille qu'on est en train de choisir se montre à
+   l'endroit exact où elle se posera. Le gris d'avant ne disait rien de plus que « ceci est
+   un bouton ».
+
+   Le texte n'est pas écrit « blanc » mais pris sur --bouton-plein-texte : il l'est en thème
+   clair, où l'azur est sombre (6,47:1) ; en thème sombre l'azur est clair, et du blanc n'y
+   ferait que 3,42:1. C'est le jeton que porte déjà le bouton plein de l'application. */
+@media (hover: hover) {
+    .ctrl-cal-case:hover:not(:disabled) {
+        border-color: transparent;
+        background: var(--accent);
+        color: var(--bouton-plein-texte);
+        /* Un jour du mois voisin s'efface à moitié : sous l'azur, il faut qu'il revienne. */
+        opacity: 1;
+    }
+}
+
+/* Les jours du mois voisin restent lisibles mais s'effacent : la grille fait toujours six
+   semaines, pour que le calendrier ne change pas de hauteur d'un mois à l'autre. */
+.ctrl-cal-case.est-autre-mois {
+    color: var(--text-muted);
+    opacity: .5;
+}
+
+.ctrl-cal-case.est-aujourdhui {
+    border-color: var(--border-fort);
+    font-weight: 500;
+}
+
+.ctrl-cal-case.est-choisi {
+    border-color: transparent;
+    background: var(--accent);
+    color: var(--bouton-plein-texte);
+    font-weight: 500;
+    opacity: 1;
+}
+
+/* Le jour déjà choisi porte le même azur que le survol : le sien descend d'un ton, sinon
+   rien ne bouge sous le curseur et on doute d'avoir visé la bonne case. */
+.ctrl-cal-case.est-choisi:hover {
+    background: var(--accent-hover);
+}
+
+.ctrl-cal-case:disabled {
+    color: var(--text-muted);
+    opacity: .3;
+    cursor: default;
+}
+
+.ctrl-cal-case:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -3px;
+}
+
+/* ---------- Le choix du mois ---------- */
+
+.ctrl-cal-mois {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+}
+
+.ctrl-cal-mois-case {
+    height: var(--h-xl);
+    padding: 0 4px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text);
+    font: 400 13px/1 var(--font);
+    cursor: pointer;
+}
+
+@media (hover: hover) {
+    .ctrl-cal-mois-case:hover:not(:disabled) {
+        border-color: transparent;
+        background: var(--accent);
+        color: var(--bouton-plein-texte);
+    }
+
+    .ctrl-cal-mois-case.est-choisi:hover {
+        background: var(--accent-hover);
+    }
+}
+
+.ctrl-cal-mois-case.est-choisi {
+    background: var(--accent);
+    color: var(--bouton-plein-texte);
+    font-weight: 500;
+}
+
+.ctrl-cal-mois-case:disabled {
+    opacity: .3;
+    cursor: default;
+}
+
+.ctrl-cal-mois-case:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -3px;
+}
+
+/* ---------- Le pied ---------- */
+
+.ctrl-cal-pied {
+    display: flex;
+    gap: 4px;
+    margin-top: 4px;
+    padding-top: 6px;
+    border-top: 1px solid var(--border-faint);
+}
+
+.ctrl-cal-action {
+    flex: 1 1 0;
+    height: var(--h-md);
+    padding: 0 10px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--accent-texte);
+    font: 500 12.5px/1 var(--font);
+    cursor: pointer;
+}
+
+.ctrl-cal-action.est-discrete {
+    color: var(--text-muted);
+}
+
+@media (hover: hover) {
+    .ctrl-cal-action:hover {
+        background: var(--hover);
+    }
+}
+
+.ctrl-cal-action:disabled {
+    opacity: .35;
+    cursor: default;
+}
+
+.ctrl-cal-action:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+}

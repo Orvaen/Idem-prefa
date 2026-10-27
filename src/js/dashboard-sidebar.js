@@ -33,7 +33,12 @@ document.querySelectorAll('.nav-rayon-titre').forEach(titre => {
 });
 
 const btn_hide_sidebar = document.getElementById('btn-hide');
-const sidebarLayout = window.matchMedia('(max-width: 900px)');
+// Le même seuil que les feuilles — barre-laterale.css et prefa-list.css. Les deux
+// avaient divergé : la feuille donnait au panneau sa forme de tiroir à 1080px pendant
+// que le script le croyait encore accroché, et sur une tablette en paysage il restait
+// ouvert par-dessus le contenu. Une requête média ne lit pas une variable CSS : si le
+// seuil bouge, il bouge ici aussi.
+const sidebarLayout = window.matchMedia('(max-width: 1080px)');
 function setSidebar(open) {
     document.getElementById('contenaire').classList.toggle('sidebar-closed', !open);
     btn_hide_sidebar.setAttribute('aria-expanded', String(open));

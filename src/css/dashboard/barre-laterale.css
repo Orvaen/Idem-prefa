@@ -18,16 +18,22 @@
 /* ===== LES TEINTES ===== */
 
 #left-panel {
-    --bl-carte: color-mix(in srgb, var(--surface) 92%, #ffffff);
-    --bl-bord: var(--border);
-    --bl-ombre: 0 1px 2px rgb(0 0 0 / 18%);
+    --bl-carte: var(--surface);
+    --bl-bord: var(--border-fort);
+    --bl-ombre: 0 1px 2px rgb(15 15 16 / 5%), 0 6px 16px rgb(15 15 16 / 4%);
     --bl-texte: var(--text);
     --bl-discret: var(--text-muted);
     --bl-icone: var(--text-muted);
     --bl-survol: var(--hover);
-    --bl-actif-fond: rgb(217 119 87 / 14%);
-    --bl-actif-texte: #F0B49E;
-    --bl-actif-icone: #E08A6D;
+    /* L'entree active prend l'azur de l'application, et non plus une terre cuite qui
+       n'appartenait a aucune autre couleur de l'ecran : l'entree ou l'on est et le bouton
+       plein disaient deux familles differentes de la meme chose.
+       Le texte ne reprend pas --accent-texte : sur --accent-fond il ne fait que 4,63:1,
+       quand la terre cuite qu'il remplace en faisait 9,86. Un azur clair de meme
+       luminosite -- 9,82:1 -- garde la lisibilite du libelle de navigation. */
+    --bl-actif-fond: var(--accent-fond);
+    --bl-actif-texte: #9ED3EF;
+    --bl-actif-icone: #5FB3DE;
     --bl-urgent-fond: rgb(217 119 87 / 18%);
     --bl-urgent-texte: #F0B49E;
     --bl-neutre-fond: var(--active);
@@ -35,48 +41,49 @@
 }
 
 html[data-theme="light"] #left-panel {
-    --bl-carte: #FAF9F5;
-    --bl-bord: #EEEBE3;
-    --bl-ombre: 0 1px 2px rgb(20 20 19 / 3%);
+    --bl-carte: var(--surface);
+    --bl-bord: var(--border-fort);
     --bl-texte: #3D3C37;
     --bl-discret: #74726A;
     --bl-icone: #8A887F;
     --bl-survol: #F1EFE8;
-    --bl-actif-fond: #F6E6DD;
-    --bl-actif-texte: #8E3A1C;
-    --bl-actif-icone: #B85433;
+    /* En clair les jetons suffisent : 7,27:1 pour le texte et 5,98:1 pour l'icone,
+       au-dessus des 6,23:1 de la terre cuite qu'ils remplacent. */
+    --bl-actif-fond: var(--accent-fond);
+    --bl-actif-texte: var(--accent-texte);
+    --bl-actif-icone: var(--accent);
     --bl-urgent-fond: #FBE5DB;
     --bl-urgent-texte: #9A3F1F;
     --bl-neutre-fond: #ECE9E1;
     --bl-neutre-texte: #5F5E57;
 }
 
-/* Autour de la carte, le fond de la page et rien d'autre : une bande d'une autre teinte
-   découpait l'écran en trois — la gouttière, la carte, le travail. C'est la carte qui
-   porte la couleur, pas ce qui l'entoure. */
-#contenaire,
-html[data-theme="light"] #contenaire {
-    background: var(--surface) !important;
-}
+/* Le cadre garde sa teinte — var(--frame), posée dans dashboard-base.css.
+ *
+ * Il était forcé ici à var(--surface), pour éviter « une bande d'une autre teinte qui
+ * découpe l'écran en trois ». Le raisonnement tenait quand la barre latérale était la
+ * seule carte. Depuis que le contenu en est une aussi, il se retourne : les deux cartes
+ * se retrouvaient de la couleur exacte de ce qui les entoure, et plus rien ne flottait —
+ * mesuré à rgb(255,255,255) pour le cadre comme pour la vue en thème clair, et à
+ * rgb(20,20,21) pour les deux en sombre. Seule la bordure trahissait encore la carte.
+ *
+ * Une carte flottante a besoin de trois tons : le cadre, la surface, et le filet entre
+ * les deux. C'est la règle des surfaces de la direction artistique. */
 
 /* ===== LA CARTE ===== */
 
 #left-panel,
 html[data-theme="light"] #left-panel {
     box-sizing: border-box;
-    height: calc(100vh - 24px);
-    margin: 12px 0 12px 12px;
-    border: 1px solid var(--bl-bord);
-    border-radius: 14px;
-    background: var(--bl-carte) !important;
-    box-shadow: var(--bl-ombre);
+    margin: 0;
+    border: 0;
     font-family: "Inter", var(--font);
     color: var(--bl-texte);
 }
 
 /* La poignée de redimensionnement suit la carte : elle s'écarte de la gouttière. */
 #drag {
-    margin: 12px 6px;
+    margin: 0;
 }
 
 /* ===== LA MARQUE ===== */
@@ -216,13 +223,19 @@ html[data-theme="light"] #left-panel .nav-btn .nav-urgent-badge[data-compteur="p
 /* ===== SUR TÉLÉPHONE =====
    La barre s'ouvre par-dessus la page : la carte garde ses marges et ses coins. */
 
-@media (max-width: 900px) {
+/* 1080 et non 900 : une tablette en paysage fait 1024 points, et la barre
+   y restait accrochee a 260px -- un quart de l ecran pour quatre entrees.
+   Un portable de 1280 la garde depliee. */
+@media (max-width: 1080px) {
     #left-panel,
     html[data-theme="light"] #left-panel {
-        inset: 12px auto 12px 12px;
+        inset: 8px auto 8px 8px;
         height: auto;
         margin: 0;
-        border-radius: 14px;
+        border: 1px solid var(--bl-bord);
+        border-radius: var(--r-xl);
+        background: var(--bl-carte) !important;
+        box-shadow: var(--bl-ombre);
     }
 
     #left-panel .sidebar-mobile-header {

@@ -35,7 +35,7 @@
 
 :root[data-theme="light"] {
     color-scheme: light;
-    --frame: #f1f5f9;
+    --frame: light-dark(#fafafa,#282c34);
     --surface: #ffffff;
     --border: #cbd5e1;
     --text: #0f172a;

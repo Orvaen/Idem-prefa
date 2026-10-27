@@ -267,8 +267,8 @@
     font-variant-numeric: tabular-nums;
 }
 
-/* Une échéance passée sur un article qui n'''est pas arrivé : l'''ambre des « à faire »,
-   doublée du mot au survol. Un article reçu n'''est jamais en retard, quelle que soit sa
+/* Une échéance passée sur un article qui n'est pas arrivé : l'ambre des « à faire »,
+   doublée du mot au survol. Un article reçu n'est jamais en retard, quelle que soit sa
    date : il est là. */
 .materiel-edition td.est-en-retard {
     color: var(--attente-texte);

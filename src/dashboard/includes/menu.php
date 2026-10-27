@@ -358,6 +358,12 @@ function dashboardRessources(Utilisateur $utilisateur): array
         // La page « Nouvelle demande » : comme ses scripts, elle est dans le socle, puisqu'on
         // l'ouvre aussi depuis la liste pour modifier une demande. Elle apporte ses polices.
         'css/dashboard/nouvelle-demande.css',
+        // Le champ date : onze champs dans l'application, et un seul calendrier. Après la
+        // nouvelle demande, dont la règle de base des champs porte quatre « :not() ».
+        'css/dashboard/champ-date.css',
+        // La palette Ctrl+K. Elle habille une boîte modale posée sur le corps de la page,
+        // donc rien ne dépend de l'ordre ici.
+        'css/dashboard/palette.css',
         // La barre latérale en carte, avec ses compteurs : après les feuilles qui la
         // dessinaient jusqu'ici, pour passer devant elles.
         'css/dashboard/barre-laterale.css',
@@ -372,6 +378,15 @@ function dashboardRessources(Utilisateur $utilisateur): array
         // pour tout le monde plutôt qu'un écran dont les listes déroulantes ne répondent
         // pas selon par où on y est entré.
         'js/liste-filtrable.js',
+        // Le champ date, pour les mêmes raisons que sa feuille : le planning, les PV, les
+        // soudures et les bons de livraison en ont tous, et il s'habille tout seul.
+        'js/champ-date.js',
+        // La palette Ctrl+K : elle lit les entrées dans la barre latérale, donc elle vaut
+        // pour tous les rôles sans rien savoir d'eux.
+        'js/palette.js',
+        // Les toasts : ce que l'application répond. Tous les écrans y ont droit, et le
+        // composant ne coûte rien tant que personne ne l'appelle.
+        'js/toast.js',
         'js/dashboard-sidebar.js',
         'js/dashboard-accounts.js',
         // L'œil des mots de passe : la fenêtre d'ajout de compte en a un, l'écran de
