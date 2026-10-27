@@ -65,29 +65,38 @@ $etatDuPlan = static function (array $ligne): array {
         </header>
 
         <?php if ($lignes): ?>
-            <div class="prefa-filters" role="search">
-                <div class="floating-field">
-                    <label for="suivi-soudures-recherche">Rechercher</label>
-                    <input id="suivi-soudures-recherche" class="floating-control" type="search"
-                           placeholder="N° de demande, affaire, plan ou soudeur">
+            <?php // La barre de filtres de la DA : contrôles de 32px, libellé court à côté du
+                  // champ. Les étiquettes flottantes de 44px coupaient l'invite de la recherche
+                  // en deux (« Rechercher ıde, affaire… »). ?>
+            <div class="prefa-filters suivi-soudures-filtres" role="search">
+                <div class="filtres-recherche">
+                    <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+                    <input id="suivi-soudures-recherche" type="search" aria-label="Rechercher"
+                           placeholder="Demande, affaire, plan, soudeur…">
                 </div>
-                <div class="floating-field floating-always">
+                <div class="suivi-soudures-champ">
                     <label for="suivi-soudures-etat">État</label>
-                    <select id="suivi-soudures-etat" class="floating-control">
-                        <option value="">Tous les plans</option>
-                        <option value="a_valider">À valider</option>
-                        <option value="en_cours">En cours</option>
-                        <option value="complet">Toutes soudées</option>
-                        <option value="a_faire">Pas commencé</option>
-                    </select>
+                    <span class="suivi-soudures-select">
+                        <select id="suivi-soudures-etat">
+                            <option value="">Tous</option>
+                            <option value="a_valider">À valider</option>
+                            <option value="en_cours">En cours</option>
+                            <option value="complet">Toutes soudées</option>
+                            <option value="a_faire">Pas commencé</option>
+                        </select>
+                        <svg class="suivi-soudures-chevron" aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m4.5 6.5 3.5 3.5 3.5-3.5" /></svg>
+                    </span>
                 </div>
                 <?php if (count($affaires) > 1): ?>
-                    <div class="floating-field floating-always">
+                    <div class="suivi-soudures-champ">
                         <label for="suivi-soudures-affaire">Affaire</label>
-                        <select id="suivi-soudures-affaire" class="floating-control">
-                            <option value="">Toutes les affaires</option>
-                            <?php foreach ($affaires as $nom): ?><option value="<?= prefaEscape($nom) ?>"><?= prefaEscape($nom) ?></option><?php endforeach; ?>
-                        </select>
+                        <span class="suivi-soudures-select">
+                            <select id="suivi-soudures-affaire">
+                                <option value="">Toutes</option>
+                                <?php foreach ($affaires as $nom): ?><option value="<?= prefaEscape($nom) ?>"><?= prefaEscape($nom) ?></option><?php endforeach; ?>
+                            </select>
+                            <svg class="suivi-soudures-chevron" aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m4.5 6.5 3.5 3.5 3.5-3.5" /></svg>
+                        </span>
                     </div>
                 <?php endif; ?>
             </div>
@@ -102,14 +111,14 @@ $etatDuPlan = static function (array $ligne): array {
         <div class="prefa-table-scroll" role="region" aria-label="Soudures par plan" tabindex="0">
             <table class="prefa-table suivi-soudures-table">
                 <thead><tr>
-                    <th scope="col">Demande n°</th>
+                    <th scope="col">Demande</th>
                     <th scope="col">Affaire</th>
                     <th scope="col">Plan</th>
                     <th scope="col">Atelier</th>
-                    <th scope="col">Cordons</th>
-                    <th scope="col">Avancement</th>
+                    <th scope="col" class="prefa-nombre">Cordons</th>
+                    <th scope="col" class="prefa-nombre">Avancement</th>
                     <th scope="col">État</th>
-                    <th scope="col">Actions</th>
+                    <th scope="col"><span class="sr-only">Actions</span></th>
                 </tr></thead>
 
                 <?php if (!$lignes): ?>
@@ -126,15 +135,20 @@ $etatDuPlan = static function (array $ligne): array {
                            data-affaire="<?= prefaEscape((string) $ligne['nom_affaire']) ?>"
                            data-cherche="<?= prefaEscape(mb_strtolower(prefaReferenceComplete((int) $ligne['id_demande']) . ' ' . $ligne['nom_affaire'] . ' ' . $ligne['reference'] . ' ' . $ligne['libelle'] . ' ' . implode(' ', $personnes))) ?>">
                         <tr>
-                            <td><?= prefaEscape(prefaReferenceComplete((int) $ligne['id_demande'])) ?></td>
+                            <?php // Le numéro seul : l'affaire a sa colonne, juste à côté. ?>
+                            <td class="suivi-soudures-reference"><?= prefaEscape(prefaReference((int) $ligne['id_demande'])) ?></td>
                             <td><?= prefaEscape((string) ($ligne['nom_affaire'] ?: '—')) ?></td>
                             <td><strong><?= prefaEscape($ligne['reference']) ?></strong><span class="atelier-row-description"><?= prefaEscape($ligne['libelle']) ?></span></td>
                             <td><?= $personnes ? prefaEscape(implode(', ', $personnes)) : '<span class="atelier-muted">Non affecté</span>' ?></td>
-                            <td class="suivi-soudures-cordons">
-                                <strong><?= $ligne['faites'] ?><?= $ligne['prevues'] ? ' / ' . $ligne['prevues'] : '' ?></strong>
-                                <?php if ($ligne['lues']): ?><span class="atelier-row-description"><?= prefaEscape($ligne['lues']) ?></span><?php endif; ?>
+                            <?php // « lues sur 2 feuilles » sous chaque compte ne servait qu'à qui se
+                                  // demande d'où sort le total : il passe dans l'infobulle. La barre
+                                  // montre le compte d'un coup d'œil. ?>
+                            <?php $partFaite = $ligne['prevues'] ? min(100, (int) round($ligne['faites'] * 100 / $ligne['prevues'])) : 0; ?>
+                            <td class="prefa-nombre suivi-soudures-cordons"<?= $ligne['lues'] ? ' title="' . prefaEscape('Cordons prévus ' . $ligne['lues']) . '"' : '' ?>>
+                                <span class="suivi-soudures-compte"><?= $ligne['faites'] ?><?= $ligne['prevues'] ? '<span> / ' . $ligne['prevues'] . '</span>' : '' ?></span>
+                                <?php if ($ligne['prevues']): ?><span class="suivi-soudures-barre" aria-hidden="true"><span style="width: <?= $partFaite ?>%"></span></span><?php endif; ?>
                             </td>
-                            <td><?= $ligne['avancement'] ?> %</td>
+                            <td class="prefa-nombre"><?= $ligne['avancement'] ?> %</td>
                             <td><span class="prefa-status <?= $etatClasse ?>"><?= $etatLibelle ?></span></td>
                             <?php // « Examiner », comme sur la liste des demandes : ce bouton n'est pas
                                   // celui qui valide, il ouvre le volet où l'on décide — le chiffre
@@ -147,86 +161,96 @@ $etatDuPlan = static function (array $ligne): array {
                             <td><button type="button" class="prefa-toggle" aria-controls="suivi-soudures-detail-<?= $elementId ?>" aria-expanded="false">Examiner</button></td>
                         </tr>
 
-                        <tr id="suivi-soudures-detail-<?= $elementId ?>" class="prefa-detail-row" hidden>
+                        <tr id="suivi-soudures-detail-<?= $elementId ?>" class="prefa-detail-row suivi-soudures-detail" hidden>
                             <td colspan="8">
-                                <div class="atelier-detail-content">
-                                    <?php // Le volet s'ouvre en pleine page : sans cette croix, le bouton
-                                          // qui l'a ouvert passe derrière lui et on ne peut plus sortir. ?>
-                                    <div class="prefa-detail-heading">
-                                        <div>
-                                            <h2><?= prefaEscape($ligne['reference']) ?> <span><?= prefaEscape(prefaReferenceComplete((int) $ligne['id_demande'])) ?></span></h2>
-                                            <p><?= prefaEscape($ligne['libelle']) ?><?= $ligne['nom_affaire'] ? ' · ' . prefaEscape($ligne['nom_affaire']) : '' ?></p>
+                                <div class="atelier-detail-content suivi-soudures-volet">
+                                    <?php // L'en-tête des volets : ce que c'est, lequel, de quelle demande. ?>
+                                    <div class="prefa-detail-heading suivi-soudures-entete">
+                                        <div class="suivi-soudures-identite">
+                                            <p class="suivi-soudures-surtitre">Soudures du plan</p>
+                                            <h2><?= prefaEscape($ligne['reference']) ?> <span><?= prefaEscape($ligne['libelle']) ?></span></h2>
+                                            <p class="suivi-soudures-parcours"><?= prefaEscape(prefaReference((int) $ligne['id_demande'])) ?><?= $ligne['nom_affaire'] ? ' · ' . prefaEscape($ligne['nom_affaire']) : '' ?></p>
                                         </div>
-                                        <button type="button" class="prefa-detail-close" data-close-target="suivi-soudures-detail-<?= $elementId ?>" aria-label="Fermer le volet">✕</button>
+                                        <button type="button" class="prefa-detail-close" data-close-target="suivi-soudures-detail-<?= $elementId ?>" aria-label="Fermer le volet" title="Fermer">
+                                            <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg>
+                                        </button>
                                     </div>
 
-                                    <?php if (!$ligne['attentes']): ?>
-                                        <p class="atelier-muted">Aucun avancement n’est en attente : l’atelier n’a rien déclaré depuis la dernière validation.</p>
-                                    <?php endif; ?>
+                                    <?php // L'avancement en lignes de propriété : ce qui est reconnu, ce que
+                                          // l'atelier a relevé, qui y travaille. La déclaration à valider vient
+                                          // dessous, à part — c'est tout l'objet de la validation. Une phrase
+                                          // disait qu'il n'y en avait pas ; l'absence de la bande le dit. ?>
+                                    <section class="suivi-soudures-section">
+                                        <h3 class="suivi-soudures-titre">Avancement</h3>
+                                        <dl class="suivi-soudures-proprietes">
+                                            <div><dt>Validé</dt><dd>
+                                                <span class="suivi-soudures-barre suivi-soudures-barre-large" aria-hidden="true"><span style="width: <?= min(100, max(0, $ligne['avancement'])) ?>%"></span></span>
+                                                <strong><?= $ligne['avancement'] ?> %</strong>
+                                            </dd></div>
+                                            <div><dt>Cordons relevés</dt><dd><strong><?= $ligne['faites'] ?></strong><?= $ligne['prevues'] ? '<span class="suivi-soudures-sur"> sur ' . $ligne['prevues'] . ' prévus</span>' : '' ?></dd></div>
+                                            <div><dt>Atelier</dt><dd><?= $personnes ? prefaEscape(implode(', ', $personnes)) : '<span class="suivi-soudures-sur">Non affecté</span>' ?></dd></div>
+                                        </dl>
 
-                                    <?php foreach ($ligne['attentes'] as $attente): ?>
-                                        <?php // Le chiffre annoncé se tient à part du chiffre reconnu : c'est
-                                              // tout l'objet de la validation. Même forme que sur l'écran des
-                                              // plans, pour qu'on reconnaisse l'objet d'un coup d'œil. ?>
-                                        <div class="atelier-declaration">
-                                            <p class="atelier-declaration-titre">Avancement déclaré, à valider</p>
-                                            <p class="atelier-declaration-chiffre"><?= prefaEscape(avancementPhrase($attente)) ?></p>
-                                            <p class="atelier-muted"><?= prefaEscape($attente['auteur']) ?> · <?= prefaEscape(atelierLocalDateTime($attente['date_saisie'])) ?></p>
-                                            <?php if ($attente['commentaire']): ?><p class="atelier-note"><?= prefaEscape($attente['commentaire']) ?></p><?php endif; ?>
-                                            <form class="atelier-action atelier-declaration-actions" data-endpoint="update_atelier.php">
-                                                <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
-                                                <input type="hidden" name="id" value="<?= (int) $ligne['id_demande'] ?>">
-                                                <input type="hidden" name="operation" value="valider">
-                                                <input type="hidden" name="affectation" value="<?= (int) $attente['affectation']['id'] ?>">
-                                                <input type="hidden" name="declaration" value="<?= (int) $attente['id'] ?>">
-                                                <button type="submit" name="decision" value="valider" title="L’avancement du plan prendra ce chiffre.">Valider</button>
-                                                <button type="submit" name="decision" value="refuser" class="bouton-discret" title="L’avancement ne change pas ; la personne affectée pourra déclarer autre chose.">Refuser</button>
-                                                <span class="atelier-message" role="status" aria-live="polite"></span>
-                                            </form>
-                                        </div>
-                                    <?php endforeach; ?>
+                                        <?php foreach ($ligne['attentes'] as $attente): ?>
+                                            <div class="atelier-declaration">
+                                                <p class="atelier-declaration-titre">À valider · déclaré par <?= prefaEscape($attente['auteur']) ?>, <?= prefaEscape(atelierLocalDateTime($attente['date_saisie'])) ?></p>
+                                                <p class="atelier-declaration-chiffre"><?= prefaEscape(avancementPhrase($attente)) ?></p>
+                                                <?php if ($attente['commentaire']): ?><p class="atelier-note"><?= prefaEscape($attente['commentaire']) ?></p><?php endif; ?>
+                                                <form class="atelier-action atelier-declaration-actions" data-endpoint="update_atelier.php">
+                                                    <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
+                                                    <input type="hidden" name="id" value="<?= (int) $ligne['id_demande'] ?>">
+                                                    <input type="hidden" name="operation" value="valider">
+                                                    <input type="hidden" name="affectation" value="<?= (int) $attente['affectation']['id'] ?>">
+                                                    <input type="hidden" name="declaration" value="<?= (int) $attente['id'] ?>">
+                                                    <button type="submit" name="decision" value="valider" title="L’avancement du plan prendra ce chiffre.">Valider</button>
+                                                    <button type="submit" name="decision" value="refuser" class="bouton-discret" title="L’avancement ne change pas ; la personne affectée pourra déclarer autre chose.">Refuser</button>
+                                                    <span class="atelier-message" role="status" aria-live="polite"></span>
+                                                </form>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </section>
 
-                                    <section class="atelier-soudures">
-                                        <?php // Le compte des cordons était redit ici, au-dessus du tableau qui
-                                              // les montre — et la ligne du plan, trois lignes plus haut, le
-                                              // porte déjà dans sa colonne. ?>
-                                        <div class="atelier-soudures-entete">
-                                            <h4 class="atelier-plan-titre-section">Cordons relevés</h4>
-                                        </div>
+                                    <section class="suivi-soudures-section atelier-soudures">
+                                        <h3 class="suivi-soudures-titre">Cordons relevés</h3>
 
                                         <?php if (!$relevees): ?>
-                                            <p class="atelier-muted">Aucun cordon n’a encore été relevé. Le soudeur les renseigne depuis « Mes soudures ».</p>
+                                            <p class="suivi-soudures-vide">Aucun cordon relevé pour l’instant.</p>
                                         <?php else: ?>
+                                            <?php // La note sur les contrôles « qui se cochent dans la fenêtre du
+                                                  // plan » est partie : elle répondait à une question que personne ne
+                                                  // pose ici. L'infobulle des colonnes la garde pour qui la cherche. ?>
                                             <table class="atelier-soudures-table">
                                                 <thead><tr>
                                                     <th scope="col">N°</th><th scope="col">Feuille</th>
                                                     <th scope="col">Soudeur</th><th scope="col">Date</th>
                                                     <th scope="col">Type</th>
-                                                    <th scope="col" class="soudure-controle">RT</th>
-                                                    <th scope="col" class="soudure-controle">VI</th>
-                                                    <th scope="col" class="soudure-controle">PT</th>
+                                                    <th scope="col" class="soudure-controle" title="Radiographie — se coche dans la fenêtre du plan">RT</th>
+                                                    <th scope="col" class="soudure-controle" title="Contrôle visuel — se coche dans la fenêtre du plan">VI</th>
+                                                    <th scope="col" class="soudure-controle" title="Ressuage — se coche dans la fenêtre du plan">PT</th>
                                                     <th scope="col">Visa</th>
                                                 </tr></thead>
                                                 <tbody>
                                                     <?php foreach ($relevees as $cordon):
                                                         $feuilleNom = preg_replace('/^[a-f0-9]{32}-/', '', (string) ($cordon['cle_document'] ?? ''));
                                                         $feuilleNom = preg_replace('/\.pdf$/i', '', $feuilleNom);
+                                                        $fait = static fn ($valeur): string => trim((string) $valeur) === ''
+                                                            ? '<span class="soudure-controle-non" aria-label="non fait">—</span>'
+                                                            : '<svg class="soudure-controle-oui" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="fait"><path d="m3.5 8.5 3 3 6-7" /></svg>';
                                                     ?>
                                                         <tr>
                                                             <td><?= prefaEscape((string) $cordon['numero']) ?></td>
-                                                            <td><?= prefaEscape($feuilleNom ?: '—') ?><?= (int) ($cordon['pages'] ?? 1) > 1 ? ' — p. ' . (int) $cordon['page'] : '' ?></td>
+                                                            <td title="<?= prefaEscape($feuilleNom) ?>"><?= prefaEscape($feuilleNom ?: '—') ?><?= (int) ($cordon['pages'] ?? 1) > 1 ? '<span class="suivi-soudures-sur"> · p. ' . (int) $cordon['page'] . '</span>' : '' ?></td>
                                                             <td><?= prefaEscape((string) ($cordon['soudeur_nom'] ?: '—')) ?></td>
                                                             <td><?= $cordon['date_soudure'] ? prefaEscape(date('d/m/Y', strtotime((string) $cordon['date_soudure']))) : '—' ?></td>
                                                             <td><?= prefaEscape((string) ($cordon['type_soudure'] ?: '—')) ?></td>
-                                                            <td class="soudure-controle"><?= trim((string) $cordon['rt']) === '' ? '' : SOUDURE_CROIX ?></td>
-                                                            <td class="soudure-controle"><?= trim((string) $cordon['vi']) === '' ? '' : SOUDURE_CROIX ?></td>
-                                                            <td class="soudure-controle"><?= trim((string) $cordon['pt']) === '' ? '' : SOUDURE_CROIX ?></td>
-                                                            <td><?= prefaEscape((string) ($cordon['visa_nom'] ?: '—')) ?></td>
+                                                            <td class="soudure-controle"><?= $fait($cordon['rt']) ?></td>
+                                                            <td class="soudure-controle"><?= $fait($cordon['vi']) ?></td>
+                                                            <td class="soudure-controle"><?= $fait($cordon['pt']) ?></td>
+                                                            <td><?= $cordon['visa_nom'] ? prefaEscape((string) $cordon['visa_nom']) : '<span class="suivi-soudures-sur">—</span>' ?></td>
                                                         </tr>
                                                     <?php endforeach; ?>
                                                 </tbody>
                                             </table>
-                                            <p class="atelier-muted atelier-soudures-note">Les contrôles RT, VI et PT se cochent dans la fenêtre du plan, feuille par feuille — c’est là qu’on a le dessin sous les yeux.</p>
                                         <?php endif; ?>
                                     </section>
                                 </div>

@@ -1907,15 +1907,14 @@
     font-size: 12.5px;
 }
 
+/* En-tête de colonne : 12px / 500, sourd, en casse normale (DA, § 5, § 7 bis). */
 .atelier-soudures-table th {
     padding: 0 8px 6px;
     border-bottom: 1px solid var(--border);
     color: var(--text-muted);
-    font-size: 10.5px;
-    font-weight: 600;
-    letter-spacing: .06em;
+    font-size: 12px;
+    font-weight: 500;
     text-align: left;
-    text-transform: uppercase;
     white-space: nowrap;
 }
 
@@ -2898,4 +2897,406 @@ html .atelier-affecter-recherche input {
 
 .atelier-affecter-choix[hidden] {
     display: none;
+}
+
+
+/* ==========================================================================
+   SOUDURES (ENCADREMENT) — LA LISTE ET LE VOLET « EXAMINER »
+   ==========================================================================
+
+   La même grammaire que les autres volets et que la barre d'outils du planning (DA) :
+   filtres de 32px à libellé court, nombres alignés à droite, un volet flottant à
+   l'en-tête collant, des sections au filet pointillé, des lignes de propriété, et un
+   tableau de cordons à la hauteur d'une ligne de tableau. « html » en tête là où le thème
+   clair pose des « !important » génériques (paragraphes, cellules, boutons). */
+
+/* ----- La barre de filtres ----- */
+
+#suivi-soudures-page .suivi-soudures-filtres {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+}
+
+#suivi-soudures-page .suivi-soudures-filtres .filtres-recherche {
+    flex: 0 1 260px;
+}
+
+#suivi-soudures-page .suivi-soudures-filtres .filtres-recherche input {
+    height: var(--h-lg);
+}
+
+.suivi-soudures-champ {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+html .suivi-soudures-champ > label {
+    color: var(--text-muted) !important;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.suivi-soudures-select {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+html .suivi-soudures-select select {
+    appearance: none;
+    -webkit-appearance: none;
+    min-width: 120px;
+    height: var(--h-lg);
+    padding: 0 30px 0 12px;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--r-md);
+    background: var(--surface) !important;
+    color: var(--text) !important;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+html .suivi-soudures-select select:focus {
+    border-color: var(--accent) !important;
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+}
+
+.suivi-soudures-chevron {
+    position: absolute;
+    right: 10px;
+    width: 14px;
+    height: 14px;
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
+/* ----- La liste ----- */
+
+#suivi-soudures-page .suivi-soudures-reference {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* Le compte des cordons : « 9 / 24 », le total en sourd, et une barre fine dessous. */
+#suivi-soudures-page .suivi-soudures-cordons {
+    white-space: nowrap;
+}
+
+.suivi-soudures-compte {
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+}
+
+.suivi-soudures-compte > span {
+    color: var(--text-muted);
+}
+
+.suivi-soudures-barre {
+    display: block;
+    width: 64px;
+    height: 4px;
+    margin: 4px 0 0 auto;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--hover);
+}
+
+.suivi-soudures-barre > span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--accent);
+}
+
+/* « Examiner » : une commande de ligne de 24px (DA, § 4). */
+html #suivi-soudures-page .suivi-soudures-plan > tr:first-child .prefa-toggle {
+    height: var(--h-sm);
+    padding: 0 8px;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--r-md) !important;
+    background: var(--surface) !important;
+    color: var(--text) !important;
+    font-size: 12px;
+    font-weight: 500 !important;
+}
+
+html #suivi-soudures-page .suivi-soudures-plan > tr:first-child .prefa-toggle:hover {
+    background: var(--hover) !important;
+}
+
+/* ----- Le volet ----- */
+
+.suivi-soudures-detail .suivi-soudures-volet {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    color: var(--text);
+    font-size: 13px;
+}
+
+.suivi-soudures-detail .suivi-soudures-entete {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    flex-wrap: nowrap;
+    margin: 0;
+    padding: 18px 20px 16px;
+    border-bottom: 1px dashed var(--border);
+    background: var(--surface);
+}
+
+.suivi-soudures-identite {
+    min-width: 0;
+}
+
+html .suivi-soudures-detail .suivi-soudures-surtitre,
+html .suivi-soudures-detail .suivi-soudures-parcours {
+    margin: 0;
+    color: var(--text-muted) !important;
+    font-size: 12px;
+}
+
+html .suivi-soudures-detail .suivi-soudures-surtitre {
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
+html .suivi-soudures-detail .suivi-soudures-parcours {
+    margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+}
+
+.suivi-soudures-detail .suivi-soudures-entete h2 {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    color: var(--text);
+    font-size: 17px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.3;
+}
+
+.suivi-soudures-detail .suivi-soudures-entete h2 span {
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 400;
+}
+
+.suivi-soudures-detail .suivi-soudures-entete .prefa-detail-close {
+    flex: none;
+    width: var(--h-lg);
+    height: var(--h-lg);
+    border: 0;
+    border-radius: var(--r-md);
+}
+
+.suivi-soudures-detail .suivi-soudures-entete .prefa-detail-close .icon {
+    width: 16px;
+    height: 16px;
+}
+
+.suivi-soudures-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 16px 20px;
+}
+
+.suivi-soudures-section + .suivi-soudures-section {
+    border-top: 1px dashed var(--border);
+}
+
+.suivi-soudures-titre {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Les lignes de propriété : libellé sourd à gauche, valeur à droite. */
+.suivi-soudures-proprietes {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+}
+
+.suivi-soudures-proprietes > div {
+    display: grid;
+    grid-template-columns: 148px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    min-height: 32px;
+}
+
+.suivi-soudures-proprietes dt {
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.suivi-soudures-proprietes dd {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    margin: 0;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+}
+
+.suivi-soudures-proprietes strong {
+    font-weight: 600;
+}
+
+.suivi-soudures-sur {
+    color: var(--text-muted);
+}
+
+.suivi-soudures-barre-large {
+    width: 140px;
+    margin: 0;
+}
+
+/* La déclaration à valider : une bande d'attente, en casse normale, sous les chiffres
+   reconnus. Valider en bouton plein noir, Refuser en secondaire (DA, § 6). */
+html .suivi-soudures-detail .atelier-declaration {
+    margin: 4px 0 0;
+    padding: 10px 12px;
+    border: 0;
+    border-left: 2px solid var(--attente-texte);
+    border-radius: 0 var(--r-md) var(--r-md) 0;
+    background: var(--carte);
+}
+
+html .suivi-soudures-detail .atelier-declaration-titre {
+    color: var(--attente-texte) !important;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: normal;
+    text-transform: none;
+}
+
+html .suivi-soudures-detail .atelier-declaration-chiffre {
+    margin-top: 2px;
+    color: var(--text) !important;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+html .suivi-soudures-detail .atelier-declaration .atelier-note {
+    margin-top: 4px;
+    color: var(--text) !important;
+    font-size: 13px;
+}
+
+html .suivi-soudures-detail .atelier-declaration-actions button {
+    height: var(--h-md);
+    padding: 0 10px;
+    border: 0;
+    border-radius: var(--r-md);
+    background: var(--bouton-plein);
+    color: var(--bouton-plein-texte);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+html .suivi-soudures-detail .atelier-declaration-actions button:hover:not(:disabled) {
+    background: var(--bouton-plein-hover);
+}
+
+html .suivi-soudures-detail .atelier-declaration-actions button.bouton-discret {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+}
+
+html .suivi-soudures-detail .atelier-declaration-actions button.bouton-discret:hover:not(:disabled) {
+    background: var(--alerte-fond);
+    color: var(--alerte-texte);
+}
+
+/* Les cordons : un tableau à la hauteur d'une ligne de tableau (36px), à même la
+   surface. Les règles des cellules de la liste — hauteur, bornes, fonds forcés en thème
+   clair — retombaient sur lui, et ses lignes montaient à 52px. */
+.suivi-soudures-detail .atelier-soudures {
+    margin: 0;
+    padding: 16px 20px 24px;
+    border-top: 1px dashed var(--border);
+}
+
+.suivi-soudures-detail .atelier-soudures-table {
+    font-size: 13px;
+}
+
+html .suivi-soudures-detail .atelier-soudures-table th {
+    height: 32px;
+    padding: 0 8px;
+    background: transparent !important;
+    vertical-align: middle;
+}
+
+html .suivi-soudures-detail .atelier-soudures-table td {
+    max-width: none;
+    height: 36px;
+    padding: 0 8px;
+    background: transparent !important;
+    color: var(--text) !important;
+}
+
+html .suivi-soudures-detail .atelier-soudures-table tbody tr:hover td {
+    background: var(--ligne-survol) !important;
+}
+
+.suivi-soudures-detail .atelier-soudures-table td:first-child,
+.suivi-soudures-detail .atelier-soudures-table th:first-child {
+    padding-left: 0;
+}
+
+.suivi-soudures-detail .atelier-soudures-table td:nth-child(2) {
+    max-width: 200px;
+}
+
+.suivi-soudures-detail .atelier-soudures-table td:first-child {
+    font-weight: 500;
+}
+
+.soudure-controle-oui {
+    display: inline-block;
+    vertical-align: middle;
+    color: var(--succes-texte);
+}
+
+.soudure-controle-non {
+    color: var(--text-muted);
+    opacity: 0.6;
+}
+
+html .suivi-soudures-detail .suivi-soudures-vide {
+    margin: 0;
+    color: var(--text-muted) !important;
+    font-size: 13px;
+}
+
+/* L'intitulé de la colonne des commandes : lu par les lecteurs d'écran, pas affiché. */
+#suivi-soudures-page .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+/* Une valeur absente reste sourde, même dans une cellule que le thème clair noircit. */
+html .suivi-soudures-detail .atelier-soudures-table .suivi-soudures-sur {
+    color: var(--text-muted) !important;
 }
