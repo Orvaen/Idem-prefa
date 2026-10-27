@@ -217,12 +217,38 @@ $signature = static function (array $pv): string {
                                     <?= prefaEscape($demandeurNom ?: '—') ?>
                                 </span>
                             </td>
-                            <?php foreach ($types as $type => $libelle): $pv = $pvs[$type]; ?>
-                                <td class="pv-cellule">
-                                    <span class="pv-etat pv-etat-<?= prefaEscape($pv['statut']) ?>"
-                                          title="<?= prefaEscape($libelle . ' : ' . mb_strtolower($statuts[$pv['statut']]) . ($pv['auto'] ? ' (aucune passivation demandée)' : '')) ?>">
-                                        <?= $iconeEtat($pv['statut']) ?><?= prefaEscape($statuts[$pv['statut']]) ?>
-                                    </span>
+                            <?php foreach ($types as $type => $libelle): $pv = $pvs[$type];
+                                $titre = $libelle . ' : ' . mb_strtolower($statuts[$pv['statut']]) . ($pv['auto'] ? ' (aucune passivation demandée)' : '');
+                                $modifiableEnLigne = !$pvLectureSeule && !$pv['auto']; ?>
+                                <?php // L'état se change sur la ligne, comme un statut sur Linear : un clic,
+                                      // un menu, c'est fait. Le volet ne sert plus qu'aux documents, aux
+                                      // photos et au commentaire. La cellule porte « prefa-actions » pour
+                                      // que le menu commun s'y ouvre et s'y referme comme sur les autres
+                                      // lignes. ?>
+                                <td class="pv-cellule<?= $modifiableEnLigne ? ' prefa-actions' : '' ?>">
+                                    <?php if ($modifiableEnLigne): ?>
+                                        <button type="button" class="prefa-actions-declencheur pv-etat-declencheur pv-etat pv-etat-<?= prefaEscape($pv['statut']) ?>"
+                                                aria-haspopup="menu" aria-expanded="false"
+                                                aria-label="<?= prefaEscape($titre) ?>. Changer l’état" title="Changer l’état">
+                                            <?= $iconeEtat($pv['statut']) ?><?= prefaEscape($statuts[$pv['statut']]) ?>
+                                            <svg class="pv-etat-chevron" aria-hidden="true" viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m4 6 4 4 4-4" /></svg>
+                                        </button>
+                                        <div class="prefa-actions-menu pv-etat-menu" role="menu" hidden>
+                                            <?php foreach ($statuts as $valeur => $texte): ?>
+                                                <button type="button" role="menuitemradio" class="pv-etat-choix pv-etat-<?= $valeur ?>"
+                                                        aria-checked="<?= $pv['statut'] === $valeur ? 'true' : 'false' ?>"
+                                                        data-demande="<?= $id ?>" data-type="<?= prefaEscape($type) ?>"
+                                                        data-statut="<?= $valeur ?>" data-revision="<?= (int) $pv['revision'] ?>"
+                                                        data-csrf="<?= prefaEscape(Session::jeton()) ?>">
+                                                    <?= $iconeEtat($valeur) ?><?= prefaEscape($texte) ?>
+                                                </button>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php else: ?>
+                                        <span class="pv-etat pv-etat-<?= prefaEscape($pv['statut']) ?>" title="<?= prefaEscape($titre) ?>">
+                                            <?= $iconeEtat($pv['statut']) ?><?= prefaEscape($statuts[$pv['statut']]) ?>
+                                        </span>
+                                    <?php endif; ?>
                                     <?php $fichiers = count($pv['documents']) + count($pv['photos']); ?>
                                     <?php if ($fichiers): ?>
                                         <span class="pv-trombone" title="<?= $fichiers ?> fichier<?= $fichiers > 1 ? 's' : '' ?>">
@@ -234,7 +260,7 @@ $signature = static function (array $pv): string {
                             <td class="prefa-actions">
                                 <span class="prefa-decision">
                                     <button type="button" class="prefa-ligne-contour pv-ouvrir" aria-expanded="false" aria-controls="pv-detail-<?= $id ?>">
-                                        <?= !$pvLectureSeule && $avancement['restants'] ? 'Renseigner' : 'Voir' ?>
+                                        Détails
                                     </button>
                                 </span>
                             </td>

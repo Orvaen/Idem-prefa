@@ -10,7 +10,7 @@ $idDemande = filter_var($_POST['demande'] ?? '', FILTER_VALIDATE_INT, ['options'
 $type = (string) ($_POST['type'] ?? '');
 $operation = (string) ($_POST['operation'] ?? 'save');
 if (!$idDemande || !array_key_exists($type, pvTypes())) prefaError(400, 'PV invalide.');
-if (!in_array($operation, ['save', 'delete_document'], true)) prefaError(400, 'Action invalide.');
+if (!in_array($operation, ['save', 'statut', 'delete_document'], true)) prefaError(400, 'Action invalide.');
 
 $stmt = $db->prepare('SELECT id, id_passivation FROM demande_prefabrication WHERE id = ? AND id_statut = 2');
 $stmt->execute([$idDemande]);
@@ -50,6 +50,30 @@ try {
 
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode(['success' => true, 'message' => 'Document retiré.']);
+        return;
+    }
+
+    // ===== L'état seul, changé depuis la ligne =====
+    // Rien d'autre ne bouge : ni le commentaire, ni les documents. Un PV marqué « fait »
+    // sans date prend celle du jour — c'est le jour où on le signe — ; une date déjà
+    // posée est gardée.
+    if ($operation === 'statut') {
+        $statut = (string) ($_POST['statut'] ?? '');
+        $revision = filter_var($_POST['revision'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
+        if (!array_key_exists($statut, pvStatuts())) prefaError(400, 'État invalide.');
+        if ($revision === false) prefaError(400, 'Révision invalide.');
+        $db->beginTransaction();
+        $pv = pvVerrouiller($db, $idDemande, $type);
+        if ((int) $pv['revision'] !== $revision) {
+            $db->rollBack();
+            prefaError(409, 'Ce PV a été modifié entre-temps. Actualisez avant de réessayer.');
+        }
+        $date = $pv['date_pv'] ?: ($statut === 'fait' ? date('Y-m-d') : null);
+        $db->prepare('UPDATE pv_prefabrication SET statut = ?, date_pv = ?, maj_par = ?, date_maj = NOW(), revision = revision + 1 WHERE id = ?')
+            ->execute([$statut, $date, $actor['id'], $pv['id']]);
+        $db->commit();
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['success' => true, 'message' => pvTypes()[$type] . ' : ' . mb_strtolower(pvStatuts()[$statut]) . '.']);
         return;
     }
 

@@ -639,3 +639,104 @@
         gap: 8px;
     }
 }
+
+/* ---------- L'état, changé sur la ligne ----------
+ *
+ * Le déclencheur du menu commun, habillé en état : il porte le signe et le mot, et un
+ * chevron discret dit qu'on peut le changer. Les règles du déclencheur « … » (un carré de
+ * 24 px, effacé au repos) sont défaites ici : l'état doit se lire même sans survol. */
+.pv-table td.pv-cellule.prefa-actions {
+    width: auto;
+}
+
+.prefa-list tbody .pv-cellule .prefa-actions-declencheur.pv-etat-declencheur,
+.pv-cellule .prefa-actions-declencheur.pv-etat-declencheur {
+    display: inline-flex;
+    gap: 6px;
+    width: auto;
+    height: var(--h-md);
+    margin-left: -8px;
+    padding: 0 8px;
+    border-radius: var(--r-md);
+    color: var(--text);
+    font-size: 13px;
+    opacity: 1;
+}
+
+.pv-cellule .pv-etat-declencheur.pv-etat-sans_objet {
+    color: var(--text-muted);
+}
+
+.pv-etat-chevron {
+    flex: none;
+    color: var(--text-muted);
+    opacity: 0;
+    transition: opacity .12s ease;
+}
+
+.pv-etat-declencheur:hover .pv-etat-chevron,
+.pv-etat-declencheur:focus-visible .pv-etat-chevron,
+.pv-etat-declencheur[aria-expanded="true"] .pv-etat-chevron {
+    opacity: 1;
+}
+
+@media (hover: none) {
+    .pv-etat-chevron {
+        opacity: 1;
+    }
+}
+
+.pv-etat-declencheur:disabled {
+    opacity: .55;
+    cursor: progress;
+}
+
+.pv-etat-menu {
+    min-width: 168px;
+}
+
+.pv-etat-menu .pv-etat-choix {
+    gap: 8px;
+}
+
+.pv-etat-menu .pv-etat-choix[aria-checked="true"] {
+    background: var(--active);
+    font-weight: 500;
+}
+
+.pv-etat-menu .pv-etat-choix.pv-etat-a_faire .pv-etat-icone { color: var(--attente-texte); }
+.pv-etat-menu .pv-etat-choix.pv-etat-fait .pv-etat-icone { color: var(--succes-texte); }
+.pv-etat-menu .pv-etat-choix.pv-etat-sans_objet .pv-etat-icone { color: var(--text-muted); }
+
+/* ---------- Le volet : un panneau sur le côté ----------
+ *
+ * Les autres volets couvrent tout l'écran. Pour les PV, c'était quitter la liste à chaque
+ * saisie : on ne voyait plus la demande d'à côté, ni ce qu'on venait de changer. Le volet
+ * glisse donc depuis la droite et la liste reste visible derrière, sous un voile léger —
+ * comme un ticket ouvert sur Linear. Un clic sur la liste, ou Échap, le referme. */
+#pv-page .prefa-detail-row {
+    left: auto;
+    width: min(680px, 100vw);
+    border-left: 1px solid var(--border-fort);
+    box-shadow: -16px 0 48px rgb(15 15 16 / 14%);
+    animation: pv-tiroir 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+body:has(#pv-page .prefa-detail-row:not([hidden]))::before {
+    background: rgb(15 15 16 / 12%);
+}
+
+@keyframes pv-tiroir {
+    from {
+        opacity: 0;
+        transform: translateX(24px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.prefa-detail-row > td > .pv-volet {
+    max-width: none;
+}

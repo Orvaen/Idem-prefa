@@ -104,6 +104,29 @@
         envoyer(new FormData(this), $(this).find('.pv-message'), $(this).find('.pv-enregistrer'), ouverts());
     });
 
+    // L'état choisi dans le menu de la cellule part tout seul : pas de formulaire à ouvrir.
+    $(document).on('click', '.pv-etat-choix', function () {
+        if (this.getAttribute('aria-checked') === 'true') return;
+        const declencheur = this.closest('.pv-cellule').querySelector('.pv-etat-declencheur');
+        const donnees = new FormData();
+        donnees.set('csrf', this.dataset.csrf);
+        donnees.set('operation', 'statut');
+        donnees.set('demande', this.dataset.demande);
+        donnees.set('type', this.dataset.type);
+        donnees.set('statut', this.dataset.statut);
+        donnees.set('revision', this.dataset.revision);
+        declencheur.disabled = true;
+        $.ajax({ url: 'actions/pv.php', method: 'POST', data: donnees, processData: false, contentType: false, dataType: 'json' })
+            .done(reponse => {
+                if (window.toast) window.toast(reponse.message || 'Enregistré.');
+                recharger(ouverts());
+            })
+            .fail(xhr => {
+                declencheur.disabled = false;
+                if (window.toast) window.toast(xhr.responseJSON?.message || 'Changement impossible. Réessayez.', { erreur: true });
+            });
+    });
+
     $(document).on('click', '.pv-retirer-document', function () {
         if (!window.confirm('Retirer « ' + this.dataset.nom + ' » ? Le fichier sera supprimé.')) return;
         const form = this.closest('.pv-form');
