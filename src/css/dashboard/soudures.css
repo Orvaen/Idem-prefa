@@ -886,3 +886,361 @@ html #soudures-page .soudures-cordons thead th:nth-child(1) { width: 56px; }
 html #soudures-page .soudures-cordons thead th:nth-child(2) { width: 160px; }
 html #soudures-page .soudures-cordons thead th:nth-child(3) { width: 112px; }
 html #soudures-page .soudures-cordons thead th:nth-child(4) { width: auto; }
+
+/* ==========================================================================
+   LA LISTE — ONGLETS, BARRE, FEUILLES
+   ==========================================================================
+
+   Les plans en onglets comptés, la recherche à gauche et le dessin du plan à droite sur
+   une même barre, puis la liste des feuilles. La section du plan choisi se fond dans la
+   grille (« display: contents ») : sa barre vient se ranger à côté de la recherche, sur
+   la même ligne. */
+
+#soudures-page .soudures-plans {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-content: start;
+    column-gap: 12px;
+    max-width: 900px;
+}
+
+#soudures-page .soudures-plans > * {
+    grid-column: 1 / -1;
+}
+
+#soudures-page .soudures-feuilles-section:not([hidden]) {
+    display: contents;
+}
+
+#soudures-page .soudures-feuilles-section > * {
+    grid-column: 1 / -1;
+}
+
+/* ----- Les onglets ----- */
+
+#soudures-page .soudures-onglets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+html #soudures-page .soudures-plan-ligne {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 36px;
+    margin-bottom: -1px;
+    padding: 0 12px;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    background: transparent !important;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+}
+
+html #soudures-page .soudures-plan-ligne:hover {
+    color: var(--text);
+}
+
+html #soudures-page .soudures-plan-ligne[aria-selected="true"] {
+    border-bottom-color: var(--accent);
+    color: var(--text);
+    font-weight: 600;
+}
+
+#soudures-page .soudures-plan-ligne:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+}
+
+.soudures-onglet-compte {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 18px;
+    padding: 0 6px;
+    box-sizing: border-box;
+    border-radius: 999px;
+    background: var(--hover);
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 500;
+}
+
+/* ----- La barre : recherche à gauche, plan et dessin à droite ----- */
+
+#soudures-page .soudures-filtres {
+    grid-column: 1;
+    grid-row: 2;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+    margin: 0 0 8px;
+    padding: 0;
+}
+
+#soudures-page .soudures-filtres-ligne {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#soudures-page .soudures-filtres .filtres-recherche {
+    flex: 0 1 240px;
+}
+
+#soudures-page .soudures-filtres .filtres-recherche input {
+    height: var(--h-lg);
+}
+
+#soudures-page .soudures-resultat {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+#soudures-page .soudures-feuilles-section > .soudures-plan-outils {
+    grid-column: 2;
+    grid-row: 2;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    margin: 0 0 8px;
+}
+
+html #soudures-page .soudures-plan-contexte {
+    margin: 0;
+    color: var(--text-muted) !important;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+#soudures-page .soudures-voir-dessin {
+    height: var(--h-lg);
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+#soudures-page .soudures-voir-dessin:hover {
+    background: var(--hover);
+}
+
+/* ----- Les feuilles ----- */
+
+html #soudures-page table.prefa-table.soudures-feuilles {
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
+}
+
+html #soudures-page .soudures-feuilles thead th:nth-child(2) { width: 120px; }
+html #soudures-page .soudures-feuilles thead th:nth-child(3) { width: 180px; }
+html #soudures-page .soudures-feuilles thead th:nth-child(4) { width: 48px; }
+
+html #soudures-page .soudures-feuilles th,
+html #soudures-page .soudures-feuilles td {
+    padding: 0 8px;
+}
+
+html #soudures-page .soudures-feuilles td {
+    height: 40px;
+}
+
+html #soudures-page .soudures-feuilles th:first-child,
+html #soudures-page .soudures-feuilles td:first-child {
+    padding-left: 0;
+}
+
+/* La ligne entière ouvre la feuille ; la choisie se teinte, comme dans les autres listes. */
+#soudures-page .soudures-feuille {
+    cursor: pointer;
+}
+
+html #soudures-page .soudures-feuille.est-choisie > td {
+    background: var(--selection-fond) !important;
+}
+
+html #soudures-page .soudures-feuille.est-choisie > td:first-child {
+    box-shadow: inset 2px 0 0 var(--accent);
+}
+
+/* Le nom : un bouton nu, en texte. */
+html #soudures-page .soudures-renseigner {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+    max-width: 100%;
+    height: auto;
+    margin: 0;
+    padding: 0 0 0 8px;
+    border: 0 !important;
+    background: transparent !important;
+    color: var(--text) !important;
+    font: inherit;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+}
+
+#soudures-page .soudures-renseigner strong {
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+}
+
+#soudures-page .soudures-renseigner span {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
+#soudures-page .soudures-feuille:hover .soudures-renseigner strong {
+    color: var(--accent-texte);
+}
+
+#soudures-page .soudures-renseigner:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--r-sm);
+}
+
+/* Le compte des cordons, et sa barre fine dessous. */
+#soudures-page .soudures-feuille-cordons {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.soudures-barre {
+    display: block;
+    width: 56px;
+    height: 4px;
+    margin: 3px 0 0 auto;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--hover);
+}
+
+.soudures-barre > span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--accent);
+}
+
+#soudures-page .soudures-feuille-etat .prefa-status {
+    font-size: 12px;
+}
+
+/* Le dessin de la feuille : une icône de 28px, qui ne paraît qu'au survol de la ligne
+   ou au clavier (DA, § 7 ter). Sans survol — une tablette d'atelier —, elle reste. */
+#soudures-page .soudures-feuille-actions {
+    text-align: right;
+}
+
+html #soudures-page .soudures-dessin-icone {
+    display: inline-grid;
+    place-items: center;
+    width: var(--h-md);
+    height: var(--h-md);
+    padding: 0;
+    border: 0 !important;
+    border-radius: var(--r-md);
+    background: transparent !important;
+    color: var(--text-muted) !important;
+    cursor: pointer;
+}
+
+html #soudures-page .soudures-dessin-icone:hover {
+    background: var(--hover) !important;
+    color: var(--text) !important;
+}
+
+#soudures-page .soudures-dessin-icone .icon {
+    width: 16px;
+    height: 16px;
+}
+
+@media (hover: hover) {
+    #soudures-page .soudures-dessin-icone {
+        opacity: 0;
+    }
+
+    #soudures-page .soudures-feuille:hover .soudures-dessin-icone,
+    #soudures-page .soudures-feuille:focus-within .soudures-dessin-icone,
+    #soudures-page .soudures-feuille.est-choisie .soudures-dessin-icone {
+        opacity: 1;
+    }
+}
+
+#soudures-page .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+/* Côte à côte avec la saisie, la liste rend sa largeur maximale. */
+#soudures-page .soudures-plan-de-travail.est-coupe-en-deux .soudures-plans {
+    max-width: none;
+}
+
+@media (max-width: 760px) {
+    #soudures-page .soudures-feuilles-section > .soudures-plan-outils,
+    #soudures-page .soudures-filtres {
+        grid-column: 1 / -1;
+        grid-row: auto;
+        justify-content: flex-start;
+    }
+}
+
+/* Le nom et sa page tiennent sur une ligne : la cellule hérite de la liste des demandes
+   un « overflow-wrap: anywhere » qui cassait « p. 1 / 2 » lettre par lettre. */
+html #soudures-page .soudures-renseigner {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+html #soudures-page .soudures-feuille-nom {
+    max-width: none;
+    overflow-wrap: normal;
+}
+
+#soudures-page .soudures-feuille-nom span {
+    margin-left: 0;
+}
+
+/* La barre de recherche commence à gauche, sous les onglets. */
+#soudures-page .soudures-filtres {
+    justify-content: flex-start;
+}
+
+#soudures-page .soudures-resultat {
+    flex-basis: auto;
+    text-align: left;
+}
+
+/* La liste des demandes ramène toute colonne d'en-tête à 1 % de largeur, sauf l'affaire :
+   en disposition fixe, la colonne du nom tombait à neuf pixels. Elle prend le reste. */
+html #soudures-page .soudures-feuilles thead th:nth-child(1) { width: auto; }
+
+html #soudures-page .soudures-feuilles .soudures-feuille.est-choisie > td.prefa-nombre {
+    background: var(--selection-fond) !important;
+}

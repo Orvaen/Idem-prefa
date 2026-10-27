@@ -50,11 +50,10 @@ foreach ($confies->fetchAll() as $confie) {
     ];
 }
 
-// Aucun plan n'est ouvert à l'arrivée, pas même quand il n'y en a qu'un. Un écran qui
-// choisit à la place de l'atelier lui fait croire qu'il sait où il en est, et la marque de
-// la ligne « déjà prise » ne veut alors plus rien dire — c'est elle qui doit répondre à
-// « où en suis-je ? ». L'invite, elle, dit quoi faire en une ligne.
-$planOuvert = null;
+// Les plans sont des onglets, et un onglet est toujours choisi : le premier l'est à
+// l'arrivée. Il fallait cliquer « Ouvrir » sur une ligne pour voir quoi que ce soit, et
+// l'écran restait d'abord un tableau de deux lignes au-dessus du vide.
+$planOuvert = $plans ? array_key_first($plans) : null;
 
 // Le premier isométrique d'un plan, pour le bouton qui montre le dessin : on ouvre le
 // cahier à sa première page, c'est de là qu'on se repère.
@@ -105,7 +104,34 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
                   // La barre est écrite ici plutôt que par filtresBarre() pour une raison :
                   // « Tout effacer » n'y paraît que lorsqu'un filtre est posé, ce que le serveur
                   // ne sait pas — rien n'est filtré au rendu, tout l'est dans la page. ?>
-            <form class="prefa-filters soudures-filtres" role="search" hidden>
+
+        <?php // Le plan de travail : à gauche les plans puis les feuilles de celui qu'on a
+              // ouvert, à droite la feuille travaillée. Les deux colonnes sont posées dès
+              // l'arrivée — sans quoi le tableau passait de pleine largeur à la moitié au
+              // moment du clic, et l'écran se tordait sous la main. ?>
+        <div class="soudures-plan-de-travail">
+        <div class="soudures-plans">
+            <?php // Les plans, en onglets comptés — la forme des PV et de la liste des demandes.
+                  // C'était un tableau à quatre colonnes étalées sur toute la largeur, avec un
+                  // bouton « Ouvrir » / « Fermer » par ligne. ?>
+            <div class="soudures-onglets" role="tablist" aria-label="Mes plans">
+                <?php foreach ($plans as $plan): $ouvert = $plan['element'] === $planOuvert; ?>
+                    <button type="button" role="tab" class="soudures-plan-ligne<?= $ouvert ? ' est-choisie' : '' ?>"
+                            id="soudures-onglet-<?= (int) $plan['element'] ?>"
+                            data-element="<?= (int) $plan['element'] ?>"
+                            aria-selected="<?= $ouvert ? 'true' : 'false' ?>"
+                            <?= $ouvert ? '' : 'tabindex="-1"' ?>
+                            title="<?= prefaEscape(prefaReferenceComplete($plan['demande'])) ?>">
+                        <?= prefaEscape($plan['reference']) ?>
+                        <span class="soudures-onglet-compte"><?= count($plan['feuilles']) ?></span>
+                    </button>
+                <?php endforeach; ?>
+            </div>
+
+            <?php // La recherche, sous les onglets, à gauche : elle porte sur les feuilles du
+                  // plan choisi. Elle flottait à droite, entre les deux tableaux, et sortait du
+                  // cadre. ?>
+            <form class="prefa-filters soudures-filtres" role="search">
                 <?php // Les deux contrôles tiennent sur une ligne, le compte passe dessous :
                       // une barre souple se mesure à la somme de ses éléments sans les
                       // écarts, et dix pixels suffisaient à faire passer la pastille sous
@@ -130,47 +156,6 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
                 <p class="soudures-resultat" role="status" aria-live="polite" hidden></p>
             </form>
 
-        <?php // Le plan de travail : à gauche les plans puis les feuilles de celui qu'on a
-              // ouvert, à droite la feuille travaillée. Les deux colonnes sont posées dès
-              // l'arrivée — sans quoi le tableau passait de pleine largeur à la moitié au
-              // moment du clic, et l'écran se tordait sous la main. ?>
-        <div class="soudures-plan-de-travail">
-        <div class="soudures-plans">
-            <?php // Les plans d'abord : un tableau court, une ligne par plan. On en ouvre un,
-                  // et ses feuilles paraissent dessous. Toutes les feuilles ensemble, sans
-                  // leur plan, on ne savait plus lesquelles étaient à qui. ?>
-            <div class="prefa-table-scroll" role="region" aria-label="Mes plans" tabindex="0">
-                <table class="prefa-table soudures-plans-table">
-                    <thead><tr>
-                        <th scope="col">Plan</th>
-                        <th scope="col">Demande n°</th>
-                        <th scope="col">Feuilles</th>
-                        <th scope="col">Actions</th>
-                    </tr></thead>
-                    <tbody>
-                        <?php foreach ($plans as $plan):
-                            $demande = prefaReferenceComplete($plan['demande']);
-                            $nombre = count($plan['feuilles']);
-                            $ouvert = $plan['element'] === $planOuvert;
-                        ?>
-                            <tr class="soudures-plan-ligne<?= $ouvert ? ' est-choisie' : '' ?>"
-                                data-element="<?= (int) $plan['element'] ?>"
-                                <?= $ouvert ? 'aria-current="true"' : '' ?>>
-                                <td><strong><?= prefaEscape($plan['reference']) ?></strong></td>
-                                <td><?= prefaEscape($demande) ?></td>
-                                <td class="soudures-plan-nombre"><?= $nombre ?></td>
-                                <td class="soudures-feuille-actions">
-                                    <?php // « Ouvrir » montre les feuilles du plan — c'est le geste de
-                                          // cet écran. Le dessin, lui, s'ouvre depuis l'en-tête des
-                                          // feuilles, une fois le plan ouvert. ?>
-                                    <button type="button" class="soudures-ouvrir-plan-feuilles" aria-expanded="false">Ouvrir</button>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-
             <?php // Une section de feuilles par plan, masquée jusqu'à ce qu'on l'ouvre. Elles
                   // sont toutes rendues : les montrer coûte un attribut, et aller les
                   // chercher coûterait un aller-retour au serveur à chaque changement. ?>
@@ -179,7 +164,7 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
                 $premiere = $premiereFeuille($plan);
             ?>
                 <section class="soudures-feuilles-section" data-element="<?= (int) $plan['element'] ?>"
-                         aria-label="Feuilles de <?= prefaEscape($plan['reference']) ?>"
+                         role="tabpanel" aria-labelledby="soudures-onglet-<?= (int) $plan['element'] ?>"
                          <?= $plan['element'] === $planOuvert ? '' : 'hidden' ?>>
                     <?php // Pas de titre ici : la ligne du plan, juste au-dessus, porte déjà son
                           // nom, sa demande et son nombre de feuilles — et elle est teintée
@@ -190,11 +175,11 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
                           //
                           // Ne reste que la barre d'outils : la recherche vient s'y poser,
                           // devant le bouton du dessin. ?>
+                    <?php // Sous les onglets : de quelle demande vient le plan, et son dessin. ?>
                     <div class="soudures-plan-outils">
+                        <p class="soudures-plan-contexte"><?= prefaEscape(prefaReference($plan['demande'])) ?><?= $plan['affaire'] !== '' ? ' · ' . prefaEscape($plan['affaire']) : '' ?></p>
                         <?php if ($premiere): ?>
-                            <?php // Le dessin du cahier, ouvert à sa première page : on y va pour
-                                  // reconnaître le plan, pas pour une feuille en particulier. ?>
-                            <button type="button" class="soudures-ouvrir-plan"
+                            <button type="button" class="soudures-ouvrir-plan soudures-voir-dessin"
                                     data-repere="<?= $plan['element'] ?>:<?= $premiere['document'] ?>:1"
                                     title="Voir le dessin de ce plan">Voir le dessin</button>
                         <?php endif; ?>
@@ -207,9 +192,9 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
                             <table class="prefa-table soudures-feuilles">
                                 <thead><tr>
                                     <th scope="col">Feuille</th>
-                                    <th scope="col">Cordons</th>
+                                    <th scope="col" class="prefa-nombre">Cordons</th>
                                     <th scope="col">État</th>
-                                    <th scope="col">Actions</th>
+                                    <th scope="col"><span class="sr-only">Dessin</span></th>
                                 </tr></thead>
                                 <tbody>
                                     <?php foreach ($plan['feuilles'] as $feuille):
@@ -230,25 +215,30 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
                                             data-element="<?= (int) $plan['element'] ?>"
                                             data-etat="<?= $etat['cle'] ?>"
                                             data-cherche="<?= prefaEscape(mb_strtolower($demande . ' ' . $plan['reference'] . ' ' . $plan['affaire'] . ' ' . $nom)) ?>">
+                                            <?php // Le nom ouvre la feuille : c'est le geste de la liste, et un
+                                                  // bouton s'atteint au clavier. « Renseigner », répété sur
+                                                  // quinze lignes, ne disait rien de plus. ?>
                                             <td class="soudures-feuille-nom">
-                                                <strong><?= prefaEscape($nom) ?></strong>
-                                                <?php if ($feuille['numero'] !== '' && $feuille['pages'] > 1): ?>
-                                                    <?php // Le numéro de ligne ne dit pas où la feuille se
-                                                          // trouve dans le cahier : la page le dit, à la
-                                                          // suite. ?>
-                                                    <span>p. <?= $feuille['page'] ?> / <?= $feuille['pages'] ?></span>
-                                                <?php endif; ?>
+                                                <button type="button" class="soudures-renseigner">
+                                                    <strong><?= prefaEscape($nom) ?></strong>
+                                                    <?php if ($feuille['numero'] !== '' && $feuille['pages'] > 1): ?>
+                                                        <span>p. <?= $feuille['page'] ?> / <?= $feuille['pages'] ?></span>
+                                                    <?php endif; ?>
+                                                </button>
                                             </td>
-                                            <td class="soudures-feuille-cordons" data-cordons><?= prefaEscape(soudureAtelierCompteFeuille($feuille['faites'], $feuille['imprimees'])) ?></td>
+                                            <?php $partFaite = $feuille['imprimees'] ? min(100, (int) round($feuille['faites'] * 100 / $feuille['imprimees'])) : 0; ?>
+                                            <td class="prefa-nombre soudures-feuille-cordons">
+                                                <span data-cordons><?= prefaEscape(soudureAtelierCompteFeuille($feuille['faites'], $feuille['imprimees'])) ?></span>
+                                                <?php if ($feuille['imprimees']): ?><span class="soudures-barre" aria-hidden="true"><span style="width: <?= $partFaite ?>%"></span></span><?php endif; ?>
+                                            </td>
                                             <td class="soudures-feuille-etat"><span class="prefa-status <?= $etat['classe'] ?>" data-etat><?= prefaEscape($etat['libelle']) ?></span></td>
                                             <td class="soudures-feuille-actions">
-                                                <?php // « Renseigner » amène le tableau de cette feuille
-                                                      // sous les yeux ; « Plan » ouvre le dessin à SA page.
-                                                      // Cliquer la ligne fait comme « Renseigner » — c'est
-                                                      // le geste qu'on a dans une liste —, mais le bouton
-                                                      // reste : il se voit, et il s'atteint au clavier. ?>
-                                                <button type="button" class="soudures-renseigner">Renseigner</button>
-                                                <button type="button" class="soudures-ouvrir-plan" data-repere="<?= prefaEscape($repere) ?>">Plan</button>
+                                                <?php // Le dessin à SA page : une icône, qui ne paraît qu'au survol de
+                                                      // la ligne — et au clavier. ?>
+                                                <button type="button" class="soudures-ouvrir-plan soudures-dessin-icone" data-repere="<?= prefaEscape($repere) ?>"
+                                                        title="Voir le dessin de cette feuille" aria-label="Voir le dessin de <?= prefaEscape($nom) ?>">
+                                                    <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5" /><path d="m8.5 16 3-3 2 2 2.5-3" /></svg>
+                                                </button>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>

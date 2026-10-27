@@ -303,9 +303,9 @@
     function ouvrirPlan(ligne) {
         const racine = page();
         if (!racine || !ligne) return;
-        // Cliquer le plan ouvert le referme : on revient à la liste des plans, sans avoir
-        // à chercher par où sortir. C'est la croix du volet, un étage plus haut.
-        poserPlan(ligne.classList.contains('est-choisie') ? null : ligne.dataset.element);
+        // Les plans sont des onglets : cliquer celui qui est choisi ne fait rien.
+        if (ligne.classList.contains('est-choisie')) return;
+        poserPlan(ligne.dataset.element);
         filtrer();
     }
 
@@ -322,29 +322,15 @@
         racine.querySelectorAll('.soudures-plan-ligne').forEach(autre => {
             const ouvert = element !== null && autre.dataset.element === element;
             autre.classList.toggle('est-choisie', ouvert);
-            if (ouvert) autre.setAttribute('aria-current', 'true');
-            else autre.removeAttribute('aria-current');
-            // Le bouton dit dans quel état on est : il n'y a pas d'autre marque à lire.
-            const bouton = autre.querySelector('.soudures-ouvrir-plan-feuilles');
-            if (bouton) {
-                bouton.textContent = ouvert ? 'Fermer' : 'Ouvrir';
-                bouton.setAttribute('aria-expanded', String(ouvert));
-            }
+            autre.setAttribute('aria-selected', String(ouvert));
+            autre.tabIndex = ouvert ? 0 : -1;
         });
         racine.querySelectorAll('.soudures-feuilles-section').forEach(section => {
             section.hidden = element === null || section.dataset.element !== element;
         });
 
-        // La recherche va dans la barre d'outils du plan ouvert, devant le bouton du
-        // dessin : elle porte sur ses feuilles, elle doit être avec elles. Écrite une
-        // seule fois dans la page, c'est elle qui se déplace.
-        const filtres = racine.querySelector('.soudures-filtres');
-        if (filtres) {
-            filtres.hidden = element === null;
-            const outils = element === null ? null
-                : racine.querySelector('.soudures-feuilles-section[data-element="' + element + '"] .soudures-plan-outils');
-            if (outils && filtres.parentElement !== outils) outils.prepend(filtres);
-        }
+        // La recherche reste à sa place, sous les onglets : elle porte sur les feuilles du
+        // plan choisi, et c'est filtrer() qui l'applique à lui seul.
 
         fermerSaisie();
     }
@@ -367,6 +353,16 @@
     // une liste.
     $(document).on('click', '.soudures-plan-ligne', function () {
         ouvrirPlan(this);
+    });
+    // Les onglets au clavier : les flèches passent de l'un à l'autre.
+    $(document).on('keydown', '.soudures-plan-ligne', function (evenement) {
+        const pas = { ArrowLeft: -1, ArrowRight: 1 }[evenement.key];
+        if (!pas) return;
+        evenement.preventDefault();
+        const onglets = [...this.parentElement.querySelectorAll('.soudures-plan-ligne')];
+        const suivant = onglets[(onglets.indexOf(this) + pas + onglets.length) % onglets.length];
+        suivant.focus();
+        ouvrirPlan(suivant);
     });
 
     // Le filtrage : tout est déjà rendu, on se contente de cacher ce qui ne correspond
