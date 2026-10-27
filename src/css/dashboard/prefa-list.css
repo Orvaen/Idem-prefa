@@ -3414,3 +3414,24 @@ summary {
     opacity: .45;
     cursor: not-allowed;
 }
+
+/* La cellule « Utilisateur » porte deux lignes — le nom, l'identifiant dessous. En
+   compact, une ligne de 36 px les tassait l'une sur l'autre : elle prend ici 44 px, le
+   minimum pour deux lignes lisibles. En confortable, le monogramme grandit avec le texte. */
+.prefa-list[data-densite="compact"] .utilisateurs-table td {
+    height: 44px;
+}
+
+.prefa-list[data-densite="confortable"] .utilisateurs-table .prefa-avatar {
+    width: 30px;
+    height: 30px;
+    font-size: 11px;
+}
+
+.prefa-list[data-densite="confortable"] .utilisateurs-table .prefa-personne {
+    gap: 10px;
+}
+
+.prefa-list[data-densite="confortable"] .utilisateur-identifiant {
+    font-size: 13px;
+}

@@ -34,7 +34,29 @@ foreach ($db->query('SELECT id, name FROM role ORDER BY id')->fetchAll(PDO::FETC
                 <h1>Utilisateurs</h1>
                 <p>Les comptes de l’application : créez-les, modifiez-les, retirez ceux qui ne servent plus.</p>
             </div>
+            <?php // Le sélecteur de densité des autres listes. Sans lui, l'écran héritait de la
+                  // densité retenue ailleurs — « compacte » sur la liste des demandes — sans
+                  // qu'on puisse la changer ici : un tableau tassé, et aucun moyen d'en sortir. ?>
             <div class="prefa-vue-outils">
+                <div class="prefa-densite" role="group" aria-label="Densité du tableau">
+                    <button type="button" class="prefa-densite-choix" data-densite="confortable"
+                            aria-pressed="true" aria-label="Lignes confortables" title="Lignes confortables">
+                        <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true">
+                            <rect x="2" y="3" width="12" height="2.6" rx="1" />
+                            <rect x="2" y="6.7" width="12" height="2.6" rx="1" />
+                            <rect x="2" y="10.4" width="12" height="2.6" rx="1" />
+                        </svg>
+                    </button>
+                    <button type="button" class="prefa-densite-choix" data-densite="compact"
+                            aria-pressed="false" aria-label="Lignes compactes" title="Lignes compactes">
+                        <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true">
+                            <rect x="2" y="2.6" width="12" height="1.6" rx=".8" />
+                            <rect x="2" y="5.6" width="12" height="1.6" rx=".8" />
+                            <rect x="2" y="8.6" width="12" height="1.6" rx=".8" />
+                            <rect x="2" y="11.6" width="12" height="1.6" rx=".8" />
+                        </svg>
+                    </button>
+                </div>
                 <button type="button" class="utilisateurs-nouveau" data-dialog="utilisateur-dialogue">
                     <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                          stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
