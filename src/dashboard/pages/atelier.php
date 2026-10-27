@@ -58,6 +58,18 @@ $recentProgress = $stmt->fetchAll();
                 <thead><tr><th scope="col">Plan</th><th scope="col">Demande</th><th scope="col">Travail</th><th scope="col">Documents</th><th scope="col">Avancement</th><th scope="col">Actions</th></tr></thead>
                 <?php if (!$assignments): ?><tbody><tr><td colspan="6" class="prefa-table-empty">Aucun élément ne vous est actuellement affecté.</td></tr></tbody><?php endif; ?>
                 <?php $elementPrecedent = null; ?>
+                <?php // Les fichiers d'un plan, ouverts d'un clic : sur la ligne et en tête du volet,
+                      // le même balisage. ?>
+                <?php $documentsDuPlan = static function (array $docs): string {
+                    if (!$docs) return '<span class="atelier-missing-file">Pas encore de fichier</span>';
+                    $liens = '';
+                    foreach ($docs as $doc) {
+                        $pdf = strtolower(pathinfo($doc['name'], PATHINFO_EXTENSION)) === 'pdf' ? ' prefa-pdf-link' : '';
+                        $liens .= '<a class="atelier-row-document' . $pdf . '" data-name="' . prefaEscape($doc['name'])
+                            . '" href="' . prefaEscape($doc['url']) . '">' . prefaEscape($doc['name']) . '</a>';
+                    }
+                    return '<span class="atelier-row-documents">' . $liens . '</span>';
+                }; ?>
                 <?php foreach ($assignments as $assignment):
                     $id = (int) $assignment['id'];
                     // Un même plan confié pour plusieurs travaux fait plusieurs lignes, qui se
@@ -102,27 +114,31 @@ $recentProgress = $stmt->fetchAll();
                                 <td><?= prefaEscape(prefaReferenceComplete((int) $assignment['id_demande'])) ?></td>
                             <?php endif; ?>
                             <td><?= $types[$assignment['type_affectation']] ?></td>
-                            <td>
-                                <?php if ($docs): ?>
-                                    <span class="atelier-row-documents">
-                                        <?php foreach ($docs as $doc): ?>
-                                            <a class="atelier-row-document<?= strtolower(pathinfo($doc['name'], PATHINFO_EXTENSION)) === 'pdf' ? ' prefa-pdf-link' : '' ?>"
-                                               data-name="<?= prefaEscape($doc['name']) ?>" href="<?= prefaEscape($doc['url']) ?>"><?= prefaEscape($doc['name']) ?></a>
-                                        <?php endforeach; ?>
-                                    </span>
-                                <?php else: ?>
-                                    <span class="atelier-missing-file">Pas encore de fichier</span>
-                                <?php endif; ?>
-                            </td>
+                            <?php // Les fichiers sont ceux du plan, pas du travail : écrits sur sa
+                                  // première ligne seulement, comme son nom. ?>
+                            <td><?= $memePlan ? '' : $documentsDuPlan($docs) ?></td>
                             <td><span class="prefa-status <?= $statusClass ?>"><?= $progress ?> % · <?= $status ?></span><?php if ($attente): ?><span class="atelier-row-description">déclaré : <?= prefaEscape(avancementPhrase($attente)) ?>, à valider</span><?php endif; ?></td>
                             <td><button type="button" class="prefa-toggle" aria-controls="atelier-detail-<?= $id ?>" aria-expanded="false">Mettre à jour</button></td>
                         </tr>
                         <tr id="atelier-detail-<?= $id ?>" class="prefa-detail-row" hidden>
                             <td colspan="6">
                                 <div class="atelier-detail-content">
-                                    <?php // Les documents ne sont plus redits ici : ils s'ouvrent déjà depuis
-                                          // la ligne du plan, juste au-dessus, et « Pas encore de fichier »
-                                          // y dit aussi leur absence. ?>
+                                    <?php // L'en-tête du volet, sur le modèle de « Plans & affectations ». Le
+                                          // volet couvre toute la page : la ligne du plan n'est plus visible
+                                          // derrière lui. Sans en-tête, on remplissait des étapes sans voir
+                                          // de quel plan ni pour quel travail, sans ses fichiers, et rien ne
+                                          // refermait le volet — le bouton qui l'ouvre est dessous. ?>
+                                    <div class="prefa-detail-heading atelier-volet-entete">
+                                        <div class="atelier-volet-identite">
+                                            <p class="atelier-volet-surtitre"><?= $types[$assignment['type_affectation']] ?></p>
+                                            <h2><?= prefaEscape($assignment['reference']) ?>
+                                                <?php if ($assignment['libelle'] !== ''): ?><span><?= prefaEscape($assignment['libelle']) ?></span><?php endif; ?></h2>
+                                            <p class="atelier-volet-contexte"><span><?= prefaEscape(prefaReferenceComplete((int) $assignment['id_demande'])) ?></span><?= $documentsDuPlan($docs) ?></p>
+                                        </div>
+                                        <button type="button" class="prefa-detail-close" data-close-target="atelier-detail-<?= $id ?>" aria-label="Fermer" title="Fermer">
+                                            <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg>
+                                        </button>
+                                    </div>
                                     <div class="atelier-tabs">
                                         <div class="atelier-tablist" role="tablist" aria-label="Suivi de l’affectation">
                                             <button type="button" class="atelier-tab" role="tab" id="atelier-tab-etapes-<?= $id ?>" aria-controls="atelier-pane-etapes-<?= $id ?>" aria-selected="true">Étapes</button>

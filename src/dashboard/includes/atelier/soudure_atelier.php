@@ -211,8 +211,12 @@ function soudureAtelierEnregistrer(PDO $db, int $elementId, array $plan, int $pa
  */
 function soudureAtelierPlans(PDO $db, int $userId): array
 {
+    // Un plan sans document ne compte aucune feuille. La jointure externe lui rend une
+    // ligne vide, et « COALESCE(doc.pages, 1) » en faisait une page : la liste annonçait
+    // « 1 feuille » sur un plan vide, et le plan ouvert d'office n'était pas toujours un
+    // plan qui en a.
     $stmt = $db->prepare("SELECT e.id, e.reference, e.id_demande, d.nom_affaire,
-            COALESCE(SUM(GREATEST(COALESCE(doc.pages, 1), 1)), 0) AS feuilles
+            COALESCE(SUM(CASE WHEN doc.id IS NULL THEN 0 ELSE GREATEST(COALESCE(doc.pages, 1), 1) END), 0) AS feuilles
         FROM (SELECT DISTINCT id_element FROM affectation_atelier WHERE id_utilisateur = ? AND actif = 1) a
         JOIN element_atelier e ON e.id = a.id_element
         JOIN demande_prefabrication d ON d.id = e.id_demande

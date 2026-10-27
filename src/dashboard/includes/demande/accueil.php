@@ -88,9 +88,16 @@ function accueilTuiles(PDO $db, Utilisateur $utilisateur): array
     }
 
     if ($utilisateur->est(Role::PersonnelAtelier)) {
-        $actives = $db->prepare('SELECT COUNT(*) FROM affectation_atelier WHERE id_utilisateur = ? AND actif = 1');
+        // Les mêmes affectations que l'écran « Mes plans » — actives, sur une demande
+        // validée —, et des plans comptés comme des plans : un plan confié pour le montage
+        // et pour le soudage en faisait deux, et la tuile disait 3 quand la liste en
+        // montrait 2.
+        $courantes = 'FROM affectation_atelier a JOIN element_atelier e ON e.id = a.id_element
+            JOIN demande_prefabrication d ON d.id = e.id_demande
+            WHERE a.id_utilisateur = ? AND a.actif = 1 AND d.id_statut = 2';
+        $actives = $db->prepare('SELECT COUNT(DISTINCT a.id_element) ' . $courantes);
         $actives->execute([$utilisateur->id]);
-        $aFinir = $db->prepare('SELECT COUNT(*) FROM affectation_atelier WHERE id_utilisateur = ? AND actif = 1 AND COALESCE(avancement, 0) < 100');
+        $aFinir = $db->prepare('SELECT COUNT(*) ' . $courantes . ' AND COALESCE(a.avancement, 0) < 100');
         $aFinir->execute([$utilisateur->id]);
         // Les cordons qu'il a déclarés : c'est son travail, et c'est ce qui fait avancer
         // ses plans. Les heures ne sont plus comptées — le soudeur renseigne des soudures.
@@ -99,7 +106,7 @@ function accueilTuiles(PDO $db, Utilisateur $utilisateur): array
         $cordons->execute([$utilisateur->id]);
         return [
             $tuile((int) $actives->fetchColumn(), 'Mes plans', 'plans qui me sont confiés', 'btn-list-prefa'),
-            $tuile((int) $aFinir->fetchColumn(), 'À terminer', 'affectations sous les 100 %', 'btn-list-prefa'),
+            $tuile((int) $aFinir->fetchColumn(), 'À terminer', 'travaux sous les 100 %', 'btn-list-prefa'),
             $tuile((int) $cordons->fetchColumn(), 'Mes soudures', 'cordons que j’ai renseignés', 'btn-soudures'),
         ];
     }

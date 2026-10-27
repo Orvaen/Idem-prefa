@@ -156,12 +156,10 @@
     min-width: 850px;
 }
 
-/* Les travaux suivants d'un même plan : le nom n'est écrit qu'une fois, et le trait qui
-   sépare les plans s'efface entre ses lignes pour qu'elles se lisent comme un bloc. */
-/* Le trait est au bas des cellules : c'est donc la ligne qui précède qui le perd, tant
-   que son détail est fermé. */
-.atelier-page .atelier-assignment-group:has(+ .atelier-meme-plan) > tr:first-child > td,
-.atelier-page .atelier-assignment-group:has(+ .atelier-meme-plan) > tr[hidden] + tr > td {
+/* Les travaux suivants d'un même plan : son nom, sa demande et ses fichiers ne sont
+   écrits qu'une fois, et le trait entre ses lignes s'efface pour qu'elles se lisent comme
+   un bloc. Le trait est au bas des cellules : c'est la ligne qui précède qui le perd. */
+.atelier-page .atelier-assignment-group:has(+ .atelier-meme-plan) > tr:first-child > td {
     border-bottom-color: transparent;
 }
 
@@ -2131,6 +2129,74 @@ html .plans-iso-detail .plans-iso-entete h2 span {
     color: var(--text-muted);
     font-size: 13px;
     font-weight: 400;
+}
+
+/* ----- L'en-tête du volet « Mettre à jour » de Mes plans -----
+   Même registre que celui de « Plans & affectations » : le travail en surtitre, le plan
+   en titre, sa demande et ses fichiers dessous, la croix nue à droite. Il reste collé en
+   haut quand le volet défile. */
+
+html .atelier-page .atelier-volet-entete {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    flex-wrap: nowrap;
+    margin: -16px 0 16px;
+    padding: 18px 0 16px;
+    border-bottom: 1px dashed var(--border);
+    background: var(--surface);
+}
+
+.atelier-volet-identite {
+    min-width: 0;
+}
+
+html .atelier-page .atelier-volet-entete .atelier-volet-surtitre {
+    margin: 0 0 4px;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+html .atelier-page .atelier-volet-entete h2 {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    color: var(--text);
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+html .atelier-page .atelier-volet-entete h2 span {
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 400;
+}
+
+html .atelier-page .atelier-volet-entete .atelier-volet-contexte {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 16px;
+    margin: 6px 0 0;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+html .atelier-page .atelier-volet-entete .prefa-detail-close {
+    flex: none;
+    width: var(--h-lg);
+    height: var(--h-lg);
+    border: 0;
+    border-radius: var(--r-md);
+}
+
+html .atelier-page .atelier-volet-entete .prefa-detail-close .icon {
+    width: 16px;
+    height: 16px;
 }
 
 /* La croix nue, comme celle de la fenêtre de modification. */

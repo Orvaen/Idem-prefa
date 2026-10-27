@@ -1281,18 +1281,21 @@ html #soudures-page .soudures-plan-ligne:first-child {
     row-gap: 12px;
 }
 
-/* La barre du plan en premier — de quelle demande il vient, son dessin —, la recherche
-   dessous, puis la liste. */
+/* La recherche à gauche, le dessin du plan à droite, sur une même ligne, puis la liste.
+   La barre du plan disait aussi de quelle demande il vient, sur une ligne à elle : le
+   sélecteur au-dessus le dit déjà. Restée seule, elle aurait posé « Voir le dessin » à
+   gauche, sur une ligne perdue. */
 #soudures-page .soudures-feuilles-section > .soudures-plan-outils {
-    grid-column: 1 / -1;
+    grid-column: 2;
     grid-row: 1;
-    justify-content: space-between;
+    align-self: start;
+    justify-content: flex-end;
     margin: 0;
 }
 
 #soudures-page .soudures-filtres {
-    grid-column: 1 / -1;
-    grid-row: 2;
+    grid-column: 1;
+    grid-row: 1;
     margin: 0;
 }
 
@@ -1685,4 +1688,50 @@ html #soudures-page .soudures-plan-vide {
 /* Un plan sans feuille n'a rien à chercher : la recherche s'efface. */
 #soudures-page .soudures-plans:has(.soudures-plan-vide) .soudures-filtres {
     display: none;
+}
+
+/* Un plan sans feuille n'a rien à ouvrir : la carte « Aucune feuille ouverte » invitait à
+   choisir une feuille dans une liste qui n'existe pas, et contredisait le mot de gauche.
+   Elle s'efface, et le mot prend la largeur. */
+#soudures-page .soudures-plan-de-travail:has(.soudures-plan-vide) {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+#soudures-page .soudures-plan-de-travail:has(.soudures-plan-vide) .soudures-saisie {
+    display: none;
+}
+
+/* ----- Le nom de la feuille garde sa place -----
+   Le compte, l'état et le dessin avaient des largeurs fixes de 120, 180 et 48 px : dans
+   la colonne de gauche — 378 px sur un écran de 1 280 px, menu ouvert —, il restait 30 px
+   au nom de la feuille, qui s'affichait « Mo… ». Ces trois colonnes prennent maintenant
+   ce que leur contenu demande : la barre du compte fait 56 px, et « Pas encore ouverte »
+   est l'état le plus long. */
+html #soudures-page .soudures-feuilles thead th:nth-child(2) { width: 80px; }
+html #soudures-page .soudures-feuilles thead th:nth-child(3) { width: 144px; }
+html #soudures-page .soudures-feuilles thead th:nth-child(4) { width: 44px; }
+
+/* L'écran passe sur une colonne quand la place manque à la liste, et non à une largeur de
+   fenêtre fixe : le menu latéral, ouvert ou replié, change de 200 px ce qui reste. Sous
+   980 px pour l'écran, la liste aurait moins de 370 px, et le nom de la feuille moins de
+   100. Mêmes règles que pour un écran étroit, plus haut. */
+#soudures-page {
+    container: soudures-ecran / inline-size;
+}
+
+@container soudures-ecran (max-width: 979px) {
+    #soudures-page .soudures-plan-de-travail,
+    #soudures-page .soudures-plan-de-travail.est-coupe-en-deux {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    #soudures-page .soudures-saisie,
+    #soudures-page .soudures-saisie[data-vide] {
+        position: static;
+    }
+
+    #soudures-page .soudures-saisie-contenu {
+        max-height: none;
+        overflow-y: visible;
+    }
 }
