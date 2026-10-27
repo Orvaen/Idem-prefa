@@ -63,10 +63,9 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles_liste'][0]
                   // son écran qui ne portent pas le même nom, on ne sait plus si on est au
                   // bon endroit. ?>
             <h1 id="soudures-page-title">Mes soudures &amp; Suivi matériel</h1>
-            <?php // La phrase dit la chaîne entière — plan, feuille, cordon — parce que
-                  // l'écran n'en montre qu'un maillon à la fois. Sans elle, on arrive devant
-                  // un tableau et rien ne dit ce qu'on est venu y faire. ?>
-            <p>Choisissez une feuille de votre plan, puis notez les cordons que vous avez soudés.</p>
+            <?php // Plus de phrase d'aide sous le titre : le panneau de droite, tant
+                  // qu'aucune feuille n'est ouverte, dit déjà les étapes une à une. Dite
+                  // deux fois, et à chaque visite, elle n'était plus que du bruit. ?>
         </div>
     </header>
 
@@ -110,7 +109,7 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles_liste'][0]
                 </span>
                 <svg class="soudures-plan-chevron" aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m4.5 6.5 3.5 3.5 3.5-3.5" /></svg>
             </button>
-            <span class="soudures-choix-total"><?= count($plans) ?> plan<?= count($plans) > 1 ? 's' : '' ?> confié<?= count($plans) > 1 ? 's' : '' ?></span>
+            <span class="soudures-choix-total"><?= count($plans) ?> plan<?= count($plans) > 1 ? 's' : '' ?></span>
 
             <div class="soudures-plan-menu" hidden>
                 <div class="soudures-plan-recherche">
@@ -184,18 +183,23 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles_liste'][0]
                           //
                           // Ne reste que la barre d'outils : la recherche vient s'y poser,
                           // devant le bouton du dessin. ?>
-                    <?php // Sous les onglets : de quelle demande vient le plan, et son dessin. ?>
-                    <div class="soudures-plan-outils">
-                        <p class="soudures-plan-contexte">Demande <strong><?= prefaEscape(prefaReference($plan['demande'])) ?></strong><?= $plan['affaire'] !== '' ? ' · ' . prefaEscape($plan['affaire']) : '' ?></p>
-                        <?php if ($premiere): ?>
+                    <?php // Le dessin du plan, seul : la demande et l'affaire sont déjà sur le
+                          // sélecteur, juste au-dessus. Les redire ici faisait lire deux fois
+                          // la même ligne. Sans dessin, la barre n'a rien à porter : on ne la
+                          // pose pas. ?>
+                    <?php if ($premiere): ?>
+                        <div class="soudures-plan-outils">
                             <button type="button" class="soudures-ouvrir-plan soudures-voir-dessin"
                                     data-repere="<?= $plan['element'] ?>:<?= $premiere['document'] ?>:1"
                                     title="Voir le dessin de ce plan">Voir le dessin</button>
-                        <?php endif; ?>
-                    </div>
+                        </div>
+                    <?php endif; ?>
 
                     <?php if (!$plan['feuilles']): ?>
-                        <p class="soudures-plan-vide">Aucune feuille ISO n’est rattachée à ce plan : le chef d’atelier les dépose depuis « Plans / ISO ».</p>
+                        <?php // Le soudeur n'a pas l'écran « Plans / ISO » : lui dire où le chef
+                              // clique ne l'avance à rien. Il lui faut savoir que ce n'est pas
+                              // prêt, et vers qui se tourner. ?>
+                        <p class="soudures-plan-vide">Ce plan n’a pas encore de feuilles. Demandez au chef d’atelier de les ajouter.</p>
                     <?php else: ?>
                         <div class="prefa-table-scroll" role="region" aria-label="Feuilles de <?= prefaEscape($plan['reference']) ?>" tabindex="0">
                             <table class="prefa-table soudures-feuilles">
