@@ -19,7 +19,7 @@ $etats = commandeEtats();
         <button type="button" class="commandes-ajouter bouton-discret">Ajouter une commande</button>
     </div>
 
-    <div class="commandes-scroll">
+    <div class="commandes-scroll"<?= $commandes ? '' : ' hidden' ?>>
         <table class="commandes-table commandes-editable">
             <colgroup>
                 <col class="col-numero">
@@ -91,7 +91,7 @@ $etats = commandeEtats();
         </table>
     </div>
 
-    <p class="commandes-vide"<?= $commandes ? ' hidden' : '' ?>>Aucune commande saisie. Le bon de commande se dépose en PDF ci-dessous ; ce tableau en reprend l’essentiel.</p>
+    <p class="commandes-vide"<?= $commandes ? ' hidden' : '' ?>>Aucune commande. Le bon se dépose en PDF ci-dessous.</p>
 
     <!-- Le gabarit d'une ligne neuve. Il vit dans un template plutôt que dans le script :
          son balisage est celui des lignes ci-dessus, et l'écrire deux fois le ferait

@@ -554,3 +554,64 @@
 .commande-articles-lecture .est-vide {
     color: var(--text-muted);
 }
+
+/* ==========================================================================
+   DANS LE VOLET DES PV — une commande sur deux lignes
+   ==========================================================================
+
+   Le volet ne fait plus que 560 px : les six colonnes du tableau (652 px) n'y tenaient
+   qu'en défilant, et l'état passait hors champ. Chaque commande s'y range donc en carte
+   de deux lignes — l'identité du bon en haut (numéro, fournisseur, état), la livraison
+   dessous (date, lieu). Les intitulés de colonne disparaissent : chaque champ porte son
+   exemple et son aria-label, et la date se reconnaît d'elle-même. */
+.pv-volet .commandes-editable {
+    display: block;
+    min-width: 0;
+}
+
+.pv-volet .commandes-editable colgroup,
+.pv-volet .commandes-editable thead {
+    display: none;
+}
+
+.pv-volet .commandes-editable tbody {
+    display: block;
+}
+
+.pv-volet .commandes-editable .commande-ligne {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) 112px 28px;
+    grid-template-areas:
+        "numero fournisseur etat retirer"
+        "livraison lieu lieu .";
+    gap: 4px 8px;
+    align-items: center;
+    padding-top: 6px;
+}
+
+.pv-volet .commandes-editable .commande-ligne > td {
+    display: block;
+    height: auto;
+    padding: 0;
+    border: 0;
+}
+
+.pv-volet .commande-ligne > td:nth-child(1) { grid-area: numero; }
+.pv-volet .commande-ligne > td:nth-child(2) { grid-area: fournisseur; }
+.pv-volet .commande-ligne > td:nth-child(3) { grid-area: livraison; }
+.pv-volet .commande-ligne > td:nth-child(4) { grid-area: lieu; align-self: start; }
+.pv-volet .commande-ligne > td:nth-child(5) { grid-area: etat; }
+.pv-volet .commande-ligne > td:nth-child(6) { grid-area: retirer; }
+
+.pv-volet .commandes-editable .commande-articles-rang {
+    display: block;
+}
+
+.pv-volet .commandes-editable .commande-articles-rang > td {
+    display: block;
+    padding: 2px 0 6px;
+}
+
+.pv-volet .commandes-editable tbody > tr.commande-articles-rang:last-child > td {
+    border-bottom: 0;
+}
