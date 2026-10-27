@@ -178,6 +178,31 @@
         if (!personnes.length) {
             menu.innerHTML = '<p class="atelier-affecter-vide">Aucun membre du personnel atelier.</p>';
         }
+
+        // La recherche, en tête : on tape trois lettres d'un nom plutôt que de le chercher
+        // des yeux dans la liste. Elle ignore la casse et les accents — « helene » trouve
+        // « Hélène ».
+        let recherche = null;
+        if (personnes.length) {
+            const zone = document.createElement('div');
+            zone.className = 'atelier-affecter-recherche';
+            zone.innerHTML = '<svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>';
+            recherche = document.createElement('input');
+            recherche.type = 'search';
+            recherche.placeholder = 'Rechercher une personne…';
+            recherche.setAttribute('aria-label', 'Rechercher une personne');
+            recherche.autocomplete = 'off';
+            zone.append(recherche);
+            menu.append(zone);
+        }
+        const liste = document.createElement('div');
+        liste.className = 'atelier-affecter-liste';
+        menu.append(liste);
+        const aucun = document.createElement('p');
+        aucun.className = 'atelier-affecter-vide';
+        aucun.textContent = 'Personne de ce nom.';
+        aucun.hidden = true;
+
         personnes.forEach(option => {
             const choix = document.createElement('button');
             choix.type = 'button';
@@ -187,7 +212,19 @@
             choix.dataset.user = option.value;
             choix.innerHTML = '<span class="atelier-affecter-coche">' + (option.value === actuel ? COCHE : '') + '</span>';
             choix.append(option.textContent);
-            menu.append(choix);
+            choix.dataset.cherche = sansAccents(option.textContent);
+            liste.append(choix);
+        });
+        liste.append(aucun);
+
+        recherche?.addEventListener('input', () => {
+            const cherche = sansAccents(recherche.value.trim());
+            let visibles = 0;
+            liste.querySelectorAll('.atelier-affecter-choix').forEach(choix => {
+                choix.hidden = cherche !== '' && !choix.dataset.cherche.includes(cherche);
+                if (!choix.hidden) visibles++;
+            });
+            aucun.hidden = visibles > 0;
         });
         if (actuel) {
             const filet = document.createElement('div');
@@ -215,8 +252,12 @@
         menuOuvert = { menu, bouton, form, actuel };
         bouton.setAttribute('aria-expanded', 'true');
         document.addEventListener('pointerdown', surClicHorsDuMenu, true);
-        (menu.querySelector('[aria-checked="true"]') || menu.querySelector('button'))?.focus();
+        (recherche || menu.querySelector('button'))?.focus();
+        // La personne en place reste à portée de vue dans une longue liste.
+        menu.querySelector('[aria-checked="true"]')?.scrollIntoView({block: 'nearest'});
     }
+
+    const sansAccents = texte => texte.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
     function envoyerAffectation(utilisateur) {
         if (!menuOuvert) return;
@@ -224,7 +265,7 @@
         if (utilisateur === actuel) { fermerMenuAffectation(true); return; }
         form.elements.type.value = bouton.dataset.type;
         form.elements.utilisateur.value = utilisateur || actuel;
-        menu.querySelectorAll('button').forEach(b => { b.disabled = true; });
+        menu.querySelectorAll('button, input').forEach(b => { b.disabled = true; });
         const mot = menu.querySelector('.atelier-affecter-mot');
         mot.hidden = false;
         mot.textContent = 'Enregistrement…';
@@ -244,19 +285,33 @@
 
     // Le clavier : flèches pour parcourir, Échap pour refermer sans rien changer. Échap ne
     // remonte pas plus haut — sans cela, il refermait aussi le volet.
+    //
+    // Depuis la recherche : Flèche bas descend dans la liste, Entrée choisit le premier nom
+    // trouvé. Depuis le premier nom, Flèche haut remonte dans la recherche.
     document.addEventListener('keydown', function (evenement) {
         if (!menuOuvert || !menuOuvert.menu.contains(document.activeElement)) return;
-        const items = Array.from(menuOuvert.menu.querySelectorAll('button:not(:disabled)'));
+        const recherche = menuOuvert.menu.querySelector('.atelier-affecter-recherche input');
+        const items = Array.from(menuOuvert.menu.querySelectorAll('button:not(:disabled):not([hidden])'));
         const rang = items.indexOf(document.activeElement);
+        const dansRecherche = document.activeElement === recherche;
         if (evenement.key === 'Escape') {
             evenement.preventDefault();
             evenement.stopImmediatePropagation();
             fermerMenuAffectation(true);
+        } else if (dansRecherche && evenement.key === 'Enter') {
+            evenement.preventDefault();
+            const premier = items.find(item => item.classList.contains('atelier-affecter-choix'));
+            if (premier) envoyerAffectation(premier.dataset.user);
         } else if (evenement.key === 'ArrowDown' || evenement.key === 'ArrowUp') {
             evenement.preventDefault();
+            if (dansRecherche) {
+                (evenement.key === 'ArrowDown' ? items[0] : items[items.length - 1])?.focus();
+                return;
+            }
+            if (recherche && evenement.key === 'ArrowUp' && rang === 0) { recherche.focus(); return; }
             const pas = evenement.key === 'ArrowDown' ? 1 : -1;
             items[(rang + pas + items.length) % items.length]?.focus();
-        } else if (evenement.key === 'Home' || evenement.key === 'End') {
+        } else if (!dansRecherche && (evenement.key === 'Home' || evenement.key === 'End')) {
             evenement.preventDefault();
             items[evenement.key === 'Home' ? 0 : items.length - 1]?.focus();
         } else if (evenement.key === 'Tab') {
@@ -352,7 +407,7 @@
                     mot.hidden = false;
                     mot.textContent = texte;
                     mot.classList.add('est-erreur');
-                    menuOuvert.menu.querySelectorAll('button').forEach(b => { b.disabled = false; });
+                    menuOuvert.menu.querySelectorAll('button, input').forEach(b => { b.disabled = false; });
                 }
             })
             .always(() => buttons.prop('disabled', false));
