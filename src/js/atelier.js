@@ -134,33 +134,136 @@
         suivant.focus();
         suivant.click();
     });
+    // ===== Affecter une personne : un menu sous le bouton =====
+    //
+    // Le choix se faisait dans un panneau ouvert tout en bas du plan, sous les feuilles
+    // ISO et les documents : on cliquait un poste en haut, on descendait chercher la liste,
+    // on choisissait, on enregistrait. Le menu s'ouvre maintenant sous le bouton cliqué, et
+    // choisir un nom enregistre aussitôt.
+    //
+    // Il ne réinvente pas l'envoi : il remplit le formulaire caché du plan (jeton, poste,
+    // personne) et le soumet, et c'est le même chemin qu'avant qui écrit et recharge.
+    let menuOuvert = null;
+
+    function fermerMenuAffectation(rendreLeFocus) {
+        if (!menuOuvert) return;
+        const { menu, bouton } = menuOuvert;
+        menuOuvert = null;
+        menu.remove();
+        bouton.setAttribute('aria-expanded', 'false');
+        document.removeEventListener('pointerdown', surClicHorsDuMenu, true);
+        if (rendreLeFocus) bouton.focus();
+    }
+
+    function surClicHorsDuMenu(evenement) {
+        if (menuOuvert && !menuOuvert.menu.contains(evenement.target) && evenement.target !== menuOuvert.bouton) {
+            fermerMenuAffectation(false);
+        }
+    }
+
+    const COCHE = '<svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>';
+
+    function ouvrirMenuAffectation(bouton) {
+        const panneau = document.getElementById(bouton.dataset.form);
+        const form = panneau?.querySelector('form');
+        if (!form) return;
+        const actuel = bouton.dataset.user || '';
+        const personnes = Array.from(form.elements.utilisateur.options).filter(option => option.value);
+
+        const menu = document.createElement('div');
+        menu.className = 'atelier-affecter-menu';
+        menu.setAttribute('role', 'menu');
+        menu.setAttribute('aria-label', (actuel ? 'Changer la personne : ' : 'Affecter : ') + bouton.dataset.label);
+
+        if (!personnes.length) {
+            menu.innerHTML = '<p class="atelier-affecter-vide">Aucun membre du personnel atelier.</p>';
+        }
+        personnes.forEach(option => {
+            const choix = document.createElement('button');
+            choix.type = 'button';
+            choix.className = 'atelier-affecter-choix';
+            choix.setAttribute('role', 'menuitemradio');
+            choix.setAttribute('aria-checked', String(option.value === actuel));
+            choix.dataset.user = option.value;
+            choix.innerHTML = '<span class="atelier-affecter-coche">' + (option.value === actuel ? COCHE : '') + '</span>';
+            choix.append(option.textContent);
+            menu.append(choix);
+        });
+        if (actuel) {
+            const filet = document.createElement('div');
+            filet.className = 'atelier-affecter-filet';
+            filet.setAttribute('role', 'separator');
+            const retirer = document.createElement('button');
+            retirer.type = 'button';
+            retirer.className = 'atelier-affecter-retirer';
+            retirer.setAttribute('role', 'menuitem');
+            retirer.textContent = 'Retirer l’affectation';
+            menu.append(filet, retirer);
+        }
+        const mot = document.createElement('p');
+        mot.className = 'atelier-affecter-mot';
+        mot.setAttribute('role', 'status');
+        mot.hidden = true;
+        menu.append(mot);
+
+        // Posé dans la ligne du poste, sous le bouton : il défile avec le volet.
+        const ligne = bouton.closest('.atelier-plan-work') || bouton.parentNode;
+        ligne.append(menu);
+        menu.style.top = (bouton.offsetTop + bouton.offsetHeight + 4) + 'px';
+        menu.style.left = bouton.offsetLeft + 'px';
+
+        menuOuvert = { menu, bouton, form, actuel };
+        bouton.setAttribute('aria-expanded', 'true');
+        document.addEventListener('pointerdown', surClicHorsDuMenu, true);
+        (menu.querySelector('[aria-checked="true"]') || menu.querySelector('button'))?.focus();
+    }
+
+    function envoyerAffectation(utilisateur) {
+        if (!menuOuvert) return;
+        const { menu, bouton, form, actuel } = menuOuvert;
+        if (utilisateur === actuel) { fermerMenuAffectation(true); return; }
+        form.elements.type.value = bouton.dataset.type;
+        form.elements.utilisateur.value = utilisateur || actuel;
+        menu.querySelectorAll('button').forEach(b => { b.disabled = true; });
+        const mot = menu.querySelector('.atelier-affecter-mot');
+        mot.hidden = false;
+        mot.textContent = 'Enregistrement…';
+        const envoi = utilisateur
+            ? form.querySelector('button[type="submit"]:not(.atelier-remove-assignment)')
+            : form.querySelector('.atelier-remove-assignment');
+        form.requestSubmit(envoi);
+    }
+
     $(document).on('click', '.atelier-edit-assignment', function () {
-        const panel = document.getElementById(this.dataset.form);
-        if (!panel) return;
-        const form = panel.querySelector('form');
-        const user = this.dataset.user || '';
-        form.elements.type.value = this.dataset.type;
-        form.elements.utilisateur.value = user;
-        panel.querySelector('.atelier-manage-title').textContent = (user ? 'Modifier : ' : 'Affecter : ') + this.dataset.label;
-        panel.querySelector('.atelier-remove-assignment').hidden = !user;
-        panel.querySelector('.atelier-message').textContent = '';
-        document.querySelectorAll('.atelier-edit-assignment').forEach(button => {
-            if (button.dataset.form === this.dataset.form) button.setAttribute('aria-expanded', String(button === this));
-        });
-        panel.hidden = false;
-        const editorRow = panel.closest('.atelier-editor-row');
-        if (editorRow) editorRow.hidden = false;
-        form.elements.utilisateur.focus();
+        const memeBouton = menuOuvert?.bouton === this;
+        fermerMenuAffectation(false);
+        if (!memeBouton) ouvrirMenuAffectation(this);
     });
-    $(document).on('click', '.atelier-cancel-assignment', function () {
-        const panel = this.closest('.atelier-manage-panel');
-        panel.hidden = true;
-        const editorRow = panel.closest('.atelier-editor-row');
-        if (editorRow) editorRow.hidden = true;
-        document.querySelectorAll('.atelier-edit-assignment').forEach(button => {
-            if (button.dataset.form === panel.id) button.setAttribute('aria-expanded', 'false');
-        });
-    });
+    $(document).on('click', '.atelier-affecter-choix', function () { envoyerAffectation(this.dataset.user); });
+    $(document).on('click', '.atelier-affecter-retirer', function () { envoyerAffectation(''); });
+
+    // Le clavier : flèches pour parcourir, Échap pour refermer sans rien changer. Échap ne
+    // remonte pas plus haut — sans cela, il refermait aussi le volet.
+    document.addEventListener('keydown', function (evenement) {
+        if (!menuOuvert || !menuOuvert.menu.contains(document.activeElement)) return;
+        const items = Array.from(menuOuvert.menu.querySelectorAll('button:not(:disabled)'));
+        const rang = items.indexOf(document.activeElement);
+        if (evenement.key === 'Escape') {
+            evenement.preventDefault();
+            evenement.stopImmediatePropagation();
+            fermerMenuAffectation(true);
+        } else if (evenement.key === 'ArrowDown' || evenement.key === 'ArrowUp') {
+            evenement.preventDefault();
+            const pas = evenement.key === 'ArrowDown' ? 1 : -1;
+            items[(rang + pas + items.length) % items.length]?.focus();
+        } else if (evenement.key === 'Home' || evenement.key === 'End') {
+            evenement.preventDefault();
+            items[evenement.key === 'Home' ? 0 : items.length - 1]?.focus();
+        } else if (evenement.key === 'Tab') {
+            fermerMenuAffectation(false);
+        }
+    }, true);
+
     $(document).on('submit', '.atelier-action', function (event) {
         event.preventDefault();
         const form = $(this);
@@ -183,6 +286,7 @@
         $.ajax({ url: 'actions/' + endpoint, method: 'POST', data: data.toString(), dataType: 'json' })
             .done(function () {
                 form[0].closest('dialog')?.close();
+                if (menuOuvert && menuOuvert.form === form[0]) fermerMenuAffectation(false);
                 // « Mes plans » et « Mes soudures » se rechargent elles-mêmes. Les
                 // écrans de l'encadrement, non : la page Plans / ISO et la liste des demandes
                 // ont chacune leur façon de se remettre à jour, plus bas. Sans cette
@@ -212,6 +316,11 @@
                     // Enregistrement fait depuis une fenêtre : déplier le panneau pour montrer le résultat.
                     const detailId = 'plans-iso-detail-' + form[0].elements.id.value;
                     if (!openCardIds.includes(detailId)) openCardIds.push(detailId);
+                    // Le volet revient sur le plan où l'on était, à la même hauteur : il
+                    // rouvrait sur le premier plan, en haut, après chaque affectation faite
+                    // sur le deuxième.
+                    const ongletsActifs = Array.from(document.querySelectorAll('.plans-iso-detail:not([hidden]) .atelier-tab[aria-selected="true"]')).map(onglet => onglet.id);
+                    const defilements = Object.fromEntries(openCardIds.map(id => [id, document.getElementById(id)?.scrollTop || 0]));
                     $('#content').load('pages/plans_iso.php', function () {
                         openCardIds.forEach(id => {
                             const card = document.getElementById(id);
@@ -222,10 +331,30 @@
                                 });
                             }
                         });
+                        ongletsActifs.forEach(id => {
+                            const onglet = document.getElementById(id);
+                            if (onglet && onglet.getAttribute('aria-selected') !== 'true') onglet.click();
+                        });
+                        Object.entries(defilements).forEach(([id, haut]) => {
+                            const card = document.getElementById(id);
+                            if (card) card.scrollTop = haut;
+                        });
                     });
                 }
             })
-            .fail(xhr => message.text(xhr.responseJSON?.message || 'Enregistrement impossible. Réessayez.'))
+            .fail(xhr => {
+                const texte = xhr.responseJSON?.message || 'Enregistrement impossible. Réessayez.';
+                message.text(texte);
+                // Le formulaire d'affectation est caché : son message se dit dans le menu
+                // resté ouvert, dont les choix redeviennent cliquables.
+                if (menuOuvert && menuOuvert.form === form[0]) {
+                    const mot = menuOuvert.menu.querySelector('.atelier-affecter-mot');
+                    mot.hidden = false;
+                    mot.textContent = texte;
+                    mot.classList.add('est-erreur');
+                    menuOuvert.menu.querySelectorAll('button').forEach(b => { b.disabled = false; });
+                }
+            })
             .always(() => buttons.prop('disabled', false));
     });
 })();

@@ -2745,3 +2745,111 @@ html .plans-iso-detail .atelier-history-kind {
     color: var(--text-muted);
     font-size: 12px;
 }
+
+/* ----- Le menu d'affectation, sous le bouton de la personne -----
+   Une surface flottante : surface, filet, ombre ; rayon 8 d'un menu déroulant, entrées de
+   28px au rayon 6 (DA, § 3, § 4). La personne en place porte la coche. */
+
+html .plans-iso-detail .atelier-plan-work {
+    position: relative;
+}
+
+.atelier-affecter-menu {
+    position: absolute;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    box-sizing: border-box;
+    min-width: 220px;
+    max-width: min(320px, calc(100% - 8px));
+    max-height: 280px;
+    overflow-y: auto;
+    padding: 4px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    box-shadow: 0 1px 2px rgb(15 15 16 / 6%), 0 12px 32px rgb(15 15 16 / 16%);
+}
+
+:root:not([data-theme="light"]) .atelier-affecter-menu {
+    box-shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 12px 32px rgb(0 0 0 / 50%);
+}
+
+.atelier-affecter-choix,
+.atelier-affecter-retirer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    height: var(--h-md);
+    padding: 0 8px 0 6px;
+    border: 0;
+    border-radius: var(--r-md);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    text-align: left;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.atelier-affecter-choix:hover,
+.atelier-affecter-choix:focus-visible,
+.atelier-affecter-retirer:focus-visible {
+    background: var(--hover);
+    outline: none;
+}
+
+.atelier-affecter-choix[aria-checked="true"] {
+    font-weight: 500;
+}
+
+.atelier-affecter-coche {
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 16px;
+    width: 16px;
+    height: 16px;
+    color: var(--accent-texte);
+}
+
+.atelier-affecter-coche .icon {
+    width: 14px;
+    height: 14px;
+}
+
+.atelier-affecter-filet {
+    height: 1px;
+    margin: 3px 2px;
+    background: var(--border-faint);
+}
+
+/* Retirer : danger, en texte (DA, § 6). */
+.atelier-affecter-retirer {
+    padding-left: 28px;
+    color: var(--alerte-texte);
+}
+
+.atelier-affecter-retirer:hover {
+    background: var(--alerte-fond);
+}
+
+.atelier-affecter-choix:disabled,
+.atelier-affecter-retirer:disabled {
+    opacity: 0.55;
+    cursor: progress;
+}
+
+.atelier-affecter-mot,
+.atelier-affecter-vide {
+    margin: 0;
+    padding: 6px 8px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.atelier-affecter-mot.est-erreur {
+    color: var(--alerte-texte);
+}

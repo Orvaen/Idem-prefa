@@ -150,7 +150,7 @@ $avancementsAValider = avancementEnAttentePlusieurs($db, $affectationsActives);
                             <?php foreach ($types as $type => $label): $assignment = $active[$type] ?? null; ?>
                                 <section class="atelier-plan-work"><h4><?= prefaEscape($label) ?></h4>
                                     <?php if ($canManageWorkshop && $taken): ?>
-                                        <button type="button" class="atelier-edit-assignment atelier-person-button <?= $assignment ? 'is-assigned' : '' ?>" data-form="<?= $formId ?>" data-type="<?= $type ?>" data-label="<?= prefaEscape($element['reference'] . ' · ' . $label) ?>" data-user="<?= $assignment ? (int) $assignment['id_utilisateur'] : '' ?>" aria-controls="<?= $formId ?>" aria-expanded="false" title="<?= $assignment ? 'Changer la personne affectée' : 'Affecter une personne' ?> — <?= prefaEscape($label) ?>">
+                                        <button type="button" class="atelier-edit-assignment atelier-person-button <?= $assignment ? 'is-assigned' : '' ?>" data-form="<?= $formId ?>" data-type="<?= $type ?>" data-label="<?= prefaEscape($element['reference'] . ' · ' . $label) ?>" data-user="<?= $assignment ? (int) $assignment['id_utilisateur'] : '' ?>" aria-haspopup="menu" aria-expanded="false" title="<?= $assignment ? 'Changer la personne affectée' : 'Affecter une personne' ?> — <?= prefaEscape($label) ?>">
                                             <?= $assignment ? prefaEscape($assignment['utilisateur_nom']) : 'Affecter' ?>
                                         </button>
                                     <?php else: ?><span><?= $assignment ? prefaEscape($assignment['utilisateur_nom']) : 'Non affecté' ?></span><?php endif; ?>
@@ -278,6 +278,12 @@ $avancementsAValider = avancementEnAttentePlusieurs($db, $affectationsActives);
                             <?php endif; ?>
 
                         <?php if ($canManageWorkshop && $taken): ?>
+                            <?php // Ce formulaire ne se montre plus : il ouvrait un panneau tout en bas
+                                  // du plan, sous les feuilles et les documents, loin du poste qu'on
+                                  // venait de cliquer. Le choix se fait maintenant dans un menu posé
+                                  // sous le bouton de la personne (atelier.js), qui remplit ce
+                                  // formulaire et l'envoie : un clic sur un nom suffit. Il reste dans
+                                  // la page pour son jeton, la liste du personnel et l'envoi. ?>
                             <div class="atelier-editor-row" hidden>
 
                                     <div id="<?= $formId ?>" class="atelier-manage-panel" hidden>
