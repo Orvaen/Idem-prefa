@@ -42,6 +42,10 @@ if ($page === 'plans_iso') {
         if ($xpath->query('./div[@class="atelier-editor-row"]/div[contains(@class,"atelier-manage-panel")]', $plan)->length !== 1) throw new RuntimeException('Assignment editor incorrectly nested');
     }
     if (str_contains($html, 'class="atelier-plans-table"')) throw new RuntimeException('Old plan table still present');
+    // L'écran suit la liste des demandes : sa recherche, ses onglets, son menu d'actions.
+    if (!str_contains($html, 'class="filtres-recherche"')) throw new RuntimeException('Search field is not the house one');
+    if (!str_contains($html, 'class="prefa-onglets-barre"') && !str_contains($html, 'Aucune demande validée')) throw new RuntimeException('Status tabs missing');
+    if (str_contains($html, '>Normale<')) throw new RuntimeException('Old priority column still present');
 }
 if ($page === 'soudures') {
     // Un bloc par plan, replié sur ses feuilles ; la feuille se choisit dans un tableau et

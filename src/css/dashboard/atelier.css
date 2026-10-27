@@ -2016,3 +2016,47 @@
 .suivi-soudures-table .atelier-declaration {
     margin-bottom: 18px;
 }
+
+/* ===== PLANS / ISO, SUR LE MODÈLE DE LA LISTE DES DEMANDES =====
+ *
+ * L'écran reprend la liste des demandes trait pour trait — recherche à la hauteur des
+ * pastilles, onglets comptés, groupes ouverts par leur signe, échéance nue avec son
+ * retard, demandeur à monogramme, une commande sur la ligne et le reste dans le menu. Ces
+ * règles ne posent que ce qui lui est propre ; tout le reste vient de prefa-list.css. */
+
+.plans-iso-groupe[hidden],
+.plans-iso-aucune[hidden] {
+    display: none !important;
+}
+
+/* Le même bouton « Actualiser » que la liste : rayon 6, corps 13. Il était à 4, la seule
+   commande de la barre à ne pas suivre l'échelle des rayons. */
+#refresh-plans-iso {
+    height: var(--h-lg);
+    border-radius: var(--r-md);
+    font-size: 13px;
+}
+
+/* Les plans avancent : un demi-cercle à l'accent, entre le pointillé de l'attente et le
+   plein de ce qui est tranché. */
+.prefa-statut-icone.plans-iso-en-cours {
+    color: var(--accent);
+}
+
+/* La commande de ligne secondaire — « Plans & affectations » : au contour, comme
+   « Refuser » sur la liste, mais dans la couleur du texte puisqu'elle ne refuse rien. */
+.prefa-decision .prefa-ligne-contour {
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+}
+
+.prefa-decision .prefa-ligne-contour:hover,
+.prefa-decision .prefa-ligne-contour[aria-expanded="true"] {
+    background: var(--hover);
+}
+
+.prefa-ligne-valider.atelier-open-plan-create .icon {
+    width: 12px;
+    height: 12px;
+}
