@@ -273,7 +273,11 @@
 
         const b = bornes(champ);
         const panneau = construire();
-        document.body.appendChild(panneau);
+        // Dans une fenêtre modale, le calendrier se pose dans la fenêtre : une <dialog>
+        // ouverte par showModal() vit dans la couche supérieure, et tout ce qui est posé
+        // sur body passe dessous, quel que soit son z-index. Il reste en « fixed », donc
+        // placé sur l'écran comme ailleurs.
+        (champ.closest('dialog[open]') || document.body).appendChild(panneau);
         ouvert = {
             champ,
             panneau,
@@ -418,7 +422,12 @@
         }
 
         if (!ouvert || !ouvert.panneau.contains(document.activeElement)) {
-            if (ouvert && evenement.key === 'Escape') fermer(true);
+            if (ouvert && evenement.key === 'Escape') {
+                // Échap ferme le calendrier, et lui seul : sans cela, la fenêtre qui porte
+                // le champ se refermait du même coup.
+                evenement.preventDefault();
+                fermer(true);
+            }
             return;
         }
 

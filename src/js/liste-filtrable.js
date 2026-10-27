@@ -202,6 +202,9 @@
             const active = options.filter('[aria-selected="true"]');
 
             if (evenement.key === 'Escape' || evenement.key === 'Tab') {
+                // Une liste ouverte se ferme seule sur Échap : la fenêtre qui la porte ne
+                // doit pas se refermer avec elle.
+                if (evenement.key === 'Escape' && this.getAttribute('aria-expanded') === 'true') evenement.preventDefault();
                 fermer(filtrable);
                 return;
             }

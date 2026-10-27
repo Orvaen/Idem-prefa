@@ -239,21 +239,79 @@ document.addEventListener('htmx:afterSwap', function () {
     if (total) updateUrgentBadge(Number(total.dataset.count));
 });
 
+// ===== Modifier une demande : dans une fenêtre, au-dessus de la liste =====
+//
+// Le formulaire est celui de la nouvelle demande, avec son design ; il remplaçait l'écran
+// entier, et l'on perdait la liste — sa recherche, son onglet, sa position — pour corriger
+// une date. Il s'ouvre maintenant dans une fenêtre centrée, la liste reste derrière.
+//
+// La fenêtre est créée une fois et vidée à la fermeture : le formulaire porte l'id
+// #prefa-form, et il ne doit jamais en exister deux dans la page.
+function fenetreEdition() {
+    let fenetre = document.getElementById('prefa-edition');
+    if (fenetre) return fenetre;
+    fenetre = document.createElement('dialog');
+    fenetre.id = 'prefa-edition';
+    fenetre.className = 'prefa-edition';
+    fenetre.setAttribute('aria-label', 'Modifier la demande');
+    fenetre.innerHTML = '<button type="button" class="prefa-edition-fermer" aria-label="Fermer" title="Fermer">'
+        + '<svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg>'
+        + '</button><div class="prefa-edition-contenu"></div>';
+    document.body.appendChild(fenetre);
+
+    // Échap, ou le geste « fermer » du navigateur : on passe par la même porte que
+    // « Annuler », pour que la confirmation d'une saisie en cours ne soit pas contournée.
+    fenetre.addEventListener('cancel', evenement => {
+        evenement.preventDefault();
+        quitterFormulairePrefa();
+    });
+    // Un clic sur le voile, hors de la fenêtre, vaut « Annuler ».
+    fenetre.addEventListener('click', evenement => {
+        if (evenement.target === fenetre) quitterFormulairePrefa();
+    });
+    fenetre.querySelector('.prefa-edition-fermer').addEventListener('click', quitterFormulairePrefa);
+    fenetre.addEventListener('close', () => {
+        fenetre.querySelector('.prefa-edition-contenu').replaceChildren();
+        if (fenetre.declencheur?.isConnected) fenetre.declencheur.focus();
+    });
+    return fenetre;
+}
+
 $(document).on('click', '.edit-prefa', function () {
-    $('#content').load('pages/create_prefa.php?id=' + encodeURIComponent(this.dataset.id), function (response, status) {
-        if (status === 'error') $(this).text('Impossible de charger cette demande. Revenez à la liste puis réessayez.');
+    const fenetre = fenetreEdition();
+    const contenu = fenetre.querySelector('.prefa-edition-contenu');
+    // Le focus revient à la ligne d'où l'on est parti ; le menu qui portait « Modifier »
+    // se referme, son déclencheur reste.
+    fenetre.declencheur = this.closest('.prefa-actions')?.querySelector('.prefa-actions-declencheur') || this;
+    contenu.innerHTML = '<p class="prefa-edition-attente">Chargement de la demande…</p>';
+    if (!fenetre.open) fenetre.showModal();
+    $(contenu).load('pages/create_prefa.php?id=' + encodeURIComponent(this.dataset.id), function (response, status) {
+        if (status === 'error') {
+            $(this).html('<p class="prefa-edition-attente">Impossible de charger cette demande. Fermez la fenêtre puis réessayez.</p>');
+        }
+        // Pas de focus sur le premier champ : c'est la liste des affaires, qui s'ouvre au
+        // focus. Il reste sur la croix, où showModal() l'a posé.
     });
 });
+
 /**
  * Quitter le formulaire de demande : par le bouton du haut, par « Annuler », ou par Échap.
  *
  * Une saisie en cours ne se jette pas sans un mot : le formulaire porte une marque dès
  * qu'un champ bouge, et c'est elle qui décide s'il faut demander confirmation.
+ *
+ * Dans la fenêtre de modification, quitter la referme ; sur l'écran « Nouvelle demande »,
+ * on revient à la liste.
  */
 function quitterFormulairePrefa() {
     const formulaire = document.getElementById('prefa-form');
     if (formulaire?.dataset.modifie === '1'
         && !window.confirm('Quitter sans enregistrer ? Les modifications seront perdues.')) return;
+    const fenetre = document.getElementById('prefa-edition');
+    if (fenetre?.open) {
+        fenetre.close();
+        return;
+    }
     $('#btn-list-prefa').trigger('click');
 }
 
@@ -673,6 +731,14 @@ $(document).on('submit', '#prefa-form, .prefa-review', function (event) {
                     .text(status === '2' ? 'Validée' : 'Refusée');
                 form.data('reviewed', true).find('textarea').prop('disabled', true);
                 setTimeout(refreshPrefaList, 700);
+            } else if (form.closest('#prefa-edition').length) {
+                // Enregistrée depuis la fenêtre : on la referme et la liste se met à jour
+                // derrière. La marque de saisie tombe d'abord, sinon la fermeture
+                // demanderait de confirmer l'abandon de ce qu'on vient d'enregistrer.
+                delete form[0].dataset.modifie;
+                document.getElementById('prefa-edition').close();
+                if (window.toast) window.toast(response.message);
+                refreshPrefaList();
             } else if (form.find('[name="id"]').length) {
                 // Garder les valeurs enregistrées et actualiser le compteur administrateur.
                 $.get('pages/lists_prefa.php', function (html) {

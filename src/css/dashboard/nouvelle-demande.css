@@ -898,3 +898,139 @@
 .prefa-nouvelle .nd-form.nd-attend-affaire .nd-colonne:nth-child(2) {
     display: none;
 }
+
+/* ==========================================================================
+   MODIFIER UNE DEMANDE : DANS UNE FENÊTRE
+   ==========================================================================
+
+   Le même formulaire, avec son design, mais dans une fenêtre centrée au-dessus de la
+   liste au lieu de remplacer l'écran. Une surface flottante : trois tons — surface,
+   filet, ombre — et le rayon 12 d'une boîte de dialogue (DA, § 3, § 7 quinquies).
+
+   La fenêtre ne défile pas elle-même : c'est « .page » qui défile, comme sur l'écran, et
+   c'est sur elle que la barre d'envoi se colle en bas. */
+.prefa-edition {
+    box-sizing: border-box;
+    width: min(860px, calc(100vw - 32px));
+    max-width: none;
+    height: calc(100vh - 48px);
+    max-height: none;
+    margin: auto;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--r-xl);
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 1px 2px rgb(15 15 16 / 6%), 0 24px 64px rgb(15 15 16 / 18%);
+}
+
+.prefa-edition[open] {
+    display: flex;
+    flex-direction: column;
+    animation: prefa-edition-ouverture 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Le voile des fenêtres de l'application, le même dans les deux thèmes, flouté pour que la
+   liste reste devinable derrière. « !important » et la forme du thème clair : sa règle
+   générale sur « dialog::backdrop » en porte un. */
+.prefa-edition::backdrop,
+[data-theme="light"] .prefa-edition::backdrop {
+    background: rgb(15 15 16 / 35%) !important;
+    backdrop-filter: blur(2px);
+}
+
+@keyframes prefa-edition-ouverture {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.99);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.prefa-edition-contenu {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.prefa-edition-attente {
+    margin: auto;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+/* La fermeture, à l'angle : un bouton d'icône de 32px, rayon 6. */
+.prefa-edition-fermer {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 5;
+    display: grid;
+    place-items: center;
+    width: var(--h-lg);
+    height: var(--h-lg);
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.prefa-edition-fermer:hover {
+    background: var(--hover);
+    color: var(--text);
+}
+
+.prefa-edition-fermer:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.prefa-edition-fermer .icon {
+    width: 14px;
+    height: 14px;
+}
+
+/* La page du formulaire, ramenée aux dimensions de la fenêtre. « [data-theme] » repris
+   pour peser autant que la règle de la page, déclarée plus haut pour les deux thèmes. */
+.prefa-edition .page.prefa-nouvelle,
+[data-theme="light"] .prefa-edition .page.prefa-nouvelle {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
+    padding: 28px 40px 0;
+}
+
+/* « ← Demandes » ramenait à la liste : elle est juste derrière, la croix suffit. */
+.prefa-edition .nd-retour {
+    display: none;
+}
+
+/* Le titre ne passe pas sous la croix. */
+.prefa-edition .nd-entete {
+    padding-right: 40px;
+}
+
+.prefa-edition .nd-titre h1,
+[data-theme="light"] .prefa-edition .nd-titre h1 {
+    font-size: 24px;
+}
+
+/* « Haut de page » est fixé au bord de l'écran : dans une fenêtre, il flotterait à côté
+   d'elle, sur le voile. */
+.prefa-edition .nd-form .nd-haut {
+    display: none;
+}
+
+@media (max-width: 640px) {
+    .prefa-edition .page.prefa-nouvelle,
+    [data-theme="light"] .prefa-edition .page.prefa-nouvelle {
+        padding: 20px 16px 0;
+    }
+}
