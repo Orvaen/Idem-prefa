@@ -5,8 +5,13 @@
         const ouvrir = row.hidden;
         if (ouvrir) {
             // Un seul volet ouvert à la fois, comme partout ailleurs.
-            document.querySelectorAll('.prefa-detail-row:not([hidden])').forEach(autre => { autre.hidden = true; });
-            document.querySelectorAll('[aria-controls][aria-expanded="true"]').forEach(bouton => bouton.setAttribute('aria-expanded', 'false'));
+            // Seuls les boutons des volets qu'on referme repassent à « replié ». Le sélecteur
+            // visait tout bouton déplié de la page : les rubriques de la barre de gauche et le
+            // bouton du menu se repliaient aussi à chaque ouverture de volet.
+            document.querySelectorAll('.prefa-detail-row:not([hidden])').forEach(autre => {
+                autre.hidden = true;
+                document.querySelectorAll(`[aria-controls="${autre.id}"]`).forEach(bouton => bouton.setAttribute('aria-expanded', 'false'));
+            });
         }
         row.hidden = !ouvrir;
         // La commande existe sur la ligne et dans le menu : les deux suivent le volet.

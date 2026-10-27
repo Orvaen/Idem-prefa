@@ -450,10 +450,10 @@ body[data-theme="light"],
 
 [data-theme="light"] .affaire-carte:hover input:not([type="checkbox"]),
 [data-theme="light"] .affaire-carte:focus-within input:not([type="checkbox"]),
-[data-theme="light"] .commandes-editable tbody tr:hover input:not([type="checkbox"]),
-[data-theme="light"] .commandes-editable tbody tr:hover select,
-[data-theme="light"] .commandes-editable tbody tr:focus-within input:not([type="checkbox"]),
-[data-theme="light"] .commandes-editable tbody tr:focus-within select,
+[data-theme="light"] .commande-ligne:hover input:not([type="checkbox"]),
+[data-theme="light"] .commande-ligne:hover select,
+[data-theme="light"] .commande-ligne:focus-within input:not([type="checkbox"]),
+[data-theme="light"] .commande-ligne:focus-within select,
 [data-theme="light"] .commande-articles-table tbody tr:hover input:not([type="checkbox"]),
 [data-theme="light"] .commande-articles-table tbody tr:focus-within input:not([type="checkbox"]) {
     border-color: #e4e6e7 !important;
@@ -461,8 +461,8 @@ body[data-theme="light"],
 }
 
 [data-theme="light"] .affaire-carte input:not([type="checkbox"]):focus,
-[data-theme="light"] .commandes-editable tbody tr input:not([type="checkbox"]):focus,
-[data-theme="light"] .commandes-editable tbody tr select:focus,
+[data-theme="light"] .commande-ligne input:not([type="checkbox"]):focus,
+[data-theme="light"] .commande-ligne select:focus,
 [data-theme="light"] .commande-articles-table tbody tr input:not([type="checkbox"]):focus {
     border-color: #006399 !important;
 }

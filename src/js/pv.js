@@ -7,8 +7,13 @@
         if (!volet) return;
         const ouvrir = volet.hidden;
         if (ouvrir) {
-            document.querySelectorAll('.prefa-detail-row:not([hidden])').forEach(autre => { autre.hidden = true; });
-            document.querySelectorAll('[aria-controls][aria-expanded="true"]').forEach(b => b.setAttribute('aria-expanded', 'false'));
+            // Seuls les boutons des volets qu'on referme repassent à « replié ». Le sélecteur
+            // visait tout bouton déplié de la page : les rubriques de la barre de gauche et le
+            // bouton du menu se repliaient aussi à chaque ouverture de volet.
+            document.querySelectorAll('.prefa-detail-row:not([hidden])').forEach(autre => {
+                autre.hidden = true;
+                document.querySelectorAll(`[aria-controls="${autre.id}"]`).forEach(b => b.setAttribute('aria-expanded', 'false'));
+            });
         }
         volet.hidden = !ouvrir;
         this.setAttribute('aria-expanded', String(ouvrir));
