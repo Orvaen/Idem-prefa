@@ -1444,3 +1444,245 @@ html #soudures-page .soudures-saisie .prefa-table-scroll {
 html #soudures-page .soudures-invite-titre {
     color: var(--text) !important;
 }
+
+/* ==========================================================================
+   LE CHOIX DU PLAN
+   ==========================================================================
+
+   Un bouton qui dit le plan ouvert — son nom, sa demande —, et une liste à recherche
+   posée dessous : des onglets ne tenaient plus au-delà de cinq plans. Même forme que le
+   menu d'affectation de « Plans & affectations » : surface flottante, rayon 8, entrées
+   de 28 à 40px. */
+
+#soudures-page .soudures-choix-plan {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    margin: 0 16px 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.soudures-choix-libelle {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+html #soudures-page .soudures-plan-declencheur {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    max-width: min(560px, 100%);
+    height: var(--h-xl);
+    padding: 0 12px;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--r-md);
+    background: var(--surface) !important;
+    color: var(--text) !important;
+    font: inherit;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+}
+
+html #soudures-page .soudures-plan-declencheur:hover {
+    border-color: var(--border-fort) !important;
+}
+
+html #soudures-page .soudures-plan-declencheur[aria-expanded="true"] {
+    border-color: var(--accent) !important;
+}
+
+#soudures-page .soudures-plan-declencheur:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.soudures-plan-courant {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.soudures-plan-courant strong {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.soudures-plan-courant span {
+    overflow: hidden;
+    color: var(--text-muted);
+    font-size: 12px;
+    text-overflow: ellipsis;
+}
+
+.soudures-plan-chevron {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    color: var(--text-muted);
+}
+
+.soudures-choix-total {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+/* ----- La liste ----- */
+
+#soudures-page .soudures-plan-menu {
+    position: absolute;
+    top: calc(var(--h-xl) + 6px);
+    left: 0;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    width: min(520px, 100%);
+    padding: 4px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    box-shadow: 0 1px 2px rgb(15 15 16 / 6%), 0 12px 32px rgb(15 15 16 / 16%);
+}
+
+#soudures-page .soudures-plan-menu[hidden] {
+    display: none;
+}
+
+/* Le libellé « Plan » est à gauche du bouton : la liste s'aligne sur le bouton. */
+#soudures-page .soudures-choix-libelle + .soudures-plan-declencheur ~ .soudures-plan-menu {
+    left: calc(var(--soudures-libelle, 28px) + 12px);
+}
+
+:root:not([data-theme="light"]) #soudures-page .soudures-plan-menu {
+    box-shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 12px 32px rgb(0 0 0 / 50%);
+}
+
+.soudures-plan-recherche {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.soudures-plan-recherche .icon {
+    position: absolute;
+    left: 8px;
+    width: 14px;
+    height: 14px;
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
+html #soudures-page .soudures-plan-recherche input {
+    box-sizing: border-box;
+    width: 100%;
+    height: var(--h-lg);
+    padding: 0 8px 0 28px;
+    border: 0 !important;
+    border-bottom: 1px solid var(--border-faint) !important;
+    border-radius: var(--r-md) var(--r-md) 0 0;
+    background: transparent !important;
+    color: var(--text) !important;
+    font: inherit;
+    font-size: 13px;
+    outline: none;
+}
+
+.soudures-plan-options {
+    max-height: 320px;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
+}
+
+/* Une entrée : le nom, la demande dessous, le nombre de feuilles à droite. */
+.soudures-plan-option {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "nom compte" "demande compte";
+    align-items: center;
+    column-gap: 12px;
+    padding: 6px 8px;
+    border-radius: var(--r-md);
+    cursor: pointer;
+}
+
+.soudures-plan-option[hidden] {
+    display: none;
+}
+
+.soudures-plan-option:hover,
+.soudures-plan-option.est-active {
+    background: var(--hover);
+}
+
+.soudures-plan-option[aria-selected="true"] {
+    background: var(--selection-fond);
+}
+
+.soudures-plan-option-nom {
+    grid-area: nom;
+    overflow: hidden;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.soudures-plan-option-demande {
+    grid-area: demande;
+    overflow: hidden;
+    color: var(--text-muted);
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.soudures-plan-option-compte {
+    grid-area: compte;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* Un plan dont le dessin n'est pas encore déposé : il est là, mais en retrait. */
+.soudures-plan-option.est-sans-dessin .soudures-plan-option-nom {
+    color: var(--text-muted);
+}
+
+.soudures-plan-option.est-sans-dessin .soudures-plan-option-compte {
+    font-style: italic;
+}
+
+html #soudures-page .soudures-plan-mot {
+    margin: 0;
+    padding: 8px;
+    color: var(--text-muted) !important;
+    font-size: 12px;
+}
+
+/* Le plan sans feuille : une ligne, pas un pavé. */
+html #soudures-page .soudures-plan-vide {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding: 16px 0;
+    color: var(--text-muted) !important;
+    font-size: 13px;
+}
+
+/* Un plan sans feuille n'a rien à chercher : la recherche s'efface. */
+#soudures-page .soudures-plans:has(.soudures-plan-vide) .soudures-filtres {
+    display: none;
+}

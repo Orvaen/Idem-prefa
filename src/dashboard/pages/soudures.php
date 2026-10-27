@@ -6,13 +6,6 @@ require_once __DIR__ . '/../includes/vue/plan_viewer.php';
 require_once __DIR__ . '/../includes/vue/filtres.php';
 if (!$isWorkshopPersonnel) prefaError(403, 'Cette page est réservée au personnel atelier.');
 
-// Une entrée par page d'isométrique : c'est la question que se pose le soudeur — sur
-// quelle feuille suis-je ? — et non « quel fichier, puis quelle page ».
-$feuilles = soudureAtelierFeuilles($db, (int) $actor['id']);
-
-$parPlan = [];
-foreach ($feuilles as $feuille) $parPlan[$feuille['element']][] = $feuille;
-
 // Comment une feuille se nomme : par son numéro de ligne, celui qui est imprimé sur le
 // papier que le soudeur a en main. Le nom du fichier et sa page ne servent que de secours,
 // pour un cahier déposé avant qu'on relève les numéros. C'est la règle du sommaire de la
@@ -27,37 +20,30 @@ $repereFeuille = static fn (array $feuille): string =>
     $feuille['element'] . ':' . $feuille['document'] . ':' . $feuille['page'];
 
 // Les plans confiés, et c'est l'affectation qui fait foi : un plan paraît même si aucune
-// feuille ISO n'y est encore rattachée, parce que le travail, lui, est bien là.
-//
-// « DISTINCT » parce qu'une même personne peut tenir le plan, le montage et le suivi
-// soudage du même plan : ici on vient souder, pas consulter la répartition du travail.
-$confies = $db->prepare('SELECT DISTINCT a.id_element, e.reference, e.id_demande, d.nom_affaire
-    FROM affectation_atelier a
-    JOIN element_atelier e ON e.id = a.id_element
-    JOIN demande_prefabrication d ON d.id = e.id_demande
-    WHERE a.id_utilisateur = ? AND a.actif = 1 AND d.id_statut = 2
-    ORDER BY e.id_demande DESC, e.reference');
-$confies->execute([$actor['id']]);
+// feuille ISO n'y est encore rattachée, parce que le travail, lui, est bien là. Une seule
+// requête, sans rien lire des PDF : il peut y en avoir des centaines.
 $plans = [];
-foreach ($confies->fetchAll() as $confie) {
-    $elementId = (int) $confie['id_element'];
-    $plans[$elementId] = [
-        'element' => $elementId,
-        'reference' => (string) $confie['reference'],
-        'affaire' => (string) $confie['nom_affaire'],
-        'demande' => (int) $confie['id_demande'],
-        'feuilles' => $parPlan[$elementId] ?? [],
-    ];
-}
+foreach (soudureAtelierPlans($db, (int) $actor['id']) as $plan) $plans[$plan['element']] = $plan;
 
-// Les plans sont des onglets, et un onglet est toujours choisi : le premier l'est à
-// l'arrivée. Il fallait cliquer « Ouvrir » sur une ligne pour voir quoi que ce soit, et
-// l'écran restait d'abord un tableau de deux lignes au-dessus du vide.
-$planOuvert = $plans ? array_key_first($plans) : null;
+// Le plan ouvert : celui qu'on demande, sinon le dernier ouvert, sinon le premier qui a des
+// feuilles. Il est retenu dans la session : enregistrer une feuille ou déposer un dessin
+// recharge l'écran, et il doit revenir sur le même plan.
+$demande = filter_var($_GET['plan'] ?? null, FILTER_VALIDATE_INT);
+$retenu = (int) ($_SESSION['soudures_plan'] ?? 0);
+$planOuvert = match (true) {
+    $demande !== false && $demande !== null && isset($plans[$demande]) => $demande,
+    isset($plans[$retenu]) => $retenu,
+    default => array_key_first(array_filter($plans, static fn (array $p): bool => $p['feuilles'] > 0))
+        ?? array_key_first($plans),
+};
+if ($planOuvert !== null) $_SESSION['soudures_plan'] = $planOuvert;
+
+// Les feuilles du seul plan ouvert : c'est leur lecture qui coûte (l'analyse de chaque page).
+$ouvert = $planOuvert !== null ? $plans[$planOuvert] + ['feuilles_liste' => soudureAtelierFeuilles($db, (int) $actor['id'], $planOuvert)] : null;
 
 // Le premier isométrique d'un plan, pour le bouton qui montre le dessin : on ouvre le
 // cahier à sa première page, c'est de là qu'on se repère.
-$premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? null;
+$premiereFeuille = static fn (array $plan): ?array => $plan['feuilles_liste'][0] ?? null;
 ?>
 <datalist id="soudure-procedes">
     <option value="TIG"></option><option value="MIG"></option><option value="MAG"></option>
@@ -109,21 +95,42 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
               // ouvert, à droite la feuille travaillée. Les deux colonnes sont posées dès
               // l'arrivée — sans quoi le tableau passait de pleine largeur à la moitié au
               // moment du clic, et l'écran se tordait sous la main. ?>
-        <?php // Les plans, en onglets comptés — la forme des PV et de la liste des demandes.
-              // C'était un tableau à quatre colonnes étalées sur toute la largeur, avec un
-              // bouton « Ouvrir » / « Fermer » par ligne. ?>
-        <div class="soudures-onglets" role="tablist" aria-label="Mes plans">
-            <?php foreach ($plans as $plan): $ouvert = $plan['element'] === $planOuvert; ?>
-                <button type="button" role="tab" class="soudures-plan-ligne<?= $ouvert ? ' est-choisie' : '' ?>"
-                        id="soudures-onglet-<?= (int) $plan['element'] ?>"
-                        data-element="<?= (int) $plan['element'] ?>"
-                        aria-selected="<?= $ouvert ? 'true' : 'false' ?>"
-                        <?= $ouvert ? '' : 'tabindex="-1"' ?>
-                        title="<?= prefaEscape(prefaReferenceComplete($plan['demande'])) ?>">
-                    <?= prefaEscape($plan['reference']) ?>
-                    <span class="soudures-onglet-compte"><?= count($plan['feuilles']) ?></span>
-                </button>
-            <?php endforeach; ?>
+        <?php // Le plan, choisi dans une liste à recherche : des onglets ne tiennent plus
+              // au-delà de cinq plans, et un soudeur peut en avoir des centaines. Le bouton
+              // dit le plan ouvert ; la liste, ouverte, cherche dans le nom, la demande et
+              // l'affaire. ?>
+        <?php $libelleFeuilles = static fn (int $n): string => $n === 0 ? 'en attente du dessin' : $n . ($n > 1 ? ' feuilles' : ' feuille'); ?>
+        <div class="soudures-choix-plan" data-choix-plan>
+            <span class="soudures-choix-libelle" id="soudures-choix-libelle">Plan</span>
+            <button type="button" class="soudures-plan-declencheur" aria-haspopup="listbox" aria-expanded="false"
+                    aria-labelledby="soudures-choix-libelle soudures-plan-courant">
+                <span id="soudures-plan-courant" class="soudures-plan-courant">
+                    <strong><?= prefaEscape($ouvert['reference']) ?></strong>
+                    <span><?= prefaEscape(prefaReference($ouvert['demande'])) ?><?= $ouvert['affaire'] !== '' ? ' · ' . prefaEscape($ouvert['affaire']) : '' ?></span>
+                </span>
+                <svg class="soudures-plan-chevron" aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m4.5 6.5 3.5 3.5 3.5-3.5" /></svg>
+            </button>
+            <span class="soudures-choix-total"><?= count($plans) ?> plan<?= count($plans) > 1 ? 's' : '' ?> confié<?= count($plans) > 1 ? 's' : '' ?></span>
+
+            <div class="soudures-plan-menu" hidden>
+                <div class="soudures-plan-recherche">
+                    <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+                    <input type="search" autocomplete="off" placeholder="Plan, demande, affaire…" aria-label="Rechercher un plan">
+                </div>
+                <ul class="soudures-plan-options" role="listbox" aria-label="Mes plans">
+                    <?php foreach ($plans as $plan): ?>
+                        <li role="option" class="soudures-plan-option<?= $plan['feuilles'] === 0 ? ' est-sans-dessin' : '' ?>"
+                            data-element="<?= (int) $plan['element'] ?>"
+                            data-cherche="<?= prefaEscape(mb_strtolower($plan['reference'] . ' ' . prefaReference($plan['demande']) . ' ' . $plan['affaire'])) ?>"
+                            aria-selected="<?= $plan['element'] === $planOuvert ? 'true' : 'false' ?>" tabindex="-1">
+                            <span class="soudures-plan-option-nom"><?= prefaEscape($plan['reference']) ?></span>
+                            <span class="soudures-plan-option-demande"><?= prefaEscape(prefaReference($plan['demande'])) ?><?= $plan['affaire'] !== '' ? ' · ' . prefaEscape($plan['affaire']) : '' ?></span>
+                            <span class="soudures-plan-option-compte"><?= $libelleFeuilles($plan['feuilles']) ?></span>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+                <p class="soudures-plan-mot" role="status" hidden></p>
+            </div>
         </div>
 
         <div class="soudures-plan-de-travail">
@@ -160,13 +167,14 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
             <?php // Une section de feuilles par plan, masquée jusqu'à ce qu'on l'ouvre. Elles
                   // sont toutes rendues : les montrer coûte un attribut, et aller les
                   // chercher coûterait un aller-retour au serveur à chaque changement. ?>
-            <?php foreach ($plans as $plan):
-                $demande = prefaReferenceComplete($plan['demande']);
-                $premiere = $premiereFeuille($plan);
+            <?php // Le seul plan ouvert : ses feuilles sont lues ici, les autres ne le sont pas.
+                  $plan = $ouvert;
+                  $plan['feuilles'] = $ouvert['feuilles_liste'];
+                  $demande = prefaReferenceComplete($plan['demande']);
+                  $premiere = $premiereFeuille($ouvert);
             ?>
                 <section class="soudures-feuilles-section" data-element="<?= (int) $plan['element'] ?>"
-                         role="tabpanel" aria-labelledby="soudures-onglet-<?= (int) $plan['element'] ?>"
-                         <?= $plan['element'] === $planOuvert ? '' : 'hidden' ?>>
+                         aria-label="Feuilles de <?= prefaEscape($plan['reference']) ?>">
                     <?php // Pas de titre ici : la ligne du plan, juste au-dessus, porte déjà son
                           // nom, sa demande et son nombre de feuilles — et elle est teintée
                           // tant qu'il est ouvert. « Feuilles de Plan de test » redisait tout
@@ -187,7 +195,7 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
                     </div>
 
                     <?php if (!$plan['feuilles']): ?>
-                        <p class="atelier-muted soudures-plan-vide">Aucune feuille ISO n’est rattachée à ce plan : le chef d’atelier les dépose depuis « Plans / ISO ».</p>
+                        <p class="soudures-plan-vide">Aucune feuille ISO n’est rattachée à ce plan : le chef d’atelier les dépose depuis « Plans / ISO ».</p>
                     <?php else: ?>
                         <div class="prefa-table-scroll" role="region" aria-label="Feuilles de <?= prefaEscape($plan['reference']) ?>" tabindex="0">
                             <table class="prefa-table soudures-feuilles">
@@ -252,7 +260,6 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
                           // de laisser un tableau sans lignes sous ses en-têtes. ?>
                     <p class="prefa-table-empty soudures-aucune" data-aucune hidden>Aucune feuille de ce plan ne correspond à cette recherche.</p>
                 </section>
-            <?php endforeach; ?>
         </div>
 
         <?php // La colonne de droite existe dès l'arrivée, et elle attend : sans elle, le
@@ -351,7 +358,7 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
         // bureau d'études y a imprimée : c'est detecter_lignes.php qui renvoie les valeurs
         // avec la géométrie du tableau, et le lecteur les y pose — le même rendu que le
         // plan final. Un tableau de plus à côté du dessin dirait deux fois la même chose.
-        foreach (array_keys($plans) as $elementId):
+        foreach ($planOuvert !== null ? [$planOuvert] : [] as $elementId):
             $docs = planDocuments($db, $elementId);
             if (!$docs) continue;
         ?>

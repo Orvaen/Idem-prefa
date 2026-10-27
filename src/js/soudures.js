@@ -292,49 +292,6 @@
         choisir(this);
     });
 
-    /**
-     * Ouvrir un plan : ses feuilles paraissent, celles des autres se rangent.
-     *
-     * Rien n'est demandé au serveur — toutes les sections sont rendues avec la page. Ce
-     * qui coûte, c'est la feuille : sa liste de cordons est reconnue sur le PDF. On ferme
-     * donc la saisie en changeant de plan, plutôt que de laisser à droite une feuille qui
-     * n'appartient plus à ce qu'on regarde à gauche.
-     */
-    function ouvrirPlan(ligne) {
-        const racine = page();
-        if (!racine || !ligne) return;
-        // Les plans sont des onglets : cliquer celui qui est choisi ne fait rien.
-        if (ligne.classList.contains('est-choisie')) return;
-        poserPlan(ligne.dataset.element);
-        filtrer();
-    }
-
-    /**
-     * Pose l'ouverture d'un plan, sans rien filtrer.
-     *
-     * À part, parce que la recherche s'en sert aussi : quand elle ne laisse qu'un plan,
-     * elle l'ouvre — et elle ne peut pas se rappeler elle-même pour autant.
-     */
-    function poserPlan(element) {
-        const racine = page();
-        if (!racine) return;
-
-        racine.querySelectorAll('.soudures-plan-ligne').forEach(autre => {
-            const ouvert = element !== null && autre.dataset.element === element;
-            autre.classList.toggle('est-choisie', ouvert);
-            autre.setAttribute('aria-selected', String(ouvert));
-            autre.tabIndex = ouvert ? 0 : -1;
-        });
-        racine.querySelectorAll('.soudures-feuilles-section').forEach(section => {
-            section.hidden = element === null || section.dataset.element !== element;
-        });
-
-        // La recherche reste à sa place, sous les onglets : elle porte sur les feuilles du
-        // plan choisi, et c'est filtrer() qui l'applique à lui seul.
-
-        fermerSaisie();
-    }
-
     /** Refermer la feuille travaillée : le volet se range, la ligne n'est plus choisie. */
     function fermerSaisie() {
         const racine = page();
@@ -349,20 +306,119 @@
         });
     }
 
-    // Cliquer la ligne d'un plan l'ouvre, comme son bouton : c'est le geste qu'on a dans
-    // une liste.
-    $(document).on('click', '.soudures-plan-ligne', function () {
-        ouvrirPlan(this);
+
+    // ===== Choisir un plan =====
+    //
+    // Une liste à recherche plutôt que des onglets : un soudeur peut avoir des centaines de
+    // plans. Choisir recharge l'écran sur ce plan — seules ses feuilles sont lues — et le
+    // serveur s'en souvient pour les rechargements suivants.
+    //
+    // Au-delà de cent lignes trouvées, la liste n'en montre que cent et invite à préciser :
+    // en dessiner dix mille à chaque frappe ne servirait personne.
+    const PLANS_MONTRES = 100;
+    const sansAccents = texte => texte.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+    function choixPlan() {
+        const racine = page();
+        const zone = racine?.querySelector('[data-choix-plan]');
+        if (!zone) return null;
+        return {
+            zone,
+            bouton: zone.querySelector('.soudures-plan-declencheur'),
+            menu: zone.querySelector('.soudures-plan-menu'),
+            recherche: zone.querySelector('.soudures-plan-recherche input'),
+            options: [...zone.querySelectorAll('.soudures-plan-option')],
+            mot: zone.querySelector('.soudures-plan-mot'),
+        };
+    }
+
+    function filtrerPlans() {
+        const c = choixPlan();
+        if (!c) return;
+        const cherche = sansAccents(c.recherche.value.trim());
+        let trouves = 0;
+        c.options.forEach(option => {
+            const garde = !cherche || sansAccents(option.dataset.cherche || '').includes(cherche);
+            if (garde) trouves++;
+            option.hidden = !garde || trouves > PLANS_MONTRES;
+        });
+        c.mot.hidden = trouves > 0 && trouves <= PLANS_MONTRES;
+        c.mot.textContent = trouves === 0
+            ? 'Aucun plan ne correspond.'
+            : PLANS_MONTRES + ' plans montrés sur ' + trouves + ' : précisez la recherche.';
+    }
+
+    function ouvrirChoixPlan() {
+        const c = choixPlan();
+        if (!c) return;
+        c.menu.hidden = false;
+        c.bouton.setAttribute('aria-expanded', 'true');
+        c.recherche.value = '';
+        filtrerPlans();
+        c.recherche.focus();
+        c.zone.querySelector('.soudures-plan-option[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' });
+        document.addEventListener('pointerdown', surClicHorsChoix, true);
+    }
+
+    function fermerChoixPlan(rendreLeFocus) {
+        const c = choixPlan();
+        if (!c || c.menu.hidden) return;
+        c.menu.hidden = true;
+        c.bouton.setAttribute('aria-expanded', 'false');
+        document.removeEventListener('pointerdown', surClicHorsChoix, true);
+        if (rendreLeFocus) c.bouton.focus();
+    }
+
+    function surClicHorsChoix(evenement) {
+        const c = choixPlan();
+        if (c && !c.zone.contains(evenement.target)) fermerChoixPlan(false);
+    }
+
+    function choisirPlan(option) {
+        if (!option) return;
+        if (option.getAttribute('aria-selected') === 'true') { fermerChoixPlan(true); return; }
+        const c = choixPlan();
+        c.mot.hidden = false;
+        c.mot.textContent = 'Ouverture du plan…';
+        $('#content').load('pages/soudures.php?plan=' + encodeURIComponent(option.dataset.element), function (_, statut) {
+            if (statut === 'error') $(this).text('Impossible d’ouvrir ce plan. Actualisez la page.');
+        });
+    }
+
+    $(document).on('click', '.soudures-plan-declencheur', function () {
+        const c = choixPlan();
+        if (c && !c.menu.hidden) fermerChoixPlan(true);
+        else ouvrirChoixPlan();
     });
-    // Les onglets au clavier : les flèches passent de l'un à l'autre.
-    $(document).on('keydown', '.soudures-plan-ligne', function (evenement) {
-        const pas = { ArrowLeft: -1, ArrowRight: 1 }[evenement.key];
-        if (!pas) return;
-        evenement.preventDefault();
-        const onglets = [...this.parentElement.querySelectorAll('.soudures-plan-ligne')];
-        const suivant = onglets[(onglets.indexOf(this) + pas + onglets.length) % onglets.length];
-        suivant.focus();
-        ouvrirPlan(suivant);
+    $(document).on('input', '.soudures-plan-recherche input', filtrerPlans);
+    $(document).on('click', '.soudures-plan-option', function () { choisirPlan(this); });
+
+    // Le clavier : la recherche garde le focus, les flèches promènent la surbrillance,
+    // Entrée ouvre le plan surligné — ou le premier trouvé —, Échap referme.
+    $(document).on('keydown', '.soudures-plan-recherche input, .soudures-plan-option', function (evenement) {
+        const c = choixPlan();
+        if (!c) return;
+        const visibles = c.options.filter(option => !option.hidden);
+        const actif = c.zone.querySelector('.soudures-plan-option.est-active');
+        if (evenement.key === 'Escape') {
+            evenement.preventDefault();
+            evenement.stopPropagation();
+            fermerChoixPlan(true);
+        } else if (evenement.key === 'ArrowDown' || evenement.key === 'ArrowUp') {
+            evenement.preventDefault();
+            const rang = visibles.indexOf(actif);
+            const pas = evenement.key === 'ArrowDown' ? 1 : -1;
+            const suivant = visibles[rang === -1 ? (pas > 0 ? 0 : visibles.length - 1) : (rang + pas + visibles.length) % visibles.length];
+            actif?.classList.remove('est-active');
+            suivant?.classList.add('est-active');
+            suivant?.scrollIntoView({ block: 'nearest' });
+        } else if (evenement.key === 'Enter') {
+            evenement.preventDefault();
+            choisirPlan(actif && !actif.hidden ? actif : visibles[0]);
+        }
+    });
+    $(document).on('input', '.soudures-plan-recherche input', function () {
+        choixPlan()?.zone.querySelector('.soudures-plan-option.est-active')?.classList.remove('est-active');
     });
 
     // Le filtrage : tout est déjà rendu, on se contente de cacher ce qui ne correspond

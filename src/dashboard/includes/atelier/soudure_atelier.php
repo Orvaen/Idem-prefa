@@ -200,6 +200,37 @@ function soudureAtelierEnregistrer(PDO $db, int $elementId, array $plan, int $pa
 }
 
 /**
+ * Les plans confiés à quelqu'un, en une seule requête : de quoi les nommer et les choisir,
+ * sans rien lire des PDF. Le nombre de feuilles est la somme des pages de leurs ISO,
+ * retenue au dépôt.
+ *
+ * C'est le sélecteur de « Mes soudures » qui s'en sert : il peut y avoir des centaines de
+ * plans, et l'écran ne lit ensuite les feuilles que de celui qu'on ouvre.
+ *
+ * @return list<array{element: int, reference: string, demande: int, affaire: string, feuilles: int}>
+ */
+function soudureAtelierPlans(PDO $db, int $userId): array
+{
+    $stmt = $db->prepare("SELECT e.id, e.reference, e.id_demande, d.nom_affaire,
+            COALESCE(SUM(GREATEST(COALESCE(doc.pages, 1), 1)), 0) AS feuilles
+        FROM (SELECT DISTINCT id_element FROM affectation_atelier WHERE id_utilisateur = ? AND actif = 1) a
+        JOIN element_atelier e ON e.id = a.id_element
+        JOIN demande_prefabrication d ON d.id = e.id_demande
+        LEFT JOIN element_atelier_document doc ON doc.id_element = e.id AND doc.type_document = 'plan'
+        WHERE d.id_statut = 2
+        GROUP BY e.id, e.reference, e.id_demande, d.nom_affaire
+        ORDER BY e.id_demande DESC, e.reference");
+    $stmt->execute([$userId]);
+    return array_map(static fn (array $ligne): array => [
+        'element' => (int) $ligne['id'],
+        'reference' => (string) $ligne['reference'],
+        'demande' => (int) $ligne['id_demande'],
+        'affaire' => (string) ($ligne['nom_affaire'] ?? ''),
+        'feuilles' => (int) $ligne['feuilles'],
+    ], $stmt->fetchAll());
+}
+
+/**
  * Les feuilles ISO que cette personne peut travailler : une entrée par page de cahier,
  * avec où en est chacune.
  *
@@ -217,15 +248,19 @@ function soudureAtelierEnregistrer(PDO $db, int $elementId, array $plan, int $pa
  * @return list<array{element:int, reference:string, libelle:string, demande:int, document:int,
  *                    nom:string, numero:string, page:int, pages:int, faites:int, imprimees:?int}>
  */
-function soudureAtelierFeuilles(PDO $db, int $userId): array
+function soudureAtelierFeuilles(PDO $db, int $userId, ?int $seulPlan = null): array
 {
+    // « $seulPlan » : l'écran ne lit plus que le plan ouvert. Lire les feuilles de tous les
+    // plans confiés relisait l'analyse de chaque page de chaque PDF à chaque affichage —
+    // une seconde pour dix plans, une minute pour six cents.
     $stmt = $db->prepare('SELECT DISTINCT e.id, e.reference, e.libelle, e.id_demande
         FROM affectation_atelier a
         JOIN element_atelier e ON e.id = a.id_element
         JOIN demande_prefabrication d ON d.id = e.id_demande
-        WHERE a.id_utilisateur = ? AND a.actif = 1 AND d.id_statut = 2
+        WHERE a.id_utilisateur = ? AND a.actif = 1 AND d.id_statut = 2'
+        . ($seulPlan !== null ? ' AND e.id = ?' : '') . '
         ORDER BY e.id_demande DESC, e.reference');
-    $stmt->execute([$userId]);
+    $stmt->execute($seulPlan !== null ? [$userId, $seulPlan] : [$userId]);
 
     // Les cordons renseignés, rangés par feuille et par page : une lecture par plan, et
     // non une par ligne du tableau. Même condition qu'avancementSouduresFaites — une
