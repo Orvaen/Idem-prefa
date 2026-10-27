@@ -152,7 +152,7 @@
         const entete = racine.querySelector('[data-feuille-compte]');
         if (entete) {
             entete.textContent = total
-                ? faites + ' / ' + total + ' cordons renseignés'
+                ? faites + ' / ' + total + ' cordons'
                 : (reponse.message || 'aucune ligne reconnue sur cette feuille');
         }
         majTableau(racine, reponse);
@@ -167,12 +167,13 @@
             const depuis = reponse.attente ? reponse.attente.depuis : '';
             attente.hidden = !combien && !depuis;
             if (combien) {
+                // Court : la phrase tient sur une ligne de la pastille, à côté du point.
                 attente.textContent = (combien > 1
-                    ? combien + ' cordons attendent la validation du chef d’atelier'
-                    : 'Un cordon attend la validation du chef d’atelier')
+                    ? combien + ' cordons à valider par le chef'
+                    : '1 cordon à valider par le chef')
                     + (depuis ? ' · déclarés le ' + depuis : '');
             } else if (depuis) {
-                attente.textContent = 'Votre déclaration est chez le chef d’atelier, envoyée le ' + depuis;
+                attente.textContent = 'Déclaration chez le chef depuis le ' + depuis;
             }
         }
 
@@ -275,7 +276,9 @@
         // cédé ses colonnes d'identité.
         const plan = racine.querySelector('[data-feuille-plan]');
         if (plan) {
-            plan.textContent = [ligne.dataset.plan, ligne.dataset.demande].filter(Boolean).join(' · ');
+            // Le numéro de la demande seul : la référence complète y ajoutait l'affaire, et la
+            // ligne passait sur deux.
+            plan.textContent = [ligne.dataset.plan, ligne.dataset.reference || ligne.dataset.demande].filter(Boolean).join(' · ');
         }
 
         charger();

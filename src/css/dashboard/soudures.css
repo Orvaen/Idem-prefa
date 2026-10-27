@@ -569,3 +569,320 @@
         overflow-y: visible;
     }
 }
+
+/* ==========================================================================
+   LA SAISIE D'UNE FEUILLE — SUR LA DA
+   ==========================================================================
+
+   La même grammaire que les volets de l'application : un en-tête collant (surtitre,
+   titre à 17px, une ligne de contexte, les commandes à droite sur la ligne du titre), un
+   tableau à la hauteur d'une ligne de tableau, et un pied collant qui porte le seul
+   bouton plein de l'écran, noir (DA, § 6). « html » en tête là où le thème clair pose des
+   « !important » génériques sur les paragraphes, les champs et les cellules. */
+
+#soudures-page .soudures-saisie-contenu {
+    display: flex;
+    flex-direction: column;
+    padding-left: 24px;
+}
+
+/* ----- L'en-tête ----- */
+
+#soudures-page .soudures-saisie-entete {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    margin: 0;
+    padding: 0 0 12px;
+    border-bottom: 1px dashed var(--border);
+    background: var(--surface);
+}
+
+.soudures-saisie-identite {
+    min-width: 0;
+}
+
+html #soudures-page .soudures-saisie-surtitre,
+html #soudures-page .soudures-saisie-parcours {
+    margin: 0;
+    color: var(--text-muted) !important;
+    font-size: 12px;
+}
+
+html #soudures-page .soudures-saisie-surtitre {
+    margin-bottom: 2px;
+    font-weight: 500;
+}
+
+html #soudures-page .soudures-saisie-parcours {
+    margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+}
+
+#soudures-page .soudures-saisie-entete h2 {
+    margin: 0;
+    color: var(--text);
+    font-size: 17px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.3;
+}
+
+#soudures-page .soudures-saisie-entete h2 span {
+    color: inherit;
+}
+
+/* Ce qui attend le chef : une pastille d'attente, pas une phrase à puce. */
+html #soudures-page .soudures-attente {
+    display: inline-flex;
+    width: fit-content;
+    gap: 6px;
+    margin: 8px 0 0;
+    padding: 2px 8px;
+    border-radius: var(--r-sm);
+    background: var(--attente-fond);
+    color: var(--attente-texte) !important;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+html #soudures-page .soudures-attente[hidden] {
+    display: none;
+}
+
+#soudures-page .soudures-saisie-actions {
+    flex: none;
+    gap: 4px;
+}
+
+/* Les commandes : 28px, rayon 6, en texte neutre ; la croix nue. */
+#soudures-page .soudures-saisie-actions .soudures-ouvrir-plan {
+    height: var(--h-md);
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+#soudures-page .soudures-saisie-actions .soudures-ouvrir-plan:hover {
+    background: var(--hover);
+}
+
+#soudures-page .soudures-saisie-actions .prefa-detail-close {
+    width: var(--h-md);
+    height: var(--h-md);
+    border: 0;
+    border-radius: var(--r-md);
+}
+
+#soudures-page .soudures-saisie-actions .prefa-detail-close .icon {
+    width: 16px;
+    height: 16px;
+}
+
+/* ----- Le tableau des cordons : 36px par ligne ----- */
+
+#soudures-page #soudures-form {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+}
+
+#soudures-page .soudures-cordons {
+    min-width: 0;
+    max-width: none;
+    width: 100%;
+}
+
+html #soudures-page .soudures-cordons th {
+    height: 32px;
+    padding: 0 8px;
+    background: transparent !important;
+}
+
+html #soudures-page .soudures-cordons td {
+    height: 36px;
+    padding: 0 8px;
+    background: transparent !important;
+}
+
+html #soudures-page .soudures-cordons tbody tr:hover > td {
+    background: var(--ligne-survol) !important;
+}
+
+#soudures-page .soudures-cordons th:first-child,
+#soudures-page .soudures-numero-cellule {
+    width: 56px;
+    padding-left: 0;
+}
+
+#soudures-page .soudures-champ {
+    width: 160px;
+}
+
+/* Le repère, en chiffre nu, avec un point d'état devant : vert quand le chef l'a validé,
+   ambre tant qu'il attend, rien quand il reste à faire. Les ronds pleins faisaient une
+   colonne de jetons qui se lisait avant les données. */
+#soudures-page .soudures-numero {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: auto;
+    height: auto;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+#soudures-page .soudures-numero::before {
+    content: "";
+    flex: none;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: transparent;
+}
+
+#soudures-page .soudures-ligne.est-faite .soudures-numero {
+    border: 0;
+    background: none;
+    color: var(--text);
+}
+
+#soudures-page .soudures-ligne.est-faite .soudures-numero::before {
+    background: var(--succes-texte);
+}
+
+#soudures-page .soudures-ligne.est-en-attente .soudures-numero::before {
+    background: var(--attente-texte);
+}
+
+#soudures-page .soudures-ligne.est-en-attente .soudures-numero::after {
+    content: none;
+}
+
+/* Un repère ajouté hors du tableau imprimé : en italique sourd, l'infobulle dit pourquoi. */
+#soudures-page .soudures-ligne.est-hors-tableau .soudures-numero {
+    border: 0;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* Les champs : 28px, rayon 6, cadre fin — une case à remplir se voit sans qu'on la
+   survole, puisqu'on vient ici pour en remplir quinze. */
+html #soudures-page .soudures-champ input {
+    height: var(--h-md);
+    padding: 0 8px;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--r-md);
+    background: var(--surface) !important;
+    color: var(--text) !important;
+    font-size: 13px;
+}
+
+html #soudures-page .soudures-champ input:hover:not(:disabled) {
+    border-color: var(--border-fort) !important;
+}
+
+html #soudures-page .soudures-champ input:focus {
+    border-color: var(--accent) !important;
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+}
+
+/* Le cordon de quelqu'un d'autre, ou d'une feuille close : du texte, sans cadre. */
+html #soudures-page .soudures-champ input:disabled {
+    border-color: transparent !important;
+    background: transparent !important;
+    color: var(--text-muted) !important;
+}
+
+#soudures-page .soudures-cordons .soudures-soudeur {
+    width: auto;
+    font-size: 13px;
+}
+
+/* ----- Le pied : collé au bas du volet, le bouton plein noir à droite ----- */
+
+#soudures-page .soudures-pied {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    margin: 0;
+    padding: 12px 0;
+    border-top: 1px dashed var(--border);
+    background: var(--surface);
+}
+
+#soudures-page .soudures-actions {
+    width: 100%;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+#soudures-page #soudures-form button[type="submit"] {
+    height: var(--h-lg);
+    padding: 0 14px;
+    border-radius: var(--r-md);
+    background: var(--bouton-plein);
+    color: var(--bouton-plein-texte);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+#soudures-page #soudures-form button[type="submit"]:hover:not(:disabled) {
+    background: var(--bouton-plein-hover);
+}
+
+@media (max-width: 1260px) {
+    #soudures-page .soudures-saisie-contenu {
+        padding-left: 0;
+    }
+}
+
+/* Des largeurs tenues : le numéro est court, la date a besoin de sa place, le procédé
+   aussi (« 141 », « TIG »…), et le soudeur prend le reste. Laissé libre, le navigateur
+   donnait la largeur au numéro et écrasait le procédé à deux lettres. */
+#soudures-page .soudures-cordons {
+    table-layout: fixed;
+}
+
+#soudures-page .soudures-cordons th:nth-child(1) { width: 56px; }
+#soudures-page .soudures-cordons th:nth-child(2) { width: 160px; }
+#soudures-page .soudures-cordons th:nth-child(3) { width: 112px; }
+
+#soudures-page .soudures-champ {
+    width: auto;
+}
+
+html #soudures-page .soudures-champ input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#soudures-page .soudures-cordons .soudures-soudeur {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* La liste des demandes donne à tout « .prefa-table » une largeur minimale de 880px et
+   ramène ses en-têtes à leur contenu : le tableau des cordons débordait du volet et la
+   colonne du soudeur sortait du cadre. On lui rend sa largeur et ses colonnes. */
+html #soudures-page table.prefa-table.soudures-cordons {
+    min-width: 0;
+    width: 100%;
+    table-layout: fixed;
+}
+
+html #soudures-page .soudures-cordons thead th:nth-child(1) { width: 56px; }
+html #soudures-page .soudures-cordons thead th:nth-child(2) { width: 160px; }
+html #soudures-page .soudures-cordons thead th:nth-child(3) { width: 112px; }
+html #soudures-page .soudures-cordons thead th:nth-child(4) { width: auto; }

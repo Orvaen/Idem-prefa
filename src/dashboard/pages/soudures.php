@@ -226,6 +226,7 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
                                             data-feuille="<?= prefaEscape($nom) ?>"
                                             data-plan="<?= prefaEscape($plan['reference']) ?>"
                                             data-demande="<?= prefaEscape($demande) ?>"
+                                            data-reference="<?= prefaEscape(prefaReference($plan['demande'])) ?>"
                                             data-element="<?= (int) $plan['element'] ?>"
                                             data-etat="<?= $etat['cle'] ?>"
                                             data-cherche="<?= prefaEscape(mb_strtolower($demande . ' ' . $plan['reference'] . ' ' . $plan['affaire'] . ' ' . $nom)) ?>">
@@ -273,10 +274,14 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
               // des feuilles. Deux formes pour tout l'écran : un en-tête, un tableau. ?>
         <section class="soudures-saisie atelier-detail-content" aria-labelledby="soudures-saisie-titre" data-vide>
             <div class="soudures-saisie-contenu">
-            <div class="prefa-detail-heading">
-                <div>
-                    <h2 id="soudures-saisie-titre">Feuille <span data-feuille-titre></span></h2>
-                    <p><span data-feuille-plan></span><span data-feuille-compte></span></p>
+            <?php // L'en-tête des volets : ce que c'est (« Feuille »), laquelle, et d'où elle
+                  // vient ; les commandes à droite, sur la ligne du titre. Elles tombaient
+                  // sous le texte, à gauche, et la croix flottait seule à côté d'un bouton. ?>
+            <div class="prefa-detail-heading soudures-saisie-entete">
+                <div class="soudures-saisie-identite">
+                    <p class="soudures-saisie-surtitre">Feuille</p>
+                    <h2 id="soudures-saisie-titre"><span data-feuille-titre></span></h2>
+                    <p class="soudures-saisie-parcours"><span data-feuille-plan></span><span data-feuille-compte></span></p>
                     <?php // Où en est la feuille auprès du chef. Le message d'enregistrement le
                           // disait une fois puis s'effaçait : on lisait « 1 soudure enregistrée »,
                           // en vert, et plus rien ensuite ne distinguait une ligne validée d'une
@@ -285,8 +290,10 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
                 </div>
                 <div class="soudures-saisie-actions">
                     <button type="button" class="soudures-ouvrir-plan" data-feuille-plan-bouton data-repere=""
-                            title="Voir le dessin pour retrouver le repère d’un cordon">Ouvrir la feuille</button>
-                    <button type="button" class="prefa-detail-close" data-fermer-saisie aria-label="Fermer la feuille">✕</button>
+                            title="Voir le dessin pour retrouver le repère d’un cordon">Voir le dessin</button>
+                    <button type="button" class="prefa-detail-close" data-fermer-saisie aria-label="Fermer la feuille" title="Fermer">
+                        <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg>
+                    </button>
                 </div>
             </div>
 
@@ -296,7 +303,7 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles'][0] ?? nu
                         <thead><tr>
                             <th scope="col">N°</th>
                             <th scope="col">Date</th>
-                            <th scope="col">Type de soudure</th>
+                            <th scope="col">Procédé</th>
                             <th scope="col">Soudeur</th>
                         </tr></thead>
                         <tbody id="soudures-corps">
