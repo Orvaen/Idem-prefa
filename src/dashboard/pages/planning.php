@@ -329,7 +329,7 @@ function planningIcone(string $nom): string
                     <!-- Ligne 1 : Semaines -->
                     <div class="gantt-weeks-header">
                         <?php foreach ($weeks as $w): ?>
-                            <div class="gantt-week-cell" style="grid-column: span <?= $w['count'] ?>;">
+                            <div class="gantt-week-cell" style="--etendue: <?= $w['count'] ?>;">
                                 <?= prefaEscape($w['label']) ?>
                             </div>
                         <?php endforeach; ?>
@@ -356,7 +356,7 @@ function planningIcone(string $nom): string
                         <?php if ($todayCol !== null): ?>
                             <!-- « / span 1 » : un élément absolu dont la colonne n'a pas de fin s'étend jusqu'au
                                  bout de la grille, et le trait se centrait 27 jours plus loin. -->
-                            <div class="gantt-today-line" style="grid-column: <?= $todayCol ?> / span 1;" title="Aujourd’hui"></div>
+                            <div class="gantt-today-line" style="--colonne: <?= $todayCol ?>;" title="Aujourd’hui"></div>
                         <?php endif; ?>
                     </div>
 
@@ -379,7 +379,7 @@ function planningIcone(string $nom): string
                                 <div class="gantt-track">
                                     <?php if ($groupe['colonnes']): ?>
                                         <button type="button" class="gantt-bar-affaire" data-ouvrir-affaire="<?= prefaEscape($groupe['cle']) ?>"
-                                            style="grid-column: <?= $groupe['colonnes'][0] ?> / span <?= $groupe['colonnes'][1] ?>;"
+                                            style="--debut: <?= $groupe['colonnes'][0] ?>; --duree: <?= $groupe['colonnes'][1] ?>;"
                                             title="<?= prefaEscape($groupe['nom'] . ' · ' . prefaFormatDate($groupe['debut']) . ' au ' . prefaFormatDate($groupe['fin'])) ?>"
                                             aria-label="<?= prefaEscape('Affaire ' . $groupe['nom'] . ' · ' . prefaFormatDate($groupe['debut']) . ' au ' . prefaFormatDate($groupe['fin'])) ?>"></button>
                                     <?php endif; ?>
@@ -400,7 +400,7 @@ function planningIcone(string $nom): string
                                         <?php if ($row['isVisible']): ?>
                                             <button type="button" class="gantt-bar <?= $row['colorClass'] ?>"
                                                 data-ouvrir="<?= (int) $r['id'] ?>"
-                                                style="grid-column: <?= $row['colStart'] ?> / span <?= $row['span'] ?>;"
+                                                style="--debut: <?= $row['colStart'] ?>; --duree: <?= $row['span'] ?>;"
                                                 title="<?= prefaEscape('Demande ' . $r['reference_demande'] . ' · ' . prefaFormatDate($r['date_debut_planifiee']) . ' au ' . prefaFormatDate($r['date_fin_planifiee'])) ?>"
                                                 aria-label="<?= prefaEscape('Demande ' . $r['reference_demande'] . ' · ' . $groupe['nom'] . ' · ' . prefaFormatDate($r['date_debut_planifiee']) . ' au ' . prefaFormatDate($r['date_fin_planifiee'])) ?>"></button>
                                         <?php endif; ?>

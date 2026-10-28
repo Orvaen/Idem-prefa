@@ -328,8 +328,10 @@ html #soudures-page .soudures-renseigner {
     background: var(--hover);
 }
 
+/* La part faite arrive en variable — du serveur au chargement, de soudures.js ensuite. */
 .soudures-barre > span {
     display: block;
+    width: var(--part, 0%);
     height: 100%;
     border-radius: inherit;
     background: var(--accent);

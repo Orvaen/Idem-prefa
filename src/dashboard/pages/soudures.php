@@ -202,7 +202,7 @@ $libelleFeuilles = static fn (int $n): string => $n === 0 ? 'en attente du dessi
                                     </td>
                                     <td class="prefa-nombre soudures-feuille-cordons">
                                         <span data-cordons><?= prefaEscape(soudureAtelierCompteFeuille($feuille['faites'], $feuille['imprimees'])) ?></span>
-                                        <?php if ($feuille['imprimees']): ?><span class="soudures-barre" aria-hidden="true"><span style="width: <?= $partFaite ?>%"></span></span><?php endif; ?>
+                                        <?php if ($feuille['imprimees']): ?><span class="soudures-barre" aria-hidden="true"><span style="--part: <?= $partFaite ?>%"></span></span><?php endif; ?>
                                     </td>
                                     <td class="soudures-feuille-etat"><span class="prefa-status <?= $etat['classe'] ?>" data-etat><?= prefaEscape($etat['libelle']) ?></span></td>
                                     <td class="soudures-feuille-actions">

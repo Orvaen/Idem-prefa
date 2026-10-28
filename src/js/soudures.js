@@ -148,7 +148,7 @@
                 barre.appendChild(document.createElement('span'));
                 compte.after(barre);
             }
-            barre.firstElementChild.style.width = feuille.part + '%';
+            barre.firstElementChild.style.setProperty('--part', feuille.part + '%');
         }
     }
 

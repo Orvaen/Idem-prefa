@@ -2889,8 +2889,10 @@ html .suivi-soudures-select select:focus {
     background: var(--hover);
 }
 
+/* La part faite arrive du serveur, en variable : le PHP ne dit que le nombre. */
 .suivi-soudures-barre > span {
     display: block;
+    width: var(--part, 0%);
     height: 100%;
     border-radius: inherit;
     background: var(--accent);

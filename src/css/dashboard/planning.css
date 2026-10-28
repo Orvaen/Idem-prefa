@@ -346,7 +346,11 @@ body.is-panning-gantt .gantt-bar:hover {
 }
 
 /* La semaine se lit à son début, comme un intertitre — pas centrée sur sept cases. */
+/* Les colonnes viennent du serveur, en variables : planning.php dit où commence et combien
+   dure chaque chose, la feuille dit comment la poser. Le PHP écrivait « grid-column »
+   lui-même, dans l'attribut style. */
 .gantt-week-cell {
+    grid-column: span var(--etendue, 1);
     display: flex;
     align-items: center;
     padding-left: 8px;
@@ -436,6 +440,7 @@ body.is-panning-gantt .gantt-bar:hover {
    balisage la borne (« N / span 1 ») : sans fin de colonne, la zone courait jusqu'au bout
    de la grille et le trait sortait au 23 novembre pour le 27 octobre. */
 .gantt-today-line {
+    grid-column: var(--colonne) / span 1;
     position: absolute;
     top: 0;
     bottom: 0;
@@ -553,6 +558,7 @@ body.is-panning-gantt .gantt-bar:hover {
    filet de la même teinte à gauche. Elle ne porte pas de texte — la demande est nommée
    dans la colonne de gauche, et la couleur suffit à dire le demandeur (voir la légende). */
 .gantt-bar {
+    grid-column: var(--debut) / span var(--duree);
     position: relative;
     z-index: 3;
     display: flex;
@@ -983,6 +989,7 @@ html body:has(.prefa-detail-row.planning-volet-rang:not([hidden]))::before {
 }
 
 .gantt-bar-affaire {
+    grid-column: var(--debut) / span var(--duree);
     position: relative;
     z-index: 3;
     height: 8px;

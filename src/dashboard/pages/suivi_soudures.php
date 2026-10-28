@@ -152,7 +152,7 @@ $etatDuPlan = static function (array $ligne): array {
                             <?php $partFaite = $ligne['prevues'] ? min(100, (int) round($ligne['faites'] * 100 / $ligne['prevues'])) : 0; ?>
                             <td class="prefa-nombre suivi-soudures-cordons"<?= $ligne['lues'] ? ' title="' . prefaEscape('Cordons prévus ' . $ligne['lues']) . '"' : '' ?>>
                                 <span class="suivi-soudures-compte"><?= $ligne['faites'] ?><?= $ligne['prevues'] ? '<span> / ' . $ligne['prevues'] . '</span>' : '' ?></span>
-                                <?php if ($ligne['prevues']): ?><span class="suivi-soudures-barre" aria-hidden="true"><span style="width: <?= $partFaite ?>%"></span></span><?php endif; ?>
+                                <?php if ($ligne['prevues']): ?><span class="suivi-soudures-barre" aria-hidden="true"><span style="--part: <?= $partFaite ?>%"></span></span><?php endif; ?>
                             </td>
                             <td class="prefa-nombre"><?= $ligne['avancement'] ?> %</td>
                             <td><span class="prefa-status <?= $etatClasse ?>"><?= $etatLibelle ?></span></td>
@@ -190,7 +190,7 @@ $etatDuPlan = static function (array $ligne): array {
                                         <h3 class="suivi-soudures-titre">Avancement</h3>
                                         <dl class="suivi-soudures-proprietes">
                                             <div><dt>Validé</dt><dd>
-                                                <span class="suivi-soudures-barre suivi-soudures-barre-large" aria-hidden="true"><span style="width: <?= min(100, max(0, $ligne['avancement'])) ?>%"></span></span>
+                                                <span class="suivi-soudures-barre suivi-soudures-barre-large" aria-hidden="true"><span style="--part: <?= min(100, max(0, $ligne['avancement'])) ?>%"></span></span>
                                                 <strong><?= $ligne['avancement'] ?> %</strong>
                                             </dd></div>
                                             <div><dt>Cordons relevés</dt><dd><strong><?= $ligne['faites'] ?></strong><?= $ligne['prevues'] ? '<span class="suivi-soudures-sur"> sur ' . $ligne['prevues'] . ' prévus</span>' : '' ?></dd></div>
