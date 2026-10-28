@@ -1,43 +1,43 @@
+// La poignée entre le menu et la carte : on tire, le menu suit.
+//
+// La largeur part de celle qu'avait le menu quand on a pris la poignée, plus le chemin
+// parcouru. Elle se lisait comme « pointeur moins bord du conteneur », qui oubliait les huit
+// pixels de marge du conteneur et les huit de la gouttière : la carte sautait de seize
+// pixels au premier mouvement, et son filet courait ensuite devant le pointeur.
+//
+// Le pointeur est capturé : le geste suit jusqu'au relâchement, même au-dessus d'un
+// document intégré. Écoutés sur le document, les mouvements s'y perdaient — et le
+// relâchement avec eux, si bien que la poignée restait accrochée au pointeur, bouton levé.
 $(function () {
+    const menu = document.getElementById('left-panel');
+    const poignee = document.getElementById('drag');
+    if (!menu || !poignee) return;
 
-    let isResizing = false;
+    let depart = null;
 
-    const container = $('#contenaire');
-    const left = $('#left-panel');
-    const drag = $('#drag'); // <-- il manquait celui-ci
-
-    drag.on('mousedown', function (e) {
-
-        isResizing = true;
-        drag.addClass('is-resizing');
-
-        e.preventDefault();
+    poignee.addEventListener('pointerdown', evenement => {
+        if (evenement.button !== 0) return;
+        depart = { x: evenement.clientX, largeur: menu.getBoundingClientRect().width };
+        poignee.setPointerCapture(evenement.pointerId);
+        poignee.classList.add('is-resizing');
+        document.body.classList.add('est-redimensionne');
+        evenement.preventDefault();
     });
 
-    $(document).on('mousemove', function (e) {
-
-        if (!isResizing) {
-            return;
-        }
-
-        const containerLeft = container.offset().left;
-        const newWidth = e.clientX - containerLeft;
-
-        const minWidth = 150;
-        const maxWidth = 600;
-
-        if (newWidth >= minWidth && newWidth <= maxWidth) {
-            left.css('width', newWidth + 'px');
-        }
+    poignee.addEventListener('pointermove', evenement => {
+        if (!depart) return;
+        // Bornée plutôt qu'ignorée : un geste rapide au-delà de 600 s'arrêtait à la
+        // dernière largeur admise, quelque part avant la butée.
+        const largeur = Math.min(600, Math.max(150, depart.largeur + evenement.clientX - depart.x));
+        menu.style.width = largeur + 'px';
     });
 
-    $(document).on('mouseup', function () {
-
-        isResizing = false;
-        drag.removeClass('is-resizing');
-
+    // La capture se perd au relâchement comme à l'interruption du geste : une seule fin.
+    poignee.addEventListener('lostpointercapture', () => {
+        depart = null;
+        poignee.classList.remove('is-resizing');
+        document.body.classList.remove('est-redimensionne');
     });
-
 });
 
 // Chaque bouton porte l'adresse de sa page, posée par le serveur depuis la déclaration du

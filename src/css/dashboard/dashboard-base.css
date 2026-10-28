@@ -860,12 +860,9 @@ textarea::placeholder {
 
 /* ===== RESIZE ===== */
 
-/* La poignée n'occupe plus de place : elle se superpose au trait de la barre. Six pixels
-   de large, c'était six pixels de vide entre les deux panneaux. */
-/* La poignee EST la gouttiere : large de huit pixels, elle separe les deux cartes de
-   l'ecart exact qui les borde, et offre enfin une prise a la souris. Large de zero, elle
-   recevait une gouttiere de chaque cote — seize pixels entre les cartes contre huit
-   autour — et il fallait viser un trait sans epaisseur pour redimensionner. */
+/* La poignee EST la gouttiere : large de huit pixels, elle separe le menu de la carte, et
+   offre enfin une prise a la souris. Large de zero, elle recevait une gouttiere de chaque
+   cote — seize pixels contre huit autour — et il fallait viser un trait sans epaisseur. */
 #drag {
     position: relative;
     width: 8px;
@@ -874,31 +871,47 @@ textarea::placeholder {
     z-index: 2;
 }
 
-/* La zone qu'on attrape déborde de part et d'autre du trait, et reste invisible : on
-   n'attrape pas un trait d'un pixel à la souris. */
+/* La zone qu'on attrape, invisible : toute la gouttière, et six pixels au-delà du filet de
+   la carte. C'est ce filet qu'on vise, la prise doit l'entourer — centrée sur la
+   gouttière, elle mordait sur le menu et s'arrêtait trois pixels après le filet. */
 #drag::before {
     content: "";
     position: absolute;
-    inset: 0 -4px;
+    inset: 0 -6px 0 0;
 }
 
-/* Ce qui se voit au survol : un trait fin, gris et translucide, posé sur la bordure. Le
-   bleu plein large de huit pixels sautait aux yeux pour un geste qu'on fait une fois par
-   mois — et il annonçait une poignée trois fois plus épaisse que le trait qu'elle déplace. */
+/* Ce qui se voit au survol : le filet de la carte qui se renforce, pas un second trait.
+   Il était posé contre le menu, huit pixels à gauche du filet — il flottait dans la
+   gouttière depuis qu'elle est devenue la poignée. Il s'arrête où le coin s'arrondit :
+   tiré jusqu'en haut, il dépassait de l'arrondi. Et il est opaque : translucide, il
+   prenait une teinte sur la gouttière et une autre sur le filet.
+
+   Mélangé à 35 % de texte, il tient 3:1 sur le cadre, le seuil d'un état — 3,27 en clair,
+   3,89 en sombre. Gris et fin quand même : le bleu plein large de huit pixels sautait aux
+   yeux pour un geste qu'on fait une fois par mois. */
 #drag::after {
     content: "";
     position: absolute;
-    top: 0;
-    bottom: 0;
-    left: -1px;
+    top: var(--r-xl);
+    bottom: var(--r-xl);
+    right: -1px;
     width: 2px;
-    background-color: hsl(220 9% 55% / 0);
+    border-radius: 1px;
+    background-color: transparent;
     transition: background-color 0.18s ease;
 }
 
 #drag:hover::after,
 #drag.is-resizing::after {
-    background-color: hsl(220 9% 55% / 0.38);
+    background-color: color-mix(in oklab, var(--border-fort), var(--text) 35%);
+}
+
+/* Pendant le geste, tout l'écran prend le curseur de la poignée et rien ne se surligne :
+   le pointeur passe au-dessus des écrans, de leurs liens et de leurs textes. */
+body.est-redimensionne,
+body.est-redimensionne * {
+    cursor: col-resize !important;
+    user-select: none;
 }
 
 /* ===== BOUTON HIDE ===== */
