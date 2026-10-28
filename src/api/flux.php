@@ -93,6 +93,12 @@ $compteurs = static function () use ($db, $visible, $utilisateur): array {
         'urgentes' => $compte(' AND d.id_statut = 1 AND d.urgent = 1'),
         // Les affaires confiées pas encore vues : la pastille « +N » de l'entrée Accueil.
         'affairesNouvelles' => affairesNouvellesCompte($db, $utilisateur->id),
+        // La tuile « Mes affaires » de l'accueil du chargé d'affaire.
+        'mesAffaires' => (static function () use ($db, $utilisateur): int {
+            $lecture = $db->prepare('SELECT COUNT(*) FROM affaire WHERE id_charge_affaire = ?');
+            $lecture->execute([$utilisateur->id]);
+            return (int) $lecture->fetchColumn();
+        })(),
     ];
 };
 

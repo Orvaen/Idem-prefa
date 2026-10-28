@@ -68,7 +68,7 @@
 
     // Les compteurs sont posés, jamais incrémentés : deux onglets ouverts, une alerte
     // ratée pendant une reconnexion, et un compteur incrémenté dérive sans qu'on le voie.
-    function poserCompteurs({ enAttente, urgentes, affairesNouvelles }) {
+    function poserCompteurs({ enAttente, urgentes, affairesNouvelles, mesAffaires }) {
         // La pastille de l'entrée Accueil : « +1 » pour une affaire confiée pas encore vue.
         // Sur l'accueil même, elle reste éteinte — la liste est sous les yeux à la prochaine
         // ouverture, et c'est l'ouverture qui vaut lecture.
@@ -81,14 +81,17 @@
         if (typeof urgentes === 'number' && typeof window.updateUrgentBadge === 'function') {
             window.updateUrgentBadge(urgentes);
         }
-        const tuile = (cle, valeur) => {
+        // « alerte » : une tuile qui réclame une action se teinte dès qu'elle n'est pas à zéro ;
+        // un simple compte (mes affaires) ne se teinte jamais.
+        const tuile = (cle, valeur, alerte = true) => {
             const cible = document.querySelector('.accueil-tuile[data-tuile="' + cle + '"]');
             if (!cible || typeof valeur !== 'number') return;
             cible.querySelector('.accueil-tuile-valeur').textContent = valeur;
-            cible.classList.toggle('est-en-alerte', valeur > 0);
+            if (alerte) cible.classList.toggle('est-en-alerte', valeur > 0);
         };
         tuile('en-attente', enAttente);
         tuile('urgentes', urgentes);
+        tuile('mes-affaires', mesAffaires, false);
     }
 
     // Ce que chaque sorte d'événement raconte. Le serveur dit ce qui s'est passé ; c'est

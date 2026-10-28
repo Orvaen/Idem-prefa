@@ -115,7 +115,9 @@ function accueilTuiles(PDO $db, Utilisateur $utilisateur): array
     $affaires = $db->prepare('SELECT COUNT(*) FROM affaire WHERE id_charge_affaire = ?');
     $affaires->execute([$utilisateur->id]);
     return [
-        $tuile((int) $affaires->fetchColumn(), 'Mes affaires', 'chantiers qui me sont confiés', 'btn-list-prefa'),
+        // « mes-affaires » : le flux la remet à jour dès qu'une affaire est confiée — sans
+        // quoi l'alerte arrivait et la tuile restait sur l'ancien chiffre jusqu'au rechargement.
+        $tuile((int) $affaires->fetchColumn(), 'Mes affaires', 'chantiers qui me sont confiés', 'btn-list-prefa', false, 'mes-affaires'),
         $tuile($demandes(' AND d.id_statut = 1'), 'En attente', 'demandes pas encore validées', 'btn-list-prefa'),
         $tuile($demandes(' AND d.id_statut = 2'), 'Validées', 'demandes parties en atelier', 'btn-list-prefa'),
         $tuile($demandes(' AND d.id_statut = 3'), 'Refusées', 'demandes à reprendre', 'btn-list-prefa', $demandes(' AND d.id_statut = 3') > 0),
