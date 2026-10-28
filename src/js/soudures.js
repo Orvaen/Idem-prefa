@@ -135,6 +135,21 @@
             etat.textContent = feuille.etat.libelle;
             etat.className = 'prefa-status ' + feuille.etat.classe;
         }
+
+        // La barre suit le compte. Elle était dessinée au chargement et jamais reprise :
+        // « 4 / 4 — Soudée » gardait sa barre aux trois quarts. Une feuille qui vient
+        // d'apprendre son total n'en avait pas encore : elle la reçoit.
+        if (compte && typeof feuille.part === 'number' && feuille.imprimees) {
+            let barre = ligne.querySelector('.soudures-barre');
+            if (!barre) {
+                barre = document.createElement('span');
+                barre.className = 'soudures-barre';
+                barre.setAttribute('aria-hidden', 'true');
+                barre.appendChild(document.createElement('span'));
+                compte.after(barre);
+            }
+            barre.firstElementChild.style.width = feuille.part + '%';
+        }
     }
 
     /**

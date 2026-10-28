@@ -239,7 +239,7 @@ $premiereFeuille = static fn (array $plan): ?array => $plan['feuilles_liste'][0]
                                                     <?php endif; ?>
                                                 </button>
                                             </td>
-                                            <?php $partFaite = $feuille['imprimees'] ? min(100, (int) round($feuille['faites'] * 100 / $feuille['imprimees'])) : 0; ?>
+                                            <?php $partFaite = soudureAtelierPartFeuille($feuille['faites'], $feuille['imprimees']); ?>
                                             <td class="prefa-nombre soudures-feuille-cordons">
                                                 <span data-cordons><?= prefaEscape(soudureAtelierCompteFeuille($feuille['faites'], $feuille['imprimees'])) ?></span>
                                                 <?php if ($feuille['imprimees']): ?><span class="soudures-barre" aria-hidden="true"><span style="width: <?= $partFaite ?>%"></span></span><?php endif; ?>

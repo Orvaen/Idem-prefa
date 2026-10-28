@@ -349,3 +349,15 @@ function soudureAtelierCompteFeuille(int $faites, ?int $imprimees): string
 {
     return $faites . ' / ' . ($imprimees === null ? '—' : $imprimees);
 }
+
+/**
+ * La part soudée d'une feuille, de 0 à 100 : la longueur de la barre sous le compte.
+ *
+ * Calculée ici et renvoyée avec le compte : la barre était dessinée au chargement de la
+ * page et jamais redessinée, si bien qu'une feuille passée à « 4 / 4 — Soudée » gardait
+ * sa barre à trois quarts.
+ */
+function soudureAtelierPartFeuille(int $faites, ?int $imprimees): int
+{
+    return $imprimees ? min(100, (int) round($faites * 100 / $imprimees)) : 0;
+}

@@ -59,6 +59,8 @@ echo json_encode([
     'feuille' => [
         'compte' => soudureAtelierCompteFeuille($feuille['faites'], $feuille['imprimees']),
         'etat' => soudureAtelierEtatFeuille($feuille['faites'], $feuille['imprimees']),
+        'part' => soudureAtelierPartFeuille($feuille['faites'], $feuille['imprimees']),
+        'imprimees' => $feuille['imprimees'],
     ],
     'plan' => [
         'prevues' => $prevu['prevues'],
