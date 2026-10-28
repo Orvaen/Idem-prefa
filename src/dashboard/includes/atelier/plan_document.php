@@ -106,3 +106,33 @@ function planDocumentDemande(array $source): ?int
     $id = filter_var($source['document'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
     return $id ?: null;
 }
+
+/**
+ * Le nombre de pages d'un PDF, lu par pdfinfo ; 0 s'il est illisible.
+ *
+ * Retenu au moment où le plan est rattaché à un élément — qu'il soit déposé dans le volet
+ * ou choisi parmi les documents de la demande — pour que chaque feuille d'un cahier ait sa
+ * liste soudure.
+ */
+function planDocumentCompterPages(string $chemin): int
+{
+    $infos = [];
+    exec('pdfinfo ' . escapeshellarg($chemin) . ' 2>/dev/null', $infos);
+    return preg_match('/^Pages:\s+(\d+)/m', implode("\n", $infos), $trouve) ? (int) $trouve[1] : 0;
+}
+
+/**
+ * Lance la lecture de toutes les feuilles d'un plan, sans attendre qu'elle finisse.
+ *
+ * La réponse part tout de suite ; la liste soudure de chaque page est gardée à mesure
+ * (outils/lire_feuilles.php). Sans cela le total des cordons prévus ne comptait que les
+ * pages déjà ouvertes. Relancer pendant une lecture ne fait rien : le script se retire si
+ * un autre tient déjà ce plan.
+ */
+function planDocumentLireEnFond(int $elementId): void
+{
+    $php = is_file('/usr/local/bin/php') ? '/usr/local/bin/php' : 'php';
+    $script = dirname(__DIR__, 2) . '/outils/lire_feuilles.php';
+    @exec(escapeshellarg($php) . ' ' . escapeshellarg($script) . ' ' . $elementId . ' > /dev/null 2>&1 &');
+}
+

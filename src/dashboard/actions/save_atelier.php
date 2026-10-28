@@ -3,6 +3,8 @@ require_once __DIR__ . '/../includes/prefa_context.php';
 require_once __DIR__ . '/../includes/atelier/prefa_workshop.php';
 require_once __DIR__ . '/../includes/demande/prefa_attachments.php';
 require_once __DIR__ . '/../includes/atelier/atelier.php';
+require_once __DIR__ . '/../includes/atelier/plan_document.php';
+require_once __DIR__ . '/../includes/lecture/plan_numeros.php';
 prefaPost();
 if (!$canManageWorkshop) prefaError(403, 'Action réservée au chef d’atelier ou à l’administrateur.');
 $requestId = filter_var($_POST['id'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
@@ -45,7 +47,18 @@ try {
         $db->prepare('INSERT INTO element_atelier (id_demande, reference, libelle, cree_par) VALUES (?, ?, ?, ?)')->execute([$requestId, $reference, $label, $actor['id']]);
         $elementId = (int) $db->lastInsertId();
         $link = $db->prepare('INSERT INTO element_atelier_document (id_element, type_document, cle_document) VALUES (?, ?, ?)');
-        foreach ($links as [$kind, $key]) $link->execute([$elementId, $kind, $key]);
+        // Un plan / ISO retient, comme au dépôt depuis le volet (upload_plan.php), son
+        // nombre de pages et le numéro de ligne de chaque feuille. Sans eux, un cahier de
+        // quinze pages valait une seule feuille : la liste soudure n'était lue que sur la
+        // première, et le total des cordons prévus s'arrêtait à elle.
+        $feuille = $db->prepare("INSERT INTO element_atelier_document (id_element, type_document, cle_document, pages, numeros_ligne)
+            VALUES (?, 'plan', ?, ?, ?)");
+        foreach ($links as [$kind, $key]) {
+            if ($kind !== 'plan') { $link->execute([$elementId, $kind, $key]); continue; }
+            $chemin = prefaAttachmentDirectory($requestId) . '/' . $key;
+            $numeros = planNumerosDeLigne($chemin);
+            $feuille->execute([$elementId, $key, max(1, planDocumentCompterPages($chemin)), $numeros ? json_encode($numeros) : null]);
+        }
     } elseif ($operation === 'documents') {
         // Les documents annexes d'un plan : QMOS, DMOS, matériel. Les feuilles ISO ne
         // passent plus par ici — elles se déposent et se retirent une par une dans le
@@ -112,6 +125,9 @@ try {
         }
     }
     $db->commit();
+    // Un plan neuf : ses feuilles se lisent dès maintenant, en tâche de fond, pour que le
+    // total des cordons prévus soit complet avant que l'atelier n'ouvre la première.
+    if ($operation === 'element') planDocumentLireEnFond($elementId);
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode(['success' => true, 'message' => 'Atelier mis à jour.']);
 } catch (InvalidArgumentException $e) {

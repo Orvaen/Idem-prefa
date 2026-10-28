@@ -15,6 +15,7 @@
 require_once __DIR__ . '/../includes/prefa_context.php';
 require_once __DIR__ . '/../includes/lecture/plan_numeros.php';
 require_once __DIR__ . '/../includes/demande/prefa_attachments.php';
+require_once __DIR__ . '/../includes/atelier/plan_document.php';
 
 prefaPost();
 if (!$canManageWorkshop) prefaError(403, 'Seul l’encadrement peut déposer un plan.');
@@ -67,9 +68,7 @@ if (!@move_uploaded_file($depot['tmp_name'], $chemin)) prefaError(507, 'Impossib
 
 // Le nombre de pages est relevé ici, une fois pour toutes : un cahier porte une liste
 // soudure par page, et le volet doit pouvoir les afficher sans relire le PDF.
-$pages = 0;
-exec('pdfinfo ' . escapeshellarg($chemin) . ' 2>/dev/null', $infos);
-if (preg_match('/^Pages:\s+(\d+)/m', implode("\n", $infos), $trouve)) $pages = (int) $trouve[1];
+$pages = planDocumentCompterPages($chemin);
 
 // Le numéro de ligne de chaque feuille, au même moment et pour la même raison : c'est
 // sous ce nom que l'atelier reconnaît une feuille, et c'est lui que le sommaire affiche.
@@ -92,6 +91,7 @@ try {
         ->execute([$elementId, $cle, max(1, $pages), $numeros ? json_encode($numeros) : null]);
     $documentId = (int) $db->lastInsertId();
     $db->commit();
+    planDocumentLireEnFond($elementId);
 } catch (Throwable $erreur) {
     $db->rollBack();
     @unlink($chemin);

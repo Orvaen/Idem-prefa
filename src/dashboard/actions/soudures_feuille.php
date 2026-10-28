@@ -33,6 +33,9 @@ $feuille = soudureAtelierFeuille($db, $elementId, $plan, $page, (int) $actor['id
 // dit pas où en est le cahier, et c'est pourtant ce qui part en validation.
 require_once __DIR__ . '/../includes/atelier/avancement.php';
 $prevu = avancementSouduresPrevues($db, $elementId);
+// Des feuilles pas encore lues — un plan rattaché avant la lecture en tâche de fond : le
+// tour se lance ici, et le total se complète pendant que le soudeur travaille.
+if ($prevu['lues'] < $prevu['pages']) planDocumentLireEnFond($elementId);
 // L'avancement que les cordons font bouger : celui du suivi soudage du plan.
 $cordons = avancementAffectationCordons($db, $elementId);
 
