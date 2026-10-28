@@ -336,7 +336,7 @@ function planningIcone(string $nom): string
                         </div>
                     <?php else: ?>
                         <?php foreach ($ganttRows as $row): $r = $row['request'];
-                            $titleAffaire = $r['nom_affaire'] ?: $r['demandeur']; ?>
+                            $titleAffaire = $r['nom_affaire'] ?: 'Sans affaire'; ?>
                             <div class="gantt-row <?= $r['id'] == $initialSelectedId ? 'is-selected' : '' ?>" data-affaire-id="<?= (int) $r['id'] ?>">
                                 <!-- Étiquette blanche à gauche -->
                                 <div class="gantt-label-col">
@@ -367,33 +367,6 @@ function planningIcone(string $nom): string
         </div>
     </div>
 
-    <?php
-    // Légende des couleurs : les demandeurs effectivement présents dans la période affichée.
-    $legende = [];
-    foreach ($ganttRows as $row) {
-        $creatorId = (int) $row['request']['creator_id'];
-        if (!$row['isVisible'] || isset($legende[$creatorId])) continue;
-        $legende[$creatorId] = [
-            'nom' => $row['request']['demandeur'] ?: 'Non renseigné',
-            'slot' => $personneSlot($creatorId),
-        ];
-    }
-    uasort($legende, static fn($a, $b) => $a['slot'] <=> $b['slot']);
-    ?>
-    <?php if ($legende): ?>
-        <div class="planning-legend">
-            <span class="planning-legend-title">Demandeur</span>
-            <ul class="planning-legend-list">
-                <?php foreach ($legende as $personne): ?>
-                    <li class="planning-legend-item">
-                        <span class="planning-legend-swatch planning-person-<?= (int) $personne['slot'] ?>" aria-hidden="true"></span>
-                        <?= prefaEscape($personne['nom']) ?>
-                    </li>
-                <?php endforeach; ?>
-            </ul>
-        </div>
-    <?php endif; ?>
-
     <!-- Les demandes sans dates : un groupe sous le calendrier, comme les groupes des
          listes, et non une carte repliée qu'on oubliait d'ouvrir. -->
     <?php if ($unplanned): ?>
@@ -409,7 +382,6 @@ function planningIcone(string $nom): string
                             <span class="gantt-ref"><?= prefaEscape($request['reference_demande']) ?></span>
                             <span class="planning-attente-nom"><?= prefaEscape($request['nom_affaire'] ?: '—') ?></span>
                             <?php if ($request['urgent']): ?><span class="pv-puce pv-puce-a_faire">Urgente</span><?php endif; ?>
-                            <span class="planning-attente-meta"><?= prefaEscape($request['demandeur'] ?: '—') ?></span>
                             <span class="planning-attente-meta"><?= prefaEscape(prefaFormatDays($heures / 24)) ?></span>
                             <span class="planning-attente-meta">Livraison <?= prefaEscape(prefaFormatDate($request['date_livraison_prevue'])) ?></span>
                             <span class="planning-attente-action"><?= $isAdmin ? 'Planifier' : 'Voir' ?></span>

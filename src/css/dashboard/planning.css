@@ -446,12 +446,16 @@ body.is-panning-gantt .gantt-bar:hover {
     border-bottom: none;
 }
 
+/* La colonne colle à gauche et les barres défilent dessous : son fond doit rester
+   opaque. En sombre, le survol est un blanc translucide — posé seul, il laissait voir la
+   barre au travers, et son texte se mêlait à celui de la ligne. On le pose donc sur la
+   surface. */
 .gantt-row:hover .gantt-label-col {
-    background: var(--ligne-survol);
+    background: linear-gradient(var(--ligne-survol), var(--ligne-survol)), var(--surface);
 }
 
 .gantt-row.is-selected .gantt-label-col {
-    background: var(--selection-fond);
+    background: linear-gradient(var(--selection-fond), var(--selection-fond)), var(--surface);
 }
 
 /* Colonne des affaires : du texte, pas des boutons encadrés. */
