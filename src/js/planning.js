@@ -166,6 +166,62 @@
         renderAvancementMatrix(req);
         renderCommentsList(req);
 
+        // Un seul volet à la fois : celui de l'affaire laisse la place à sa demande.
+        const affaire = root()?.querySelector('#planning-volet-affaire');
+        if (affaire) affaire.hidden = true;
+        volet.hidden = false;
+        volet.scrollTop = 0;
+    }
+
+    /**
+     * Le volet d'une affaire : sa période (de la première date de ses demandes à la
+     * dernière), qui en répond, sa charge, et la liste de ses demandes — planifiées ou
+     * non. Chaque demande ouvre son propre volet.
+     */
+    function ouvrirAffaire(cle) {
+        const demandes = requests().filter(r => r.affaire_cle === cle);
+        const volet = root()?.querySelector('#planning-volet-affaire');
+        if (!demandes.length || !volet) return;
+        marquer(0);
+        $('.gantt-row-affaire').removeClass('is-selected');
+        $(`.gantt-row-affaire[data-affaire-cle="${cle}"]`).addClass('is-selected');
+
+        const planifiees = demandes.filter(r => r.date_debut_planifiee && r.date_fin_planifiee);
+        const debuts = planifiees.map(r => r.date_debut_planifiee).sort();
+        const fins = planifiees.map(r => r.date_fin_planifiee).sort();
+        const livraisons = demandes.map(r => r.date_livraison_prevue).filter(Boolean).sort();
+        const heures = demandes.reduce((total, r) => total + getHoursForRequest(r), 0);
+
+        $('#planning-affaire-titre').text(demandes[0].affaire_libelle);
+        $('#planning-affaire-sous-titre').text(
+            demandes.length + ' demande' + (demandes.length > 1 ? 's' : '')
+            + ' · ' + planifiees.length + ' planifiée' + (planifiees.length > 1 ? 's' : ''));
+        $('#planning-affaire-charge').text(demandes[0].charge_affaire_nom || 'Non désigné');
+        $('#planning-affaire-debut').text(debuts.length ? displayDate(debuts[0]) : '—');
+        $('#planning-affaire-fin').text(fins.length ? displayDate(fins[fins.length - 1]) : '—');
+        $('#planning-affaire-charge-totale').text(Math.round(heures).toLocaleString('fr-FR') + ' h · ' + Math.max(1, Math.ceil(heures / 24)) + ' j');
+        $('#planning-affaire-livraison').text(livraisons.length ? displayDate(livraisons[livraisons.length - 1]) : '—');
+        $('#planning-affaire-compte').text(demandes.length);
+
+        const liste = $('#planning-affaire-demandes').empty();
+        demandes
+            .slice()
+            .sort((a, b) => (a.date_debut_planifiee || '9999') .localeCompare(b.date_debut_planifiee || '9999'))
+            .forEach(r => {
+                const planifiee = Boolean(r.date_debut_planifiee && r.date_fin_planifiee);
+                const ligne = $('<button type="button" class="planning-affaire-demande">').attr('data-ouvrir', r.id);
+                $('<span class="gantt-ref">').text(r.reference_demande).appendTo(ligne);
+                $('<span class="planning-affaire-dates">')
+                    .text(planifiee ? displayDate(r.date_debut_planifiee) + ' → ' + displayDate(r.date_fin_planifiee) : 'Pas encore planifiée')
+                    .appendTo(ligne);
+                if (r.urgent) $('<span class="pv-puce pv-puce-a_faire">').text('Urgente').appendTo(ligne);
+                $('<span>').attr('class', 'pv-puce ' + (planifiee ? 'pv-puce-fait' : 'pv-puce-sans_objet'))
+                    .text(planifiee ? 'Planifiée' : 'À planifier').appendTo(ligne);
+                $('<li>').append(ligne).appendTo(liste);
+            });
+
+        const demande = root()?.querySelector('#planning-volet');
+        if (demande) demande.hidden = true;
         volet.hidden = false;
         volet.scrollTop = 0;
     }
@@ -463,6 +519,9 @@
 
     $(document).on('click', '[data-ouvrir]', function () {
         selectAffaire(this.dataset.ouvrir);
+    });
+    $(document).on('click', '[data-ouvrir-affaire]', function () {
+        ouvrirAffaire(this.dataset.ouvrirAffaire);
     });
     document.addEventListener('planning:select', event => selectAffaire(event.detail.id));
     document.addEventListener('planning:edit', event => selectAffaire(event.detail.id));

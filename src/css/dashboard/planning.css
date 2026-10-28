@@ -1218,3 +1218,116 @@ html body:has(.prefa-detail-row.planning-volet-rang:not([hidden]))::before {
     clip: rect(0, 0, 0, 0);
     border: 0;
 }
+
+/* ==========================================================================
+   LES AFFAIRES
+   ==========================================================================
+
+   Le calendrier se lit par affaire : une ligne d'affaire, en titre de groupe, puis ses
+   demandes en retrait. La barre de l'affaire est neutre et fine — elle dit seulement la
+   période que couvrent ses demandes ; la couleur reste aux demandes, qui disent le
+   demandeur. */
+
+.gantt-row-affaire .gantt-affaire-badge {
+    gap: 8px;
+}
+
+.gantt-affaire-nom {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text);
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.gantt-row-affaire .prefa-groupe-compte {
+    flex: none;
+}
+
+.gantt-row-affaire + .gantt-row-demande,
+.gantt-row-demande + .gantt-row-demande {
+    border-top: 0;
+}
+
+/* Une affaire après la précédente : un filet un peu plus marqué pour séparer les groupes. */
+.gantt-row-demande + .gantt-row-affaire {
+    border-top: 1px solid var(--border);
+}
+
+.gantt-row-demande .gantt-affaire-badge {
+    padding-left: 28px;
+}
+
+/* Les demandes sous leur affaire : des lignes serrées, le groupe se lit d'un coup d'œil. */
+.gantt-row-affaire {
+    min-height: 40px;
+}
+
+.gantt-row-demande {
+    min-height: 34px;
+}
+
+.gantt-row-demande .gantt-ref {
+    font-weight: 500;
+}
+
+.gantt-row-demande .gantt-nom {
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
+.gantt-bar-affaire {
+    position: relative;
+    z-index: 3;
+    height: 8px;
+    margin: 0 1px;
+    padding: 0;
+    border: 1px solid var(--border-fort, var(--border));
+    border-radius: 999px;
+    background: var(--active);
+    cursor: pointer;
+}
+
+.gantt-bar-affaire:hover,
+.gantt-row-affaire.is-selected .gantt-bar-affaire {
+    border-color: var(--accent);
+}
+
+/* La liste des demandes dans le volet d'une affaire : une ligne par demande, cliquable. */
+.planning-affaire-demandes {
+    display: flex;
+    flex-direction: column;
+    margin: 0 -8px;
+    padding: 0;
+    list-style: none;
+}
+
+.planning-affaire-demande {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 36px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: var(--r-md);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.planning-affaire-demande:hover {
+    background: var(--hover);
+}
+
+.planning-affaire-dates {
+    flex: 1;
+    min-width: 0;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}

@@ -39,9 +39,13 @@ $requests = $db->query("SELECT d.id, d.nom_affaire, d.urgent, d.idUsers AS creat
     p.libelle AS passivation_libelle,
     TRIM(CONCAT(staff.prenom, ' ', staff.name)) AS personnel_atelier_nom,
     TRIM(CONCAT(val.prenom, ' ', val.name)) AS valideur_nom,
-    TRIM(CONCAT(u.prenom, ' ', u.name)) AS demandeur
+    TRIM(CONCAT(u.prenom, ' ', u.name)) AS demandeur,
+    d.id_affaire, a.nom AS affaire_nom,
+    TRIM(CONCAT(ca.prenom, ' ', ca.name)) AS charge_affaire_nom
     FROM demande_prefabrication d
     LEFT JOIN Utilisateur u ON u.id = d.idUsers
+    LEFT JOIN affaire a ON a.id = d.id_affaire
+    LEFT JOIN Utilisateur ca ON ca.id = a.id_charge_affaire
     LEFT JOIN type_matiere m ON m.id = d.id_matiere
     LEFT JOIN type_passivation p ON p.id = d.id_passivation
     LEFT JOIN Utilisateur staff ON staff.id = d.id_personnel_atelier
@@ -54,6 +58,10 @@ foreach ($requests as &$req) {
     $req['reference_demande'] = prefaReference($rId);
     $req['reference_complete'] = prefaReferenceComplete($rId);
     $req['plans'] = prefaAttachments($rId);
+    // L'affaire de la demande : la fiche affaire quand elle existe, sinon le nom saisi.
+    // Deux demandes sur le même chantier tombent ainsi sous la même ligne du planning.
+    $req['affaire_libelle'] = trim((string) ($req['affaire_nom'] ?: $req['nom_affaire'])) ?: 'Sans affaire';
+    $req['affaire_cle'] = $req['id_affaire'] ? 'a' . (int) $req['id_affaire'] : 'n' . md5(mb_strtolower($req['affaire_libelle']));
 
     $elemStmt = $db->prepare('SELECT e.id, e.reference, e.libelle, s.statuts FROM element_atelier e
         LEFT JOIN element_atelier_etapes s ON s.id_element = e.id WHERE e.id_demande = ? ORDER BY e.id');
@@ -181,6 +189,32 @@ foreach ($planned as $req) {
     ];
 }
 
+// Les demandes rangées par affaire : une ligne d'affaire, qui couvre de la première date
+// de ses demandes à la dernière, puis ses demandes. Les affaires se suivent dans l'ordre
+// de leur début, les demandes aussi.
+$colonnes = static function (DateTimeImmutable $first, DateTimeImmutable $last) use ($renduStart, $renduEnd): ?array {
+    if ($first > $renduEnd || $last < $renduStart) return null;
+    $debut = (int) $renduStart->diff(max($first, $renduStart))->days + 1;
+    $fin = (int) $renduStart->diff(min($last, $renduEnd))->days + 1;
+    return [$debut, max(1, $fin - $debut + 1)];
+};
+$affairesGantt = [];
+foreach ($ganttRows as $row) {
+    $r = $row['request'];
+    $cle = $r['affaire_cle'];
+    $affairesGantt[$cle] ??= ['cle' => $cle, 'nom' => $r['affaire_libelle'], 'debut' => $r['date_debut_planifiee'], 'fin' => $r['date_fin_planifiee'], 'rows' => [], 'urgent' => false];
+    $affairesGantt[$cle]['rows'][] = $row;
+    $affairesGantt[$cle]['debut'] = min($affairesGantt[$cle]['debut'], $r['date_debut_planifiee']);
+    $affairesGantt[$cle]['fin'] = max($affairesGantt[$cle]['fin'], $r['date_fin_planifiee']);
+    $affairesGantt[$cle]['urgent'] = $affairesGantt[$cle]['urgent'] || (bool) $r['urgent'];
+}
+foreach ($affairesGantt as &$groupe) {
+    usort($groupe['rows'], static fn($a, $b) => $a['request']['date_debut_planifiee'] <=> $b['request']['date_debut_planifiee']);
+    $groupe['colonnes'] = $colonnes(planningDate($groupe['debut']), planningDate($groupe['fin']));
+}
+unset($groupe);
+uasort($affairesGantt, static fn($a, $b) => [$a['debut'], $a['nom']] <=> [$b['debut'], $b['nom']]);
+
 // Le titre dit la période choisie. Le calendrier est rendu trois fois plus large (une
 // période de marge de chaque côté, pour le glisser) : lire ses bornes donnait « 3 octobre —
 // 25 décembre » pour quatre semaines affichées.
@@ -226,7 +260,7 @@ function planningIcone(string $nom): string
     <header class="prefa-heading prefa-list-heading">
         <div>
             <h1 id="planning-title">Planning</h1>
-            <p>Les demandes validées dans le temps de l’atelier : cliquez une barre pour la planifier ou la suivre.</p>
+            <p>Les demandes validées, rangées par affaire : cliquez une affaire pour sa vue d’ensemble, une demande pour la planifier.</p>
         </div>
         <div class="prefa-vue-outils">
             <button type="button" class="pv-outil" id="planning-refresh">
@@ -292,7 +326,7 @@ function planningIcone(string $nom): string
                 <!-- En-tête des colonnes -->
                 <div class="gantt-header-row">
                     <!-- Coin supérieur gauche (label affaire) -->
-                    <div class="gantt-header-corner">Demande</div>
+                    <div class="gantt-header-corner">Affaire et demandes</div>
 
                     <div class="gantt-header-cols">
                     <!-- Ligne 1 : Semaines -->
@@ -335,30 +369,47 @@ function planningIcone(string $nom): string
                             <p>Aucune affaire planifiée dans cette période.</p>
                         </div>
                     <?php else: ?>
-                        <?php foreach ($ganttRows as $row): $r = $row['request'];
-                            $titleAffaire = $r['nom_affaire'] ?: 'Sans affaire'; ?>
-                            <div class="gantt-row <?= $r['id'] == $initialSelectedId ? 'is-selected' : '' ?>" data-affaire-id="<?= (int) $r['id'] ?>">
-                                <!-- Étiquette blanche à gauche -->
+                        <?php foreach ($affairesGantt as $groupe): ?>
+                            <!-- La ligne de l'affaire : son nom, le nombre de demandes, et une
+                                 barre neutre qui couvre toute sa période. -->
+                            <div class="gantt-row gantt-row-affaire" data-affaire-cle="<?= prefaEscape($groupe['cle']) ?>">
                                 <div class="gantt-label-col">
-                                    <button type="button" class="gantt-affaire-badge" data-ouvrir="<?= (int) $r['id'] ?>" title="<?= prefaEscape($r['reference_demande'] . ' · ' . $titleAffaire) ?>">
-                                        <span class="gantt-ref"><?= prefaEscape($r['reference_demande']) ?></span>
-                                        <span class="gantt-nom"><?= prefaEscape($titleAffaire) ?></span>
-                                        <?php if ($r['urgent']): ?><span class="gantt-urgent" title="Urgente" aria-label="Urgente">
-                                            <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3 4.5 13.5H11l-1 7.5 8.5-10.5H12z" /></svg>
-                                        </span><?php endif; ?>
+                                    <button type="button" class="gantt-affaire-badge" data-ouvrir-affaire="<?= prefaEscape($groupe['cle']) ?>" title="<?= prefaEscape($groupe['nom']) ?>">
+                                        <span class="gantt-affaire-nom"><?= prefaEscape($groupe['nom']) ?></span>
+                                        <span class="prefa-groupe-compte"><?= count($groupe['rows']) ?></span>
                                     </button>
                                 </div>
-                                <!-- Piste de la barre de Gantt -->
                                 <div class="gantt-track">
-                                    <?php if ($row['isVisible']): ?>
-                                        <button type="button" class="gantt-bar <?= $row['colorClass'] ?> <?= $r['id'] == $initialSelectedId ? 'is-selected' : '' ?>"
-                                            data-ouvrir="<?= (int) $r['id'] ?>"
-                                            style="grid-column: <?= $row['colStart'] ?> / span <?= $row['span'] ?>;"
-                                            title="<?= prefaEscape('Demande ' . $r['reference_demande'] . ' · ' . $titleAffaire . ' · ' . prefaFormatDate($r['date_debut_planifiee']) . ' au ' . prefaFormatDate($r['date_fin_planifiee'])) ?>"
-                                            aria-label="<?= prefaEscape('Demande ' . $r['reference_demande'] . ' · ' . $titleAffaire . ' · ' . prefaFormatDate($r['date_debut_planifiee']) . ' au ' . prefaFormatDate($r['date_fin_planifiee'])) ?>"></button>
+                                    <?php if ($groupe['colonnes']): ?>
+                                        <button type="button" class="gantt-bar-affaire" data-ouvrir-affaire="<?= prefaEscape($groupe['cle']) ?>"
+                                            style="grid-column: <?= $groupe['colonnes'][0] ?> / span <?= $groupe['colonnes'][1] ?>;"
+                                            title="<?= prefaEscape($groupe['nom'] . ' · ' . prefaFormatDate($groupe['debut']) . ' au ' . prefaFormatDate($groupe['fin'])) ?>"
+                                            aria-label="<?= prefaEscape('Affaire ' . $groupe['nom'] . ' · ' . prefaFormatDate($groupe['debut']) . ' au ' . prefaFormatDate($groupe['fin'])) ?>"></button>
                                     <?php endif; ?>
                                 </div>
                             </div>
+                            <?php foreach ($groupe['rows'] as $row): $r = $row['request']; ?>
+                                <div class="gantt-row gantt-row-demande" data-affaire-id="<?= (int) $r['id'] ?>">
+                                    <div class="gantt-label-col">
+                                        <button type="button" class="gantt-affaire-badge" data-ouvrir="<?= (int) $r['id'] ?>" title="<?= prefaEscape('Demande ' . $r['reference_demande']) ?>">
+                                            <span class="gantt-ref"><?= prefaEscape($r['reference_demande']) ?></span>
+                                            <span class="gantt-nom"><?= prefaEscape(planningDate($r['date_debut_planifiee'])->format('d/m') . ' → ' . planningDate($r['date_fin_planifiee'])->format('d/m')) ?></span>
+                                            <?php if ($r['urgent']): ?><span class="gantt-urgent" title="Urgente" aria-label="Urgente">
+                                                <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3 4.5 13.5H11l-1 7.5 8.5-10.5H12z" /></svg>
+                                            </span><?php endif; ?>
+                                        </button>
+                                    </div>
+                                    <div class="gantt-track">
+                                        <?php if ($row['isVisible']): ?>
+                                            <button type="button" class="gantt-bar <?= $row['colorClass'] ?>"
+                                                data-ouvrir="<?= (int) $r['id'] ?>"
+                                                style="grid-column: <?= $row['colStart'] ?> / span <?= $row['span'] ?>;"
+                                                title="<?= prefaEscape('Demande ' . $r['reference_demande'] . ' · ' . prefaFormatDate($r['date_debut_planifiee']) . ' au ' . prefaFormatDate($r['date_fin_planifiee'])) ?>"
+                                                aria-label="<?= prefaEscape('Demande ' . $r['reference_demande'] . ' · ' . $groupe['nom'] . ' · ' . prefaFormatDate($r['date_debut_planifiee']) . ' au ' . prefaFormatDate($r['date_fin_planifiee'])) ?>"></button>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
                         <?php endforeach; ?>
                     <?php endif; ?>
                 </div>
@@ -407,7 +458,7 @@ function planningIcone(string $nom): string
                     <li>
                         <button type="button" class="planning-attente-ligne" data-ouvrir="<?= (int) $request['id'] ?>">
                             <span class="gantt-ref"><?= prefaEscape($request['reference_demande']) ?></span>
-                            <span class="planning-attente-nom"><?= prefaEscape($request['nom_affaire'] ?: '—') ?></span>
+                            <span class="planning-attente-nom"><?= prefaEscape($request['affaire_libelle']) ?></span>
                             <?php if ($request['urgent']): ?><span class="pv-puce pv-puce-a_faire">Urgente</span><?php endif; ?>
                             <span class="planning-attente-meta"><?= prefaEscape($request['demandeur'] ?: '—') ?></span>
                             <span class="planning-attente-meta"><?= prefaEscape(prefaFormatDays($heures / 24)) ?></span>
@@ -420,6 +471,41 @@ function planningIcone(string $nom): string
         </section>
     <?php endif; ?>
   </div>
+
+    <!-- Le volet d'une affaire : sa période, qui en répond, et ses demandes — chacune
+         ouvre son propre volet. Rempli par planning.js. -->
+    <div id="planning-volet-affaire" class="prefa-detail-row planning-volet-rang" hidden>
+        <div class="pv-volet" role="dialog" aria-labelledby="planning-affaire-titre">
+            <header class="pv-volet-tete">
+                <div>
+                    <h2 id="planning-affaire-titre">Affaire</h2>
+                    <p id="planning-affaire-sous-titre"></p>
+                </div>
+                <div class="pv-volet-outils">
+                    <button type="button" class="prefa-detail-close" data-close-target="planning-volet-affaire" aria-label="Fermer le volet" title="Fermer">
+                        <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 6 12 12M18 6 6 18" /></svg>
+                    </button>
+                </div>
+            </header>
+            <section class="pv-volet-section">
+                <h3 class="pv-volet-titre">Affaire</h3>
+                <dl class="pv-proprietes">
+                    <div><dt><?= planningIcone('personne') ?>Chargé d’affaire</dt><dd id="planning-affaire-charge"></dd></div>
+                    <div><dt><?= planningIcone('debut') ?>Début</dt><dd id="planning-affaire-debut"></dd></div>
+                    <div><dt><?= planningIcone('fin') ?>Fin</dt><dd id="planning-affaire-fin"></dd></div>
+                    <div><dt><?= planningIcone('charge') ?>Charge totale</dt><dd id="planning-affaire-charge-totale"></dd></div>
+                    <div><dt><?= planningIcone('camion') ?>Dernière livraison</dt><dd id="planning-affaire-livraison"></dd></div>
+                </dl>
+            </section>
+            <section class="pv-volet-section">
+                <div class="pv-volet-titre-rang">
+                    <h3 class="pv-volet-titre">Demandes</h3>
+                    <span id="planning-affaire-compte" class="pv-puce pv-puce-sans_objet"></span>
+                </div>
+                <ul id="planning-affaire-demandes" class="planning-affaire-demandes"></ul>
+            </section>
+        </div>
+    </div>
 
     <!-- Le volet d'une demande : le même panneau flottant que les PV et la fiche d'une
          demande. Il remplace la fenêtre de planification ET les quatre cartes du bas — un
