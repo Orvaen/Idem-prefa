@@ -631,14 +631,19 @@ textarea::placeholder {
 }
 
 /* Le dessin est fait pour du papier blanc : ses contours gris foncé et la queue noire du
-   ruban disparaissent sur fond sombre. Éclaircir ne suffit pas — du noir multiplié reste
-   du noir — alors on lui rend son papier : une plaque claire à sa taille, arrondie comme
-   le reste. C'est le seul moyen de garder le logo fidèle sans une version monochrome, qui
-   serait la vraie réponse si le graphiste peut en fournir une. */
-:root:not([data-theme="light"]) .nav-marque img {
-    padding: 3px 6px;
-    border-radius: 6px;
-    background: #ffffff;
+   ruban disparaissent sur fond sombre. Il y avait une plaque blanche derrière : une pièce
+   claire collée dans un écran sombre. On sert maintenant logo-idem-sombre.png, la même
+   image dont les gris foncés sont éclaircis — les bleus et le chrome ne bougent pas. */
+.nav-marque-logo-sombre {
+    display: none;
+}
+
+:root:not([data-theme="light"]) .nav-marque-logo-clair {
+    display: none;
+}
+
+:root:not([data-theme="light"]) .nav-marque-logo-sombre {
+    display: block;
 }
 
 .nav-marque-mot {

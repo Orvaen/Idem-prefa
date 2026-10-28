@@ -140,8 +140,15 @@ $pvAFaire = ($isAdmin || $isWorkshopChief) ? pvAFaireTotal($db) : 0;
                 }
                 ?>
                 <div class="nav-marque">
-                    <?php if ($logo): ?>
-                        <img src="<?= htmlspecialchars($logo) ?>?v=<?= filemtime(__DIR__ . '/../assets/' . basename($logo)) ?>" alt="IDEM">
+                    <?php if ($logo):
+                        // Une version pour le thème sombre, à côté de l'autre : le dessin est fait
+                        // pour du papier blanc, et ses contours noirs disparaissent sur fond sombre.
+                        $logoSombre = preg_replace('/(\.[a-z]+)$/', '-sombre$1', $logo);
+                        $aLogoSombre = is_file(__DIR__ . '/../assets/' . basename($logoSombre)); ?>
+                        <img class="nav-marque-logo<?= $aLogoSombre ? ' nav-marque-logo-clair' : '' ?>" src="<?= htmlspecialchars($logo) ?>?v=<?= filemtime(__DIR__ . '/../assets/' . basename($logo)) ?>" alt="IDEM">
+                        <?php if ($aLogoSombre): ?>
+                            <img class="nav-marque-logo nav-marque-logo-sombre" src="<?= htmlspecialchars($logoSombre) ?>?v=<?= filemtime(__DIR__ . '/../assets/' . basename($logoSombre)) ?>" alt="" aria-hidden="true">
+                        <?php endif; ?>
                     <?php else: ?>
                         <span class="nav-marque-mot">IDEM</span>
                     <?php endif; ?>
