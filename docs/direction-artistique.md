@@ -346,6 +346,38 @@ garde la teinte et descend de trois points et demi de clarté : 5,15:1. En clair
 
 ---
 
+## 11. Les paramètres : une fenêtre, sur le modèle de celle de Claude
+
+L'écran « Paramètres » n'était ouvert qu'au chargé de production. C'est maintenant une
+fenêtre que chacun ouvre — du pied de la barre latérale, du menu du compte, ou par
+`Ctrl+,` — rendue avec le tableau de bord (`includes/vue/parametres.php`), stylée par
+`settings.css`, animée par `parametres.js`.
+
+**La forme.** 920 × 680, taille fixe : changer de rubrique ne fait pas sauter la fenêtre.
+L'en-tête porte un filet ; dessous, une colonne de 220 px — une recherche, puis les
+rubriques groupées (« Préférences » pour tous, « Administration » pour le seul chargé de
+production) — et le contenu, en sections. Chaque ligne dit ce que c'est à gauche (titre
+13 px/500, aide 12 px sourde) et porte la commande à droite ; un filet `--border-faint`
+sépare deux lignes visibles. Sous 720 px, plein écran, la colonne en rangée défilante.
+
+**Les règles.**
+
+- *Un réglage s'applique dès qu'on le touche.* Pas de bouton « Enregistrer » : le thème
+  bascule au clic, la cadence part quand on quitte le champ. Une confirmation s'écrit en
+  gris sous la ligne ; seul un refus prend la couleur `--alerte-texte`.
+- *Rien d'inventé.* Une rubrique ne porte que ce que l'application sait régler. Le profil
+  est en lecture : c'est le chargé de production qui le tient, dans Utilisateurs.
+- *La rubrique ouverte se marque d'un fond plein (`--active`), pas de l'azur* : on règle,
+  on ne change pas d'écran.
+- *La recherche traverse les rubriques* et empile les réponses sous le nom de la leur, qui
+  n'est visible qu'à ce moment-là.
+- *Le thème a deux portes* — la fenêtre et le menu de la barre. `theme.js` annonce chaque
+  choix par l'événement `theme:choisi`, que les deux écoutent.
+- *`data-static-fields` sur la fenêtre* : sans lui, `floating-fields.js` emportait chaque
+  étiquette dans un champ à étiquette flottante, à droite, et vidait la colonne de gauche.
+
+---
+
 ## Les écarts à combler
 
 Par ordre de visibilité. Rien n'est fait tant que ce document n'est pas validé.

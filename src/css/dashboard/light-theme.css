@@ -754,6 +754,7 @@ body[data-theme="light"],
 [data-theme="light"] .account-item,
 [data-theme="light"] .account-add,
 [data-theme="light"] .account-manage,
+[data-theme="light"] .account-parametres,
 [data-theme="light"] .account-menu .account-logout {
     color: var(--text) !important;
 }
@@ -765,6 +766,7 @@ body[data-theme="light"],
 [data-theme="light"] .account-item:hover,
 [data-theme="light"] .account-add:hover,
 [data-theme="light"] .account-manage:hover,
+[data-theme="light"] .account-parametres:hover,
 [data-theme="light"] .account-menu .account-logout:hover {
     background: #efeff0 !important;
 }

@@ -7,6 +7,7 @@ require_once __DIR__ . '/includes/vue/user_display.php';
 require_once __DIR__ . '/includes/menu.php';
 require_once __DIR__ . '/includes/demande/accueil.php';
 require_once __DIR__ . '/includes/demande/affaires_nouvelles.php';
+require_once __DIR__ . '/includes/vue/parametres.php';
 
 Session::demarrer();
 header('Cache-Control: no-store');
@@ -285,6 +286,19 @@ $manquesNouveaux = ($isAdmin || $isWorkshopChief) ? manquesNouveauxCompte($db) :
                     <?php endforeach; ?>
                 </div>
 
+                <!-- Les paramètres, au pied de la barre et pour tout le monde : chacun a les
+                     siens. Ce n'est pas un écran, c'est une fenêtre (includes/vue/parametres.php) :
+                     le bouton ne porte donc pas de data-page, mais la palette le trouve quand même. -->
+                <div class="nav-pied">
+                    <button id="btn-parametres" class="nav-btn" type="button" data-ouvre-parametres>
+                        <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3" />
+                            <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" />
+                        </svg>
+                        <span>Paramètres</span>
+                    </button>
+                </div>
+
             </nav>
 
             <!-- Utilitaires -->
@@ -390,6 +404,18 @@ $manquesNouveaux = ($isAdmin || $isWorkshopChief) ? manquesNouveauxCompte($db) :
         <div class="account-menu-separator"></div>
 
         <div class="account-menu-group">
+            <!-- Les paramètres, là où Claude les range : dans le menu du compte. -->
+            <button type="button" class="account-parametres" role="menuitem">
+                <span class="account-action-icon" aria-hidden="true">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3" />
+                        <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" />
+                    </svg>
+                </span>
+                Paramètres
+                <kbd class="account-raccourci">Ctrl ,</kbd>
+            </button>
+
             <a class="account-logout" role="menuitem" href="../auth/logout.php">
                 <!-- Le même gabarit que « Ajouter un compte » et « Gérer les comptes » : sans lui,
                  son icône s'étirait sur 32 px au lieu de tenir dans le rail, et la ligne ne
@@ -470,6 +496,8 @@ $manquesNouveaux = ($isAdmin || $isWorkshopChief) ? manquesNouveauxCompte($db) :
             </div>
         </form>
     </dialog>
+
+    <?php parametresRendu($db, $utilisateur); ?>
 
     <!-- All scripts js -->
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.11/dist/htmx.js" integrity="sha384-gmJEF2eAKY4e+FDN+qtKIivWyb6ANwDB7JUdUybKgQspPKyEX/pIRZG/0uaRoW2C" crossorigin="anonymous"></script>

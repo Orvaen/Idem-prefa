@@ -62,16 +62,6 @@ function dashboardMenu(): array
             'scripts' => [],
         ],
         [
-            'id' => 'settings',
-            'rayon' => 'administration',
-            'libelle' => 'Paramètres',
-            'page' => 'pages/settings.php',
-            'pour' => [Role::ChargeDeProduction],
-            'icone' => '<path d="M4 7.5h9M17 7.5h3M4 16.5h3M11 16.5h9"/><circle cx="15" cy="7.5" r="2"/><circle cx="9" cy="16.5" r="2"/>',
-            'styles' => [],
-            'scripts' => [],
-        ],
-        [
             // C'est le chargé de production qui ouvre un chantier et désigne qui le suit.
             'id' => 'affaires',
             'rayon' => 'affaires',
@@ -380,6 +370,9 @@ function dashboardRessources(Utilisateur $utilisateur): array
         // Les alertes : ce que l'application demande, à la place de window.alert, confirm
         // et prompt. Même raison que les toasts, et elle reprend aussi les hx-confirm.
         'js/alerte.js',
+        // Les paramètres : une fenêtre et non plus un écran, que chacun ouvre depuis le
+        // pied de la barre, le menu du compte ou Ctrl+, (includes/vue/parametres.php).
+        'js/parametres.js',
         'js/dashboard-sidebar.js',
         'js/dashboard-accounts.js',
         // L'œil des mots de passe : la fenêtre d'ajout de compte en a un, l'écran de

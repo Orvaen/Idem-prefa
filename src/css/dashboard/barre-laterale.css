@@ -105,6 +105,18 @@ html[data-theme="light"] #left-panel {
     padding: 6px 10px 20px;
 }
 
+/* Le pied : les paramètres, poussés au bas de la colonne. Ce n'est pas un écran de plus,
+   c'est l'endroit où l'on règle l'application — il ne se range sous aucun rayon. */
+#left-panel .nav-pied {
+    flex: none;
+    margin-top: auto;
+    padding: 6px 10px 12px;
+}
+
+#left-panel .nav-pied .nav-btn {
+    width: 100%;
+}
+
 #left-panel .nav-btn,
 html[data-theme="light"] #left-panel .nav-btn {
     min-height: 34px;

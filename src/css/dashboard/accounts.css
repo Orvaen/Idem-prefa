@@ -254,6 +254,7 @@
 .account-remove:focus-visible,
 .account-add:focus-visible,
 .account-manage:focus-visible,
+.account-parametres:focus-visible,
 .account-menu .account-logout:focus-visible {
     background: var(--hover);
     outline: 1.5px solid var(--accent);
@@ -269,6 +270,7 @@
 
 .account-add,
 .account-manage,
+.account-parametres,
 .account-menu .account-logout {
     display: flex;
     width: 100%;
@@ -289,8 +291,21 @@
 
 .account-add:hover,
 .account-manage:hover,
+.account-parametres:hover,
 .account-menu .account-logout:hover {
     background: var(--hover);
+}
+
+/* Le raccourci, au bout de la ligne : on l'apprend en passant par le menu. */
+.account-raccourci {
+    margin-left: auto;
+    padding: 1px 5px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 11px;
+    line-height: 1.4;
 }
 
 /* Un glyphe nu de la largeur d'un monogramme : la colonne des icônes tombe sur celle
@@ -429,6 +444,7 @@
     .account-item,
     .account-add,
     .account-manage,
+    .account-parametres,
     .account-menu .account-logout {
         min-height: 44px;
     }

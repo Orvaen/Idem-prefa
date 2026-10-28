@@ -98,6 +98,11 @@
     }
 
     menu.addEventListener('click', async event => {
+        if (event.target.closest('.account-parametres')) {
+            ouvrirMenu(false);
+            window.ouvrirParametres?.();
+            return;
+        }
         if (event.target.closest('.account-add')) {
             ouvrirMenu(false);
             form.reset();
@@ -192,6 +197,9 @@
             appliquerTheme(option.dataset.themeVal);
             menuThemes.ouvrir(false);
         });
+
+        // Les paramètres changent aussi le thème : la coche suit.
+        document.addEventListener('theme:choisi', marquerActif);
 
         marquerActif();
     }

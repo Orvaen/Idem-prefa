@@ -1,351 +1,609 @@
 /* ==========================================================================
-   PAGE PARAMÈTRES — façon Linear / GitHub
+   LES PARAMÈTRES — une fenêtre, sur le modèle de celle de Claude
    ==========================================================================
 
-   Une seule page, trois sections empilées. Chaque section est un titre et une phrase, puis
-   une carte (DA, § 8 : « un bloc de paramètres » est une carte) dont les lignes disent ce
-   que c'est à gauche et portent la commande à droite.
+   C'était un écran, ouvert au seul chargé de production, où trois sections s'empilaient.
+   C'est une fenêtre que chacun ouvre — du pied de la barre latérale, du menu du compte, ou
+   par Ctrl+, — et qui se lit comme celle de Claude :
 
-   L'en-tête vient de la coque des listes (.prefa-list .prefa-heading) : même titre, même
-   retrait que la liste des demandes. Aucune couleur en dur : trois tons de texte, un
-   filet, et l'accent pour le seul focus. */
+   - à gauche, une recherche puis les rubriques, groupées : les préférences de chacun,
+     puis l'administration, que seul le chargé de production voit ;
+   - à droite, des sections ; chaque ligne dit ce que c'est et porte la commande, séparée
+     de la suivante par un filet ;
+   - une taille fixe : passer d'une rubrique à l'autre ne fait pas sauter la fenêtre.
 
-/* La coque des listes se serre sur son contenu (« fit-content ») : un tableau tient sa
-   largeur. Ici rien ne la tient, on lui rend la largeur de la vue. */
-.page.prefa-list.settings-page {
-    width: auto;
-    height: 100%;
-    overflow-y: auto;
-}
+   La boîte, le voile et l'ouverture viennent de « dialog.fenetre » (fenetre.css). Le
+   gabarit est dans includes/vue/parametres.php, le comportement dans parametres.js. */
 
-.settings-page .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    padding: 0;
+dialog.fenetre.parametres {
+    width: min(920px, calc(100vw - 32px));
+    height: min(680px, calc(100dvh - 48px));
+    max-height: none;
+    margin: auto;
+    /* Les deux colonnes défilent dedans : sans ce rognage, leurs barres de défilement
+       sortaient de l'arrondi des coins du bas. */
     overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-    border: 0;
 }
 
-.reglages {
+dialog.fenetre.parametres > .parametres-cadre {
     display: flex;
     flex-direction: column;
-    gap: 32px;
-    max-width: 760px;
-    padding: 4px 16px 48px;
+    height: 100%;
 }
 
-/* ---------- Une section ---------- */
-
-.reglages-section-tete {
-    margin-bottom: 12px;
-}
-
-.reglages-section-tete h2 {
-    margin: 0;
-    color: var(--text);
-    font-size: 16px;
-    font-weight: 600;
-    line-height: 1.3;
-}
-
-.reglages-section-tete p {
-    margin: 4px 0 0;
-    color: var(--text-muted);
-    font-size: 13px;
-}
-
-/* La carte ne prend pas de teinte : la page en portait déjà trois (cadre, surface, carte),
-   et c'est le filet seul qui délimite le bloc. */
-.reglages-carte {
-    border: 1px solid var(--border);
-    border-radius: var(--r-lg);
-    background: var(--surface);
-    overflow: hidden;
-}
-
-/* ---------- Une ligne de réglage ---------- */
-
-.reglage {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px 24px;
-    margin: 0;
-    padding: 16px;
-}
-
-.reglage + .reglage {
-    border-top: 1px solid var(--border-faint);
-}
-
-.reglage-texte {
-    flex: 1 1 280px;
-    min-width: 0;
-}
-
-.reglage-titre {
-    display: block;
-    color: var(--text);
-    font-size: 13px;
-    font-weight: 600;
-}
-
-/* La règle générale du thème clair peint toute étiquette en gris sourd, en !important. Le
-   titre d'un réglage n'est pas une étiquette de champ : il se lit d'abord. */
-[data-theme="light"] .settings-page label.reglage-titre {
-    color: var(--text) !important;
-}
-
-.reglage-aide {
-    margin: 2px 0 0;
-    color: var(--text-muted);
-    font-size: 12px;
-    line-height: 1.54;
-}
-
-.reglage-aide strong {
-    color: var(--text);
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-}
-
-.reglage-controle {
-    display: flex;
+/* L'en-tête porte un filet, comme chez Claude : la colonne et le contenu commencent dessous. */
+dialog.fenetre.parametres .fenetre-entete {
     flex: none;
-    align-items: center;
-    gap: 8px;
+    padding: 14px 16px 14px 20px;
+    border-bottom: 1px solid var(--border);
 }
 
-/* ---------- Un seul champ, un seul bouton ----------
- *
- * Les trois sections se commandent de la même façon : un champ de même taille, et le même
- * bouton au contour. Ils étaient quatre styles — un nombre étroit avec son unité, un texte
- * large, un bouton noir, un bouton au contour — plus trois cartes de thème : on lisait des
- * différences là où il n'y en a pas.
- *
- * La zone de commande a une largeur fixe : les champs commencent tous au même endroit et
- * finissent au même endroit, d'une section à l'autre. */
-.reglage-controle {
-    width: 300px;
-    max-width: 100%;
+dialog.fenetre.parametres .parametres-corps {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
 }
 
-.settings-page .reglage-champ {
+/* ---------- La colonne ---------- */
+
+dialog.fenetre.parametres .parametres-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 12px;
+    border-right: 1px solid var(--border);
+}
+
+dialog.fenetre.parametres .parametres-recherche {
+    position: relative;
+    flex: none;
+    margin-bottom: 6px;
+}
+
+dialog.fenetre.parametres .parametres-recherche .icon {
+    position: absolute;
+    top: 50%;
+    left: 9px;
+    width: 14px;
+    height: 14px;
+    color: var(--text-muted);
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+dialog.fenetre.parametres .parametres-recherche input {
     box-sizing: border-box;
-    flex: 1 1 auto;
     width: 100%;
-    min-width: 0;
     height: var(--h-lg);
-    padding: 0 10px;
+    margin: 0;
+    padding: 0 8px 0 30px;
     border: 1px solid var(--border);
     border-radius: var(--r-md);
-    background: var(--surface);
+    background: transparent;
     color: var(--text);
     font: inherit;
     font-size: 13px;
 }
 
-.settings-page .reglage-champ-nombre {
-    font-variant-numeric: tabular-nums;
-}
-
-.settings-page .reglage-champ:focus {
+dialog.fenetre.parametres .parametres-recherche input:focus {
     border-color: var(--accent);
-    outline: 1px solid var(--accent);
-    outline-offset: -1px;
+    outline: none;
 }
 
-/* La liste déroulante prend l'allure des champs : sans « appearance: none », Windows la
-   dessine à sa façon et elle redevient le seul contrôle différent de la page. */
-.reglage-liste {
-    position: relative;
-    display: flex;
-    flex: 1 1 auto;
-    color: var(--text-muted);
-}
-
-.settings-page .reglage-liste select {
-    padding-right: 28px;
-    appearance: none;
+/* La croix d'effacement du navigateur, une glyphe grise de Windows dans notre champ : Échap
+   vide la recherche de la même façon. */
+dialog.fenetre.parametres .parametres-recherche input::-webkit-search-cancel-button {
     -webkit-appearance: none;
-    cursor: pointer;
+    appearance: none;
 }
 
-.reglage-liste svg {
-    position: absolute;
-    top: 50%;
-    right: 10px;
-    transform: translateY(-50%);
-    pointer-events: none;
+dialog.fenetre.parametres .parametres-groupe {
+    margin: 14px 8px 4px;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
 }
 
-.reglage-bouton {
-    display: inline-flex;
+dialog.fenetre.parametres .parametres-onglet {
+    display: flex;
     flex: none;
     align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
-    width: 96px;
+    gap: 10px;
+    width: 100%;
     height: var(--h-lg);
-    padding: 0 12px;
-    border: 1px solid var(--border);
+    margin: 0;
+    padding: 0 8px;
+    border: 0;
     border-radius: var(--r-md);
-    background: var(--surface);
+    background: transparent;
     color: var(--text);
+    font: inherit;
     font-size: 13px;
-    font-weight: 500;
+    text-align: left;
     white-space: nowrap;
     cursor: pointer;
 }
 
-.reglage-bouton:hover:not(:disabled) {
+dialog.fenetre.parametres .parametres-onglet .icon {
+    color: var(--text-muted);
+}
+
+dialog.fenetre.parametres .parametres-onglet:hover {
     background: var(--hover);
 }
 
-.reglage-bouton:disabled {
-    opacity: .55;
-    cursor: not-allowed;
+/* La rubrique ouverte : un fond plein, sans l'azur — on règle, on ne change pas d'écran. */
+dialog.fenetre.parametres .parametres-onglet[aria-current="true"] {
+    background: var(--active);
+    font-weight: 500;
 }
 
-/* ---------- Les messages ----------
- *
- * Une confirmation se lit en gris : elle dit que c'est fait, rien de plus. Seule l'erreur
- * prend une couleur, parce qu'elle demande d'agir. */
+dialog.fenetre.parametres .parametres-onglet[aria-current="true"] .icon {
+    color: var(--text);
+}
 
-.settings-page .prefa-message {
-    display: none;
-    margin: 6px 0 0;
+dialog.fenetre.parametres .parametres-onglet:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+}
+
+/* ---------- Le contenu ---------- */
+
+dialog.fenetre.parametres .parametres-contenu {
+    min-height: 0;
+    overflow-y: auto;
+    padding: 4px 28px 32px;
+}
+
+/* Le nom de la rubrique : pour le lecteur d'écran seulement, sauf quand on cherche — les
+   réponses de plusieurs rubriques s'empilent alors, et il faut savoir d'où vient chacune. */
+dialog.fenetre.parametres .parametres-rubrique-titre {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+dialog.fenetre.parametres.est-en-recherche .parametres-rubrique-titre {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    margin: 24px 0 -10px;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+dialog.fenetre.parametres .parametres-section {
+    margin-top: 20px;
+}
+
+dialog.fenetre.parametres .parametres-section > h4 {
+    margin: 0 0 2px;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+dialog.fenetre.parametres .parametres-section-aide {
+    margin: 0 0 2px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+/* Une ligne : ce que c'est à gauche, la commande à droite. Le filet sépare deux lignes
+   visibles — pendant une recherche, celles qui restent ne doivent pas en hériter d'un
+   au-dessus d'elles qui ne sépare plus rien. */
+dialog.fenetre.parametres .parametre {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    min-height: 52px;
+    margin: 0;
+    padding: 10px 0;
+}
+
+dialog.fenetre.parametres .parametre:not([hidden]) ~ .parametre:not([hidden]) {
+    border-top: 1px solid var(--border-faint);
+}
+
+dialog.fenetre.parametres .parametre-texte {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+dialog.fenetre.parametres .parametre-titre {
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+dialog.fenetre.parametres .parametre-aide {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+/* La réponse du serveur, sous la ligne. Une confirmation se lit en gris : elle dit que
+   c'est fait, rien de plus. Seule l'erreur prend une couleur, parce qu'elle demande d'agir,
+   et elle reste à côté du nombre à corriger. */
+dialog.fenetre.parametres .prefa-message {
+    margin: 2px 0 0;
     font-size: 12px;
     line-height: 1.4;
 }
 
-.settings-page .prefa-message:not(:empty) {
-    display: block;
+dialog.fenetre.parametres .prefa-message.success {
+    color: var(--text-muted);
 }
 
-.settings-page .prefa-message.success,
-[data-theme="light"] .settings-page .prefa-message.success {
-    color: var(--text-muted) !important;
+dialog.fenetre.parametres .prefa-message.error {
+    color: var(--alerte-texte);
 }
 
-.settings-page .prefa-message.error,
-[data-theme="light"] .settings-page .prefa-message.error {
-    color: var(--alerte-texte) !important;
+dialog.fenetre.parametres .parametre-controle {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-/* ---------- La liste des passivations ----------
- *
- * Des lignes comme les autres réglages : le nom à gauche, au même retrait que les
- * libellés, et « Modifier » à droite. Le numéro et l'en-tête de colonnes n'apportaient rien
- * à une liste de quelques noms ; la ligne vient du partiel partagé, on masque donc la
- * colonne ici plutôt que de la retirer aux autres écrans. */
-
-.reglages-table {
-    width: 100%;
-    border-collapse: collapse;
+dialog.fenetre.parametres .parametre-valeur {
+    min-width: 0;
+    color: var(--text-muted);
     font-size: 13px;
-    text-align: left;
+    text-align: right;
+    overflow-wrap: anywhere;
 }
 
-.reglages-table thead,
-.reglages-table td:first-child {
-    display: none;
+/* ---------- Les commandes ---------- */
+
+/* Le thème en trois icônes, le contrôle segmenté de Claude. Le bouton radio couvre son
+   icône, transparent : c'est lui qu'on clique, lui qui prend le focus et les flèches. */
+dialog.fenetre.parametres .parametres-segments {
+    flex: none;
+    display: inline-flex;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
 }
 
-.reglages-table td {
-    height: var(--h-2xl);
-    padding: 4px 16px;
-    border-top: 1px solid var(--border-faint);
+dialog.fenetre.parametres .parametres-segment {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: var(--h-md);
+    height: var(--h-md);
+    border-radius: var(--r-md);
+    color: var(--text-muted);
+}
+
+dialog.fenetre.parametres .parametres-segment input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+dialog.fenetre.parametres .parametres-segment:hover {
+    background: var(--hover);
     color: var(--text);
-    vertical-align: middle;
 }
 
-.reglages-table tbody tr:not(.passivation-empty):hover td {
+dialog.fenetre.parametres .parametres-segment:has(input:checked) {
+    background: var(--active);
+    box-shadow: inset 0 0 0 1px var(--border);
+    color: var(--text);
+}
+
+dialog.fenetre.parametres .parametres-segment:has(input:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+dialog.fenetre.parametres .parametre-touches {
+    flex: none;
+    display: inline-flex;
+    gap: 4px;
+}
+
+dialog.fenetre.parametres kbd {
+    min-width: 22px;
+    padding: 1px 6px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 11px;
+    line-height: 1.6;
+    text-align: center;
+}
+
+dialog.fenetre.parametres .parametres-champ {
+    box-sizing: border-box;
+    width: 220px;
+    height: var(--h-lg);
+    margin: 0;
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+}
+
+dialog.fenetre.parametres .parametres-champ:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+
+dialog.fenetre.parametres .parametres-champ-nombre {
+    width: 96px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+dialog.fenetre.parametres .parametres-unite {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-muted);
+}
+
+/* Encadré, jamais plein : rien ici n'est l'action unique d'une fenêtre. */
+dialog.fenetre.parametres .parametres-bouton {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    height: var(--h-lg);
+    margin: 0;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+dialog.fenetre.parametres .parametres-bouton:hover {
     background: var(--hover);
 }
 
-.reglages-table td:last-child {
+/* Un lien dans une phrase, vers l'écran où l'on modifie ce qu'on ne fait que lire ici. */
+dialog.fenetre.parametres .parametres-lien {
+    display: inline;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent-texte);
+    font: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+}
+
+dialog.fenetre.parametres .parametres-bouton:focus-visible,
+dialog.fenetre.parametres .parametres-lien:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* ---------- La liste des passivations ----------
+
+   Des lignes comme les autres : le nom à gauche, « Modifier » à droite. La ligne vient du
+   partiel partagé avec l'action de modification, qui la remplace sur place : on masque ici
+   sa première cellule, le numéro en base, qui ne dit rien à personne. */
+
+dialog.fenetre.parametres .parametres-liste {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+dialog.fenetre.parametres .parametres-liste td {
+    height: 44px;
+    padding: 6px 0;
+    border-top: 1px solid var(--border-faint);
+    color: var(--text);
+    font-size: 13px;
+    vertical-align: middle;
+}
+
+dialog.fenetre.parametres .parametres-liste tr:not(.passivation-empty) td:first-child {
+    display: none;
+}
+
+dialog.fenetre.parametres .parametres-liste tr:not(.passivation-empty) td:last-child {
     width: 1%;
+    padding-left: 16px;
     text-align: right;
     white-space: nowrap;
 }
 
-.reglages-table .passivation-empty td {
-    display: table-cell;
-    padding: 16px;
+dialog.fenetre.parametres .parametres-liste .passivation-empty td {
     color: var(--text-muted);
 }
 
-/* Les commandes de ligne (Modifier, Enregistrer, Annuler) : le bouton de la page, en plus
-   petit, effacé au repos et rendu au survol comme sur la liste des demandes. */
-.settings-page .edit-passivation {
-    height: var(--h-sm);
-    margin-left: 4px;
-    padding: 0 8px;
+dialog.fenetre.parametres .parametres-liste .edit-passivation {
+    height: var(--h-md);
+    margin: 0;
+    padding: 0 10px;
     border: 1px solid var(--border);
     border-radius: var(--r-md);
-    background: var(--surface);
+    background: transparent;
     color: var(--text);
+    font: inherit;
     font-size: 12px;
     cursor: pointer;
 }
 
-.settings-page .edit-passivation:hover {
+dialog.fenetre.parametres .parametres-liste .edit-passivation + .edit-passivation {
+    margin-left: 6px;
+}
+
+dialog.fenetre.parametres .parametres-liste .edit-passivation:hover {
     background: var(--hover);
 }
 
+/* « Modifier » s'efface au repos, comme les commandes de ligne des tableaux, et revient au
+   survol ou au clavier. Pas sur une tablette : elle n'a pas de survol. */
 @media (hover: hover) {
-    .reglages-table tbody tr:not(:has(form)) .edit-passivation {
+
+    dialog.fenetre.parametres .parametres-liste tr:not(:has(form)) .edit-passivation {
         opacity: 0;
         transition: opacity .12s ease;
     }
 
-    .reglages-table tbody tr:hover .edit-passivation,
-    .reglages-table tbody tr:focus-within .edit-passivation {
+    dialog.fenetre.parametres .parametres-liste tr:hover .edit-passivation,
+    dialog.fenetre.parametres .parametres-liste tr:focus-within .edit-passivation {
         opacity: 1;
     }
 }
 
-.reglages-table .passivation-name input {
-    box-sizing: border-box;
-    width: 100%;
-    max-width: 280px;
-    height: var(--h-md);
-    padding: 0 8px;
-    border: 1px solid var(--border);
-    border-radius: var(--r-md);
-    background: var(--surface);
-    color: var(--text);
-    font-size: 13px;
-}
-
-.reglages-table .passivation-name form {
+dialog.fenetre.parametres .parametres-liste .passivation-name form {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
     margin: 0;
 }
 
-/* ---------- Sur une tablette d'atelier ---------- */
+dialog.fenetre.parametres .parametres-liste .passivation-name input {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 320px;
+    height: var(--h-lg);
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+}
 
-@media (max-width: 1100px), (pointer: coarse) {
+dialog.fenetre.parametres .parametres-liste .passivation-name input:focus {
+    border-color: var(--accent);
+    outline: none;
+}
 
-    .reglage-bouton,
-    .settings-page .reglage-champ {
-        height: 44px;
+dialog.fenetre.parametres .parametres-aucun {
+    margin: 48px 0 0;
+    color: var(--text-muted);
+    font-size: 13px;
+    text-align: center;
+}
+
+/* ---------- Le thème clair ----------
+
+   light-theme.css repeint en gris, et en !important, tout « label » et tout « p » de
+   l'application. Un titre de ligne est une étiquette quand il nomme un champ : il garde la
+   couleur du texte. Une réponse du serveur garde la sienne. */
+
+[data-theme="light"] dialog.fenetre.parametres .parametre-titre {
+    color: var(--text) !important;
+}
+
+[data-theme="light"] dialog.fenetre.parametres .prefa-message.success {
+    color: var(--text-muted) !important;
+}
+
+[data-theme="light"] dialog.fenetre.parametres .prefa-message.error {
+    color: var(--alerte-texte) !important;
+}
+
+/* ---------- Sur un écran étroit ----------
+
+   La fenêtre prend tout l'écran, et la colonne passe en tête, en une rangée qu'on fait
+   défiler : deux colonnes ne tiennent pas dans la largeur d'un téléphone. */
+
+@media (max-width: 719px) {
+
+    dialog.fenetre.parametres {
+        width: 100vw;
+        max-width: none;
+        height: 100dvh;
+        margin: 0;
+        border: 0;
+        border-radius: 0;
     }
 
-    .settings-page .edit-passivation {
-        height: 36px;
+    dialog.fenetre.parametres .parametres-corps {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto minmax(0, 1fr);
+    }
+
+    /* La rangée défile au doigt : sa barre de défilement ne ferait que doubler le filet. */
+    dialog.fenetre.parametres .parametres-nav {
+        flex-direction: row;
+        align-items: center;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 8px 12px;
+        border-right: 0;
+        border-bottom: 1px solid var(--border);
+        scrollbar-width: none;
+    }
+
+    dialog.fenetre.parametres .parametres-nav::-webkit-scrollbar {
+        display: none;
+    }
+
+    dialog.fenetre.parametres .parametres-recherche {
+        flex: 0 0 150px;
+        margin: 0 6px 0 0;
+    }
+
+    dialog.fenetre.parametres .parametres-groupe {
+        display: none;
+    }
+
+    dialog.fenetre.parametres .parametres-onglet {
+        width: auto;
+    }
+
+    dialog.fenetre.parametres .parametres-contenu {
+        padding: 4px 16px 24px;
+    }
+
+    dialog.fenetre.parametres .parametre {
+        flex-wrap: wrap;
+        gap: 8px 16px;
     }
 }
 
-@media (max-width: 640px) {
+/* Sur une tablette d'atelier, la cible fait 44 px. */
+@media (pointer: coarse) {
 
-    .reglage-controle {
-        flex: 1 1 100%;
-        width: auto;
+    dialog.fenetre.parametres .parametres-onglet,
+    dialog.fenetre.parametres .parametres-recherche input,
+    dialog.fenetre.parametres .parametres-champ,
+    dialog.fenetre.parametres .parametres-bouton {
+        height: 44px;
+    }
+
+    dialog.fenetre.parametres .parametres-segment {
+        width: 40px;
+        height: 40px;
     }
 }

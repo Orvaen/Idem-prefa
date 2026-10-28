@@ -50,6 +50,9 @@
             else localStorage.removeItem(CLE);
         } catch (erreur) { /* le choix ne sera pas mémorisé, il s'applique quand même */ }
         peindre();
+        // Deux endroits montrent le choix — le menu de la barre et les paramètres. Chacun se
+        // tient à jour sur cet événement, quel que soit celui où l'on a choisi.
+        document.dispatchEvent(new CustomEvent('theme:choisi', { detail: choix() }));
     }
 
     // Le système change d'avis — la nuit tombe, l'horaire bascule : on suit, mais seulement
