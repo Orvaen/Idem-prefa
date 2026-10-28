@@ -282,7 +282,7 @@ $pvAFaire = ($isAdmin || $isWorkshopChief) ? pvAFaireTotal($db) : 0;
     <!-- Comptes connectés sur cet appareil : bascule sans ressaisir le mot de passe -->
     <div id="account-menu" class="account-menu" role="menu" aria-labelledby="account-menu-button" data-csrf="<?= htmlspecialchars(Session::jeton()) ?>" hidden>
         <div class="account-menu-group">
-            <p class="account-menu-title">Comptes connectés</p>
+            <p class="account-menu-title">Comptes</p>
 
             <ul class="account-list">
                 <?php foreach ($comptes as $compte):
@@ -298,6 +298,7 @@ $pvAFaire = ($isAdmin || $isWorkshopChief) ? pvAFaireTotal($db) : 0;
                                 <strong><?= htmlspecialchars($nomComplet) ?></strong>
                                 <span><?= htmlspecialchars($compte['role_name']) ?><?php if ($metier = roleComplement((int) $compte['id_role'])): ?> · <?= htmlspecialchars($metier) ?><?php endif; ?></span>
                             </span>
+                            <svg class="icon account-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"<?= $estActif ? '' : ' hidden' ?>><path d="m5 13 4 4 10-10" /></svg>
                         </button>
                         <button type="button" class="account-remove" data-compte="<?= htmlspecialchars($compte['identifiant']) ?>" data-nom="<?= htmlspecialchars($nomComplet) ?>" aria-label="Retirer le compte <?= htmlspecialchars($nomComplet) ?>">Retirer</button>
                     </li>
@@ -309,8 +310,6 @@ $pvAFaire = ($isAdmin || $isWorkshopChief) ? pvAFaireTotal($db) : 0;
 
 
         <?php if ($comptesDev): ?>
-            <div class="account-menu-separator"></div>
-
             <div class="account-menu-group account-menu-dev">
                 <p class="account-menu-title">
                     Développement
@@ -362,6 +361,8 @@ $pvAFaire = ($isAdmin || $isWorkshopChief) ? pvAFaireTotal($db) : 0;
                 <span class="account-manage-label">Gérer les comptes</span>
             </button>
         </div>
+
+        <div class="account-menu-separator"></div>
 
         <div class="account-menu-group">
             <a class="account-logout" role="menuitem" href="../auth/logout.php">

@@ -42,60 +42,58 @@
 
 /* ===== MENU DES COMPTES ===== */
 
-/* Les deux menus partagent la même enveloppe : un filet d'un pixel posé en ombre
-   interne (et non en bordure, qui mangerait la largeur utile) et une ombre portée
-   en deux passes, une courte pour le relief, une longue pour détacher du fond. */
 /* ---------- Le menu des comptes ----------
-   Une fenêtre surgissante, pas une zone de la page : elle garde donc ses coins arrondis et
-   son ombre, là où le reste de l'écran est à plat.
+   Un menu déroulant comme les autres, sur la grammaire de Propel : rayon 8, entrées de
+   28 px à rayon 6, corps 13. Il n'a rien d'un « profil » : pas de grosses pastilles
+   rondes, pas de point de présence, pas de couleur sur les actions — c'est une liste
+   de comptes et trois commandes, dense et sourde.
 
-   Elle n'a pas de marge intérieure : les filets qui séparent les groupes vont ainsi d'un
-   bord à l'autre. C'est chaque groupe qui porte la sienne, et le débord est coupé par le
-   rayon de l'enveloppe. */
+   L'enveloppe n'a pas de marge intérieure : les filets vont d'un bord à l'autre, et
+   chaque groupe porte la sienne. */
 .account-menu {
     position: fixed;
     z-index: 60;
-    width: 300px;
+    width: 264px;
     max-width: calc(100vw - 16px);
     padding: 0;
     overflow: hidden;
     border: 1px solid var(--border);
-    border-radius: 5px;
+    border-radius: 8px;
     background: var(--surface);
     box-shadow:
-        0 1px 2px rgb(0 0 0 / 10%),
-        0 10px 28px rgb(0 0 0 / 22%);
+        0 1px 2px rgb(0 0 0 / 8%),
+        0 8px 24px rgb(0 0 0 / 18%);
+    font-size: 13px;
 }
 
-/* En thème clair, le menu est blanc sur une page blanche : sans un filet net et une ombre
-   plus marquée, il se confond avec l'écran et semble n'avoir aucun fond. */
 [data-theme="light"] .account-menu {
-    border-color: #cbd5e1;
+    border-color: #d5d7d9;
     box-shadow:
-        0 1px 3px rgb(15 23 42 / 10%),
-        0 14px 36px rgb(15 23 42 / 18%);
+        0 1px 2px rgb(15 23 42 / 6%),
+        0 8px 24px rgb(15 23 42 / 12%);
 }
 
-/* Un groupe de lignes. Sa marge intérieure tient le fond du survol à l'écart des bords :
-   sans elle, la ligne survolée touchait le filet et le cadre. */
 .account-menu-group {
-    padding: 6px;
+    padding: 4px;
 }
 
-/* L'intitulé du groupe : discret, il nomme sans peser. */
+/* L'intitulé du groupe : il nomme sans peser. */
 .account-menu-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     margin: 0;
-    padding: 6px 10px 4px;
+    padding: 6px 8px 4px;
     color: var(--text-muted);
     font-size: 11.5px;
-    font-weight: 400;
+    font-weight: 500;
 }
 
 .account-list {
     list-style: none;
     margin: 0;
     padding: 0;
-    max-height: 300px;
+    max-height: 280px;
     overflow-y: auto;
 }
 
@@ -105,105 +103,116 @@
     gap: 2px;
 }
 
+/* Un compte tient sur une ligne : le nom, puis le rôle en sourdine. Deux lignes par
+   compte faisaient de chaque entrée une carte de visite. */
 .account-item {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     width: 100%;
     flex: 1;
     min-width: 0;
-    padding: 8px 10px;
+    height: 30px;
+    padding: 0 8px;
     border: 0;
-    border-radius: 8px;
+    border-radius: 6px;
     background: transparent;
     color: var(--text);
     font: inherit;
     text-align: left;
     cursor: pointer;
-    transition: background 0.12s cubic-bezier(0.32, 0.72, 0, 1);
+    transition: background 0.12s ease;
 }
 
 .account-item:hover {
     background: var(--hover);
 }
 
-/* Le compte courant se signale par sa coche, pas par un fond : deux lignes teintées
-   dans un menu de trois, c'était illisible. */
 .account-item.is-current {
     cursor: default;
 }
 
-/* Pastille de présence sur l'avatar du compte actif. */
 .account-avatar {
     position: relative;
     flex-shrink: 0;
     line-height: 0;
 }
 
-.account-avatar .user-avatar {
-    width: 32px;
-    height: 32px;
-    font-size: 13px;
+/* Le même monogramme que le demandeur d'une liste : petit, gris, sans couleur. */
+.account-avatar .user-avatar,
+.toolbar-compte .user-avatar {
+    width: 20px;
+    height: 20px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--active);
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
 }
 
-.account-presence {
-    position: absolute;
-    right: -2px;
-    bottom: -2px;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: #23a55a;
-    box-shadow: 0 0 0 3px var(--surface);
+[data-theme="light"] .account-avatar .user-avatar,
+[data-theme="light"] .toolbar-compte .user-avatar {
+    border: 0 !important;
+    background: #eaebec !important;
+    color: #5c5f63 !important;
+    font-weight: 600;
 }
 
 .account-identity {
     flex: 1;
     min-width: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    overflow: hidden;
+    white-space: nowrap;
 }
 
 .account-identity strong {
-    display: block;
-    font-size: 13.5px;
-    font-weight: 500;
-    line-height: 1.3;
-    white-space: nowrap;
+    flex: none;
+    max-width: 100%;
     overflow: hidden;
+    font-size: 13px;
+    font-weight: 500;
     text-overflow: ellipsis;
 }
 
 .account-identity span {
-    display: block;
-    margin-top: 2px;
+    min-width: 0;
+    overflow: hidden;
     color: var(--text-muted);
     font-size: 12px;
-    line-height: 1.35;
+    text-overflow: ellipsis;
 }
 
+/* Le compte courant se signale par sa coche, pas par un fond. */
 .account-check {
     flex-shrink: 0;
-    width: 16px;
-    color: var(--accent-texte);
+    width: 14px;
+    height: 14px;
+    color: var(--text);
 }
 
 /* La suppression n'apparaît que dans le mode « Gérer les comptes ». */
 .account-remove {
     display: none;
     flex-shrink: 0;
-    padding: 5px 9px;
+    height: 24px;
+    padding: 0 8px;
     border: 0;
-    border-radius: 8px;
+    border-radius: 6px;
     background: transparent;
     color: var(--danger-texte);
     font: inherit;
     font-size: 12px;
-    font-weight: 500;
     cursor: pointer;
-    transition: background 0.12s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .account-menu.is-managing .account-remove {
     display: inline-flex;
+    align-items: center;
 }
 
 .account-remove:hover {
@@ -221,13 +230,8 @@
 
 .account-menu.is-managing .account-manage {
     background: var(--hover);
-    color: var(--accent-texte);
 }
 
-/* La ligne qu'on vient de cliquer garde le focus : elle portait un contour et rien
-   d'autre, ce qui la laissait vide au milieu d'un menu où le survol remplit. Elle prend
-   donc le même fond que le survol, le contour en plus. Le rayon suit celui des lignes —
-   un contour carré sur une gélule se voyait. */
 .account-item:focus-visible,
 .account-remove:focus-visible,
 .account-add:focus-visible,
@@ -236,12 +240,9 @@
     background: var(--hover);
     outline: 1.5px solid var(--accent);
     outline-offset: -1.5px;
-    border-radius: 8px;
+    border-radius: 6px;
 }
 
-/* Le filet va d'un bord à l'autre : c'est ce qui fait lire les groupes comme des blocs
-   posés les uns sur les autres plutôt que comme une liste à trous. Posé en retrait, il
-   ressemblait à une ligne barrée au milieu du menu. */
 .account-menu-separator {
     height: 1px;
     margin: 0;
@@ -254,19 +255,18 @@
     display: flex;
     width: 100%;
     align-items: center;
-    gap: 12px;
-    padding: 8px 10px;
+    gap: 8px;
+    height: 30px;
+    padding: 0 8px;
     border: 0;
-    border-radius: 8px;
+    border-radius: 6px;
     background: transparent;
     color: var(--text);
     font: inherit;
-    font-size: 13.5px;
-    /* « Se déconnecter » est un lien, les deux autres sont des boutons : sans cela il
-       arrivait souligné, et c'est la seule ligne du menu qui ne ressemblait pas aux autres. */
+    font-size: 13px;
     text-decoration: none;
     cursor: pointer;
-    transition: background 0.12s cubic-bezier(0.32, 0.72, 0, 1);
+    transition: background 0.12s ease;
 }
 
 .account-add:hover,
@@ -275,9 +275,8 @@
     background: var(--hover);
 }
 
-/* Un glyphe nu, sans plateau ni filet : trois pastilles encadrées sous les avatars
-   faisaient une seconde colonne de boîtes, et le menu paraissait rempli de boutons. Le
-   dessin aligne son bord gauche sur celui des avatars, ce qui suffit à tenir la colonne. */
+/* Un glyphe nu de la largeur d'un monogramme : la colonne des icônes tombe sur celle
+   des avatars, et les libellés sur les noms. */
 .account-action-icon {
     flex-shrink: 0;
     display: grid;
@@ -288,12 +287,8 @@
 }
 
 .account-action-icon .icon {
-    width: 20px;
-    height: 20px;
-}
-
-.account-add .account-action-icon {
-    color: var(--succes-texte);
+    width: 16px;
+    height: 16px;
 }
 
 /* ===== FENÊTRE D'AJOUT DE COMPTE ===== */
@@ -410,10 +405,12 @@
     cursor: not-allowed;
 }
 
-@media (max-width: 1100px), (pointer: coarse) {
+/* Au doigt seulement : une fenêtre étroite pilotée à la souris garde le menu dense. */
+@media (pointer: coarse) {
 
     .account-item,
     .account-add,
+    .account-manage,
     .account-menu .account-logout {
         min-height: 44px;
     }

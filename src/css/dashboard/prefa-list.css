@@ -1942,8 +1942,10 @@ tbody tr:last-child > td {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 4px 8px;
+    height: 30px;
+    padding: 0 6px 0 5px;
     border: 0;
+    border-radius: 6px;
     background: transparent;
     color: var(--text);
     font: inherit;
@@ -1963,6 +1965,7 @@ tbody tr:last-child > td {
    tombait deux pixels sous la pastille et le chevron, qui sont centrés sur leur dessin. */
 .toolbar-compte .nav-subfooter .title {
     font-size: 13px;
+    font-weight: 500;
     line-height: 1;
     white-space: nowrap;
 }
@@ -1975,10 +1978,15 @@ tbody tr:last-child > td {
     margin: 0;
     padding: 6px;
     border: 0;
-    border-radius: 0;
+    border-radius: 4px;
     background: transparent;
     color: var(--text-muted);
     cursor: pointer;
+}
+
+.toolbar-compte .account-chevron {
+    width: 14px;
+    height: 14px;
 }
 
 /* Sous 700 px, le nom s'efface : l'initiale suffit à savoir qui est connecté. */
