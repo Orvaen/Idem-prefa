@@ -262,7 +262,10 @@
     function choisir(ligne) {
         const racine = page();
         if (!racine || !ligne) return;
-        if (ligne.classList.contains('est-choisie')) return;
+        const volet = racine.querySelector('#soudures-volet');
+        // La même feuille, volet ouvert : rien à relire. Volet refermé — par Échap ou un
+        // clic à côté —, on le rouvre.
+        if (ligne.classList.contains('est-choisie') && volet && !volet.hidden) return;
 
         racine.querySelectorAll('.soudures-feuille').forEach(autre => {
             const choisie = autre === ligne;
@@ -279,13 +282,15 @@
         if (titre) titre.textContent = ligne.dataset.feuille || '';
         if (bouton) bouton.dataset.repere = ligne.dataset.repere || '';
 
-        // La feuille s'ouvre à droite, et l'écran se coupe en deux. Les listes rendent
-        // alors la moitié de leur largeur — c'est le seul moment où elles la cèdent, et
-        // la feuille de style la leur reprend dès qu'on referme le volet.
-        const saisie = racine.querySelector('.soudures-saisie');
-        if (saisie) saisie.removeAttribute('data-vide');
-        const zone = racine.querySelector('.soudures-plan-de-travail');
-        if (zone) zone.classList.add('est-coupe-en-deux');
+        // La feuille s'ouvre dans le volet flottant, à droite, par-dessus la liste : un seul
+        // volet à la fois, comme sur les autres écrans.
+        document.querySelectorAll('.prefa-detail-row:not([hidden])').forEach(autre => {
+            if (autre !== volet) autre.hidden = true;
+        });
+        if (volet) {
+            volet.hidden = false;
+            volet.scrollTop = 0;
+        }
 
         // Le plan de la feuille, dans l'en-tête du volet : à droite du tableau, celui-ci a
         // cédé ses colonnes d'identité.
@@ -311,10 +316,8 @@
     function fermerSaisie() {
         const racine = page();
         if (!racine) return;
-        const saisie = racine.querySelector('.soudures-saisie');
-        if (saisie) saisie.setAttribute('data-vide', '');
-        const zone = racine.querySelector('.soudures-plan-de-travail');
-        if (zone) zone.classList.remove('est-coupe-en-deux');
+        const volet = racine.querySelector('#soudures-volet');
+        if (volet) volet.hidden = true;
         racine.querySelectorAll('.soudures-feuille.est-choisie').forEach(ligne => {
             ligne.classList.remove('est-choisie');
             ligne.removeAttribute('aria-current');
@@ -500,12 +503,6 @@
 
     $(document).on('click', '.soudures-renseigner', function () {
         choisir(this.closest('.soudures-feuille'));
-        // Le volet est à droite quand l'écran est large, dessous quand il ne l'est pas :
-        // on ne se déplace que dans le second cas, et seulement s'il tombe hors de vue.
-        const saisie = document.querySelector('.soudures-saisie');
-        if (saisie && saisie.getBoundingClientRect().top > window.innerHeight - 120) {
-            saisie.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
     });
 
     // « Plan » et « Ouvrir la feuille » sont servis par plan-viewer.js : c'est lui qui sait
@@ -556,6 +553,106 @@
             // Les boutons reviennent tous, puis celui d'enregistrement retrouve son sort :
             // la feuille qu'on vient d'envoyer n'a plus rien à dire.
             majEnregistrer(racine);
+        }
+    });
+
+    // ===== Signaler un manque =====
+    //
+    // La fenêtre de la maison, ouverte depuis l'en-tête ou depuis la feuille travaillée. Le
+    // plan proposé est celui qu'on regarde ; les articles suggérés sont ceux du bon de
+    // commande de sa demande — on peut toujours en écrire un autre.
+    const fenetreManque = () => document.getElementById('soudures-manque');
+
+    function poserArticles(fenetre) {
+        const plan = fenetre.querySelector('[name="element"]').value;
+        let articles = {};
+        try { articles = JSON.parse(fenetre.dataset.articles || '{}'); } catch { articles = {}; }
+        const liste = fenetre.querySelector('#soudures-manque-articles');
+        liste.replaceChildren(...(articles[plan] || []).map(article => {
+            const option = document.createElement('option');
+            option.value = article.designation;
+            if (article.reference) option.label = article.reference;
+            option.dataset.unite = article.unite || '';
+            return option;
+        }));
+    }
+
+    $(document).on('click', '[data-signaler-manque]', function () {
+        const fenetre = fenetreManque();
+        if (!fenetre) return;
+        const form = fenetre.querySelector('form');
+        form.reset();
+        // Le plan de la feuille ouverte s'il y en a une, sinon celui du sélecteur.
+        const racine = page();
+        const feuille = racine && ligneChoisie(racine);
+        const section = racine && racine.querySelector('.soudures-feuilles-section');
+        const plan = (feuille && feuille.dataset.element) || (section && section.dataset.element) || '';
+        const choix = form.querySelector('[name="element"]');
+        if (plan && choix.querySelector('option[value="' + plan + '"]')) choix.value = plan;
+        poserArticles(fenetre);
+        const message = form.querySelector('.fenetre-message');
+        message.textContent = '';
+        message.classList.remove('is-error');
+        fenetre.showModal();
+        form.querySelector('[name="designation"]').focus();
+    });
+
+    $(document).on('change', '#soudures-manque [name="element"]', function () {
+        poserArticles(fenetreManque());
+    });
+
+    // Un article choisi dans la liste apporte son unité : « m » pour un tube, « u » pour une
+    // bride. On ne l'écrase pas si la personne en a déjà tapé une.
+    $(document).on('change', '#soudures-manque [name="designation"]', function () {
+        const fenetre = fenetreManque();
+        const unite = fenetre.querySelector('[name="unite"]');
+        const option = [...fenetre.querySelectorAll('#soudures-manque-articles option')]
+            .find(o => o.value === this.value);
+        if (option && option.dataset.unite && !unite.value) unite.value = option.dataset.unite;
+    });
+
+    $(document).on('click', '[data-fermer-manque]', function () {
+        fenetreManque()?.close();
+    });
+
+    $(document).on('submit', '#soudures-manque-form', async function (event) {
+        event.preventDefault();
+        const form = this;
+        const message = form.querySelector('.fenetre-message');
+        const bouton = form.querySelector('.fenetre-valider');
+        const donnees = new URLSearchParams(new FormData(form));
+        donnees.set('csrf', form.dataset.csrf);
+
+        bouton.disabled = true;
+        message.classList.remove('is-error');
+        message.textContent = 'Envoi…';
+        try {
+            const reponse = await fetch('actions/signaler_manque.php', {
+                method: 'POST', body: donnees,
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            });
+            const corps = await reponse.json();
+            if (!reponse.ok || !corps.success) {
+                message.classList.add('is-error');
+                message.textContent = corps.message || 'Signalement impossible.';
+                return;
+            }
+            fenetreManque().close();
+            // Le tableau « Matériel signalé » se met à jour sur place, et son compte avec.
+            const racine = page();
+            const zone = racine && racine.querySelector('[data-manques]');
+            if (zone && corps.html) zone.innerHTML = corps.html;
+            const compte = racine && racine.querySelector('#soudures-materiel-titre .prefa-onglet-compte');
+            if (compte && zone) compte.textContent = zone.querySelectorAll('tbody tr').length;
+            // Ouvert depuis une feuille : le pied du volet le dit. Sinon, le tableau suffit.
+            const retour = racine && racine.querySelector('#soudures-volet:not([hidden]) .atelier-message');
+            if (retour) retour.textContent = corps.message;
+            racine?.querySelector('.soudures-materiel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } catch {
+            message.classList.add('is-error');
+            message.textContent = 'Le serveur ne répond pas.';
+        } finally {
+            bouton.disabled = false;
         }
     });
 

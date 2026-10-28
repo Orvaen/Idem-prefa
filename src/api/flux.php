@@ -38,6 +38,7 @@ require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/autoload.php';
 require_once __DIR__ . '/../dashboard/includes/demande/prefa_visibilite.php';
 require_once __DIR__ . '/../dashboard/includes/demande/affaires_nouvelles.php';
+require_once __DIR__ . '/../dashboard/includes/materiel/manques.php';
 
 /** Durée d'une connexion, en secondes. Au-delà, on raccroche et le navigateur rappelle. */
 const FLUX_DUREE = 60;
@@ -99,6 +100,9 @@ $compteurs = static function () use ($db, $visible, $utilisateur): array {
             $lecture->execute([$utilisateur->id]);
             return (int) $lecture->fetchColumn();
         })(),
+        // Les manques de matériel que l'encadrement n'a pas encore regardés : la pastille de
+        // « Commande matériel ». Les autres profils n'ont pas cette entrée.
+        'manques' => $utilisateur->gereLAtelier() ? manquesNouveauxCompte($db) : null,
     ];
 };
 
@@ -173,6 +177,10 @@ while (time() - $debut < FLUX_DUREE) {
                 'demandeur' => trim(($ligne['prenom'] ?? '') . ' ' . ($ligne['name'] ?? '')),
                 'urgente' => (bool) ($donnees['urgente'] ?? false),
                 'motif' => (string) ($donnees['motif'] ?? ''),
+                // Un manque de matériel : l'article et sa quantité, le plan, qui le signale.
+                'article' => (string) ($donnees['article'] ?? ''),
+                'plan' => (string) ($donnees['plan'] ?? ''),
+                'auteur' => (string) ($donnees['auteur'] ?? ''),
             ] + $etat, $depuis);
         }
         $dernierMot = time();

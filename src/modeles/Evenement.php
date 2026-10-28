@@ -18,6 +18,10 @@ final class Evenement
     public const DEMANDE_REFUSEE = 'demande.refusee';
     /** Une affaire a été confiée à un chargé d'affaire. Elle ne regarde que lui. */
     public const AFFAIRE_CONFIEE = 'affaire.confiee';
+    /** L'atelier signale un manque de matériel. Il s'adresse à l'encadrement, nommément. */
+    public const MANQUE_SIGNALE = 'manque.signale';
+    /** Un manque signalé est traité : celui qui l'a signalé l'apprend. */
+    public const MANQUE_TRAITE = 'manque.traite';
 
     /**
      * Note un événement.

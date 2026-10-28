@@ -68,7 +68,15 @@
 
     // Les compteurs sont posés, jamais incrémentés : deux onglets ouverts, une alerte
     // ratée pendant une reconnexion, et un compteur incrémenté dérive sans qu'on le voie.
-    function poserCompteurs({ enAttente, urgentes, affairesNouvelles, mesAffaires }) {
+    function poserCompteurs({ enAttente, urgentes, affairesNouvelles, mesAffaires, manques }) {
+        // La pastille de « Commande matériel » : les manques que personne n'a regardés.
+        const pastilleManques = document.querySelector('.nav-urgent-badge[data-compteur="manques"]');
+        if (pastilleManques && typeof manques === 'number') {
+            pastilleManques.textContent = manques;
+            pastilleManques.setAttribute('aria-label', manques + ' manque(s) de matériel à traiter');
+            pastilleManques.hidden = manques === 0;
+        }
+
         // La pastille de l'entrée Accueil : « +1 » pour une affaire confiée pas encore vue.
         // Sur l'accueil même, elle reste éteinte — la liste est sous les yeux à la prochaine
         // ouverture, et c'est l'ouverture qui vaut lecture.
@@ -113,6 +121,17 @@
             // Le clic mène à l'accueil, qui la montre parmi les nouvelles affaires — et
             // éteint la pastille.
             ouvre: 'btn-accueil',
+        }),
+        'manque.signale': e => ({
+            titre: 'Manque de matériel signalé',
+            detail: [e.article, [e.reference, e.plan].filter(Boolean).join(' · '), e.auteur].filter(Boolean).join(' — '),
+            urgente: true,
+            ouvre: 'btn-commande-materiel',
+        }),
+        'manque.traite': e => ({
+            titre: 'Votre manque de matériel est traité',
+            detail: [e.article, e.reference].filter(Boolean).join(' · '),
+            ouvre: 'btn-soudures',
         }),
         'demande.refusee': e => ({
             titre: 'Demande refusée',

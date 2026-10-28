@@ -93,6 +93,10 @@ if ($isAdmin) {
 
 // PV restant à renseigner : la même règle que l'écran des PV et que l'accueil.
 $pvAFaire = ($isAdmin || $isWorkshopChief) ? pvAFaireTotal($db) : 0;
+
+// Les manques de matériel signalés par l'atelier et que personne n'a encore regardés.
+require_once __DIR__ . '/includes/materiel/manques.php';
+$manquesNouveaux = ($isAdmin || $isWorkshopChief) ? manquesNouveauxCompte($db) : 0;
 ?>
 
 <!DOCTYPE html>
@@ -273,7 +277,7 @@ $pvAFaire = ($isAdmin || $isWorkshopChief) ? pvAFaireTotal($db) : 0;
                                     <button id="btn-<?= $entree['id'] ?>" class="nav-btn<?= $entree['id'] === $vue['id'] ? ' is-active' : '' ?>" type="button" data-page="<?= htmlspecialchars($entree['page'], ENT_QUOTES, 'UTF-8') ?>" <?= $entree['id'] === $vue['id'] ? ' aria-current="page"' : '' ?>>
                                         <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><?= $entree['icone'] ?></svg>
                                         <span><?= htmlspecialchars($libelle, ENT_QUOTES, 'UTF-8') ?></span>
-                                        <?= dashboardBadge($entree['id'], $utilisateur, $urgentPending, $pvAFaire) ?>
+                                        <?= dashboardBadge($entree['id'], $utilisateur, $urgentPending, $pvAFaire, $manquesNouveaux) ?>
                                     </button>
                                 <?php endforeach; ?>
                             </div>

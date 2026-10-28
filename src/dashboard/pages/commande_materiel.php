@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/prefa_context.php';
 require_once __DIR__ . '/../includes/materiel/materiel_bon.php';
+require_once __DIR__ . '/../includes/materiel/manques.php';
 
 // Le bon décrit la demande entière, pas un plan : l'atelier le lit par affectation, pas
 // ici. Cet écran est celui de l'encadrement, qui fait lire et qui corrige.
@@ -13,6 +14,11 @@ unset($bon);
 
 $etats = materielEtats();
 
+// Ce que l'atelier a signalé et que personne n'a encore traité.
+$manques = $canManageWorkshop ? manquesATraiter($db) : [];
+$motifs = manquesMotifs();
+$etatsManque = manquesEtats();
+
 ?>
 <section class="page prefa-page prefa-list atelier-page" id="materiel-page" aria-labelledby="materiel-page-title">
     <div class="prefa-shell">
@@ -23,6 +29,52 @@ $etats = materielEtats();
                 <p>Les bons déposés sur les demandes, et les articles qu’ils commandent. La lecture propose, vous corrigez.</p>
             </div>
         </header>
+
+        <?php // Les manques signalés par l'atelier, au-dessus des bons : c'est ce qui attend
+              // une action, et un soudeur arrêté faute d'une bride passe avant une relecture
+              // de bon. La section n'existe que s'il y a quelque chose à traiter. ?>
+        <?php if ($manques): ?>
+            <section class="materiel-manques" aria-labelledby="materiel-manques-titre" data-csrf="<?= prefaEscape(Session::jeton()) ?>">
+                <h2 id="materiel-manques-titre">Manques signalés par l’atelier
+                    <span class="prefa-onglet-compte" data-manques-compte><?= count($manques) ?></span></h2>
+                <div class="prefa-table-scroll" role="region" aria-label="Manques signalés" tabindex="0">
+                    <table class="prefa-table materiel-manques-table">
+                        <thead><tr>
+                            <th scope="col">Article</th>
+                            <th scope="col" class="prefa-nombre">Qté</th>
+                            <th scope="col">Motif</th>
+                            <th scope="col">Demande</th>
+                            <th scope="col">Signalé par</th>
+                            <th scope="col">État</th>
+                            <th scope="col"><span class="atelier-sr-only">Actions</span></th>
+                        </tr></thead>
+                        <tbody>
+                            <?php foreach ($manques as $manque):
+                                $etat = $etatsManque[$manque['statut']]; ?>
+                                <tr class="materiel-manque" data-manque="<?= (int) $manque['id'] ?>" data-statut="<?= prefaEscape($manque['statut']) ?>">
+                                    <td class="materiel-manque-article">
+                                        <strong><?= prefaEscape($manque['designation']) ?></strong>
+                                        <?php if ($manque['commentaire']): ?><span><?= prefaEscape($manque['commentaire']) ?></span><?php endif; ?>
+                                    </td>
+                                    <td class="prefa-nombre"><?= prefaEscape(manqueQuantite($manque['quantite']) . ' ' . $manque['unite']) ?></td>
+                                    <td><?= prefaEscape($motifs[$manque['motif']] ?? $manque['motif']) ?></td>
+                                    <td class="prefa-reference"><?= prefaEscape(prefaReference((int) $manque['id_demande'])) ?></td>
+                                    <td><?= prefaEscape($manque['auteur']) ?><span class="materiel-manque-date"><?= prefaEscape(prefaFormatDate($manque['date_creation'])) ?></span></td>
+                                    <td><span class="pv-puce <?= $etat['puce'] ?>" data-manque-etat><?= prefaEscape($etat['libelle']) ?></span></td>
+                                    <td class="materiel-manque-actions">
+                                        <?php if ($manque['statut'] === 'nouvelle'): ?>
+                                            <button type="button" class="materiel-manque-bouton" data-traiter="vue">Marquer vu</button>
+                                        <?php endif; ?>
+                                        <button type="button" class="materiel-manque-bouton est-principal" data-traiter="traitee">Traité</button>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="prefa-table-empty materiel-manques-vide" hidden>Tous les manques sont traités.</p>
+            </section>
+        <?php endif; ?>
 
         <?php // La barre de la maison : la recherche à loupe, puis un onglet par état avec son
               // compte. Trois étiquettes flottantes de 44 px faisaient un formulaire de

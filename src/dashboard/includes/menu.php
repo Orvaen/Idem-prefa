@@ -212,7 +212,7 @@ function dashboardMenu(): array
  * nav-urgent-badge, et la mise à jour des urgentes les repeignait toutes : les PV restant
  * à renseigner tombaient au nombre de demandes urgentes à chaque rafraîchissement.
  */
-function dashboardBadge(string $id, Utilisateur $utilisateur, int $urgentes, int $pvAFaire): string
+function dashboardBadge(string $id, Utilisateur $utilisateur, int $urgentes, int $pvAFaire, int $manques = 0): string
 {
     $pastille = static fn (string $quoi, string $attributs, int $compte): string =>
         '<span class="nav-urgent-badge" data-compteur="' . $quoi . '" ' . $attributs
@@ -227,6 +227,9 @@ function dashboardBadge(string $id, Utilisateur $utilisateur, int $urgentes, int
         'pv' => $pvAFaire === 0 ? '' : $pastille('pv', 'aria-label="' . $pvAFaire . ' PV à renseigner"'
             . ' title="PV encore à renseigner"', $pvAFaire),
         'urgent-prefa' => $pastille('urgentes', 'aria-hidden="true"', $urgentes),
+        // Toujours posée, même à zéro : le flux l'allume en direct quand l'atelier signale.
+        'commande-materiel' => $pastille('manques', 'aria-label="' . $manques . ' manque(s) de matériel à traiter"'
+            . ' title="Manques de matériel signalés par l’atelier"', $manques),
         default => '',
     };
 }

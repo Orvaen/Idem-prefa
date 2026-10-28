@@ -518,3 +518,100 @@ html .materiel-volet-rang .materiel-edition td.est-en-retard,
 html .materiel-volet-rang .materiel-edition td.est-en-retard input {
     color: var(--attente-texte) !important;
 }
+
+/* ==========================================================================
+   LES MANQUES SIGNALÉS PAR L'ATELIER
+   ==========================================================================
+
+   Au-dessus des bons : c'est ce qui attend une action. Un titre de section, puis un
+   tableau à même la surface, comme « Matériel signalé » chez le soudeur. */
+
+#materiel-page .materiel-manques {
+    margin-bottom: 28px;
+}
+
+html #materiel-page .materiel-manques h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 16px 8px;
+    color: var(--text) !important;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+html #materiel-page table.materiel-manques-table {
+    width: 100%;
+    min-width: 0;
+}
+
+html #materiel-page .materiel-manques-table th:not(:first-child),
+html #materiel-page .materiel-manques-table td:not(:first-child) {
+    width: 1%;
+    padding-left: 24px;
+    white-space: nowrap;
+}
+
+html #materiel-page .materiel-manques-table td.materiel-manque-article {
+    min-width: 260px;
+    max-width: none;
+    overflow-wrap: normal;
+}
+
+#materiel-page .materiel-manque-article strong {
+    display: block;
+    font-weight: 500;
+}
+
+html #materiel-page .materiel-manque-article span,
+html #materiel-page .materiel-manque-date {
+    display: block;
+    color: var(--text-muted) !important;
+    font-size: 12px;
+}
+
+#materiel-page .materiel-manque-actions {
+    text-align: right;
+}
+
+/* Deux commandes de ligne, à la hauteur des contrôles de tableau (DA, § 4). « Traité »
+   est l'issue : il porte le plein. */
+html #materiel-page .materiel-manque-bouton {
+    display: inline-flex;
+    align-items: center;
+    height: var(--h-md);
+    margin: 0 0 0 6px;
+    padding: 0 10px;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--r-md);
+    background: var(--surface) !important;
+    color: var(--text) !important;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+html #materiel-page .materiel-manque-bouton:hover:not(:disabled) {
+    background: var(--hover) !important;
+}
+
+html #materiel-page .materiel-manque-bouton.est-principal {
+    border-color: var(--bouton-plein) !important;
+    background: var(--bouton-plein) !important;
+    color: var(--bouton-plein-texte) !important;
+}
+
+html #materiel-page .materiel-manque-bouton.est-principal:hover:not(:disabled) {
+    background: var(--bouton-plein-hover) !important;
+}
+
+html #materiel-page .materiel-manque-bouton:disabled {
+    opacity: .55;
+    cursor: progress;
+}
+
+.pv-puce-vue {
+    background: var(--accent-fond, var(--selection-fond));
+    color: var(--accent-texte);
+}

@@ -23,6 +23,59 @@
         }
     }
 
+    // ------------------------------------------------------------- LES MANQUES SIGNALÉS
+    //
+    // L'atelier signale, l'encadrement fait avancer : vu, puis traité. Un manque traité
+    // quitte la liste — elle ne garde que ce qui attend quelqu'un.
+
+    /** La pastille de l'entrée « Commande matériel » : les manques que personne n'a vus. */
+    function majPastilleManques() {
+        const pastille = document.querySelector('.nav-urgent-badge[data-compteur="manques"]');
+        if (!pastille) return;
+        const nouveaux = document.querySelectorAll('.materiel-manque[data-statut="nouvelle"]').length;
+        pastille.textContent = nouveaux;
+        pastille.hidden = nouveaux === 0;
+    }
+
+    $(document).on('click', '.materiel-manque [data-traiter]', function () {
+        const bouton = this;
+        const ligne = bouton.closest('.materiel-manque');
+        const section = bouton.closest('.materiel-manques');
+        const statut = bouton.dataset.traiter;
+        ligne.querySelectorAll('button').forEach(b => { b.disabled = true; });
+
+        $.ajax({
+            url: 'actions/traiter_manque.php',
+            method: 'POST',
+            data: { csrf: section.dataset.csrf, manque: ligne.dataset.manque, statut },
+            dataType: 'json',
+        })
+            .done(reponse => {
+                if (statut === 'traitee') {
+                    ligne.remove();
+                    const restants = section.querySelectorAll('.materiel-manque').length;
+                    section.querySelector('[data-manques-compte]').textContent = restants;
+                    if (!restants) {
+                        section.querySelector('.prefa-table-scroll').hidden = true;
+                        section.querySelector('.materiel-manques-vide').hidden = false;
+                    }
+                } else {
+                    ligne.dataset.statut = statut;
+                    const puce = ligne.querySelector('[data-manque-etat]');
+                    puce.className = 'pv-puce ' + reponse.etat.puce;
+                    puce.textContent = reponse.etat.libelle;
+                    bouton.remove();
+                    ligne.querySelectorAll('button').forEach(b => { b.disabled = false; });
+                }
+                majPastilleManques();
+            })
+            .fail(xhr => {
+                ligne.querySelectorAll('button').forEach(b => { b.disabled = false; });
+                bouton.title = xhr.responseJSON?.message || 'Opération impossible. Réessayez.';
+                window.alert(bouton.title);
+            });
+    });
+
     // ------------------------------------------------------------------ LES FILTRES
 
     function filtrer() {
