@@ -343,32 +343,110 @@ $(document).on('click', '.delete-prefa', function () {
     });
 });
 
+// ===== Le visualiseur PDF =====
+// Plein écran : le document à gauche, son sommaire à droite — une vignette par page,
+// qu'on clique pour s'y rendre. Le sommaire n'existe que pour les documents dont
+// l'adresse sait rendre ses pages (data-sommaire) ; les autres s'ouvrent sans.
+const PDF_ICONES = {
+    fichier: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"/><path d="M14 3v5h5"/>',
+    telecharger: '<path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/>',
+    sommaire: '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M15 4v16"/>',
+    fermer: '<path d="m6 6 12 12M18 6 6 18"/>',
+};
+const pdfIcone = nom => `<svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">${PDF_ICONES[nom]}</svg>`;
+
+function pdfViewer() {
+    let viewer = document.getElementById('prefa-pdf-viewer');
+    if (viewer) return viewer;
+    viewer = document.createElement('dialog');
+    viewer.id = 'prefa-pdf-viewer';
+    viewer.className = 'prefa-pdf-viewer';
+    viewer.setAttribute('aria-labelledby', 'prefa-pdf-title');
+    viewer.innerHTML = `
+        <header class="prefa-pdf-toolbar">
+            <span class="prefa-pdf-icone">${pdfIcone('fichier')}</span>
+            <div class="prefa-pdf-titre"><h2 id="prefa-pdf-title"></h2><span class="prefa-pdf-pages"></span></div>
+            <button type="button" class="prefa-pdf-bouton prefa-pdf-bouton-sommaire" aria-pressed="true" title="Afficher ou masquer le sommaire">${pdfIcone('sommaire')}Sommaire</button>
+            <a class="prefa-pdf-bouton prefa-pdf-download" download>${pdfIcone('telecharger')}Télécharger</a>
+            <button type="button" class="prefa-pdf-bouton prefa-pdf-close" aria-label="Fermer" title="Fermer (Échap)" autofocus>${pdfIcone('fermer')}</button>
+        </header>
+        <div class="prefa-pdf-corps">
+            <iframe title="Aperçu PDF"></iframe>
+            <aside class="prefa-pdf-sommaire" aria-label="Sommaire du document">
+                <h3 class="prefa-pdf-sommaire-titre">Pages</h3>
+                <ol class="prefa-pdf-sommaire-corps"></ol>
+            </aside>
+        </div>`;
+    document.body.appendChild(viewer);
+
+    viewer.querySelector('.prefa-pdf-close').addEventListener('click', () => viewer.close());
+    viewer.addEventListener('close', () => {
+        viewer.querySelector('iframe').src = 'about:blank';
+        document.body.classList.remove('prefa-viewer-open');
+    });
+    // Le sommaire se replie pour rendre la largeur au document ; le choix tient d'un
+    // document à l'autre, le temps de la page.
+    viewer.querySelector('.prefa-pdf-bouton-sommaire').addEventListener('click', function () {
+        const montre = this.getAttribute('aria-pressed') !== 'true';
+        this.setAttribute('aria-pressed', String(montre));
+        viewer.dataset.sommaireMasque = montre ? '' : '1';
+        viewer.querySelector('.prefa-pdf-sommaire').hidden = !montre || !viewer.dataset.pages;
+    });
+    viewer.querySelector('.prefa-pdf-sommaire-corps').addEventListener('click', event => {
+        const page = event.target.closest('.prefa-pdf-page');
+        if (!page) return;
+        // Le lecteur PDF du navigateur suit l'ancre #page= : on ne recharge rien.
+        const iframe = viewer.querySelector('iframe');
+        iframe.src = viewer.dataset.apercu + '#page=' + page.dataset.page;
+        viewer.querySelectorAll('.prefa-pdf-page').forEach(p => p.classList.toggle('est-vue', p === page));
+    });
+    return viewer;
+}
+
+function pdfSommaire(viewer, adresse) {
+    const corps = viewer.querySelector('.prefa-pdf-sommaire-corps');
+    const sommaire = viewer.querySelector('.prefa-pdf-sommaire');
+    const compte = viewer.querySelector('.prefa-pdf-pages');
+    const bascule = viewer.querySelector('.prefa-pdf-bouton-sommaire');
+    corps.innerHTML = '';
+    compte.textContent = '';
+    viewer.dataset.pages = '';
+    sommaire.hidden = true;
+    bascule.hidden = !adresse;
+    if (!adresse) return;
+
+    const url = new URL(adresse, window.location.href);
+    url.searchParams.set('pages', '1');
+    const demande = viewer.dataset.ouverture = String(Date.now());
+    fetch(url.href)
+        .then(reponse => reponse.ok ? reponse.json() : Promise.reject())
+        .then(({pages}) => {
+            // Un autre document a été ouvert entre-temps : ce sommaire n'est plus le sien.
+            if (viewer.dataset.ouverture !== demande || !pages) return;
+            viewer.dataset.pages = String(pages);
+            compte.textContent = pages + (pages > 1 ? ' pages' : ' page');
+            const vignette = new URL(adresse, window.location.href);
+            corps.innerHTML = Array.from({length: Math.min(pages, 500)}, (_, i) => {
+                vignette.searchParams.set('vignette', String(i + 1));
+                return `<li><button type="button" class="prefa-pdf-page${i === 0 ? ' est-vue' : ''}" data-page="${i + 1}" aria-label="Aller à la page ${i + 1}">
+                    <img loading="lazy" alt="" src="${vignette.href}"><span>${i + 1}</span></button></li>`;
+            }).join('');
+            sommaire.hidden = viewer.dataset.sommaireMasque === '1';
+        })
+        .catch(() => { bascule.hidden = true; });
+}
+
 $(document).on('click', '.prefa-pdf-link', function (event) {
     if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
-    let viewer = document.getElementById('prefa-pdf-viewer');
-    if (!viewer) {
-        viewer = document.createElement('dialog');
-        viewer.id = 'prefa-pdf-viewer';
-        viewer.className = 'prefa-pdf-viewer';
-        viewer.setAttribute('aria-labelledby', 'prefa-pdf-title');
-        viewer.innerHTML = '<header class="prefa-pdf-toolbar"><div><small>Aperçu PDF</small><h2 id="prefa-pdf-title"></h2></div><a class="prefa-pdf-download" download>Télécharger</a><button type="button" class="prefa-pdf-close" autofocus>Fermer</button></header><iframe title="Aperçu PDF"></iframe>';
-        document.body.appendChild(viewer);
-        viewer.querySelector('.prefa-pdf-close').addEventListener('click', () => viewer.close());
-        viewer.addEventListener('click', event => {
-            const bounds = viewer.getBoundingClientRect();
-            if (event.target === viewer && (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom)) viewer.close();
-        });
-        viewer.addEventListener('close', () => {
-            viewer.querySelector('iframe').src = 'about:blank';
-            document.body.classList.remove('prefa-viewer-open');
-        });
-    }
+    const viewer = pdfViewer();
     viewer.querySelector('h2').textContent = this.dataset.name;
     viewer.querySelector('.prefa-pdf-download').href = this.href;
-    const preview = new URL(this.href);
+    const preview = new URL(this.href, window.location.href);
     preview.searchParams.set('preview', '1');
+    viewer.dataset.apercu = preview.href;
     viewer.querySelector('iframe').src = preview.href;
+    pdfSommaire(viewer, this.dataset.sommaire ? this.href : '');
     viewer.showModal();
     document.body.classList.add('prefa-viewer-open');
 });

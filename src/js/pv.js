@@ -28,7 +28,7 @@
     // pénible de rouvrir la demande à chaque fois.
     const ouverts = () => Array.from(document.querySelectorAll('#pv-page .prefa-detail-row:not([hidden])')).map(ligne => ligne.id);
 
-    function recharger(deplies = []) {
+    function recharger(deplies = [], ensuite = null) {
         $('#content').load('pages/pv.php', function (_, statut) {
             if (statut === 'error') {
                 $(this).text('Impossible de charger les PV. Actualisez.');
@@ -39,6 +39,7 @@
                 if (ligne) ligne.hidden = false;
                 document.querySelectorAll(`[aria-controls="${id}"]`).forEach(b => b.setAttribute('aria-expanded', 'true'));
             });
+            if (ensuite) ensuite();
         });
     }
 
@@ -96,7 +97,12 @@
         $.ajax({ url: 'actions/pv.php', method: 'POST', data: donnees, processData: false, contentType: false, dataType: 'json' })
             .done(reponse => {
                 if (window.toast) window.toast(reponse.message || 'Enregistré.');
-                recharger(deplies);
+                // Un bon déposé sur la réception matériel se lit tout de suite : commandes.js
+                // écoute cet événement et remplit la commande dans le volet rouvert.
+                const bons = reponse.bons || [];
+                const demande = donnees.get('demande');
+                recharger(deplies, bons.length ? () => document.dispatchEvent(
+                    new CustomEvent('pv:bons-deposes', { detail: { demande, bons } })) : null);
             })
             .fail(xhr => {
                 message.addClass('error').text(xhr.responseJSON?.message || 'Enregistrement impossible. Réessayez.');

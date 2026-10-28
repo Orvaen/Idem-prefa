@@ -339,6 +339,8 @@ function dashboardRessources(Utilisateur $utilisateur): array
         'css/dashboard/dashboard-forms.css',
         'css/dashboard/prefa-form.css',
         'css/dashboard/prefa-list.css',
+        // Le visualiseur PDF : tout écran qui liste des documents l'ouvre.
+        'css/dashboard/pdf-viewer.css',
         // La nomenclature et les suggestions habillent des tableaux et des champs qu'on
         // retrouve dans plusieurs écrans, pour sept kilo-octets à eux deux.
         'css/dashboard/nomenclature.css',

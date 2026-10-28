@@ -37,17 +37,51 @@ if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
 
 $lu = commandeLignesLire($chemin);
 
+// Rien de reconnu : avant de renvoyer « saisissez à la main », on regarde si ce n'est pas
+// un autre document. Le cas courant est le certificat matière (EN 10204 3.1) déposé à la
+// place du bon — même fournisseur, même enveloppe, et sur un PV de réception les deux
+// arrivent ensemble. Le dire évite de chercher pourquoi « la lecture ne marche plus ».
+$certificat = null;
+if (!$lu['lignes']) {
+    $ccpu = ccpuLire($chemin);
+    if ($ccpu['certificat'] || $ccpu['coulees']) {
+        $certificat = [
+            'numero' => $ccpu['certificat'],
+            'coulees' => array_values(array_map(static fn (array $c): string => (string) $c['numero'], $ccpu['coulees'])),
+            'nuances' => $ccpu['nuances'],
+            'dimensions' => $ccpu['dimensions'],
+        ];
+    }
+}
+
+// L'échéance la plus proche devient la date de livraison de la commande : c'est celle
+// que l'atelier guette. Le chef la corrige si le bon arrive en plusieurs fois.
+$echeances = array_values(array_filter(array_map(static fn (array $l): ?string => $l['date_livraison'] ?? null, $lu['lignes'])));
+sort($echeances);
+
+if ($lu['lignes']) {
+    $message = count($lu['lignes']) . ' article(s) lus' . ($lu['lecture'] === 'ocr' ? ' par reconnaissance d’image — relisez les références et les quantités, puis enregistrez.' : ' — relisez, puis enregistrez.');
+} elseif ($certificat) {
+    $message = '« ' . $document['nom'] . ' » est un certificat matière'
+        . ($certificat['numero'] ? ' (n° ' . $certificat['numero'] . ')' : '')
+        . ', pas un bon de commande : il n’a pas d’articles à lire.'
+        . ($certificat['coulees'] ? ' Coulées relevées : ' . implode(', ', $certificat['coulees']) . '.' : '');
+} else {
+    $message = 'Aucun article reconnu dans « ' . $document['nom'] . ' ». Saisissez-les à la main.';
+}
+
 header('Content-Type: application/json; charset=utf-8');
 echo json_encode([
     'success' => true,
     'nom' => $document['nom'],
     'lecture' => $lu['lecture'],
     'pages' => $lu['pages'],
+    'numero' => $lu['numero'],
+    'date' => $lu['date'],
+    'livraison' => $echeances[0] ?? null,
     'lignes' => $lu['lignes'],
-    // Ce que l'écran doit dire avant que le chef d'atelier ne valide : une lecture par OCR
-    // se trompe sur des caractères qui se ressemblent, et personne ne doit l'enregistrer
-    // sans avoir relu.
-    'message' => $lu['lignes']
-        ? count($lu['lignes']) . ' article(s) lus' . ($lu['lecture'] === 'ocr' ? ' par reconnaissance d’image — relisez les références et les quantités.' : '.')
-        : 'Aucun article reconnu dans ce document. Saisissez-les à la main.',
+    'certificat' => $certificat,
+    // Une lecture par OCR se trompe sur des caractères qui se ressemblent, et personne
+    // ne doit l'enregistrer sans avoir relu : l'écran le dit.
+    'message' => $message,
 ]);

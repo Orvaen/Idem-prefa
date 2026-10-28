@@ -29,6 +29,7 @@ $modifiable = $modifiable ?? false;
             <a class="prefa-document-link<?= $estPdf ? ' prefa-pdf-link' : '' ?>"
                href="<?= prefaEscape($estPdf ? $adresse : $adresse . '&preview=1') ?>"
                data-name="<?= prefaEscape($document['nom']) ?>"
+               <?= $estPdf ? 'data-sommaire="1"' : '' ?>
                <?= $estPdf ? 'aria-haspopup="dialog"' : 'target="_blank" rel="noopener"' ?>>
                 <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m21 11-8.6 8.6a5 5 0 0 1-7-7L14 4a3.3 3.3 0 0 1 4.7 4.7l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4L15.4 7" /></svg>
                 <span class="pv-document-nom"><?= prefaEscape($document['nom']) ?></span>

@@ -1,0 +1,230 @@
+/* Le visualiseur PDF de l'application (prefa-interactions.js).
+
+   Plein écran, une barre fine en tête — le nom du document, son nombre de pages, puis
+   Télécharger et une croix — et sous elle le document à gauche, son sommaire à droite :
+   une vignette par page, la page vue cernée d'accent. Même grammaire que le sommaire du
+   lecteur de plans, pour qu'on n'ait pas deux façons de feuilleter un PDF. */
+
+body.prefa-viewer-open {
+    overflow: hidden;
+}
+
+.prefa-pdf-viewer {
+    width: 100vw;
+    max-width: none;
+    height: 100vh;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: var(--frame);
+    color: var(--text);
+    box-shadow: none;
+}
+
+.prefa-pdf-viewer[open] {
+    display: flex;
+    flex-direction: column;
+}
+
+.prefa-pdf-viewer::backdrop {
+    background: #142235b3;
+}
+
+/* ---------- La barre ---------- */
+
+.prefa-pdf-toolbar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 48px;
+    padding: 0 8px 0 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+}
+
+.prefa-pdf-icone {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    color: var(--text-muted);
+}
+
+.prefa-pdf-titre {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.prefa-pdf-titre h2 {
+    margin: 0;
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.prefa-pdf-pages {
+    flex: none;
+    font-size: 12px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.prefa-pdf-bouton {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 30px;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 12px;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.prefa-pdf-bouton:hover,
+.prefa-pdf-bouton[aria-pressed="true"] {
+    background: var(--hover);
+}
+
+.prefa-pdf-bouton .icon {
+    width: 14px;
+    height: 14px;
+}
+
+/* La croix : sans cadre, comme celle des volets. */
+.prefa-pdf-close {
+    width: 30px;
+    padding: 0;
+    justify-content: center;
+    border-color: transparent;
+}
+
+.prefa-pdf-bouton:focus-visible,
+.prefa-pdf-page:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* ---------- Le document et son sommaire ---------- */
+
+.prefa-pdf-corps {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+}
+
+.prefa-pdf-viewer iframe {
+    display: block;
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    border: 0;
+    background: var(--frame);
+}
+
+.prefa-pdf-sommaire {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    width: 200px;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+}
+
+.prefa-pdf-sommaire[hidden] {
+    display: none;
+}
+
+.prefa-pdf-sommaire-titre {
+    flex: none;
+    margin: 0;
+    padding: 12px 14px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.prefa-pdf-sommaire-corps {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0 12px 12px;
+    list-style: none;
+}
+
+.prefa-pdf-page {
+    display: block;
+    width: 100%;
+    padding: 4px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    text-align: center;
+    cursor: pointer;
+}
+
+.prefa-pdf-page:hover {
+    background: var(--hover);
+}
+
+.prefa-pdf-page.est-vue {
+    border-color: var(--accent);
+    box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+/* Le rapport d'un A4 debout, tenu avant que la vignette arrive : sans lui la colonne
+   sursaute à chaque image reçue. Le papier reste blanc quel que soit le thème. */
+.prefa-pdf-page img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 0.707;
+    object-fit: contain;
+    border-radius: 3px;
+    background: #ffffff;
+}
+
+.prefa-pdf-page span {
+    display: block;
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.prefa-pdf-sommaire-vide {
+    margin: 0;
+    padding: 0 14px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+@media (max-width: 760px) {
+    .prefa-pdf-sommaire {
+        display: none;
+    }
+
+    .prefa-pdf-bouton-sommaire,
+    .prefa-pdf-pages {
+        display: none;
+    }
+}

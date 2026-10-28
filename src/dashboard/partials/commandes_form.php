@@ -77,8 +77,13 @@ $ligneCommande = static function (array $commande) use ($etats): void {
 <div class="commandes-saisie" data-commandes>
     <div class="commandes-entete">
         <h3>Commandes fournisseur</h3>
-        <button type="button" class="commandes-ajouter bouton-discret">Ajouter une commande</button>
+        <div class="commandes-actions">
+            <button type="button" class="commandes-lire-bons bouton-discret" title="Lire les articles du bon déposé ci-dessous">Lire le bon</button>
+            <button type="button" class="commandes-ajouter bouton-discret">Ajouter une commande</button>
+        </div>
     </div>
+    <!-- Ce que la lecture a trouvé — ou pourquoi elle n'a rien trouvé. -->
+    <p class="commandes-mot" role="status" aria-live="polite"></p>
 
     <div class="commandes-scroll"<?= $commandes ? '' : ' hidden' ?>>
         <div class="commandes-editable commandes-lignes">
@@ -86,7 +91,7 @@ $ligneCommande = static function (array $commande) use ($etats): void {
         </div>
     </div>
 
-    <p class="commandes-vide"<?= $commandes ? ' hidden' : '' ?>>Aucune commande. Le bon se dépose en PDF ci-dessous.</p>
+    <p class="commandes-vide"<?= $commandes ? ' hidden' : '' ?>>Aucune commande. Déposez le bon en PDF ci-dessous et enregistrez : il est lu tout seul.</p>
 
     <template class="commande-gabarit"><?php $ligneCommande([]); ?></template>
 </div>

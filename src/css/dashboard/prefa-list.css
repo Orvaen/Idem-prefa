@@ -1408,100 +1408,11 @@ body.prefa-viewer-open {
     overflow: hidden;
 }
 
-.prefa-pdf-viewer {
-    width: 100vw;
-    max-width: none;
-    height: 100vh;
-    height: 100dvh;
-    max-height: none;
-    margin: 0;
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    background: var(--frame);
-    color: var(--text);
-    box-shadow: none;
-}
-
-.prefa-pdf-viewer[open] {
-    display: flex;
-    flex-direction: column;
-}
-
-.prefa-pdf-viewer::backdrop {
-    background: #142235b3;
-}
-
-.prefa-pdf-toolbar {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-height: 64px;
-    padding: 12px 20px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-}
-
-.prefa-pdf-toolbar>div {
-    flex: 1;
-    min-width: 0;
-}
-
-.prefa-pdf-toolbar small {
-    color: var(--text-muted);
-    font-size: 11px;
-}
-
-.prefa-pdf-toolbar h2 {
-    margin: 4px 0 0;
-    font-size: 14px;
-    overflow-wrap: anywhere;
-}
-
-.prefa-pdf-toolbar a,
-.prefa-pdf-toolbar button {
-    flex-shrink: 0;
-    padding: 9px 14px;
-    border-radius: 6px;
-    font: inherit;
-    font-size: 13px;
-    cursor: pointer;
-    text-decoration: none;
-}
-
-.prefa-pdf-download {
-    background: var(--accent);
-    color: #ffffff;
-    border: 1px solid var(--accent);
-}
-
-.prefa-pdf-close {
-    background: var(--surface);
-    color: var(--text);
-    border: 1px solid var(--border);
-}
-
-.prefa-pdf-viewer iframe {
-    display: block;
-    flex: 1;
-    width: 100%;
-    min-height: 0;
-    border: 0;
-    background: var(--frame);
-}
+/* Le visualiseur PDF vit dans pdf-viewer.css. */
 
 @media (max-width: 850px) {
     .prefa-document-groups {
         grid-template-columns: 1fr;
-    }
-
-    .prefa-pdf-toolbar {
-        flex-wrap: wrap;
-        padding: 12px;
-    }
-
-    .prefa-pdf-toolbar>div {
-        flex-basis: 100%;
     }
 }
 

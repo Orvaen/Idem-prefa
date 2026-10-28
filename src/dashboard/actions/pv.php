@@ -22,6 +22,12 @@ if ($type === 'passivation' && $demande['id_passivation'] === null) {
     prefaError(409, 'Aucune passivation n’est demandée : ce PV est sans objet.');
 }
 
+/** Échappe un chemin pour glob() : une clé de document peut porter des crochets. */
+function pvGlobEchappe(string $chemin): string
+{
+    return preg_replace('/[\\*?\[\]]/', '\\\\$0', $chemin);
+}
+
 /** Crée la ligne du PV à la première écriture, puis la verrouille. */
 function pvVerrouiller(PDO $db, int $idDemande, string $type): array
 {
@@ -46,7 +52,10 @@ try {
         $db->prepare('DELETE FROM pv_document WHERE id = ?')->execute([$idDocument]);
         $db->commit();
         // Le fichier part après la transaction : une suppression disque ne se défait pas.
-        @unlink(pvDocumentDirectory((int) $pv['id']) . '/' . $document['cle']);
+        $fichier = pvDocumentDirectory((int) $pv['id']) . '/' . $document['cle'];
+        @unlink($fichier);
+        // Les vignettes du sommaire du visualiseur partent avec lui.
+        foreach (glob(pvGlobEchappe($fichier) . '.p*.jpg') ?: [] as $vignette) @unlink($vignette);
 
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode(['success' => true, 'message' => 'Document retiré.']);
@@ -119,6 +128,7 @@ try {
         }
     }
     $deposes = [];
+    $pdfsDeposes = [];
     $db->beginTransaction();
     try {
         $pv = pvVerrouiller($db, $idDemande, $type);
@@ -147,6 +157,7 @@ try {
                 if (!@move_uploaded_file($document['tmp'], $chemin)) throw new RuntimeException('Impossible de déposer le document.');
                 $deposes[] = $chemin;
                 $inserer->execute([$pv['id'], $cle, $document['nom'], $document['categorie'], $document['taille'], $actor['id']]);
+                if (strtolower(pathinfo($document['nom'], PATHINFO_EXTENSION)) === 'pdf') $pdfsDeposes[] = (int) $db->lastInsertId();
             }
         }
 
@@ -160,7 +171,13 @@ try {
 
     header('Content-Type: application/json; charset=utf-8');
     $n = count($documents);
-    echo json_encode(['success' => true, 'message' => 'PV enregistré' . ($n ? ' avec ' . $n . ($n === 1 ? ' fichier.' : ' fichiers.') : '.')]);
+    echo json_encode([
+        'success' => true,
+        'message' => 'PV enregistré' . ($n ? ' avec ' . $n . ($n === 1 ? ' fichier.' : ' fichiers.') : '.'),
+        // Les bons déposés sur la réception se lisent dès qu'ils sont là : l'écran les
+        // relit sans qu'on ait à créer une commande vide pour trouver le bouton.
+        'bons' => $type === 'reception_materiel' ? $pdfsDeposes : [],
+    ]);
 } catch (DomainException $refus) {
     prefaError(409, $refus->getMessage());
 } catch (PDOException $e) {

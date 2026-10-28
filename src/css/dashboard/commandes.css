@@ -24,7 +24,13 @@
     font-weight: 600;
 }
 
-.commandes-ajouter {
+.commandes-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.commandes-ajouter,
+.commandes-lire-bons {
     height: var(--ctrl-sm);
     padding: 0 12px;
     border: 1px solid var(--border);
@@ -38,8 +44,30 @@
     transition: background 0.12s ease;
 }
 
-.commandes-ajouter:hover {
+.commandes-ajouter:hover,
+.commandes-lire-bons:hover:not(:disabled) {
     background: var(--hover);
+}
+
+.commandes-lire-bons:disabled {
+    opacity: 0.6;
+    cursor: progress;
+}
+
+/* La ligne de la lecture : vide tant qu'on n'a rien lu, elle ne prend pas de place. */
+.commandes-mot {
+    margin: 0 0 8px;
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.commandes-mot:empty {
+    display: none;
+}
+
+.commandes-mot.error {
+    color: var(--alerte-texte);
 }
 
 /* Le défilement horizontal est assumé ici : dans un volet étroit il vaut mieux faire

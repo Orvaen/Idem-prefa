@@ -190,6 +190,120 @@
             .map(li => ({id: li.dataset.document, nom: li.dataset.nom}));
     }
 
+    /** Demande la lecture d'un PDF déposé ; la réponse ne fait que proposer. */
+    function lire(formulaire, idDocument) {
+        const donnees = new FormData();
+        donnees.set('csrf', formulaire.elements.csrf.value);
+        donnees.set('document', idDocument);
+        return fetch('actions/lire_bon_commande.php', {method: 'POST', body: donnees})
+            .then(reponse => reponse.json().then(corps => {
+                if (!reponse.ok) throw new Error(corps.message || 'Lecture impossible.');
+                return corps;
+            }));
+    }
+
+    /** Pose les articles lus dans la rangée d'une commande et la déplie. */
+    function remplirArticles(rang, lignes) {
+        // La lecture remplace ce qui était là : on relit un bon pour corriger une
+        // première lecture, pas pour en empiler une seconde.
+        poser(rang, lignes.map(l => ({
+            reference_article: l.reference,
+            designation: l.designation,
+            unite: l.unite,
+            quantite_attendue: l.quantite,
+            quantite_recue: '',
+        })));
+        rendre(rang);
+        rang.querySelector('.commande-articles').hidden = false;
+        rang.querySelector('.commande-articles-bascule').setAttribute('aria-expanded', 'true');
+    }
+
+    /**
+     * La commande que décrit un bon lu : celle qui porte déjà son numéro, sinon une ligne
+     * vide laissée par « Ajouter une commande », sinon une commande neuve.
+     */
+    function commandePour(zone, numero) {
+        const lignes = [...zone.querySelectorAll('.commande-ligne')];
+        const champ = l => l.querySelector('[name="commande[numero][]"]');
+        let ligne = numero ? lignes.find(l => champ(l).value.trim() === numero) : null;
+        if (!ligne) ligne = lignes.find(l => !champ(l).value.trim() && !articles(l.nextElementSibling).length);
+        if (!ligne) {
+            const neuf = zone.querySelector('.commande-gabarit').content.cloneNode(true);
+            ligne = neuf.querySelector('.commande-ligne');
+            zone.querySelector('.commandes-lignes').appendChild(neuf);
+            compter(zone);
+        }
+        return ligne;
+    }
+
+    /** Lit un bon et en fait une commande du volet : numéro, livraison et articles. */
+    function lireEnCommande(zone, pdf) {
+        const formulaire = zone.closest('.pv-form');
+        const mot = zone.querySelector('.commandes-mot');
+        mot.classList.remove('error');
+        mot.textContent = 'Lecture de ' + pdf.nom + '…';
+        return lire(formulaire, pdf.id)
+            .then(corps => {
+                mot.textContent = corps.message;
+                if (!corps.lignes.length) {
+                    mot.classList.add('error');
+                    return;
+                }
+                const ligne = commandePour(zone, corps.numero || '');
+                const numero = ligne.querySelector('[name="commande[numero][]"]');
+                if (!numero.value.trim() && corps.numero) numero.value = corps.numero;
+                const livraison = ligne.querySelector('[name="commande[date_bl][]"]');
+                if (livraison && !livraison.value && corps.livraison) livraison.value = corps.livraison;
+                remplirArticles(ligne.nextElementSibling, corps.lignes);
+            })
+            .catch(erreur => {
+                mot.classList.add('error');
+                mot.textContent = erreur.message || 'Lecture impossible. Réessayez.';
+            });
+    }
+
+    /** Lit les bons l'un après l'autre : l'OCR prend quelques secondes par page. */
+    function lireTous(zone, pdfs) {
+        return pdfs.reduce((suite, pdf) => suite.then(() => lireEnCommande(zone, pdf)), Promise.resolve());
+    }
+
+    // Le bouton de l'en-tête : il marche même quand aucune commande n'existe encore, ce
+    // qui est le cas normal — on dépose le bon justement pour la créer.
+    $(document).on('click', '.commandes-lire-bons', function () {
+        const zone = bloc(this);
+        const pdfs = documentsDuPv(zone);
+        if (!pdfs.length) {
+            zone.querySelector('.commandes-mot').textContent = 'Déposez d’abord le bon en PDF ci-dessous, puis enregistrez.';
+            return;
+        }
+        let choisis = pdfs;
+        if (pdfs.length > 1) {
+            const noms = pdfs.map((p, i) => (i + 1) + ' — ' + p.nom).join('\n');
+            const reponse = window.prompt('Quel bon lire ? (laissez vide pour tous)\n' + noms, '');
+            if (reponse === null) return;
+            const index = Number(reponse) - 1;
+            if (reponse.trim() !== '') {
+                if (!(index >= 0 && index < pdfs.length)) return;
+                choisis = [pdfs[index]];
+            }
+        }
+        const bouton = this;
+        bouton.disabled = true;
+        lireTous(zone, choisis).finally(() => { bouton.disabled = false; });
+    });
+
+    // Un bon vient d'être déposé et le PV enregistré (pv.js) : on le lit sans attendre.
+    document.addEventListener('pv:bons-deposes', event => {
+        const {demande, bons} = event.detail;
+        const formulaire = [...document.querySelectorAll('.pv-form')].find(f =>
+            f.elements.demande?.value === String(demande) && f.elements.type?.value === 'reception_materiel');
+        const zone = formulaire?.querySelector('[data-commandes]');
+        if (!zone) return;
+        const pdfs = documentsDuPv(zone).filter(p => bons.map(String).includes(String(p.id)));
+        if (pdfs.length) lireTous(zone, pdfs);
+    });
+
+    // Le bouton sous une commande : relit un bon pour cette commande-là.
     $(document).on('click', '.commande-lire-bon', function () {
         const rang = this.closest('.commande-articles-rang');
         const mot = rang.querySelector('.commande-articles-mot');
@@ -213,31 +327,12 @@
         bouton.disabled = true;
         mot.textContent = 'Lecture de ' + choisi.nom + '…';
 
-        const donnees = new FormData();
-        donnees.set('csrf', rang.closest('.pv-form').elements.csrf.value);
-        donnees.set('document', choisi.id);
-
-        fetch('actions/lire_bon_commande.php', {method: 'POST', body: donnees})
-            .then(reponse => reponse.json().then(corps => ({ok: reponse.ok, corps})))
-            .then(({ok, corps}) => {
-                if (!ok) { mot.textContent = corps.message || 'Lecture impossible.'; return; }
-                if (corps.lignes.length) {
-                    // La lecture remplace ce qui était là : on relit un bon pour corriger
-                    // une première lecture, pas pour en empiler une seconde.
-                    poser(rang, corps.lignes.map(l => ({
-                        reference_article: l.reference,
-                        designation: l.designation,
-                        unite: l.unite,
-                        quantite_attendue: l.quantite,
-                        quantite_recue: '',
-                    })));
-                    rendre(rang);
-                    rang.querySelector('.commande-articles').hidden = false;
-                    rang.querySelector('.commande-articles-bascule').setAttribute('aria-expanded', 'true');
-                }
+        lire(rang.closest('.pv-form'), choisi.id)
+            .then(corps => {
+                if (corps.lignes.length) remplirArticles(rang, corps.lignes);
                 rang.querySelector('.commande-articles-mot').textContent = corps.message;
             })
-            .catch(() => { mot.textContent = 'Lecture impossible. Réessayez.'; })
+            .catch(erreur => { mot.textContent = erreur.message || 'Lecture impossible. Réessayez.'; })
             .finally(() => { bouton.disabled = false; });
     });
 })();
