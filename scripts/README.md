@@ -34,7 +34,7 @@ La traduction des trois noms d'un rôle, elle, vit dans `Role::depuisLeTexte()`.
 ## `migrations/` — pour une base déjà remplie
 
 **Sur une base neuve, il n'y a rien à lancer ici.** `db/schema.sql` contient déjà le
-résultat de toutes ces migrations : 35 tables, 278 colonnes et 54 clés étrangères,
+résultat de toutes ces migrations : 35 tables, 280 colonnes et 55 clés étrangères,
 vérifiées identiques à la base en service. Installez le schéma, c'est tout.
 
 Ces scripts ne servent qu'à **rattraper une base créée avant un changement** — typiquement

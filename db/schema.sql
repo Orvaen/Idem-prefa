@@ -268,9 +268,14 @@ CREATE TABLE `demande_materiel_lignes` (
   `date_livraison` date DEFAULT NULL,
   `confiance` tinyint unsigned NOT NULL DEFAULT '0',
   `douteuse` tinyint(1) NOT NULL DEFAULT '0',
+  `recu` tinyint(1) NOT NULL DEFAULT '0',
+  `date_reception` datetime DEFAULT NULL,
+  `receptionne_par` int DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `idx_materiel_lignes_document` (`id_document`),
-  CONSTRAINT `fk_materiel_lignes_document` FOREIGN KEY (`id_document`) REFERENCES `demande_materiel_documents` (`id`) ON DELETE CASCADE
+  KEY `fk_materiel_lignes_receptionnaire` (`receptionne_par`),
+  CONSTRAINT `fk_materiel_lignes_document` FOREIGN KEY (`id_document`) REFERENCES `demande_materiel_documents` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_materiel_lignes_receptionnaire` FOREIGN KEY (`receptionne_par`) REFERENCES `Utilisateur` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
