@@ -46,6 +46,7 @@ foreach ($plans as $plan) {
         // affectation venue — rangées par type, c'était le Plan / ISO — restait à 0 % alors
         // que la validation avait bien écrit 75 % sur le suivi soudage.
         'avancement' => (int) ($soudage['avancement'] ?? 0),
+        'soudage' => $soudage,
     ];
 }
 ksort($affaires);
@@ -213,6 +214,34 @@ $etatDuPlan = static function (array $ligne): array {
                                                 </form>
                                             </div>
                                         <?php endforeach; ?>
+
+                                        <?php // Des cordons relevés que rien ne propose de valider : le soudeur a
+                                              // enregistré avant que le suivi soudage lui soit affecté, ou avant
+                                              // que la liste du plan soit lue. Le chef n'avait alors qu'une liste
+                                              // sous les yeux, et aucun moyen de reconnaître ce qu'il voyait. Il
+                                              // pose le chiffre lui-même : il est l'autorité. Sans suivi soudage
+                                              // affecté, le chiffre n'a nulle part où aller — on le dit.
+                                        $calcule = $ligne['prevues'] > 0 ? avancementPourcentage(min($ligne['faites'], $ligne['prevues']), $ligne['prevues']) : null;
+                                        if (!$ligne['attentes'] && $calcule !== null && $ligne['faites'] > 0 && $calcule !== $ligne['avancement']): ?>
+                                            <?php if ($ligne['soudage']): ?>
+                                                <div class="atelier-declaration">
+                                                    <p class="atelier-declaration-titre">Cordons relevés, pas encore validés</p>
+                                                    <p class="atelier-declaration-chiffre"><?= min($ligne['faites'], $ligne['prevues']) ?> soudure<?= $ligne['faites'] > 1 ? 's' : '' ?> sur <?= $ligne['prevues'] ?> — <?= $calcule ?> %</p>
+                                                    <form class="atelier-action atelier-declaration-actions" data-endpoint="update_atelier.php">
+                                                        <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
+                                                        <input type="hidden" name="id" value="<?= (int) $ligne['id_demande'] ?>">
+                                                        <input type="hidden" name="operation" value="progress">
+                                                        <input type="hidden" name="affectation" value="<?= (int) $ligne['soudage']['id'] ?>">
+                                                        <input type="hidden" name="revision" value="<?= (int) $ligne['soudage']['revision'] ?>">
+                                                        <input type="hidden" name="soudures" value="<?= min($ligne['faites'], $ligne['prevues']) ?>">
+                                                        <button type="submit" title="L’avancement du suivi soudage prendra ce chiffre.">Valider</button>
+                                                        <span class="atelier-message" role="status" aria-live="polite"></span>
+                                                    </form>
+                                                </div>
+                                            <?php else: ?>
+                                                <p class="atelier-note">Aucun suivi soudage n’est affecté sur ce plan : les cordons relevés ne font avancer aucun travail. Affectez « Suivi soudage » dans Plans / ISO &amp; Affectations pour pouvoir les valider.</p>
+                                            <?php endif; ?>
+                                        <?php endif; ?>
                                     </section>
 
                                     <section class="suivi-soudures-section atelier-soudures">
