@@ -7,6 +7,7 @@ require_once __DIR__ . '/../includes/demande/prefa_visibilite.php';
 require_once __DIR__ . '/../includes/materiel/commandes.php';
 require_once __DIR__ . '/../includes/materiel/materiel_bon.php';
 require_once __DIR__ . '/../includes/demande/prefa_documents.php';
+require_once __DIR__ . '/../includes/demande/prefa_retard.php';
 $workshopUsers = $canManageWorkshop ? prefaWorkshopPersonnel($db) : [];
 
 $q = trim((string) ($_GET['q'] ?? ''));
@@ -116,7 +117,7 @@ $filtreEnSql('d.id_statut', 'status', $status);
 $vueParAffaire = !$canViewAllPrefa && !$isWorkshopPersonnel;
 
 $stmt = $db->prepare(
-    'SELECT d.*, s.libelle, u.name, u.prenom, val.name AS valideur_name, val.prenom AS valideur_prenom, TRIM(CONCAT(taker.prenom, \' \', taker.name)) AS prise_en_charge_nom, TRIM(CONCAT(staff.prenom, \' \', staff.name)) AS personnel_atelier_nom, p.libelle AS passivation_libelle, m.libelle AS matiere_libelle' . $joins . $where
+    'SELECT d.*, s.libelle, u.name, u.prenom, val.name AS valideur_name, val.prenom AS valideur_prenom, TRIM(CONCAT(taker.prenom, \' \', taker.name)) AS prise_en_charge_nom, TRIM(CONCAT(staff.prenom, \' \', staff.name)) AS personnel_atelier_nom, p.libelle AS passivation_libelle, m.libelle AS matiere_libelle, (SELECT pvf.statut = \'fait\' FROM pv_prefabrication pvf WHERE pvf.id_demande = d.id AND pvf.type = \'fin_fabrication\') AS fabrication_finie' . $joins . $where
     // Celui qui ne voit que ses propres demandes les lit par affaire : elles se suivent
     // sous leur chantier, la plus récente en tête. L'encadrement et l'atelier les lisent par
     // statut — en attente, validées, refusées, dans l'ordre des identifiants — et, dans
@@ -132,14 +133,8 @@ $requests = $stmt->fetchAll();
 
 $total = count($requests);
 
-// Les demandes affichées dont l'échéance est passée. Une refusée ne court plus : elle ne
-// sera pas faite, elle n'est donc pas en retard — la même règle que sur la ligne.
-$enRetardTotal = count(array_filter(
-    $requests,
-    static fn (array $r): bool => !empty($r['date_fin_prevue'])
-        && (int) $r['id_statut'] !== 3
-        && $r['date_fin_prevue'] < date('Y-m-d')
-));
+// Les demandes affichées en retard : la règle de la ligne (prefaJoursDeRetard).
+$enRetardTotal = count(array_filter($requests, static fn (array $r): bool => prefaJoursDeRetard($r) > 0));
 $attachmentsByRequest = [];
 foreach ($requests as $request) {
     $attachmentsByRequest[$request['id']] = prefaAttachments((int) $request['id']);

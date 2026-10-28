@@ -11,16 +11,10 @@ $ownerName = trim($row['prenom'] . ' ' . $row['name']);
 // gagne un point d'ancrage, et on retrouve une personne du coin de l'œil sans lire.
 $initiales = mb_strtoupper(mb_substr(trim($row['prenom']), 0, 1) . mb_substr(trim($row['name']), 0, 1));
 
-// Une échéance dépassée sur une demande qui court encore. Refusée, elle ne court plus :
-// elle ne sera pas faite, elle n'est donc pas en retard.
-$enRetard = !empty($row['date_fin_prevue'])
-    && (int) $row['id_statut'] !== 3
-    && $row['date_fin_prevue'] < date('Y-m-d');
-
-// Le retard se dit en jours : « en retard » seul ne distingue pas la veille du mois dernier.
-$joursDeRetard = $enRetard
-    ? (new DateTimeImmutable((string) $row['date_fin_prevue']))->diff(new DateTimeImmutable('today'))->days
-    : 0;
+// Le retard se dit en jours : « en retard » seul ne distingue pas la veille du mois
+// dernier. La règle — qui court encore, qui est fabriquée — est dans prefa_retard.php.
+$joursDeRetard = prefaJoursDeRetard($row);
+$enRetard = $joursDeRetard > 0;
 
 // La décision se prend sur la ligne quand c'est elle que la ligne attend.
 $decisionEnLigne = $isAdmin && $isPending;
