@@ -296,7 +296,8 @@ $pvAFaire = ($isAdmin || $isWorkshopChief) ? pvAFaireTotal($db) : 0;
                             </span>
                             <span class="account-identity">
                                 <strong><?= htmlspecialchars($nomComplet) ?></strong>
-                                <span><?= htmlspecialchars($compte['role_name']) ?><?php if ($metier = roleComplement((int) $compte['id_role'])): ?> · <?= htmlspecialchars($metier) ?><?php endif; ?></span>
+                                <?php $roleTexte = $compte['role_name'] . (($metier = roleComplement((int) $compte['id_role'])) ? ' · ' . $metier : ''); ?>
+                                <span title="<?= htmlspecialchars($roleTexte) ?>"><?= htmlspecialchars($roleTexte) ?></span>
                             </span>
                             <svg class="icon account-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"<?= $estActif ? '' : ' hidden' ?>><path d="m5 13 4 4 10-10" /></svg>
                         </button>

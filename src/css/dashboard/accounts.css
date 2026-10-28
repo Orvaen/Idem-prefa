@@ -53,7 +53,7 @@
 .account-menu {
     position: fixed;
     z-index: 60;
-    width: 264px;
+    width: 288px;
     max-width: calc(100vw - 16px);
     padding: 0;
     overflow: hidden;
@@ -103,17 +103,18 @@
     gap: 2px;
 }
 
-/* Un compte tient sur une ligne : le nom, puis le rôle en sourdine. Deux lignes par
-   compte faisaient de chaque entrée une carte de visite. */
+/* Un compte : le nom, et le rôle dessous en plus petit. Sur une seule ligne, le rôle
+   passait après le nom et se faisait couper — « Chef d'a… » — dès que le nom était un
+   peu long. Deux lignes serrées (40 px) le laissent toujours entier. */
 .account-item {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     width: 100%;
     flex: 1;
     min-width: 0;
-    height: 30px;
-    padding: 0 8px;
+    min-height: 40px;
+    padding: 4px 8px;
     border: 0;
     border-radius: 6px;
     background: transparent;
@@ -122,6 +123,12 @@
     text-align: left;
     cursor: pointer;
     transition: background 0.12s ease;
+}
+
+/* Les entrées du menu Thème n'ont qu'une ligne : elles gardent la hauteur d'un menu. */
+.theme-option.account-item {
+    min-height: 30px;
+    padding: 0 8px;
 }
 
 .account-item:hover {
@@ -138,8 +145,19 @@
     line-height: 0;
 }
 
+/* Dans la liste, le monogramme suit la hauteur des deux lignes. */
+.account-avatar .user-avatar {
+    width: 26px;
+    height: 26px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--active);
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+}
+
 /* Le même monogramme que le demandeur d'une liste : petit, gris, sans couleur. */
-.account-avatar .user-avatar,
 .toolbar-compte .user-avatar {
     width: 20px;
     height: 20px;
@@ -164,27 +182,27 @@
     flex: 1;
     min-width: 0;
     display: flex;
-    align-items: baseline;
-    gap: 6px;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.account-identity strong,
+.account-identity span {
     overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .account-identity strong {
-    flex: none;
-    max-width: 100%;
-    overflow: hidden;
     font-size: 13px;
     font-weight: 500;
-    text-overflow: ellipsis;
+    line-height: 18px;
 }
 
 .account-identity span {
-    min-width: 0;
-    overflow: hidden;
     color: var(--text-muted);
     font-size: 12px;
-    text-overflow: ellipsis;
+    line-height: 16px;
 }
 
 /* Le compte courant se signale par sa coche, pas par un fond. */
