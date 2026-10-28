@@ -279,7 +279,7 @@ if ($isWorkshopPersonnel) {
                             urgente<?= $urgentPending > 1 ? 's' : '' ?>
                         </span>
                     <?php endif; ?>
-                    <span class="<?= $enRetardTotal > 0 ? 'est-a-traiter' : '' ?>">
+                    <span class="<?= $enRetardTotal > 0 ? 'est-a-traiter' : '' ?>" title="Fin prévue dépassée sur une demande ni refusée ni fabriquée (PV « Fin de fabrication et conformité » pas encore à « Fait »).">
                         <strong><?= (int) $enRetardTotal ?></strong> en retard
                     </span>
                 </p>

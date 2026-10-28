@@ -3011,6 +3011,16 @@ summary {
     line-height: 16px;
 }
 
+/* Ce qui manque pour que le retard s'arrête, en sourdine : le chiffre reste l'alerte. */
+.prefa-retard-raison {
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.prefa-retard[title] {
+    cursor: help;
+}
+
 /* En compact, la ligne ne peut pas prendre une seconde ligne de texte : le retard se
    range à côté de la date. */
 .prefa-list[data-densite="compact"] .prefa-date,

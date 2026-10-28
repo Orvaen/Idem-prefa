@@ -62,7 +62,8 @@ $decisionEnLigne = $isAdmin && $isPending;
         <td class="prefa-echeance">
             <span class="prefa-date"><?= $row['date_fin_prevue'] ? prefaEscape(prefaFormatDate($row['date_fin_prevue'])) : '—' ?></span>
             <?php if ($enRetard): ?>
-                <span class="prefa-retard"><?= (int) $joursDeRetard ?> j de retard</span>
+                <?php $raison = prefaRaisonDuRetard($row); ?>
+                <span class="prefa-retard" title="<?= prefaEscape($raison['long']) ?>"><?= (int) $joursDeRetard ?> j de retard <span class="prefa-retard-raison">· <?= prefaEscape($raison['court']) ?></span></span>
             <?php endif; ?>
             <?php if ($vueParAffaire && $row['urgent']): ?>
                 <span class="prefa-urgent">Urgente</span>
