@@ -384,148 +384,18 @@
     text-align: center;
 }
 
-/* ---------- LA FENÊTRE D'OUVERTURE ----------
-   Les trois tons d'une surface flottante : le fond, le filet, l'ombre. Rayon 12 — l'échelle
-   de la DA donne ce barreau à une boîte de dialogue, comme à la palette et à la grande vue.
-
-   Large et basse, comme la fenêtre de création d'un outil de suivi : la saisie y tient sur
-   une ligne de titre, et le reste se choisit dessous. 420 puis 480 px faisaient une vignette
-   — une boîte haute et étroite pour deux questions.
-
-   La marge n'est plus posée sur la boîte mais sur chacune de ses trois zones : l'en-tête,
-   la saisie et le pied. C'est ce qui permet au filet du pied d'aller d'un bord à l'autre
-   au lieu de s'arrêter à 28 px de chaque côté. */
-.affaire-dialog {
-    width: min(640px, calc(100vw - 32px));
-    /* Posée au premier tiers, pas au centre. Une fenêtre centrée verticalement oblige
-       l'œil à redescendre chercher le titre, et elle bouge d'un écran à l'autre selon sa
-       hauteur ; posée en haut, elle s'ouvre toujours au même endroit, sous le regard —
-       c'est là que les outils de suivi la mettent. */
-    margin: 10vh auto auto;
-    padding: 0;
-    border: 1px solid var(--border);
-    border-radius: var(--r-xl);
-    background: var(--surface);
-    color: var(--text);
-    font-family: var(--font);
-    box-shadow: 0 1px 2px rgb(0 0 0 / 6%), 0 16px 48px rgb(0 0 0 / 18%);
-    /* ---------- L'ouverture et la fermeture ----------
-       Une fenêtre modale apparaît et disparaît par « display », qui ne s'interpole pas :
-       c'est pour ça qu'un <dialog> saute à l'écran. « allow-discrete » lève l'obstacle —
-       le navigateur retient l'affichage et la couche du dessus le temps de la transition,
-       et la fermeture s'anime donc sans une ligne de script.
-
-       16 centièmes : assez pour qu'on voie d'où vient la boîte, assez court pour qu'on ne
-       l'attende pas. Le mouvement est de huit pixels vers le bas — elle tombe de là où on
-       a cliqué, pas du bord de l'écran. */
-    opacity: 0;
-    transform: translateY(-8px) scale(0.985);
-    transition:
-        opacity 0.16s ease,
-        transform 0.16s ease,
-        display 0.16s allow-discrete,
-        overlay 0.16s allow-discrete;
-    /* Le volet du champ filtrable se pose sous le champ, en absolu. Le navigateur donne
-       « overflow: auto » à tout <dialog> : la liste des chargés d'affaire s'y serait
-       enroulée dans une barre de défilement au lieu de dépasser le cadre. Deux champs et un
-       pied ne passent pas sous le bord de l'écran, la fenêtre n'a rien à faire défiler. */
-    overflow: visible;
-}
-
-.affaire-dialog[open] {
-    opacity: 1;
-    transform: none;
-}
-
-/* L'état d'où part l'ouverture. Sans cette règle, le navigateur n'a aucune valeur de
-   départ à interpoler — l'élément vient de naître — et il pose directement l'état
-   ouvert : la fermeture s'animerait, l'ouverture non. */
-@starting-style {
-    .affaire-dialog[open] {
-        opacity: 0;
-        transform: translateY(-8px) scale(0.985);
-    }
-}
-
-:root:not([data-theme="light"]) .affaire-dialog {
-    box-shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 20px 56px rgb(0 0 0 / 60%);
-}
-
-/* Le fond se fond, lui aussi. On anime son opacité et non sa couleur : les deux thèmes
-   lui donnent une teinte différente, et il n'y en a qu'une à écrire de cette façon. */
-.affaire-dialog::backdrop {
-    background: rgb(15 15 16 / 38%);
-    opacity: 0;
-    transition:
-        opacity 0.16s ease,
-        display 0.16s allow-discrete,
-        overlay 0.16s allow-discrete;
-}
-
-.affaire-dialog[open]::backdrop {
-    opacity: 1;
-}
-
-@starting-style {
-    .affaire-dialog[open]::backdrop {
-        opacity: 0;
-    }
-}
-
-/* Qui a demandé moins de mouvement l'obtient : la fenêtre paraît et disparaît, sans
-   glisser. Elle reste visible — c'est l'animation qu'on retire, pas la boîte. */
-@media (prefers-reduced-motion: reduce) {
-
-    .affaire-dialog,
-    .affaire-dialog::backdrop {
-        transition: none;
-    }
-
-    .affaire-dialog {
-        transform: none;
-    }
-}
-
-:root:not([data-theme="light"]) .affaire-dialog::backdrop {
-    background: rgb(0 0 0 / 58%);
-}
-
-/* Les trois zones se touchent : chacune porte sa marge, et le filet du pied court d'un
-   bord à l'autre. */
-.affaire-dialog .affaire-form {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
+/* La fenêtre « Nouvelle affaire » est la fenêtre commune (fenetre.css) — elle en a été
+   le modèle. Ne restent ici que les réglages du champ filtrable du chargé d'affaire, pour
+   qu'il soit le jumeau du champ du nom. */
+.affaire-dialog .liste-filtrable {
+    width: 100%;
     margin: 0;
-    padding: 0;
 }
 
-/* ---------- La saisie ----------
-   Le nom s'écrit en grand et sans étiquette : dans une fenêtre qui s'appelle « Nouvelle
-   affaire », un champ qui dit « Nom de l'affaire » n'a pas besoin qu'on l'annonce une
-   seconde fois au-dessus de lui. */
-/* L'écart est le même partout dans la fenêtre : 24 px au bord, 20 sous le titre, 12 entre
-   les deux champs. Un champ qui en suit un autre est plus proche de lui que du titre — ils
-   forment un bloc, et c'est ce que l'œil doit lire. */
-.affaire-dialog-corps {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 20px 24px 24px;
-}
-
-/* Les deux champs sont le même objet, écrit une fois : même hauteur, même corps, même
-   cadre, pleine largeur tous les deux.
- *
-   Le chargé d'affaire arrivait en pastille de 230 px sur 32, à côté d'une ligne de titre
-   de 40 — deux contrôles de deux familles différentes dans une fenêtre qui n'en compte
-   que deux. La rangée de pastilles avait un sens chez Plane, où elle en aligne huit ;
-   avec une seule, elle ne dit rien et se voit. */
-.affaire-nom-champ,
 .affaire-dialog .liste-filtrable-champ {
     width: 100%;
     height: var(--h-2xl);
-    padding: 0 12px;
+    padding: 0 38px 0 12px;
     border: 1px solid var(--border);
     border-radius: var(--r-md);
     background: transparent;
@@ -534,28 +404,12 @@
     font-size: 15px;
 }
 
-.affaire-nom-champ:focus,
 .affaire-dialog .liste-filtrable-champ:focus {
     border-color: var(--accent);
     outline: none;
 }
 
-.affaire-dialog .liste-filtrable {
-    width: 100%;
-    margin: 0;
-}
-
-/* Seule différence entre les deux champs, et elle est due : la croix d'effacement demande
-   sa place à droite. */
-.affaire-dialog .liste-filtrable-champ {
-    padding-right: 38px;
-}
-
-/* Le « × » se montre dès qu'il y a quelqu'un à retirer, et pas avant. Le mode sans
-   étiquette ne le révèle qu'au survol, et le taille pour une ligne de tableau — c'est bon
-   là où cinq croix alignées feraient une colonne, pas dans une fenêtre où elle est seule
-   dans un champ de 40 px. « visibility » et non « opacity » pour le vide : ça la sort
-   aussi du parcours au clavier. */
+/* La croix d'effacement : visible dès qu'il y a quelqu'un à retirer, et pas avant. */
 .affaire-dialog .liste-filtrable-tableau .liste-filtrable-effacer {
     right: 8px;
     width: 24px;
@@ -572,103 +426,15 @@
     visibility: hidden;
 }
 
-.affaire-dialog-entete {
-    padding: 24px 24px 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-}
-
-.affaire-dialog-entete h2 {
-    margin: 0;
-    font-size: 16px;
-    font-weight: 600;
-    line-height: 1.3;
-}
-
-/* Le message s'intercale entre le dernier champ et le pied — là où le regard revient après
-   avoir pressé le bouton. Vide, il ne pousse pas le pied de seize pixels. */
-.affaire-dialog .prefa-message {
-    margin: 0;
-    font-size: 13px;
-    color: var(--text-muted);
-}
-
-.affaire-dialog .prefa-message:empty {
-    display: none;
-}
-
-.affaire-dialog .prefa-message.is-error {
-    color: var(--danger-texte);
-}
-
-.affaire-dialog-pied {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 8px;
-    padding: 16px 24px;
-    /* Le filet d'une carte, pas celui d'une ligne de tableau : il sépare deux zones de la
-       fenêtre. À « --border-faint », il disparaissait sur la surface sombre. */
-    border-top: 1px solid var(--border);
-}
-
-.affaire-dialog-pied button {
-    display: inline-flex;
-    align-items: center;
-    height: var(--h-lg);
-    padding: 0 12px;
-    border: 1px solid transparent;
-    border-radius: var(--r-md);
-    font: inherit;
-    font-size: 13px;
-    line-height: 1;
-    cursor: pointer;
-}
-
-.affaire-dialog-pied button:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-}
-
-/* Annuler sort de la fenêtre sans rien écrire : un bouton encadré, pas un second appel à
-   l'action. */
-.affaire-dialog-pied .affaire-dialog-fermer {
-    border-color: var(--border);
-    background: var(--surface);
-    color: var(--text);
-}
-
-.affaire-dialog-pied .affaire-dialog-fermer:hover {
-    background: var(--hover);
-}
-
-.affaire-dialog-pied .affaire-ouvrir {
-    background: var(--bouton-plein);
-    color: var(--bouton-plein-texte);
-    font-weight: 500;
-}
-
-.affaire-dialog-pied .affaire-ouvrir:hover {
-    background: var(--bouton-plein-hover);
-}
-
 /* Sur une tablette d'atelier, la cible fait 44 px : c'est la règle des autres fenêtres. */
-@media (max-width: 1100px), (pointer: coarse) {
+@media (pointer: coarse) {
 
     /* Un seul réglage : la hauteur sert aussi au calage sur la ligne du titre. */
     .affaire-nouvelle {
         --bouton-h: 44px;
     }
 
-    .affaire-dialog-pied button {
-        height: 44px;
-    }
-
-    /* La ligne de titre et la pastille suivent : une cible de 32 px ne se vise pas avec un
-       gant d'atelier. */
-    .affaire-nom-champ,
+    /* Le champ du chargé d'affaire suit ceux de la fenêtre (fenetre.css). */
     .affaire-dialog .liste-filtrable-champ {
         height: 44px;
     }

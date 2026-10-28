@@ -41,23 +41,27 @@ $avancementsAValider = avancementEnAttentePlusieurs($db, $affectationsActives);
 <section class="atelier-section" aria-label="Travaux à affecter pour la demande <?= prefaEscape(prefaReferenceComplete($requestId)) ?>">
     <?php if ($canManageWorkshop && $taken): ?>
         <?php if (empty($isPlansIsoPage)): ?><button type="button" class="prefa-toggle atelier-open-plan-create" data-dialog="atelier-create-dialog-<?= $requestId ?>">Ajouter un plan</button><?php endif; ?>
-        <dialog id="atelier-create-dialog-<?= $requestId ?>" class="atelier-plan-dialog" aria-labelledby="atelier-create-title-<?= $requestId ?>">
-            <form class="atelier-action prefa-form" data-endpoint="save_atelier.php">
-                <div class="atelier-plan-dialog-heading">
+        <dialog id="atelier-create-dialog-<?= $requestId ?>" class="atelier-plan-dialog fenetre" aria-labelledby="atelier-create-title-<?= $requestId ?>">
+            <form class="atelier-action" data-endpoint="save_atelier.php">
+                <div class="fenetre-entete">
                     <h2 id="atelier-create-title-<?= $requestId ?>">Ajouter un plan</h2>
                     <button type="button" class="atelier-close-plan-edit modal-close" aria-label="Fermer"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg></button>
                 </div>
                 <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>"><input type="hidden" name="id" value="<?= $requestId ?>"><input type="hidden" name="operation" value="element">
-                <div><label for="atelier-ref-<?= $requestId ?>">Nom du plan</label><input id="atelier-ref-<?= $requestId ?>" name="reference" maxlength="80" required></div>
-                <div><label for="atelier-label-<?= $requestId ?>">Description</label><input id="atelier-label-<?= $requestId ?>" name="libelle" maxlength="180" required></div>
-                <?php if ($documentOptions): ?>
-                    <fieldset class="atelier-document-picker">
-                        <legend>Documents à associer</legend>
-                        <?php foreach ($documentOptions as $token => $label): ?><label class="atelier-checkbox"><input type="checkbox" name="documents[]" value="<?= prefaEscape($token) ?>" <?= str_starts_with($token, 'plan:') && count($attachmentsByRequest[$requestId] ?? []) === 1 ? 'checked' : '' ?>> <span><?= prefaEscape($label) ?></span></label><?php endforeach; ?>
-                    </fieldset>
-                <?php endif; ?>
-                <span class="atelier-message" role="status" aria-live="polite"></span>
-                <div class="atelier-plan-dialog-footer"><button type="button" class="atelier-close-plan-edit">Annuler</button><button type="submit">Ajouter</button></div>
+                <div class="fenetre-corps">
+                    <input class="fenetre-champ" name="reference" maxlength="80" required autocomplete="off" aria-label="Nom du plan" placeholder="Nom du plan">
+                    <input class="fenetre-champ" name="libelle" maxlength="180" required autocomplete="off" aria-label="Description" placeholder="Description">
+                    <?php if ($documentOptions): ?>
+                        <fieldset class="fenetre-bloc">
+                            <legend>Documents à associer</legend>
+                            <div class="fenetre-cases">
+                                <?php foreach ($documentOptions as $token => $label): ?><label class="fenetre-case"><input type="checkbox" name="documents[]" value="<?= prefaEscape($token) ?>" <?= str_starts_with($token, 'plan:') && count($attachmentsByRequest[$requestId] ?? []) === 1 ? 'checked' : '' ?>> <span><?= prefaEscape($label) ?></span></label><?php endforeach; ?>
+                            </div>
+                        </fieldset>
+                    <?php endif; ?>
+                    <span class="atelier-message fenetre-message" role="status" aria-live="polite"></span>
+                </div>
+                <div class="fenetre-pied"><button type="button" class="atelier-close-plan-edit fenetre-annuler">Annuler</button><button type="submit" class="fenetre-valider">Ajouter le plan</button></div>
             </form>
         </dialog>
     <?php elseif (!$elements && !$canManageWorkshop): ?>
@@ -321,53 +325,60 @@ $avancementsAValider = avancementEnAttentePlusieurs($db, $affectationsActives);
 
         </div>
         <?php if ($canManageWorkshop && $taken): ?>
-            <dialog id="atelier-plan-dialog-<?= $requestId ?>" class="atelier-plan-dialog" aria-labelledby="atelier-plan-dialog-title-<?= $requestId ?>">
-                <form class="atelier-action prefa-form" data-endpoint="save_atelier.php">
-                    <div class="atelier-plan-dialog-heading">
-                        <h2 id="atelier-plan-dialog-title-<?= $requestId ?>">Modifier le plan</h2>
+            <dialog id="atelier-plan-dialog-<?= $requestId ?>" class="atelier-plan-dialog fenetre" aria-labelledby="atelier-plan-dialog-title-<?= $requestId ?>">
+                <form class="atelier-action" data-endpoint="save_atelier.php">
+                    <div class="fenetre-entete">
+                        <h2 id="atelier-plan-dialog-title-<?= $requestId ?>">Renommer le plan</h2>
                         <button type="button" class="atelier-close-plan-edit modal-close" aria-label="Fermer"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg></button>
                     </div>
                     <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
                     <input type="hidden" name="id" value="<?= $requestId ?>">
                     <input type="hidden" name="element">
                     <input type="hidden" name="operation" value="update_element">
-                    <div class="form-group"><label for="atelier-dialog-name-<?= $requestId ?>">Nom du plan</label><input id="atelier-dialog-name-<?= $requestId ?>" name="reference" maxlength="80" required></div>
-                    <div class="form-group"><label for="atelier-dialog-description-<?= $requestId ?>">Description</label><textarea id="atelier-dialog-description-<?= $requestId ?>" name="libelle" maxlength="180" rows="3" required></textarea></div>
-                    <span class="atelier-message" role="status" aria-live="polite"></span>
-                    <div class="atelier-plan-dialog-footer">
-                        <button type="button" class="atelier-close-plan-edit">Annuler</button>
-                        <button type="submit">Enregistrer</button>
+                    <div class="fenetre-corps">
+                        <input class="fenetre-champ" name="reference" maxlength="80" required autocomplete="off" aria-label="Nom du plan" placeholder="Nom du plan">
+                        <textarea class="fenetre-champ" name="libelle" maxlength="180" rows="3" required aria-label="Description" placeholder="Description"></textarea>
+                        <span class="atelier-message fenetre-message" role="status" aria-live="polite"></span>
+                    </div>
+                    <div class="fenetre-pied">
+                        <button type="button" class="atelier-close-plan-edit fenetre-annuler">Annuler</button>
+                        <button type="submit" class="fenetre-valider">Enregistrer</button>
                     </div>
                 </form>
             </dialog>
 
-            <dialog id="atelier-progress-dialog-<?= $requestId ?>" class="atelier-plan-dialog" aria-labelledby="atelier-progress-dialog-title-<?= $requestId ?>">
-                <form class="atelier-action prefa-form" data-endpoint="update_atelier.php">
-                    <div class="atelier-plan-dialog-heading">
+            <dialog id="atelier-progress-dialog-<?= $requestId ?>" class="atelier-plan-dialog fenetre" aria-labelledby="atelier-progress-dialog-title-<?= $requestId ?>">
+                <form class="atelier-action" data-endpoint="update_atelier.php">
+                    <div class="fenetre-entete">
                         <h2 id="atelier-progress-dialog-title-<?= $requestId ?>">Saisir l’avancement</h2>
                         <button type="button" class="atelier-close-plan-edit modal-close" aria-label="Fermer"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg></button>
                     </div>
-                    <p class="atelier-muted atelier-progress-target"></p>
+                    <p class="atelier-progress-target fenetre-sous-titre"></p>
                     <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
                     <input type="hidden" name="id" value="<?= $requestId ?>">
                     <input type="hidden" name="operation" value="progress">
                     <input type="hidden" name="affectation">
                     <input type="hidden" name="revision">
-                    <!-- Deux façons de dire la même chose, et une seule sert à la fois : le plan
-                         porte une liste de soudures, on compte des cordons ; sinon des pour cent.
-                         Le champ écarté est désactivé, pas seulement masqué — masqué, il partirait
-                         quand même avec le formulaire. -->
-                    <div class="form-group atelier-champ-soudures" hidden>
-                        <label for="atelier-progress-soudures-<?= $requestId ?>">Soudures faites</label>
-                        <input id="atelier-progress-soudures-<?= $requestId ?>" name="soudures" type="number" min="0" step="1" disabled>
-                        <span class="atelier-champ-aide"><span class="atelier-soudures-origine"></span> · <output class="atelier-quotient"></output></span>
+                    <div class="fenetre-corps">
+                        <!-- Deux façons de dire la même chose, et une seule sert à la fois : le plan
+                             porte une liste de soudures, on compte des cordons ; sinon des pour cent.
+                             Le champ écarté est désactivé, pas seulement masqué — masqué, il partirait
+                             quand même avec le formulaire. -->
+                        <div class="fenetre-bloc atelier-champ-soudures" hidden>
+                            <label class="fenetre-etiquette" for="atelier-progress-soudures-<?= $requestId ?>">Soudures faites</label>
+                            <input class="fenetre-champ" id="atelier-progress-soudures-<?= $requestId ?>" name="soudures" type="number" min="0" step="1" disabled>
+                            <span class="fenetre-aide"><span class="atelier-soudures-origine"></span> · <output class="atelier-quotient"></output></span>
+                        </div>
+                        <div class="fenetre-bloc atelier-champ-pourcentage">
+                            <label class="fenetre-etiquette" for="atelier-progress-value-<?= $requestId ?>">Avancement (%)</label>
+                            <input class="fenetre-champ" id="atelier-progress-value-<?= $requestId ?>" name="avancement" type="number" min="0" max="100" step="1" required>
+                        </div>
+                        <textarea class="fenetre-champ" id="atelier-progress-note-<?= $requestId ?>" name="commentaire" maxlength="2000" rows="3" aria-label="Compte rendu" placeholder="Compte rendu (facultatif)"></textarea>
+                        <span class="atelier-message fenetre-message" role="status" aria-live="polite"></span>
                     </div>
-                    <div class="form-group atelier-champ-pourcentage"><label for="atelier-progress-value-<?= $requestId ?>">Avancement (%)</label><input id="atelier-progress-value-<?= $requestId ?>" name="avancement" type="number" min="0" max="100" step="1" required></div>
-                    <div class="form-group"><label for="atelier-progress-note-<?= $requestId ?>">Compte rendu</label><textarea id="atelier-progress-note-<?= $requestId ?>" name="commentaire" maxlength="2000" rows="3"></textarea></div>
-                    <span class="atelier-message" role="status" aria-live="polite"></span>
-                    <div class="atelier-plan-dialog-footer">
-                        <button type="button" class="atelier-close-plan-edit">Annuler</button>
-                        <button type="submit">Enregistrer</button>
+                    <div class="fenetre-pied">
+                        <button type="button" class="atelier-close-plan-edit fenetre-annuler">Annuler</button>
+                        <button type="submit" class="fenetre-valider">Enregistrer</button>
                     </div>
                 </form>
             </dialog>

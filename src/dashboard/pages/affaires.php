@@ -153,9 +153,9 @@ $choixCharge = static function (array $options, int $idAffaire, ?int $choisi): s
         #content et repart entier à chaque rechargement — la fenêtre suit, avec la liste des
         chargés d'affaire que le PHP vient d'écrire.
     -->
-    <dialog id="affaire-dialog" class="affaire-dialog" aria-labelledby="affaire-dialog-titre">
+    <dialog id="affaire-dialog" class="affaire-dialog fenetre" aria-labelledby="affaire-dialog-titre">
         <form id="affaire-form" class="affaire-form" method="post">
-            <div class="affaire-dialog-entete">
+            <div class="affaire-dialog-entete fenetre-entete">
                 <h2 id="affaire-dialog-titre">Nouvelle affaire</h2>
                 <button type="button" class="affaire-dialog-fermer modal-close" aria-label="Fermer">
                     <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -168,8 +168,8 @@ $choixCharge = static function (array $options, int $idAffaire, ?int $choisi): s
                  champs, chacun porte son intitulé à l'intérieur. Une étiquette flottante par
                  champ faisait lire deux fois le même mot, une fois en l'air et une fois dans
                  le champ. Les deux champs sont taillés pareil : voir la feuille. -->
-            <div class="affaire-dialog-corps">
-                <input id="affaire-nom" class="affaire-nom-champ" name="nom" maxlength="255" required
+            <div class="affaire-dialog-corps fenetre-corps">
+                <input id="affaire-nom" class="affaire-nom-champ fenetre-champ" name="nom" maxlength="255" required
                     autocomplete="off" aria-label="Nom de l’affaire" placeholder="Nom de l’affaire">
 
                 <?php
@@ -192,12 +192,12 @@ $choixCharge = static function (array $options, int $idAffaire, ?int $choisi): s
                 ]);
                 ?>
 
-                <p class="prefa-message" role="status" aria-live="polite"></p>
+                <p class="prefa-message fenetre-message" role="status" aria-live="polite"></p>
             </div>
 
-            <div class="affaire-dialog-pied">
-                <button type="button" class="affaire-dialog-fermer">Annuler</button>
-                <button type="submit" class="affaire-ouvrir">Ouvrir l’affaire</button>
+            <div class="affaire-dialog-pied fenetre-pied">
+                <button type="button" class="affaire-dialog-fermer fenetre-annuler">Annuler</button>
+                <button type="submit" class="affaire-ouvrir fenetre-valider">Ouvrir l’affaire</button>
             </div>
         </form>
     </dialog>

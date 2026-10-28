@@ -1,0 +1,360 @@
+/* ==========================================================================
+   LA FENÊTRE — une seule boîte de dialogue pour toute l'application
+   ==========================================================================
+
+   Le modèle est « Nouvelle affaire » : large et basse, posée au premier tiers, trois
+   zones qui se touchent — l'en-tête (titre et croix), le corps (les champs, sans
+   étiquette au-dessus quand le titre suffit), le pied (Annuler encadré, l'action en
+   bouton plein) séparé par un filet d'un bord à l'autre.
+
+   Chaque fenêtre l'écrivait à sa façon : « Ajouter un plan » faisait 480 px, centrée,
+   avec des étiquettes au-dessus de champs de 38 px et un bouton bleu. Elles partagent
+   maintenant ces règles — une fenêtre n'a plus à se dessiner, seulement à dire ce
+   qu'elle contient.
+
+   « dialog.fenetre » : les feuilles des écrans posent des règles larges sur leurs
+   boutons et leurs champs (« .atelier-section button »…) ; la fenêtre doit passer
+   devant elles où qu'elle soit ouverte. */
+
+dialog.fenetre {
+    width: min(640px, calc(100vw - 32px));
+    max-height: calc(100dvh - 20vh);
+    margin: 10vh auto auto;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--r-xl);
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 6%), 0 16px 48px rgb(0 0 0 / 18%);
+    /* L'ouverture : elle tombe de huit pixels et apparaît, 16 centièmes. « allow-discrete »
+       anime aussi la fermeture, sans script. */
+    opacity: 0;
+    transform: translateY(-8px) scale(0.985);
+    transition:
+        opacity 0.16s ease,
+        transform 0.16s ease,
+        display 0.16s allow-discrete,
+        overlay 0.16s allow-discrete;
+    overflow: visible;
+}
+
+dialog.fenetre[open] {
+    opacity: 1;
+    transform: none;
+}
+
+@starting-style {
+    dialog.fenetre[open] {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.985);
+    }
+}
+
+:root:not([data-theme="light"]) dialog.fenetre {
+    box-shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 20px 56px rgb(0 0 0 / 60%);
+}
+
+dialog.fenetre::backdrop {
+    background: rgb(15 15 16 / 38%);
+    opacity: 0;
+    transition:
+        opacity 0.16s ease,
+        display 0.16s allow-discrete,
+        overlay 0.16s allow-discrete;
+}
+
+dialog.fenetre[open]::backdrop {
+    opacity: 1;
+}
+
+@starting-style {
+    dialog.fenetre[open]::backdrop {
+        opacity: 0;
+    }
+}
+
+:root:not([data-theme="light"]) dialog.fenetre::backdrop {
+    background: rgb(0 0 0 / 58%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    dialog.fenetre,
+    dialog.fenetre::backdrop {
+        transition: none;
+    }
+
+    dialog.fenetre {
+        transform: none;
+    }
+}
+
+/* Le formulaire ne porte pas d'écart : chaque zone a sa marge, et le filet du pied court
+   d'un bord à l'autre. Il passe devant « .prefa-form », qui en pose un de 18 px. */
+dialog.fenetre > form {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-height: inherit;
+    margin: 0;
+    padding: 0;
+}
+
+/* ---------- L'en-tête ---------- */
+
+dialog.fenetre .fenetre-entete {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 24px 24px 0;
+}
+
+dialog.fenetre .fenetre-entete h2 {
+    margin: 0;
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+dialog.fenetre .fenetre-entete .modal-close {
+    display: grid;
+    place-items: center;
+    width: var(--h-lg);
+    height: var(--h-lg);
+    margin: -6px -8px -6px 0;
+    padding: 0;
+    border: 0;
+    border-radius: var(--r-md);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+dialog.fenetre .fenetre-entete .modal-close:hover {
+    background: var(--hover);
+    color: var(--text);
+}
+
+dialog.fenetre .fenetre-entete .modal-close .icon {
+    width: 16px;
+    height: 16px;
+}
+
+/* Une phrase sous le titre, quand la fenêtre porte sur quelque chose de précis. */
+dialog.fenetre .fenetre-sous-titre {
+    margin: 4px 24px 0;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+dialog.fenetre .fenetre-sous-titre:empty {
+    display: none;
+}
+
+/* ---------- Le corps ---------- */
+
+dialog.fenetre .fenetre-corps {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 20px 24px 24px;
+}
+
+/* Les champs sont un seul objet : 40 px, filet, pleine largeur, l'intitulé dedans. */
+dialog.fenetre .fenetre-champ {
+    box-sizing: border-box;
+    width: 100%;
+    height: var(--h-2xl);
+    min-height: 0;
+    margin: 0;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 15px;
+    box-shadow: none;
+}
+
+dialog.fenetre textarea.fenetre-champ {
+    height: auto;
+    min-height: 88px;
+    padding: 10px 12px;
+    font-size: 14px;
+    line-height: 1.5;
+    resize: vertical;
+}
+
+dialog.fenetre .fenetre-champ::placeholder {
+    color: var(--text-muted);
+}
+
+dialog.fenetre .fenetre-champ:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+
+/* Quand l'intitulé ne peut pas vivre dans le champ (un nombre, une case), il le coiffe
+   en petit — pas en étiquette de formulaire. */
+dialog.fenetre .fenetre-bloc {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+}
+
+dialog.fenetre .fenetre-bloc[hidden] {
+    display: none;
+}
+
+dialog.fenetre .fenetre-etiquette,
+dialog.fenetre .fenetre-bloc > legend {
+    margin: 0;
+    padding: 0;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+dialog.fenetre .fenetre-aide {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+/* Une liste de cases : des lignes de menu, pas des cartes encadrées une à une. */
+dialog.fenetre .fenetre-cases {
+    display: flex;
+    flex-direction: column;
+    margin: 0 -8px;
+}
+
+dialog.fenetre .fenetre-case {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 32px;
+    margin: 0;
+    padding: 4px 8px;
+    border: 0;
+    border-radius: var(--r-md);
+    background: transparent;
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+dialog.fenetre .fenetre-case:hover {
+    background: var(--hover);
+}
+
+dialog.fenetre .fenetre-case input[type="checkbox"] {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    accent-color: var(--accent-texte);
+}
+
+dialog.fenetre .fenetre-case span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+/* Le message de la fenêtre se glisse sous le dernier champ ; vide, il ne prend rien. */
+dialog.fenetre .fenetre-message {
+    display: block;
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+dialog.fenetre .fenetre-message:empty {
+    display: none;
+}
+
+dialog.fenetre .fenetre-message.is-error,
+dialog.fenetre .fenetre-message.error {
+    color: var(--danger-texte);
+}
+
+/* ---------- Le pied ---------- */
+
+dialog.fenetre .fenetre-pied {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    margin: 0;
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+}
+
+dialog.fenetre .fenetre-pied button {
+    display: inline-flex;
+    align-items: center;
+    width: auto;
+    height: var(--h-lg);
+    min-height: 0;
+    margin: 0;
+    padding: 0 12px;
+    border: 1px solid transparent;
+    border-radius: var(--r-md);
+    font: inherit;
+    font-size: 13px;
+    line-height: 1;
+    box-shadow: none;
+    cursor: pointer;
+}
+
+dialog.fenetre .fenetre-pied button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* Annuler sort sans rien écrire : encadré, pas un second appel à l'action. */
+dialog.fenetre .fenetre-pied .fenetre-annuler {
+    border-color: var(--border);
+    background: var(--surface);
+    color: var(--text);
+}
+
+dialog.fenetre .fenetre-pied .fenetre-annuler:hover {
+    background: var(--hover);
+}
+
+dialog.fenetre .fenetre-pied .fenetre-valider {
+    border-color: var(--bouton-plein);
+    background: var(--bouton-plein);
+    color: var(--bouton-plein-texte);
+    font-weight: 500;
+}
+
+dialog.fenetre .fenetre-pied .fenetre-valider:hover:not(:disabled) {
+    background: var(--bouton-plein-hover);
+}
+
+dialog.fenetre .fenetre-pied .fenetre-valider:disabled {
+    opacity: 0.55;
+    cursor: progress;
+}
+
+/* Sur une tablette d'atelier, la cible fait 44 px. */
+@media (pointer: coarse) {
+
+    dialog.fenetre .fenetre-champ,
+    dialog.fenetre .fenetre-pied button {
+        height: 44px;
+    }
+}

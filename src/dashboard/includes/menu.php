@@ -360,6 +360,9 @@ function dashboardRessources(Utilisateur $utilisateur): array
         // La palette Ctrl+K. Elle habille une boîte modale posée sur le corps de la page,
         // donc rien ne dépend de l'ordre ici.
         'css/dashboard/palette.css',
+        // La fenêtre : une seule boîte de dialogue pour tous les écrans (« Nouvelle affaire »,
+        // « Ajouter un plan »…). Elle s'ouvre partout, sa feuille aussi.
+        'css/dashboard/fenetre.css',
         // La barre latérale en carte, avec ses compteurs : après les feuilles qui la
         // dessinaient jusqu'ici, pour passer devant elles.
         'css/dashboard/barre-laterale.css',
