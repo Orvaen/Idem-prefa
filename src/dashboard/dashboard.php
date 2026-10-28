@@ -17,7 +17,7 @@ $db = new MyPDO(__DIR__ . '/../my_setting.ini');
 // supprimé doit se voir ici, pas à la prochaine connexion.
 $utilisateur = Session::utilisateur($db);
 if (!$utilisateur) {
-    header('Location: ../auth/' . (Session::connectee() ? 'logout.php' : 'login.php'));
+    header('Location: ' . (Session::connectee() ? '../auth/logout.php' : '../'));
     exit;
 }
 Session::jeton();

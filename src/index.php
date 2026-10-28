@@ -1,7 +1,13 @@
 <?php
+// L'écran de connexion est la page d'accueil du site : http://localhost:8080 y mène, sans
+// adresse à retenir ni page intermédiaire. Ce qui l'accompagne reste dans auth/ — l'action
+// qui vérifie le mot de passe, celle qui ferme la session.
+//
+// Déjà connecté, on ne repasse pas par ici : la session est lue plus bas et le tableau de
+// bord prend la place.
 
-require_once __DIR__ . './../db.php';
-require_once __DIR__ . '/../modeles/autoload.php';
+require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/modeles/autoload.php';
 
 Session::demarrer();
 
@@ -13,14 +19,14 @@ Session::demarrer();
 // tout cela n'apparaît.
 $comptesDev = [];
 if (Environnement::estDev()) {
-    $db = new MyPDO(__DIR__ . '/../my_setting.ini');
+    $db = new MyPDO(__DIR__ . '/my_setting.ini');
     $comptesDev = $db->query("SELECT u.identifiant, u.name, u.prenom, u.id_role, r.name AS role_name
         FROM Utilisateur u JOIN role r ON r.id = u.id_role
         ORDER BY u.id_role, u.prenom, u.name")->fetchAll(PDO::FETCH_ASSOC);
 }
 
 if (Session::connectee()) {
-    header('Location: ../dashboard/dashboard.php');
+    header('Location: dashboard/dashboard.php');
     exit;
 }
 
@@ -39,22 +45,22 @@ if (Session::connectee()) {
     <!-- Le thème est posé avant le premier rendu, sinon l'écran clignote le temps que la
          feuille s'applique. theme.js décide : le choix mémorisé s'il y en a un, celui du
          système sinon. -->
-    <script src="../js/theme.js?v=<?= filemtime(__DIR__ . '/../js/theme.js') ?>"></script>
+    <script src="js/theme.js?v=<?= filemtime(__DIR__ . '/js/theme.js') ?>"></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.20.0/axios.min.js" integrity="sha512-OVq+Gfa9PIjbTC0jWOccSFSp/vzkBQ5pMcbHQrNZLl+izmdFmusmAMlX4LT550ivvSnMXMEeG7CxEtjIz6Dn2Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-    <link href="../css/index.css?v=<?= filemtime(__DIR__ . '/../css/index.css') ?>" rel="stylesheet" />
-    <link href="../css/floating-fields.css?v=<?= filemtime(__DIR__ . '/../css/floating-fields.css') ?>" rel="stylesheet" />
+    <link href="css/index.css?v=<?= filemtime(__DIR__ . '/css/index.css') ?>" rel="stylesheet" />
+    <link href="css/floating-fields.css?v=<?= filemtime(__DIR__ . '/css/floating-fields.css') ?>" rel="stylesheet" />
 
-    <script src="../js/floating-fields.js?v=<?= filemtime(__DIR__ . '/../js/floating-fields.js') ?>" defer></script>
-    <script src="../js/mot-de-passe.js?v=<?= filemtime(__DIR__ . '/../js/mot-de-passe.js') ?>" defer></script>
-    <script src="../js/login.js?v=<?= filemtime(__DIR__ . '/../js/login.js') ?>" defer></script>
+    <script src="js/floating-fields.js?v=<?= filemtime(__DIR__ . '/js/floating-fields.js') ?>" defer></script>
+    <script src="js/mot-de-passe.js?v=<?= filemtime(__DIR__ . '/js/mot-de-passe.js') ?>" defer></script>
+    <script src="js/login.js?v=<?= filemtime(__DIR__ . '/js/login.js') ?>" defer></script>
 </head>
 
 <body>
     <main class="connexion-panneau">
         <div class="connexion-marque">
-            <img src="../assets/logo-idem.png" alt="IDEM">
+            <img src="assets/logo-idem.png" alt="IDEM">
         </div>
 
         <div class="connexion-corps">

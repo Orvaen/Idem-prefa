@@ -6,4 +6,5 @@ require_once __DIR__ . '/../modeles/autoload.php';
 
 Session::fermer();
 
-header('Location: ../auth/login.php');
+// La racine du site, c'est-à-dire l'écran de connexion.
+header('Location: ../');

@@ -13,13 +13,13 @@ form.addEventListener('submit', async (event) => {
 
     try {
         const response = await axios.post(
-            './action.php',
+            'auth/action.php',
             formData,
             { timeout: 15000 }
         );
 
         if (response.data.success) {
-            window.location.href = '../dashboard/dashboard.php';
+            window.location.href = 'dashboard/dashboard.php';
         } else {
             message.style.display = "flex";
             message.innerText = response.data.message || "La connexion a échoué. Veuillez réessayer.";
@@ -57,9 +57,9 @@ if (comptesDev) {
         donnees.set('compte', bouton.dataset.compte);
 
         try {
-            const reponse = await axios.post('./dev_connexion.php', donnees, { timeout: 15000 });
+            const reponse = await axios.post('auth/dev_connexion.php', donnees, { timeout: 15000 });
             if (reponse.data.success) {
-                window.location.href = '../dashboard/dashboard.php';
+                window.location.href = 'dashboard/dashboard.php';
                 return;
             }
             message.style.display = 'flex';

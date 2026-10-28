@@ -10,4 +10,4 @@ if not defined APP_BROWSER (
     echo Microsoft Edge ou Google Chrome est necessaire pour ouvrir la fenetre d'application.
     exit /b 1
 )
-start "" "%APP_BROWSER%" --app="http://localhost:8080/auth/login.php"
+start "" "%APP_BROWSER%" --app="http://localhost:8080/"
