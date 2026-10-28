@@ -44,7 +44,12 @@ function userRow(array $user, int $moi): void
                 </span>
             </span>
         </td>
-        <td class="prefa-secondaire"><?= prefaEscape(userRoleLabel($user)) ?></td>
+        <?php // Le rôle, et dessous le métier qu'il recouvre : « Demandeur » seul ne dit pas
+              // qu'on parle du chargé d'affaire. ?>
+        <td class="prefa-secondaire utilisateur-role">
+            <span class="utilisateur-role-nom"><?= prefaEscape(userRoleLabel($user)) ?></span>
+            <?php if ($metier = roleComplement((int) ($user['id_role'] ?? 0))): ?><span class="utilisateur-role-metier"><?= prefaEscape($metier) ?></span><?php endif; ?>
+        </td>
         <td class="prefa-secondaire utilisateur-date" title="<?= prefaEscape(userCreationLabel($user)) ?>"><?= prefaEscape(userCreationCourte($user)) ?></td>
         <?php // Une cellule d'actions à déclencheur unique, comme sur la liste des demandes :
               // « Modifier » et « Supprimer » répétés sur chaque ligne pesaient plus lourd
@@ -91,7 +96,12 @@ function userRowEdition(array $user): void
                 <input name="name" value="<?= prefaEscape($user['name']) ?>" aria-label="Nom" required>
             </span>
         </td>
-        <td class="prefa-secondaire"><?= prefaEscape(userRoleLabel($user)) ?></td>
+        <?php // Le rôle, et dessous le métier qu'il recouvre : « Demandeur » seul ne dit pas
+              // qu'on parle du chargé d'affaire. ?>
+        <td class="prefa-secondaire utilisateur-role">
+            <span class="utilisateur-role-nom"><?= prefaEscape(userRoleLabel($user)) ?></span>
+            <?php if ($metier = roleComplement((int) ($user['id_role'] ?? 0))): ?><span class="utilisateur-role-metier"><?= prefaEscape($metier) ?></span><?php endif; ?>
+        </td>
         <td class="prefa-secondaire utilisateur-date"><?= prefaEscape(userCreationCourte($user)) ?></td>
         <td class="prefa-actions">
             <span class="prefa-decision">

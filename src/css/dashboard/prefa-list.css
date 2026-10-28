@@ -3251,28 +3251,97 @@ summary {
     height: 14px;
 }
 
+/* Le tableau des comptes respire plus que les autres : chaque ligne porte deux étages
+   (nom et identifiant, rôle et métier) et un monogramme. À la hauteur d'une ligne de
+   demande, tout se touchait. */
+.utilisateurs-page[data-densite="confortable"] {
+    --ligne-td: 64px;
+    --ligne-th: 40px;
+}
+
+.utilisateurs-page[data-densite="compact"] {
+    --ligne-td: 48px;
+    --ligne-th: 34px;
+}
+
 .utilisateurs-table {
     min-width: 640px;
 }
 
-.utilisateurs-table thead th:first-child {
-    padding-left: 12px;
+.utilisateurs-page .utilisateurs-table th,
+.utilisateurs-page .utilisateurs-table td {
+    padding-left: 20px;
+    padding-right: 20px;
 }
 
-.utilisateur-identite {
+.utilisateurs-page .utilisateurs-table th:first-child,
+.utilisateurs-page .utilisateurs-table td:first-child {
+    padding-left: 24px;
+}
+
+.utilisateurs-page .utilisateurs-table .prefa-personne {
+    gap: 12px;
+}
+
+.utilisateurs-page .utilisateurs-table .prefa-avatar {
+    width: 34px;
+    height: 34px;
+    font-size: 12px;
+}
+
+.utilisateurs-page[data-densite="compact"] .utilisateurs-table .prefa-avatar {
+    width: 26px;
+    height: 26px;
+    font-size: 10.5px;
+}
+
+.utilisateur-identite,
+.utilisateur-role {
     display: inline-flex;
     flex-direction: column;
-    line-height: 1.3;
+    gap: 3px;
+    line-height: 1.25;
+}
+
+.utilisateurs-page .utilisateurs-table td.utilisateur-role {
+    display: table-cell;
+}
+
+.utilisateur-role-nom,
+.utilisateur-role-metier {
+    display: block;
+}
+
+.utilisateur-role-nom {
+    color: var(--text);
+}
+
+.utilisateur-role-metier {
+    margin-top: 3px;
+    color: var(--text-muted);
+    font-size: 12px;
 }
 
 .utilisateur-nom {
     color: var(--text);
+    font-size: 14px;
     font-weight: 500;
 }
 
 .utilisateur-identifiant {
     color: var(--text-muted);
-    font-size: 12px;
+    font-size: 12.5px;
+}
+
+/* En compact, une ligne : le second étage se range à côté du premier. */
+.utilisateurs-page[data-densite="compact"] .utilisateur-identite {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.utilisateurs-page[data-densite="compact"] .utilisateur-role-metier {
+    display: none;
 }
 
 /* « vous » : sa propre ligne se reconnaît sans lire, et on comprend pourquoi elle ne se
