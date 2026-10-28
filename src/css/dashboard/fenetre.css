@@ -358,3 +358,113 @@ dialog.fenetre .fenetre-pied .fenetre-valider:disabled {
         height: 44px;
     }
 }
+
+/* ---------- La liste filtrable dans une fenêtre ----------
+
+   Les listes de la maison (liste-filtrable.js), pas celles du navigateur : un <select>
+   ou une <datalist> ouvrent le menu du système, qui ne connaît ni nos jetons ni notre
+   échelle — un menu gris Windows au milieu de la fenêtre. Le champ prend la forme des
+   autres champs de la fenêtre ; son volet, celle des menus de l'application. Écrit ici
+   une fois pour toutes les fenêtres : « Nouvelle affaire » le portait pour elle seule. */
+
+dialog.fenetre .liste-filtrable {
+    width: 100%;
+    margin: 0;
+}
+
+dialog.fenetre .liste-filtrable[hidden] {
+    display: none;
+}
+
+dialog.fenetre .liste-filtrable-champ {
+    box-sizing: border-box;
+    width: 100%;
+    height: var(--h-2xl);
+    padding: 0 38px 0 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 15px;
+    text-overflow: ellipsis;
+}
+
+dialog.fenetre .liste-filtrable-champ::placeholder {
+    color: var(--text-muted);
+}
+
+dialog.fenetre .liste-filtrable-champ:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+
+/* La croix d'effacement : visible dès qu'il y a quelque chose à retirer, et pas avant. */
+dialog.fenetre .liste-filtrable .liste-filtrable-effacer {
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    opacity: 1;
+}
+
+dialog.fenetre .liste-filtrable-champ:placeholder-shown ~ .liste-filtrable-effacer {
+    visibility: hidden;
+}
+
+/* Le volet : une surface flottante de rayon 8, des entrées de 32 px. */
+dialog.fenetre .liste-filtrable-options {
+    z-index: 10;
+    box-sizing: border-box;
+    max-height: 240px;
+    padding: 4px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    box-shadow: 0 1px 2px rgb(15 15 16 / 6%), 0 12px 32px rgb(15 15 16 / 16%);
+}
+
+:root:not([data-theme="light"]) dialog.fenetre .liste-filtrable-options {
+    box-shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 12px 32px rgb(0 0 0 / 50%);
+}
+
+dialog.fenetre .liste-filtrable-options [role="option"] {
+    display: flex;
+    align-items: center;
+    min-height: 32px;
+    padding: 0 8px;
+    border-radius: var(--r-md);
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+dialog.fenetre .liste-filtrable-options [role="option"]:hover,
+dialog.fenetre .liste-filtrable-options [role="option"].is-active {
+    background: var(--hover);
+}
+
+dialog.fenetre .liste-filtrable-options [role="option"][aria-selected="true"] {
+    background: var(--selection-fond);
+}
+
+dialog.fenetre .liste-filtrable-options .liste-filtrable-autre {
+    margin-top: 4px;
+    border-top: 1px solid var(--border-faint);
+    border-radius: 0 0 var(--r-md) var(--r-md);
+    color: var(--text-muted);
+}
+
+dialog.fenetre .liste-filtrable-vide {
+    margin: 0;
+    padding: 8px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+@media (pointer: coarse) {
+
+    dialog.fenetre .liste-filtrable-champ {
+        height: 44px;
+    }
+}

@@ -563,18 +563,55 @@
     // commande de sa demande — on peut toujours en écrire un autre.
     const fenetreManque = () => document.getElementById('soudures-manque');
 
-    function poserArticles(fenetre) {
-        const plan = fenetre.querySelector('[name="element"]').value;
+    function articlesDuPlan(fenetre, plan) {
         let articles = {};
         try { articles = JSON.parse(fenetre.dataset.articles || '{}'); } catch { articles = {}; }
-        const liste = fenetre.querySelector('#soudures-manque-articles');
-        liste.replaceChildren(...(articles[plan] || []).map(article => {
-            const option = document.createElement('option');
-            option.value = article.designation;
-            if (article.reference) option.label = article.reference;
+        return articles[plan] || [];
+    }
+
+    /** Pose une valeur dans une liste filtrable de la fenêtre, texte affiché compris. */
+    function choisirDans(fenetre, prefixe, valeur) {
+        const filtrable = fenetre.querySelector('[data-liste-filtrable="' + prefixe + '"]');
+        if (!filtrable) return;
+        const option = [...filtrable.querySelectorAll('[role="option"]')].find(o => o.dataset.value === String(valeur));
+        filtrable.querySelector('.liste-filtrable-champ').value = option && valeur !== '' ? option.textContent.trim() : '';
+        filtrable.querySelector('input[type="hidden"]').value = option ? valeur : '';
+        filtrable.querySelectorAll('[role="option"]').forEach(o => {
+            o.setAttribute('aria-selected', o === option ? 'true' : 'false');
+        });
+    }
+
+    /**
+     * La liste des articles suit le plan : ce sont ceux du bon de commande de sa demande.
+     * Sans bon lu, il n'y a rien à proposer — la liste s'efface et le champ libre la
+     * remplace, plutôt qu'une liste qui n'offrirait que « Autre article… ».
+     */
+    function poserArticles(fenetre) {
+        const plan = fenetre.querySelector('[name="element"]').value;
+        const articles = articlesDuPlan(fenetre, plan);
+        const filtrable = fenetre.querySelector('[data-liste-filtrable="manque-article"]');
+        const liste = filtrable.querySelector('.liste-filtrable-options');
+        const autre = liste.querySelector('.liste-filtrable-autre');
+        liste.querySelectorAll('[role="option"]:not(.liste-filtrable-autre)').forEach(o => o.remove());
+        articles.forEach((article, rang) => {
+            const option = document.createElement('div');
+            option.id = 'manque-article-option-' + rang;
+            option.setAttribute('role', 'option');
+            option.setAttribute('aria-selected', 'false');
+            option.dataset.value = article.designation;
             option.dataset.unite = article.unite || '';
-            return option;
-        }));
+            option.textContent = article.designation;
+            liste.insertBefore(option, autre);
+        });
+
+        const libre = fenetre.querySelector('#manque-article-autre-field');
+        const precision = fenetre.querySelector('#manque-article-autre');
+        choisirDans(fenetre, 'manque-article', '');
+        precision.value = '';
+        const sansListe = articles.length === 0;
+        filtrable.hidden = sansListe;
+        libre.hidden = !sansListe;
+        libre.style.display = sansListe ? 'block' : 'none';
     }
 
     $(document).on('click', '[data-signaler-manque]', function () {
@@ -587,27 +624,34 @@
         const feuille = racine && ligneChoisie(racine);
         const section = racine && racine.querySelector('.soudures-feuilles-section');
         const plan = (feuille && feuille.dataset.element) || (section && section.dataset.element) || '';
-        const choix = form.querySelector('[name="element"]');
-        if (plan && choix.querySelector('option[value="' + plan + '"]')) choix.value = plan;
+        if (plan) {
+            const champ = form.querySelector('[name="element"]');
+            if (fenetre.querySelector('[data-liste-filtrable="manque-plan"]')) choisirDans(fenetre, 'manque-plan', plan);
+            else champ.value = plan;
+        }
+        choisirDans(fenetre, 'manque-motif', '');
         poserArticles(fenetre);
         const message = form.querySelector('.fenetre-message');
         message.textContent = '';
         message.classList.remove('is-error');
         fenetre.showModal();
-        form.querySelector('[name="designation"]').focus();
+        const premier = fenetre.querySelector('[data-liste-filtrable="manque-article"]:not([hidden]) .liste-filtrable-champ')
+            || fenetre.querySelector('#manque-article-autre');
+        premier?.focus();
     });
 
-    $(document).on('change', '#soudures-manque [name="element"]', function () {
+    // Le composant prévient par un « change » sur son champ caché.
+    $(document).on('change', '#soudures-manque input[name="element"]', function () {
         poserArticles(fenetreManque());
     });
 
-    // Un article choisi dans la liste apporte son unité : « m » pour un tube, « u » pour une
-    // bride. On ne l'écrase pas si la personne en a déjà tapé une.
-    $(document).on('change', '#soudures-manque [name="designation"]', function () {
+    // Un article du bon apporte son unité : « m » pour un tube, « u » pour une bride. On ne
+    // l'écrase pas si la personne en a déjà tapé une.
+    $(document).on('change', '#soudures-manque input[name="designation"]', function () {
         const fenetre = fenetreManque();
         const unite = fenetre.querySelector('[name="unite"]');
-        const option = [...fenetre.querySelectorAll('#soudures-manque-articles option')]
-            .find(o => o.value === this.value);
+        const option = [...fenetre.querySelectorAll('[data-liste-filtrable="manque-article"] [role="option"]')]
+            .find(o => o.dataset.value === this.value);
         if (option && option.dataset.unite && !unite.value) unite.value = option.dataset.unite;
     });
 
@@ -620,6 +664,19 @@
         const form = this;
         const message = form.querySelector('.fenetre-message');
         const bouton = form.querySelector('.fenetre-valider');
+        // Les listes de la maison écrivent dans des champs cachés, qu'aucun « required »
+        // ne couvre : on dit ce qui manque avant d'envoyer.
+        const article = form.querySelector('[name="designation"]').value;
+        const libre = form.querySelector('#manque-article-autre').value.trim();
+        const manque = (!article || article === 'autre') && !libre ? 'Indiquez l’article qui manque.'
+            : !form.querySelector('[name="quantite"]').value.trim() ? 'Indiquez la quantité.'
+            : !form.querySelector('[name="motif"]').value ? 'Choisissez le motif du manque.' : '';
+        if (manque) {
+            message.classList.add('is-error');
+            message.textContent = manque;
+            return;
+        }
+
         const donnees = new URLSearchParams(new FormData(form));
         donnees.set('csrf', form.dataset.csrf);
 

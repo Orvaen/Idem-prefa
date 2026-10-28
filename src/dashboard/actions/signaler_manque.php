@@ -23,8 +23,14 @@ $stmt->execute([$elementId]);
 $plan = $stmt->fetch();
 if (!$plan) prefaError(404, 'Plan introuvable.');
 
+// L'article vient de la liste du bon de commande, ou de « Autre article… » et du champ
+// écrit dessous : c'est alors ce texte qui est l'article.
+$saisie = $_POST;
+$choisi = trim((string) ($saisie['designation'] ?? ''));
+if ($choisi === '' || $choisi === 'autre') $saisie['designation'] = trim((string) ($saisie['designation_autre'] ?? ''));
+
 try {
-    manqueSignaler($db, (int) $plan['id_demande'], (int) $actor['id'], $_POST);
+    manqueSignaler($db, (int) $plan['id_demande'], (int) $actor['id'], $saisie);
 } catch (DomainException $refus) {
     prefaError(422, $refus->getMessage());
 } catch (PDOException $erreur) {
@@ -36,7 +42,7 @@ try {
 // ferait chercher au chef ce qui n'existe pas.
 manquesPrevenirEncadrement($db, (int) $plan['id_demande'], (int) $actor['id'], [
     'affaire' => (string) ($plan['nom_affaire'] ?? ''),
-    'article' => trim((string) $_POST['designation']) . ' × '
+    'article' => trim((string) $saisie['designation']) . ' × '
         . manqueQuantite(str_replace(',', '.', (string) $_POST['quantite'])) . ' ' . (trim((string) ($_POST['unite'] ?? '')) ?: 'u'),
     'plan' => (string) $plan['reference'],
     'auteur' => trim($utilisateur->prenom . ' ' . $utilisateur->nom),

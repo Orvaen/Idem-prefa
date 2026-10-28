@@ -5,6 +5,7 @@ require_once __DIR__ . '/../includes/atelier/nomenclature.php';
 require_once __DIR__ . '/../includes/vue/plan_viewer.php';
 require_once __DIR__ . '/../includes/vue/filtres.php';
 require_once __DIR__ . '/../includes/vue/manques.php';
+require_once __DIR__ . '/../includes/vue/liste_filtrable.php';
 if (!$isWorkshopPersonnel) prefaError(403, 'Cette page est réservée au personnel atelier.');
 
 // Comment une feuille se nomme : par son numéro de ligne, celui qui est imprimé sur le
@@ -296,29 +297,55 @@ $libelleFeuilles = static fn (int $n): string => $n === 0 ? 'en attente du dessi
                 </div>
                 <p class="fenetre-sous-titre">Le chef d’atelier est prévenu tout de suite.</p>
                 <div class="fenetre-corps">
-                    <div class="fenetre-bloc"<?= count($plans) > 1 ? '' : ' hidden' ?>>
-                        <label class="fenetre-etiquette" for="soudures-manque-plan">Plan</label>
-                        <select class="fenetre-champ" id="soudures-manque-plan" name="element">
-                            <?php foreach ($plans as $choix): ?>
-                                <option value="<?= (int) $choix['element'] ?>"<?= $choix['element'] === $planOuvert ? ' selected' : '' ?>>
-                                    <?= prefaEscape($choix['reference'] . ' · ' . prefaReference($choix['demande'])) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+                    <?php // Les listes de la maison, pas celles du navigateur : on tape pour
+                          // chercher, on choisit au clavier ou à la souris — comme le chargé
+                          // d'affaire de « Nouvelle affaire ». Le mode sans étiquette : la
+                          // fenêtre n'en porte pas, l'invite dit ce qu'on attend. ?>
+                    <?php if (count($plans) > 1): ?>
+                        <?= listeFiltrableRendu('manque-plan', 'Plan', array_map(static fn (array $choix): array => [
+                            'id' => $choix['element'],
+                            'libelle' => $choix['reference'] . ' · ' . prefaReference($choix['demande']),
+                        ], array_values($plans)), $planOuvert, [
+                            'nom' => 'element',
+                            'aucun' => 'Aucun plan à ce nom.',
+                            'chercher' => 'Plan',
+                            'tableau' => true,
+                        ]) ?>
+                    <?php else: ?>
+                        <input type="hidden" name="element" value="<?= (int) $planOuvert ?>">
+                    <?php endif; ?>
+
+                    <?php // L'article : ceux du bon de commande du plan, ou un autre, écrit
+                          // dans le champ qui paraît sous la liste. Le script refait la liste
+                          // quand on change de plan. ?>
+                    <?= listeFiltrableRendu('manque-article', 'Article', array_map(static fn (array $article): array => [
+                        'id' => $article['designation'],
+                        'libelle' => $article['designation'],
+                    ], $articlesParPlan[$planOuvert] ?? []), null, [
+                        'nom' => 'designation',
+                        'autre' => 'Autre article…',
+                        'aucun' => 'Pas sur le bon de commande : choisissez « Autre article ».',
+                        'chercher' => 'Article qui manque',
+                        'tableau' => true,
+                    ]) ?>
+                    <div id="manque-article-autre-field" class="soudures-manque-autre" hidden style="display: none;">
+                        <input id="manque-article-autre" class="fenetre-champ" name="designation_autre" maxlength="180"
+                               autocomplete="off" placeholder="Article qui manque — bride DN40, tube Ø48,3…" aria-label="Article qui manque">
                     </div>
-                    <input class="fenetre-champ" name="designation" list="soudures-manque-articles" maxlength="180" required
-                           autocomplete="off" placeholder="Article qui manque — bride DN40, tube Ø48,3…" aria-label="Article qui manque">
-                    <datalist id="soudures-manque-articles"></datalist>
+
                     <div class="soudures-manque-quantite">
-                        <input class="fenetre-champ" name="quantite" inputmode="decimal" required placeholder="Quantité" aria-label="Quantité">
+                        <input class="fenetre-champ" name="quantite" inputmode="decimal" placeholder="Quantité" aria-label="Quantité">
                         <input class="fenetre-champ" name="unite" maxlength="16" placeholder="Unité (u, m, kg…)" aria-label="Unité">
                     </div>
-                    <select class="fenetre-champ" name="motif" required aria-label="Motif">
-                        <option value="" disabled selected>Motif du manque</option>
-                        <?php foreach (manquesMotifs() as $cle => $libelle): ?>
-                            <option value="<?= $cle ?>"><?= prefaEscape($libelle) ?></option>
-                        <?php endforeach; ?>
-                    </select>
+
+                    <?= listeFiltrableRendu('manque-motif', 'Motif', array_map(static fn (string $cle, string $libelle): array => [
+                        'id' => $cle, 'libelle' => $libelle,
+                    ], array_keys(manquesMotifs()), manquesMotifs()), null, [
+                        'nom' => 'motif',
+                        'aucun' => 'Aucun motif ne correspond.',
+                        'chercher' => 'Motif du manque',
+                        'tableau' => true,
+                    ]) ?>
                     <textarea class="fenetre-champ" name="commentaire" maxlength="1000" rows="3"
                               placeholder="Précision pour le chef (facultatif) — repère, longueur, urgence…" aria-label="Commentaire"></textarea>
                     <p class="fenetre-message" role="status" aria-live="polite"></p>
