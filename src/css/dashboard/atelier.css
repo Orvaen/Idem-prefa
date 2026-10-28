@@ -3795,3 +3795,85 @@ html .plans-iso-detail .atelier-file-management .atelier-document-edit.prefa-for
     background: transparent !important;
     box-shadow: none;
 }
+
+/* ==========================================================================
+   « MES PLANS » — LE VOLET D'UN PLAN DANS LA GRAMMAIRE DES VOLETS
+   ==========================================================================
+
+   Le volet d'un plan confié reprend celui des PV (pv.css) : en-tête avec le plan en
+   titre et la croix dans son cadre, sections au filet pointillé et au titre sourd,
+   lignes de propriétés à icône, état en trois boutons, fichiers en puces, historique
+   en frise. */
+
+/* Tous les titres de section sont sourds, comme « Mes travaux » : « Étapes du plan »
+   prenait la taille d'un titre de PV parce qu'il porte son compte à droite. */
+html .mes-plans-detail .pv-volet-titre-rang .pv-volet-titre {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+html .mes-plans-detail .pv-proprietes dt .icon {
+    width: 16px;
+    height: 16px;
+}
+
+/* Les fichiers : la puce ouvre, la flèche à côté télécharge. */
+html .mes-plans-detail .mes-plans-fichiers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+html .mes-plans-detail .mes-plans-fichiers .pv-document {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    width: auto;
+}
+
+html .mes-plans-detail .mes-plans-telecharger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--h-md);
+    height: var(--h-md);
+    border-radius: var(--r-md);
+    color: var(--text-muted);
+}
+
+html .mes-plans-detail .mes-plans-telecharger:hover {
+    background: var(--hover);
+    color: var(--text);
+}
+
+html .mes-plans-detail .mes-plans-telecharger .icon {
+    width: 14px;
+    height: 14px;
+}
+
+html .mes-plans-detail .pv-historique-refus .pv-historique-signe {
+    color: var(--alerte-texte);
+}
+
+html .mes-plans-detail .plan-historique-note {
+    font-style: italic;
+}
+
+html .mes-plans-detail .mes-plans-fichiers {
+    flex-direction: row;
+}
+
+html .mes-plans-detail .mes-plans-fichiers .pv-document {
+    justify-content: flex-start;
+    padding: 0;
+    border: 0;
+}
+
+html .mes-plans-detail .mes-plans-fichiers .prefa-document-link,
+[data-theme="light"] .mes-plans-detail .mes-plans-fichiers .prefa-document-link {
+    color: var(--text) !important;
+}

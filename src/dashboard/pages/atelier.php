@@ -120,6 +120,15 @@ $etatTravail = static function (int $pct): array {
     return [$cle, ['done' => 'Terminé', 'progress' => 'En cours', 'todo' => 'À commencer'][$cle]];
 };
 
+// Les icônes des lignes du volet, au trait des volets des PV.
+$iconesTravail = [
+    'plan' => '<svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z" /><path d="M14 3v5h5" /></svg>',
+    'montage' => '<svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3.5 17.5l3 3 5.8-5.8a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z" /></svg>',
+    'soudage' => '<svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c1.5 3 4 4.5 4 8a4 4 0 0 1-8 0c0-2 1-3 2-4 .2 1.5 1 2 2 2 0-2-1-3.5 0-6Z" /><path d="M5 21h14" /></svg>',
+    'cordons' => '<svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 14c1.4 0 1.4-2 2.8-2s1.4 2 2.8 2 1.4-2 2.8-2 1.4 2 2.8 2 1.4-2 2.8-2 1.4 2 2.5 2" /><path d="M3.5 19h17" /></svg>',
+];
+$trombone = '<svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m21 11-8.6 8.6a5 5 0 0 1-7-7L14 4a3.3 3.3 0 0 1 4.7 4.7l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4L15.4 7" /></svg>';
+$telecharger = '<svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11" /><path d="m7 10 5 5 5-5" /><path d="M5 20h14" /></svg>';
 $fermer = '<svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg>';
 
 // Les saisies faites sur des plans qui ne lui sont plus confiés : l'historique ne se perd
@@ -295,27 +304,28 @@ $anciennes = $stmt->fetchAll();
                                 <td colspan="6">
                                     <div class="atelier-detail-content mes-plans-volet">
                                         <?php // L'en-tête des volets : ce que c'est, lequel, de quelle demande. ?>
-                                        <div class="prefa-detail-heading mes-plans-entete">
-                                            <div class="mes-plans-identite">
-                                                <p class="mes-plans-surtitre">Plan confié</p>
-                                                <h2><?= prefaEscape($plan['reference']) ?><?php if ($plan['libelle'] !== ''): ?> <span><?= prefaEscape($plan['libelle']) ?></span><?php endif; ?></h2>
-                                                <p class="mes-plans-parcours"><?= prefaEscape(prefaReference($plan['demande'])) ?><?= $plan['affaire'] !== '' ? ' · ' . prefaEscape($plan['affaire']) : '' ?></p>
+                                        <header class="pv-volet-tete mes-plans-entete">
+                                            <div>
+                                                <h2><?= prefaEscape($plan['reference']) ?></h2>
+                                                <p><?= $plan['libelle'] !== '' ? prefaEscape($plan['libelle']) . ' · ' : '' ?><?= prefaEscape(prefaReference($plan['demande'])) ?><?= $plan['affaire'] !== '' ? ' · ' . prefaEscape($plan['affaire']) : '' ?></p>
                                             </div>
-                                            <button type="button" class="prefa-detail-close" data-close-target="<?= $voletId ?>" aria-label="Fermer le volet" title="Fermer"><?= $fermer ?></button>
-                                        </div>
+                                            <div class="pv-volet-outils">
+                                                <button type="button" class="prefa-detail-close" data-close-target="<?= $voletId ?>" aria-label="Fermer le volet" title="Fermer"><?= $fermer ?></button>
+                                            </div>
+                                        </header>
 
                                         <?php // Ses travaux sur ce plan, comme les affectations du volet du chef :
                                               // le travail, son état, et d'où vient le chiffre. ?>
-                                        <section class="mes-plans-section">
-                                            <h3 class="mes-plans-titre">Mes travaux</h3>
-                                            <dl class="mes-plans-proprietes">
+                                        <section class="pv-volet-section mes-plans-section">
+                                            <h3 class="pv-volet-titre mes-plans-titre">Mes travaux</h3>
+                                            <dl class="pv-proprietes mes-plans-proprietes">
                                                 <?php foreach ($plan['travaux'] as $travail):
                                                     $pct = (int) $travail['avancement'];
                                                     [$etat, $etatLibelle] = $etatTravail($pct);
                                                     $attente = $enAttente[(int) $travail['id']] ?? null;
                                                     $libelle = $types[$travail['type_affectation']]; ?>
                                                     <div>
-                                                        <dt><?= prefaEscape($libelle) ?></dt>
+                                                        <dt><?= $iconesTravail[$travail['type_affectation']] ?? '' ?><?= prefaEscape($libelle) ?></dt>
                                                         <dd>
                                                             <span class="mes-plans-source"><?= avancementSource((string) $travail['type_affectation'], $soudureTotal) === 'cordons' ? 'selon les cordons' : 'selon les étapes' ?></span>
                                                             <span class="atelier-work-status is-<?= $etat ?>"><?= $etatLibelle ?> · <?= $pct ?> %</span>
@@ -329,7 +339,7 @@ $anciennes = $stmt->fetchAll();
                                                 <?php endforeach; ?>
                                                 <?php if ($soudureTotal): ?>
                                                     <div>
-                                                        <dt>Cordons</dt>
+                                                        <dt><?= $iconesTravail['cordons'] ?>Cordons</dt>
                                                         <dd>
                                                             <span><strong><?= $soudureFaites ?></strong><span class="mes-plans-sur"> sur <?= $soudureTotal ?> · soit <?= avancementPourcentage($soudureFaites, $soudureTotal) ?> %</span></span>
                                                             <button type="button" class="mes-plans-commande-ligne atelier-vers-soudures">Renseigner mes soudures</button>
@@ -343,9 +353,9 @@ $anciennes = $stmt->fetchAll();
                                               // ce qui fait l'avancement de leurs travaux. Un état en boutons côte à
                                               // côte, comme celui des PV : sept listes déroulantes cachaient chacune
                                               // leur valeur derrière un clic. ?>
-                                        <section class="mes-plans-section">
-                                            <div class="mes-plans-titre-ligne">
-                                                <h3 class="mes-plans-titre">Étapes du plan</h3>
+                                        <section class="pv-volet-section mes-plans-section">
+                                            <div class="pv-volet-titre-rang mes-plans-titre-ligne">
+                                                <h3 class="pv-volet-titre mes-plans-titre">Étapes du plan</h3>
                                                 <span class="mes-plans-compte"><?= $compteEtapes['applicables']
                                                     ? $compteEtapes['faites'] . ' sur ' . $compteEtapes['applicables'] . ' faite' . ($compteEtapes['faites'] > 1 ? 's' : '')
                                                     : 'aucune ne s’applique' ?></span>
@@ -356,14 +366,14 @@ $anciennes = $stmt->fetchAll();
                                                 <input type="hidden" name="affectation" value="<?= $affectationEtapes ?>">
                                                 <input type="hidden" name="operation" value="steps">
                                                 <input type="hidden" name="etapes_revision" value="<?= $etapes['revision'] ?>">
-                                                <dl class="mes-plans-proprietes">
+                                                <dl class="pv-proprietes mes-plans-proprietes">
                                                     <?php foreach (atelierSteps() as $cleEtape => $libelleEtape):
                                                         $valeur = $etapes['statuts'][$cleEtape] ?? ($cleEtape === 'autre' ? 'RAS' : '');
                                                         $nomGroupe = 'mes-plans-etape-' . $element . '-' . $cleEtape; ?>
                                                         <div>
                                                             <dt id="<?= $nomGroupe ?>"><?= prefaEscape($libelleEtape) ?></dt>
                                                             <dd>
-                                                                <span class="mes-plans-segments" role="radiogroup" aria-labelledby="<?= $nomGroupe ?>">
+                                                                <span class="pv-segments mes-plans-segments" role="radiogroup" aria-labelledby="<?= $nomGroupe ?>">
                                                                     <?php foreach (['' => '—', 'OK' => 'OK', 'Non OK' => 'Non OK', 'RAS' => 'RAS'] as $choix => $texte): ?>
                                                                         <label<?= $choix === '' ? ' title="Non renseigné"' : '' ?>>
                                                                             <input type="radio" name="etapes[<?= $cleEtape ?>]" value="<?= prefaEscape($choix) ?>"<?= $valeur === $choix ? ' checked' : '' ?><?= $choix === '' ? ' aria-label="Non renseigné"' : '' ?>>
@@ -377,65 +387,93 @@ $anciennes = $stmt->fetchAll();
                                                 </dl>
                                                 <div class="mes-plans-pied">
                                                     <span class="atelier-message" role="status" aria-live="polite"></span>
-                                                    <button type="submit" class="mes-plans-enregistrer">Enregistrer les étapes</button>
+                                                    <button type="submit" class="pv-enregistrer mes-plans-enregistrer">Enregistrer les étapes</button>
                                                 </div>
                                             </form>
-                                            <?php if ($historiqueEtapes): ?>
-                                                <details class="mes-plans-historique">
-                                                    <summary>Historique des étapes (<?= count($historiqueEtapes) ?>)</summary>
-                                                    <ol>
-                                                        <?php foreach ($historiqueEtapes as $saisie): $statuts = json_decode($saisie['statuts'], true) ?: []; ?>
-                                                            <li>
-                                                                <span class="mes-plans-sur"><?= prefaEscape(atelierLocalDateTime($saisie['date_saisie'])) ?> · <?= prefaEscape($saisie['auteur']) ?></span>
-                                                                <span><?= prefaEscape(implode(' · ', array_map(
-                                                                    static fn (string $cle, string $libelle): string => $libelle . ' ' . (($statuts[$cle] ?? '') ?: '—'),
-                                                                    array_keys(atelierSteps()), atelierSteps()))) ?></span>
-                                                            </li>
-                                                        <?php endforeach; ?>
-                                                    </ol>
-                                                </details>
-                                            <?php endif; ?>
+
                                         </section>
 
                                         <?php // Les fichiers du plan, qu'on ouvre ou qu'on télécharge — comme les
                                               // feuilles du volet du chef, sans ce qui sert à les gérer. ?>
-                                        <section class="mes-plans-section">
-                                            <h3 class="mes-plans-titre">Fichiers du plan</h3>
+                                        <section class="pv-volet-section mes-plans-section">
+                                            <h3 class="pv-volet-titre mes-plans-titre">Fichiers du plan</h3>
                                             <?php if (!$documents): ?>
                                                 <p class="mes-plans-aide">Pas encore de fichier. Le chef d’atelier les ajoute à ce plan.</p>
                                             <?php else: ?>
-                                                <ul class="mes-plans-fichiers">
+                                                <?php // En puces, comme les pièces jointes des PV : la puce ouvre le PDF
+                                                      // dans le visualiseur, la flèche le télécharge. ?>
+                                                <ul class="pv-documents mes-plans-fichiers">
                                                     <?php foreach ($documents as $doc): ?>
-                                                        <li>
-                                                            <span class="mes-plans-fichier-nom"><?= prefaEscape($doc['nom']) ?></span>
-                                                            <span class="mes-plans-fichier-commandes">
-                                                                <?php if ($doc['pdf']): ?>
-                                                                    <a class="mes-plans-commande-ligne prefa-pdf-link" data-name="<?= prefaEscape($doc['nom']) ?>" href="<?= prefaEscape($doc['url']) ?>">Ouvrir</a>
-                                                                <?php endif; ?>
-                                                                <a class="mes-plans-commande-ligne" href="<?= prefaEscape($doc['url']) ?>" download>Télécharger</a>
-                                                            </span>
+                                                        <li class="pv-document">
+                                                            <a class="prefa-document-link<?= $doc['pdf'] ? ' prefa-pdf-link' : '' ?>" data-name="<?= prefaEscape($doc['nom']) ?>" href="<?= prefaEscape($doc['url']) ?>"<?= $doc['pdf'] ? ' aria-haspopup="dialog"' : ' download' ?>>
+                                                                <?= $trombone ?><span class="pv-document-nom"><?= prefaEscape($doc['nom']) ?></span>
+                                                            </a>
+                                                            <a class="mes-plans-telecharger" href="<?= prefaEscape($doc['url']) ?>" download aria-label="Télécharger <?= prefaEscape($doc['nom']) ?>" title="Télécharger"><?= $telecharger ?></a>
                                                         </li>
                                                     <?php endforeach; ?>
                                                 </ul>
                                             <?php endif; ?>
                                         </section>
 
-                                        <?php if ($historiqueAvancement): ?>
-                                            <section class="mes-plans-section">
-                                                <details class="mes-plans-historique">
-                                                    <summary>Historique de l’avancement (<?= count($historiqueAvancement) ?>)</summary>
-                                                    <ol>
-                                                        <?php foreach ($historiqueAvancement as $saisie): ?>
-                                                            <li>
-                                                                <span><strong><?= prefaEscape($types[$saisie['type_affectation']] ?? '') ?> · <?= prefaEscape(avancementPhrase($saisie)) ?></strong> <span class="mes-plans-sur">· <?= prefaEscape(avancementEtatPhrase($saisie)) ?></span></span>
-                                                                <span class="mes-plans-sur"><?= prefaEscape(atelierLocalDateTime($saisie['date_saisie'])) ?> · <?= prefaEscape($saisie['auteur']) ?></span>
-                                                                <?php if ($saisie['commentaire']): ?><span class="mes-plans-note"><?= prefaEscape($saisie['commentaire']) ?></span><?php endif; ?>
-                                                            </li>
-                                                        <?php endforeach; ?>
-                                                    </ol>
-                                                </details>
-                                            </section>
-                                        <?php endif; ?>
+                                        <?php
+                                        // L'historique du plan, en frise comme celui des PV : les étapes
+                                        // enregistrées et les avancements calculés, mêlés, le plus récent en
+                                        // tête. Ils étaient repliés dans deux « Historique (…) » distincts.
+                                        $frise = [];
+                                        foreach ($historiqueEtapes as $saisie) {
+                                            $statuts = json_decode($saisie['statuts'], true) ?: [];
+                                            $faites = array_keys(array_filter($statuts, static fn ($v) => $v === 'OK'));
+                                            $frise[] = [
+                                                'genre' => 'etapes',
+                                                'quand' => (string) $saisie['date_saisie'],
+                                                'titre' => 'Étapes enregistrées',
+                                                'texte' => implode(' · ', array_map(
+                                                    static fn (string $cle, string $libelle): string => $libelle . ' ' . (($statuts[$cle] ?? '') ?: '—'),
+                                                    array_keys(atelierSteps()), atelierSteps())),
+                                                'qui' => (string) $saisie['auteur'],
+                                                'note' => '',
+                                            ];
+                                        }
+                                        foreach ($historiqueAvancement as $saisie) {
+                                            $frise[] = [
+                                                'genre' => in_array($saisie['etat'] ?? '', ['valide', 'refuse'], true) ? ($saisie['etat'] === 'valide' ? 'fait' : 'refus') : 'a_faire',
+                                                'quand' => (string) $saisie['date_saisie'],
+                                                'titre' => ($types[$saisie['type_affectation']] ?? '') . ' · ' . avancementPhrase($saisie),
+                                                'texte' => avancementEtatPhrase($saisie),
+                                                'qui' => (string) $saisie['auteur'],
+                                                'note' => (string) ($saisie['commentaire'] ?? ''),
+                                            ];
+                                        }
+                                        usort($frise, static fn ($a, $b) => strcmp($b['quand'], $a['quand']));
+                                        ?>
+                                        <section class="pv-volet-section mes-plans-section">
+                                            <h3 class="pv-volet-titre mes-plans-titre">Historique</h3>
+                                            <?php if ($frise): ?>
+                                                <ol class="pv-historique">
+                                                    <?php foreach ($frise as $evenement): ?>
+                                                        <li class="pv-historique-<?= $evenement['genre'] ?>">
+                                                            <span class="pv-historique-signe" aria-hidden="true">
+                                                                <?php if ($evenement['genre'] === 'fait'): ?>
+                                                                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
+                                                                <?php elseif ($evenement['genre'] === 'etapes'): ?>
+                                                                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01" /></svg>
+                                                                <?php else: ?>
+                                                                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5" stroke-dasharray="3 2.6" /></svg>
+                                                                <?php endif; ?>
+                                                            </span>
+                                                            <div>
+                                                                <strong><?= prefaEscape($evenement['titre']) ?></strong>
+                                                                <p><?= prefaEscape($evenement['texte']) ?></p>
+                                                                <?php if ($evenement['note'] !== ''): ?><p class="plan-historique-note"><?= prefaEscape($evenement['note']) ?></p><?php endif; ?>
+                                                                <time datetime="<?= prefaEscape($evenement['quand']) ?>"><?= prefaEscape(atelierLocalDateTime($evenement['quand'])) ?> · <?= prefaEscape($evenement['qui']) ?></time>
+                                                            </div>
+                                                        </li>
+                                                    <?php endforeach; ?>
+                                                </ol>
+                                            <?php else: ?>
+                                                <p class="pv-volet-note">Rien n’a encore été enregistré sur ce plan.</p>
+                                            <?php endif; ?>
+                                        </section>
                                     </div>
                                 </td>
                             </tr>
