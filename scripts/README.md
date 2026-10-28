@@ -14,18 +14,20 @@ Trois familles, et elles ne se lancent pas dans les mêmes circonstances.
 
 | Script | Ce qu'il fait |
 |---|---|
-| `add_user.php` | Crée un compte : nom, prénom, et au choix le rôle, le courriel, le mot de passe. Sans mot de passe, il en tire un au sort et le montre une fois. |
+| `add_user.php` | Crée un compte : nom, prénom, et au choix le rôle, le courriel, le mot de passe. Le rôle s'écrit sous l'un de ses trois noms (`chef-atelier`, « Chef d'atelier », « Gestionnaire »). Sans mot de passe, il en tire un au sort et le montre une fois. |
 | `add_test_users.php` | Pose les comptes d'essai des quatre profils. Relançable sans doublon. |
 | `add_demo_data.php` | Remplit la base de demandes et de plans de démonstration. Ne touche pas à l'existant. |
 
 ```
 run admin Dupont Jean --role chef-atelier
-run demo                                    # les comptes d'essai et le jeu de démonstration
+run admin Dupont Jean --role "Chef d'atelier"   # le même, dit autrement
+run demo                                        # les comptes d'essai et le jeu de démonstration
 ```
 
 `add_user.php` ne fabrique rien lui-même : il appelle `User::register()`, comme le ferait
-l'application. Le format de l'identifiant, le refus des doublons et le hachage du mot de
-passe sont décidés à un seul endroit.
+l'application. Le format de l'identifiant, le refus des doublons, le refus d'un courriel
+qui n'est pas une adresse et le hachage du mot de passe sont décidés à un seul endroit.
+La traduction des trois noms d'un rôle, elle, vit dans `Role::depuisLeTexte()`.
 
 ---
 

@@ -241,7 +241,7 @@ résultat.
 ## Créer un compte depuis le terminal
 
 ```
-run admin Dupont Jean
+run admin --nom "Dupont" --prenom "Albert"
 ```
 
 L'identifiant est fabriqué comme dans l'application — première lettre du nom, un point, le
@@ -258,8 +258,29 @@ run admin Dupont Jean --role chef-atelier --courriel jean.dupont@eitc-be.com
 run admin Dupont Jean --mdp "celui que je veux"
 ```
 
-Les rôles s'écrivent `charge-production`, `chef-atelier`, `personnel-atelier` et
-`charge-affaire`. Un identifiant déjà pris est refusé et rien n'est écrit.
+Le rôle s'écrit dans n'importe lequel de ses trois noms : celui du journal, le métier, ou
+le libellé de la base. Accents, majuscules et pluriel sont indifférents.
+
+| Dans le journal | Le métier | En base |
+| --- | --- | --- |
+| `charge-production` | Chargé de production | Administrateur |
+| `chef-atelier` | Chef d'atelier | Gestionnaire |
+| `personnel-atelier` | Personnel atelier | Utilisateur |
+| `charge-affaire` | Chargé d'affaire | Demandeur |
+
+```
+run admin Dupont Jean "chef d'atelier"    # le métier, tel que le client le nomme
+run admin Dupont Jean Gestionnaire        # le libellé qu'on lit dans la base
+```
+
+Un rôle qu'il ne reconnaît pas n'écrit rien et fait afficher ce tableau.
+
+**Les guillemets comptent.** Le rôle est le troisième mot : un nom — ou un rôle — en deux
+mots sans guillemets laisse son second mot filer dans l'argument suivant, qui est le
+courriel. `run admin --nom rayan --prenom El Manssouri` créait ainsi un compte dont le
+courriel valait « Manssouri », sans un mot de travers. Le courriel qui n'est pas une
+adresse est maintenant refusé, et rien n'est écrit — comme pour un identifiant déjà pris.
+Le compte créé redit son courriel, pour qu'un argument décalé se voie tout de suite.
 
 ## Références des demandes
 

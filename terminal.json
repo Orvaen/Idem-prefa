@@ -79,7 +79,7 @@
     "admin": {
       "run": "docker.exe compose exec -T php php -- --nom $nom --prenom $prenom --role $role --courriel $courriel --mot-de-passe $mdp < scripts/init/add_user.php",
       "args": ["nom", "prenom", "role=charge-production", "courriel=", "mdp="],
-      "description": "Crée un compte. Sans mot de passe, il en tire un au sort et le montre une fois. Rôles : charge-production, chef-atelier, personnel-atelier, charge-affaire"
+      "description": "Crée un compte. Sans mot de passe, il en tire un au sort et le montre une fois. Rôle : charge-production, chef-atelier, personnel-atelier, charge-affaire — ou le métier (\"chef d'atelier\"), ou le libellé de la base (\"Gestionnaire\")"
     },
 
     "migration": {
@@ -89,6 +89,7 @@
 
     "test": {
       "run": [
+        "docker.exe compose exec -T php php /tests/roles.php",
         "docker.exe compose exec -T php php /tests/encodage.php",
         "docker.exe compose exec -T php php /tests/dashboard_vues.php",
         "docker.exe compose exec -T php php /tests/api_demandes.php",

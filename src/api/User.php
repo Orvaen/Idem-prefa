@@ -106,15 +106,23 @@ class User
             throw new DomainException('Cet identifiant existe déjà : ' . $identifiant);
         }
 
+        // Le courriel est facultatif, mais s'il est donné, c'est une adresse.
+        //
+        // Il n'était pas vérifié du tout, et un compte est parti avec « Manssouri » pour
+        // courriel : en ligne de commande, un nom de famille en deux mots glisse son second
+        // mot dans l'argument suivant, qui se trouve être celui-là. Rien ne s'en plaignait —
+        // ni le script, ni la base, ni l'écran des comptes — et le compte était bien créé.
+        $email = trim($email ?? '');
+        if ($email === '') {
+            $email = null;
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new DomainException("Ceci n'est pas une adresse courriel : " . $email);
+        }
+
         $sql = "INSERT INTO Utilisateur (name, id_role, password, email, prenom, identifiant)
                 VALUES (:name, :id_role, :password, :email, :prenom, :identifiant)";
         $stmt = $this->db->prepare($sql);
         $hash = password_hash($password, PASSWORD_BCRYPT);
-        $email = trim($email ?? ''); // Peut être null
-
-        if ($email === '') {
-            $email = null;
-        }
 
         return $stmt->execute([
             'name' => $name,
