@@ -137,10 +137,6 @@ html #soudures-page .soudures-plan-declencheur[aria-expanded="true"] {
     box-shadow: 0 1px 2px rgb(15 15 16 / 6%), 0 12px 32px rgb(15 15 16 / 16%);
 }
 
-#soudures-page .soudures-plan-menu[hidden] {
-    display: none;
-}
-
 :root:not([data-theme="light"]) #soudures-page .soudures-plan-menu {
     box-shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 12px 32px rgb(0 0 0 / 50%);
 }
@@ -193,10 +189,6 @@ html #soudures-page .soudures-plan-recherche input {
     padding: 6px 8px;
     border-radius: var(--r-md);
     cursor: pointer;
-}
-
-.soudures-plan-option[hidden] {
-    display: none;
 }
 
 .soudures-plan-option:hover,
@@ -507,10 +499,6 @@ html .soudures-volet-rang .soudures-attente {
     font-weight: 500;
 }
 
-.soudures-volet-rang .soudures-attente[hidden] {
-    display: none;
-}
-
 .soudures-volet-rang .soudures-attente::before {
     content: "";
     width: 6px;
@@ -695,11 +683,6 @@ html .soudures-volet-pied .soudures-volet-manque:hover {
 
 .soudures-volet-pied .pv-message {
     text-align: right;
-}
-
-/* Une feuille close — entièrement soudée et validée — n'a plus d'enregistrement. */
-.soudures-volet-pied .pv-enregistrer[hidden] {
-    display: none;
 }
 
 /* ----- La fenêtre « Signaler un manque » ----- */

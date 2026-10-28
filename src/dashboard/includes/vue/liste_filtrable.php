@@ -86,7 +86,7 @@ function listeFiltrableRendu(string $prefixe, string $libelle, array $options, i
         . '" value="' . prefaEscape($choisi) . '">'
         // Le volet est caché des deux façons : l'attribut pour les lecteurs d'écran, le
         // style parce qu'une règle de mise en page lui pose un display qui l'emporterait.
-        . '<div id="' . $prefixe . '-options" class="liste-filtrable-options" role="listbox" hidden style="display: none;">';
+        . '<div id="' . $prefixe . '-options" class="liste-filtrable-options" role="listbox" hidden>';
 
     if ($vide !== null) {
         $html .= '<div id="' . $prefixe . '-none" role="option" data-value=""'
@@ -108,7 +108,7 @@ function listeFiltrableRendu(string $prefixe, string $libelle, array $options, i
             . ' data-value="autre" aria-selected="false">' . prefaEscape($autre) . '</div>';
     }
 
-    $html .= '<p class="liste-filtrable-vide" hidden style="display: none;">' . prefaEscape($aucun) . '</p>'
+    $html .= '<p class="liste-filtrable-vide" hidden>' . prefaEscape($aucun) . '</p>'
         . '</div></div>';
 
     if (!empty($reglages['aide'])) {
@@ -127,7 +127,7 @@ function listeFiltrableRendu(string $prefixe, string $libelle, array $options, i
  */
 function listeFiltrableAutreRendu(string $prefixe, string $libelle, string $invite, string $nom): string
 {
-    return '<div class="form-group prefa-full" id="' . $prefixe . '-autre-field" hidden style="display: none;">'
+    return '<div class="form-group prefa-full" id="' . $prefixe . '-autre-field" hidden>'
         . '<label for="' . $prefixe . '-autre">' . prefaEscape($libelle)
         . ' <span class="required-mark" aria-hidden="true">*</span></label>'
         . '<input id="' . $prefixe . '-autre" name="' . $nom . '" type="text" maxlength="100"'

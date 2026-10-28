@@ -328,7 +328,7 @@ $libelleFeuilles = static fn (int $n): string => $n === 0 ? 'en attente du dessi
                         'chercher' => 'Article qui manque',
                         'tableau' => true,
                     ]) ?>
-                    <div id="manque-article-autre-field" class="soudures-manque-autre" hidden style="display: none;">
+                    <div id="manque-article-autre-field" class="soudures-manque-autre" hidden>
                         <input id="manque-article-autre" class="fenetre-champ" name="designation_autre" maxlength="180"
                                autocomplete="off" placeholder="Article qui manque — bride DN40, tube Ø48,3…" aria-label="Article qui manque">
                     </div>

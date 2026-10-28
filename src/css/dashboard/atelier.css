@@ -1619,11 +1619,6 @@
 }
 
 /* Tableau : mêmes styles que la liste des demandes. */
-.plans-iso-request[hidden],
-.plans-iso-detail[hidden] {
-    display: none !important;
-}
-
 .plans-iso-table .plans-iso-detail > td {
     padding: 0;
     max-width: none;
@@ -1950,11 +1945,6 @@
  * pastilles, onglets comptés, groupes ouverts par leur signe, échéance nue avec son
  * retard, demandeur à monogramme, une commande sur la ligne et le reste dans le menu. Ces
  * règles ne posent que ce qui lui est propre ; tout le reste vient de prefa-list.css. */
-
-.plans-iso-groupe[hidden],
-.plans-iso-aucune[hidden] {
-    display: none !important;
-}
 
 /* Le même bouton « Actualiser » que la liste : rayon 6, corps 13. Il était à 4, la seule
    commande de la barre à ne pas suivre l'échelle des rayons. */
@@ -2792,11 +2782,6 @@ html .atelier-affecter-recherche input {
     overflow-y: auto;
 }
 
-.atelier-affecter-choix[hidden] {
-    display: none;
-}
-
-
 /* ==========================================================================
    SOUDURES (ENCADREMENT) — LA LISTE ET LE VOLET « EXAMINER »
    ==========================================================================
@@ -3229,12 +3214,6 @@ html .suivi-soudures-detail .atelier-soudures-table .suivi-soudures-sur {
    sections et ses lignes de propriété sont ceux du volet « Soudures » ; la pastille
    d'état est celle du volet « Plans & affectations » ; le contrôle des étapes est l'état
    en boutons des PV. Ne vit ici que ce qui est propre à l'écran. */
-
-.mes-plans-plan[hidden],
-.mes-plans-groupe[hidden],
-.mes-plans-aucun-resultat[hidden] {
-    display: none !important;
-}
 
 #mes-plans-recherche {
     width: 100%;

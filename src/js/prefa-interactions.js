@@ -20,7 +20,7 @@ $(document).on('change', '#prefa-form [name="CDN"]', function () {
 $(document).on('change', '#prefa-form #revetement-type', function () {
     const revetu = this.value !== 'aucun';
     const details = $('#revetement-details');
-    details.prop('hidden', !revetu).css('display', revetu ? 'flex' : 'none');
+    details.prop('hidden', !revetu);
     const precision = details.find('#revetement-precision');
     if (!revetu) precision.val('');
     // Le champ vient d'apparaître : on y porte le curseur, après que le navigateur l'a

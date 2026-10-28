@@ -1110,10 +1110,6 @@ html body:has(.prefa-detail-row.planning-volet-rang:not([hidden]))::before {
     color: var(--alerte-texte);
 }
 
-.planning-retirer[hidden] {
-    display: none;
-}
-
 .planning-exporter {
     color: var(--text-muted);
 }

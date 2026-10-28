@@ -364,12 +364,6 @@
     background: var(--surface);
 }
 
-/* Repliée, elle disparaît : le bouton de la barre d'outils la rappelle. Garder une
-   colonne vide pour y loger un titre mangerait ce qu'on vient de rendre au dessin. */
-.plan-dialog-listes[hidden] {
-    display: none;
-}
-
 /* La poignée est posée SUR le bord, à cheval dessus, et non glissée dans la colonne :
    enfant d'une colonne flex, elle n'avait aucune hauteur et il n'y avait rien à
    attraper. */
@@ -498,10 +492,6 @@
     gap: 0.4rem;
     padding-left: 0.6rem;
     padding-right: 0.6rem;
-}
-
-.plan-dialog-sommaire[hidden] {
-    display: none;
 }
 
 /* Le champ de recherche du sommaire. Même grammaire que les autres champs : 32 px de

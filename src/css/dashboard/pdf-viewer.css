@@ -145,10 +145,6 @@ body.prefa-viewer-open {
     border-left: 1px solid var(--border);
 }
 
-.prefa-pdf-sommaire[hidden] {
-    display: none;
-}
-
 .prefa-pdf-sommaire-titre {
     flex: none;
     margin: 0;

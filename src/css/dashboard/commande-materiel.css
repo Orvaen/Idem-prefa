@@ -426,10 +426,6 @@ html .materiel-volet-rang .materiel-recevoir thead + .materiel-groupe .materiel-
     font-variant-numeric: tabular-nums;
 }
 
-.materiel-groupe-retard[hidden] {
-    display: none;
-}
-
 /* Une livraison arrivée en entier : son titre passe en sourd, comme ses lignes. */
 html .materiel-volet-rang .materiel-groupe.est-complete .materiel-groupe-titre {
     color: var(--text-muted);
@@ -453,10 +449,6 @@ html .materiel-volet-rang .materiel-groupe-tout {
 
 html .materiel-volet-rang .materiel-groupe-tout:hover {
     background: var(--hover) !important;
-}
-
-.materiel-groupe-tout[hidden] {
-    display: none !important;
 }
 
 /* Les lignes : 36 px, filets fins, toute la ligne se coche. */

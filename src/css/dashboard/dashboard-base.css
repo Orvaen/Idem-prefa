@@ -254,6 +254,8 @@ dialog {
     }
 }
 
+/* hidden suffit, partout : aucune règle d'écran ne bat ce !important. Inutile d'écrire
+   « .x[hidden] { display: none } » dans une feuille, ni le display en ligne dans un script. */
 [hidden] {
     display: none !important;
 }

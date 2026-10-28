@@ -95,7 +95,7 @@
         if (tout) {
             const filtre = tout.closest('.filtre');
             const cases = [...filtre.querySelectorAll('.filtre-option input')]
-                .filter(c => c.closest('.filtre-option').style.display !== 'none');
+                .filter(c => !c.closest('.filtre-option').hidden);
             const manquant = cases.some(c => !c.checked);
             cases.forEach(c => { c.checked = manquant; });
             tout.textContent = manquant ? 'Tout désélectionner' : 'Tout sélectionner';
@@ -134,7 +134,7 @@
         filtre.querySelectorAll('.filtre-option').forEach(option => {
             const texte = option.querySelector('.filtre-texte').textContent.toLowerCase();
             const montre = !cherche || texte.includes(cherche);
-            option.style.display = montre ? '' : 'none';
+            option.hidden = !montre;
             if (montre) visibles++;
         });
         filtre.querySelector('.filtre-vide').hidden = visibles > 0;

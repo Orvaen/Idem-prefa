@@ -38,12 +38,6 @@
     padding: 24px 16px;
 }
 
-#pv-page .pv-ligne[hidden],
-#pv-page .pv-groupe[hidden],
-#pv-page .pv-aucune[hidden] {
-    display: none !important;
-}
-
 /* ---------- Les états ----------
  *
  * Un signe et un mot, sans pastille : trois pastilles par ligne faisaient un damier de

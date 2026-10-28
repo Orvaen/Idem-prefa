@@ -262,7 +262,7 @@ $affairesOuvertes = Affaire::pour($db, $utilisateur);
                                 <option value="les_deux" <?= $currentRevetementType === 'les_deux' ? 'selected' : '' ?>>Revêtement intérieur et extérieur</option>
                             </select>
                         </div>
-                        <div class="form-group prefa-full" id="revetement-details" <?= $currentRevetementType === 'aucun' ? 'hidden style="display: none;"' : '' ?>>
+                        <div class="form-group prefa-full" id="revetement-details" <?= $currentRevetementType === 'aucun' ? 'hidden' : '' ?>>
                             <label for="revetement-precision">Précision du revêtement <span class="nd-discret">· facultatif</span></label>
                             <input id="revetement-precision" name="revetement_precision" type="text" maxlength="255" value="<?= prefaEscape($currentRevetementPrecision) ?>" placeholder="Ex. Peinture anticorrosion, époxy…">
                         </div>

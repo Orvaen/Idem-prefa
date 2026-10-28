@@ -235,10 +235,6 @@ html[data-theme="light"] #left-panel .nav-btn .nav-urgent-badge[data-compteur="a
     color: var(--accent-texte) !important;
 }
 
-#left-panel .nav-btn .nav-urgent-badge[hidden] {
-    display: none;
-}
-
 /* ===== SUR TÉLÉPHONE =====
    La barre s'ouvre par-dessus la page : la carte garde ses marges et ses coins. */
 

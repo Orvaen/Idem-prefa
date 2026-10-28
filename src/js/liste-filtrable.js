@@ -21,12 +21,12 @@
 
     const champFiltrable = cible => (cible && cible.closest ? cible.closest('[data-liste-filtrable]') : null);
 
-    // L'attribut hidden ne suffit pas : des règles de style posent un display qui le
-    // court-circuite. On écrit donc les deux, comme le faisait le code d'origine.
-    const montrer = (element, visible, affichage) => {
-        if (!element) return;
-        element.hidden = !visible;
-        element.style.display = visible ? (affichage || 'block') : 'none';
+    // L'attribut hidden suffit : dashboard-base.css le tient en « display: none !important »,
+    // qu'aucune règle d'écran ne bat. On écrivait aussi le display en ligne, et en montrant
+    // l'élément ce « block » écrasait celui de sa feuille — les entrées du volet perdaient
+    // leur mise en page dès qu'elles réapparaissaient.
+    const montrer = (element, visible) => {
+        if (element) element.hidden = !visible;
     };
 
     /** Les morceaux d'un champ. Le bloc « Autre » vit dehors : il prend toute la largeur. */
@@ -129,7 +129,7 @@
         if (valeur === 'autre') {
             if (saisie) saisie.value = 'Autre';
             if (identifiant) identifiant.value = 'autre';
-            montrer(blocPrecision, true, 'flex');
+            montrer(blocPrecision, true);
             if (precision) {
                 precision.required = true;
                 // Ce qui venait d'être tapé devient la précision : on ne le fait pas retaper.

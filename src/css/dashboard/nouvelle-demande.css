@@ -391,12 +391,6 @@
     grid-column: 1 / -1;
 }
 
-/* Les éléments que le script montre et cache : leur display écrit à la main, plus haut,
-   ne doit pas l'emporter sur l'attribut. */
-.prefa-nouvelle [hidden] {
-    display: none !important;
-}
-
 @media (max-width: 560px) {
     /* Au plus étroit, la pastille se serre contre le bord. */
     .prefa-nouvelle .nd-form .nd-haut {

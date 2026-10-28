@@ -611,7 +611,6 @@
         const sansListe = articles.length === 0;
         filtrable.hidden = sansListe;
         libre.hidden = !sansListe;
-        libre.style.display = sansListe ? 'block' : 'none';
     }
 
     $(document).on('click', '[data-signaler-manque]', function () {

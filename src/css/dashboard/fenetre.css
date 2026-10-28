@@ -213,10 +213,6 @@ dialog.fenetre .fenetre-bloc {
     min-width: 0;
 }
 
-dialog.fenetre .fenetre-bloc[hidden] {
-    display: none;
-}
-
 dialog.fenetre .fenetre-etiquette,
 dialog.fenetre .fenetre-bloc > legend {
     margin: 0;
@@ -372,10 +368,6 @@ dialog.fenetre .liste-filtrable {
     margin: 0;
 }
 
-dialog.fenetre .liste-filtrable[hidden] {
-    display: none;
-}
-
 dialog.fenetre .liste-filtrable-champ {
     box-sizing: border-box;
     width: 100%;
@@ -428,8 +420,9 @@ dialog.fenetre .liste-filtrable-options {
     box-shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 12px 32px rgb(0 0 0 / 50%);
 }
 
-/* Centré par la hauteur de ligne, pas par flex : liste-filtrable.js remet chaque entrée
-   en « display: block » quand il la montre, et le texte remontait en haut de sa ligne. */
+/* Centré par la hauteur de ligne. liste-filtrable.js remettait chaque entrée en
+   « display: block », en ligne, quand il la montrait : un centrage par flex ne tenait pas,
+   et le texte remontait en haut de sa ligne. Il ne pose plus que l'attribut hidden. */
 dialog.fenetre .liste-filtrable-options [role="option"] {
     min-height: 0;
     padding: 7px 8px;
