@@ -81,21 +81,8 @@ function dashboardMenu(): array
             'styles' => ['dashboard/affaires.css'],
             'scripts' => ['affaires.js'],
         ],
-        [
-            // « Nouvelle demande » et non « Créer une affaire » : l'affaire est ouverte par
-            // le chargé de production, et une affaire porte plusieurs demandes.
-            'id' => 'prefa',
-            'rayon' => 'avant',
-            'libelle' => 'Nouvelle demande',
-            'page' => 'pages/create_prefa.php',
-            'pour' => [Role::ChargeDAffaire],
-            'icone' => '<path d="M13.5 3.5H7A1.5 1.5 0 0 0 5.5 5v14A1.5 1.5 0 0 0 7 20.5h10a1.5 1.5 0 0 0 1.5-1.5V8.5z"/><path d="M13.5 3.5v5h5"/><path d="M12 11.5v6M9 14.5h6"/>',
-            'styles' => [],
-            // Le formulaire s'ouvre aussi depuis la liste, pour modifier une demande — et
-            // le chargé de production, qui n'en dépose pas, en modifie. Ses scripts sont
-            // donc dans le socle et non ici.
-            'scripts' => [],
-        ],
+        // « Nouvelle demande » n'est plus une entrée du menu : elle se crée depuis « Mes
+        // demandes », dans une fenêtre au-dessus de la liste (prefa-interactions.js).
         [
             // La seule entrée que tout le monde voit, et la seule dont le nom change : on
             // ne valide pas, on suit, on pointe ou on consulte selon le métier.

@@ -174,6 +174,17 @@ if ($isWorkshopPersonnel) {
 
                     </button>
 
+                    <?php // L'action de l'écran, pour qui dépose : la demande se crée d'ici, dans
+                          // une fenêtre au-dessus de la liste — la même que « Modifier ». Elle
+                          // avait son entrée à part dans le menu, loin du tableau qu'elle remplit. ?>
+                    <?php if ($isRequester): ?>
+                        <button type="button" class="prefa-nouvelle-demande" data-nouvelle-demande>
+                            <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
+                            Nouvelle demande
+                        </button>
+                    <?php endif; ?>
+
                 </div>
 
             </div>

@@ -59,7 +59,7 @@
                                 <span><?= $affaire['par'] !== '' ? 'Confiée par ' . htmlspecialchars($affaire['par']) : 'Confiée à vous' ?></span>
                             </span>
                             <span class="accueil-affaire-quand"><?= htmlspecialchars((new DateTimeImmutable($affaire['quand']))->format('d/m à H:i')) ?></span>
-                            <button type="button" class="accueil-affaire-action" data-ouvre="btn-prefa">Déposer une demande</button>
+                            <button type="button" class="accueil-affaire-action" data-nouvelle-demande>Déposer une demande</button>
                         </li>
                     <?php endforeach; ?>
                 </ul>

@@ -277,8 +277,26 @@ function fenetreEdition() {
     return fenetre;
 }
 
+// « Nouvelle demande » : la même fenêtre, le formulaire vide. Le bouton vit dans l'en-tête
+// de « Mes demandes » (et sur l'accueil, sous une affaire qu'on vient de recevoir) ;
+// enregistrer referme la fenêtre et rafraîchit la liste derrière, comme pour « Modifier ».
+$(document).on('click', '[data-nouvelle-demande]', function () {
+    const fenetre = fenetreEdition();
+    const contenu = fenetre.querySelector('.prefa-edition-contenu');
+    fenetre.declencheur = this;
+    fenetre.setAttribute('aria-label', 'Nouvelle demande');
+    contenu.innerHTML = '<p class="prefa-edition-attente">Chargement du formulaire…</p>';
+    if (!fenetre.open) fenetre.showModal();
+    $(contenu).load('pages/create_prefa.php', function (response, status) {
+        if (status === 'error') {
+            $(this).html('<p class="prefa-edition-attente">Impossible de charger le formulaire. Fermez la fenêtre puis réessayez.</p>');
+        }
+    });
+});
+
 $(document).on('click', '.edit-prefa', function () {
     const fenetre = fenetreEdition();
+    fenetre.setAttribute('aria-label', 'Modifier la demande');
     const contenu = fenetre.querySelector('.prefa-edition-contenu');
     // Le focus revient à la ligne d'où l'on est parti ; le menu qui portait « Modifier »
     // se referme, son déclencheur reste.
