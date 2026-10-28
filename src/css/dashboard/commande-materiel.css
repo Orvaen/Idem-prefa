@@ -398,15 +398,7 @@ html .materiel-volet-rang .materiel-volet-outils button:disabled {
     color: var(--succes-texte);
 }
 
-/* Une ligne reçue se lit sans lire les étiquettes : le vert des « faits », doublé d'un
-   filet d'équerre à gauche pour que la couleur ne porte pas l'information seule. */
-.materiel-edition-ligne.est-recue > td {
-    background: color-mix(in srgb, var(--succes-texte) 9%, transparent);
-}
 
-.materiel-edition-ligne.est-recue > td:first-child {
-    box-shadow: inset 2px 0 0 var(--succes-texte);
-}
 
 /* Une commande validée s'ouvre en lecture : plus rien qui écrive. Le serveur refuse de
    toute façon — ceci évite d'avoir à le lui demander. La réception, elle, reste : la
@@ -427,4 +419,102 @@ html .materiel-volet-rang.est-figee .materiel-volet-pied {
 .materiel-liste .materiel-cellule-recus {
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
+}
+
+/* ==========================================================================
+   LE TABLEAU DES ARTICLES, COMME LES AUTRES TABLEAUX DE VOLET
+   ==========================================================================
+
+   La grammaire du tableau des cordons, dans le volet des soudures : en-tête de 32 px
+   en casse normale, rangs de 36 px, filets fins, survol à peine marqué. Celui-ci avait
+   ses pastilles encadrées, des rangs de 46 px teintés de vert et une largeur minimale
+   qui faisait défiler le volet de côté. */
+
+html .materiel-volet-rang .materiel-edition {
+    min-width: 0;
+    font-size: 13px;
+}
+
+html .materiel-volet-rang .materiel-edition th {
+    position: static;
+    height: 32px;
+    padding: 0 8px;
+    border-bottom: 1px solid var(--border);
+    background: transparent !important;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    vertical-align: middle;
+}
+
+html .materiel-volet-rang .materiel-edition td {
+    height: 36px;
+    padding: 0 2px;
+    border-bottom: 1px solid var(--border-faint);
+    background: transparent !important;
+    color: var(--text) !important;
+}
+
+/* Le texte d'une case fermée tombe à 8 px du bord, comme celui de l'en-tête. */
+html .materiel-volet-rang .materiel-edition input:not([type="checkbox"]) {
+    height: 28px;
+    padding: 0 6px;
+}
+
+html .materiel-volet-rang .materiel-edition tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+html .materiel-volet-rang .materiel-edition tbody tr:hover td {
+    background: var(--ligne-survol) !important;
+}
+
+html .materiel-volet-rang .materiel-edition th:first-child,
+html .materiel-volet-rang .materiel-edition td:first-child {
+    padding-left: 0;
+}
+
+/* La réception : un point et un mot, comme les états des listes — pas une pastille
+   encadrée par ligne. Elle reste un bouton : c'est là qu'on la pointe. */
+html .materiel-volet-rang .materiel-recu {
+    height: 24px;
+    margin-left: -6px;
+    padding: 0 6px;
+    border: 0;
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+html .materiel-volet-rang .materiel-recu:hover {
+    background: var(--hover);
+    color: var(--text);
+}
+
+html .materiel-volet-rang .materiel-recu[aria-pressed="true"] {
+    border: 0;
+    background: transparent;
+    color: var(--succes-texte);
+}
+
+html .materiel-volet-rang .materiel-recu[aria-pressed="true"]:hover {
+    background: var(--hover);
+}
+
+html .materiel-volet-rang .materiel-recu-point {
+    width: 6px;
+    height: 6px;
+}
+
+/* Une commande validée : du texte, au même retrait que les champs. */
+html .materiel-volet-rang.est-figee .materiel-edition td:not(.materiel-colonne-recu) {
+    padding: 0 8px;
+}
+
+
+/* Une échéance dépassée garde son ambre, champ ou texte. */
+html .materiel-volet-rang .materiel-edition td.est-en-retard,
+html .materiel-volet-rang .materiel-edition td.est-en-retard input {
+    color: var(--attente-texte) !important;
 }
