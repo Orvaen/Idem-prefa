@@ -3524,3 +3524,274 @@ html .mes-plans-page .mes-plans-historique summary {
         min-height: 44px;
     }
 }
+
+/* ==========================================================================
+   « PLANS & AFFECTATIONS » — LA GRAMMAIRE DES VOLETS
+   ==========================================================================
+
+   Le volet suivait sa propre mise en page ; il reprend celle des volets des PV et de la
+   fiche d'une demande (pv.css) : en-tête avec la référence en titre et la croix dans son
+   cadre, puis des sections séparées par un filet pointillé, au titre sourd en casse
+   normale, des lignes de propriétés à icône, et l'historique en frise. Ces règles
+   passent devant les anciennes (« html .plans-iso-detail ») par le même préfixe. */
+
+html .plans-iso-detail .plans-iso-body {
+    padding: 0 22px 24px;
+}
+
+html .plans-iso-detail .pv-volet-tete.plans-iso-entete {
+    margin: 0 -22px 12px;
+    padding: 18px 22px 16px;
+}
+
+html .plans-iso-detail .atelier-tablist {
+    margin-bottom: 4px;
+}
+
+/* ---------- L'en-tête d'un plan ---------- */
+
+html .plans-iso-detail .plan-volet-tete {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 0 4px;
+}
+
+html .plans-iso-detail .plan-volet-tete .atelier-plan-identity {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+html .plans-iso-detail .plan-volet-tete h3 {
+    margin: 0;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: normal;
+}
+
+html .plans-iso-detail .plan-volet-tete .atelier-row-description {
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+/* Renommer et Supprimer : deux icônes dans le cadre des commandes d'un volet. Le
+   formulaire de suppression ne doit pas casser la rangée. */
+html .plans-iso-detail .plan-volet-outils {
+    flex: none;
+}
+
+html .plans-iso-detail .plan-volet-outils form {
+    display: contents;
+}
+
+html .plans-iso-detail .plan-volet-outils .atelier-message {
+    display: none;
+}
+
+html .plans-iso-detail .plan-volet-outils button,
+html .plans-iso-detail .plan-volet-outils .prefa-toggle.atelier-open-plan-edit,
+html .plans-iso-detail .plan-volet-outils .atelier-plan-delete-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--h-sm);
+    height: var(--h-sm);
+    margin: 0;
+    padding: 0;
+    border: 0 !important;
+    border-radius: var(--r-sm);
+    background: transparent !important;
+    color: var(--text-muted) !important;
+    cursor: pointer;
+}
+
+html .plans-iso-detail .plan-volet-outils button:hover {
+    background: var(--hover) !important;
+    color: var(--text) !important;
+}
+
+html .plans-iso-detail .plan-volet-outils .atelier-plan-delete-button:hover {
+    background: var(--alerte-fond) !important;
+    color: var(--danger-texte) !important;
+}
+
+html .plans-iso-detail .plan-volet-outils .icon {
+    width: 14px;
+    height: 14px;
+}
+
+/* ---------- Les sections ---------- */
+
+html .plans-iso-detail .plan-volet-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 16px 0;
+    border: 0;
+    border-top: 1px dashed var(--border);
+}
+
+/* Le titre d'une section : sourd, 12 px, en casse normale — comme dans les PV. */
+html .plans-iso-detail .atelier-plan-titre-section {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: normal;
+    text-transform: none;
+}
+
+/* Les postes : le libellé porte son icône, comme une ligne de propriétés. */
+html .plans-iso-detail .atelier-plan-work h4 {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+html .plans-iso-detail .atelier-plan-work h4 .icon {
+    flex: none;
+    width: 16px;
+    height: 16px;
+}
+
+html .plans-iso-detail .atelier-plan-work {
+    grid-template-columns: 148px minmax(0, 1fr) auto auto;
+    min-height: 40px;
+    padding: 4px 0;
+    border-bottom: 0;
+}
+
+html .plans-iso-detail .atelier-plan-work .atelier-work-report summary {
+    color: var(--text-muted);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+/* « Saisir » : une commande de ligne, sourde jusqu'au survol. */
+html .plans-iso-detail .atelier-plan-work .atelier-edit-progress {
+    height: var(--h-sm);
+    padding: 0 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: transparent;
+    color: var(--text);
+    font-size: 12px;
+}
+
+html .plans-iso-detail .atelier-plan-work .atelier-edit-progress:hover {
+    background: var(--hover);
+}
+
+/* Les soudures : une ligne de propriété, le chiffre à droite du libellé. */
+html .plans-iso-detail .atelier-soudures-renvoi.plan-volet-section {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+}
+
+html .plans-iso-detail .atelier-soudures-renvoi strong {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+html .plans-iso-detail .atelier-soudures-renvoi .atelier-plan-titre-section {
+    flex: 0 0 136px;
+}
+
+html .plans-iso-detail .atelier-soudures-renvoi .atelier-vers-suivi-soudures {
+    margin-left: auto;
+    height: var(--h-sm);
+    padding: 0 10px;
+    border-radius: var(--r-md);
+    font-size: 12px;
+}
+
+/* ---------- Les documents ----------
+   En puces, comme les pièces jointes des PV : trombone, nom. Le rattachement des QMOS et
+   DMOS suit, en lignes de cases, sans cadre de carte autour. */
+html .plans-iso-detail .atelier-file-management .atelier-plan-files {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+html .plans-iso-detail .atelier-file-management .prefa-document-link {
+    display: inline-flex;
+    align-items: center;
+    height: var(--h-md);
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: transparent;
+    color: var(--text);
+    font-size: 12.5px;
+    text-decoration: none;
+}
+
+html .plans-iso-detail .atelier-file-management .prefa-document-link:hover {
+    background: var(--hover);
+}
+
+html .plans-iso-detail .atelier-file-management .atelier-document-edit {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 4px 0 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+}
+
+html .plans-iso-detail .atelier-file-management .atelier-document-edit .atelier-muted {
+    margin: 0;
+    font-size: 12px;
+}
+
+html .plans-iso-detail .atelier-file-management .atelier-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    padding: 6px 0;
+    border: 0;
+    background: transparent;
+    font-size: 13px;
+}
+
+html .plans-iso-detail .atelier-file-management .atelier-form-actions button[type="submit"] {
+    height: var(--h-md) !important;
+    font-size: 12px !important;
+}
+
+/* ---------- L'historique ---------- */
+
+html .plans-iso-detail .pv-historique {
+    margin-top: 4px;
+}
+
+html .plans-iso-detail .plan-historique-note {
+    font-style: italic;
+}
+
+/* Le titre de section ne porte plus de filet à lui : c'est la section qui sépare. Les
+   anciennes règles lui en donnaient un, doublé par celui de la section. */
+html .plans-iso-detail .plan-volet-section > .atelier-plan-titre-section,
+html .plans-iso-detail .plan-volet-section .atelier-plan-titre-section {
+    padding: 0;
+    border: 0;
+}
+
+/* Le rattachement des QMOS et DMOS vit à même la section, sans fond de carte. */
+html .plans-iso-detail .atelier-file-management .atelier-document-edit.prefa-form {
+    background: transparent !important;
+    box-shadow: none;
+}

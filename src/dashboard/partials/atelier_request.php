@@ -19,6 +19,13 @@ $elements = atelierElements($db, $requestId);
 // Les coulées des certificats de la demande : une seule lecture pour tous ses plans.
 $couleesDisponibles = nomenclatureCouleesDisponibles($db, $requestId);
 $types = ['plan' => 'Plan / ISO', 'montage' => 'Montage', 'soudage' => 'Suivi soudage'];
+// Une icône par poste, comme les lignes de propriétés des volets (PV, fiche) : le libellé
+// se repère avant de se lire.
+$iconesPoste = [
+    'plan' => '<svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z" /><path d="M14 3v5h5" /></svg>',
+    'montage' => '<svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3.5 17.5l3 3 5.8-5.8a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z" /></svg>',
+    'soudage' => '<svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c1.5 3 4 4.5 4 8a4 4 0 0 1-8 0c0-2 1-3 2-4 .2 1.5 1 2 2 2 0-2-1-3.5 0-6Z" /><path d="M5 21h14" /></svg>',
+];
 // Une demande validée est ouverte au travail de l'atelier : il n'y a plus d'étape de
 // prise en charge à franchir avant d'y préparer des plans.
 $taken = true;
@@ -112,31 +119,29 @@ $avancementsAValider = avancementEnAttentePlusieurs($db, $affectationsActives);
                             static fn (string $token): bool => !str_starts_with($token, 'plan:'), ARRAY_FILTER_USE_KEY);
                     ?>
                         <article class="atelier-plan-block" <?php if ($plusieursPlans): ?>role="tabpanel" id="plan-pane-<?= (int) $element['id'] ?>" aria-labelledby="plan-tab-<?= (int) $element['id'] ?>"<?= $index === 0 ? '' : ' hidden' ?><?php else: ?>aria-label="Plan <?= prefaEscape($element['reference']) ?>"<?php endif; ?>>
-                            <div class="atelier-plan-identity"><h3><?= prefaEscape($element['reference']) ?></h3><span class="atelier-row-description"><?= prefaEscape($element['libelle']) ?></span>
-                                <?php if (!$availableDocuments): ?><span class="atelier-missing-file"><?= !empty($attachmentsByRequest[$requestId]) ? 'Le fichier de la demande reste à rattacher à ce plan.' : 'Aucun fichier rattaché à ce plan.' ?></span><?php endif; ?>
-                            </div>
-
-                            <?php if ($canManageWorkshop && $taken): ?>
-                                <!-- Ces deux commandes portent sur le plan lui-même — son nom,
-                                     sa description, son existence — et non sur ses feuilles.
-                                     Elles se tiennent donc contre son titre, et le disent :
-                                     « Modifier » et « Supprimer » tout court laissaient croire
-                                     qu'on allait toucher aux fichiers. -->
-                                <div class="atelier-plan-actions-area">
-                                    <div class="atelier-plan-actions">
-                                        <button type="button" class="prefa-toggle atelier-open-plan-edit" data-dialog="atelier-plan-dialog-<?= $requestId ?>" data-element="<?= (int) $element['id'] ?>" data-reference="<?= prefaEscape($element['reference']) ?>" data-description="<?= prefaEscape($element['libelle']) ?>">Renommer</button>
+                            <!-- L'en-tête du plan, sur le modèle de celui d'un volet : son nom en titre,
+                                 sa description dessous, et ses deux commandes groupées dans un cadre —
+                                 elles portent sur le plan lui-même, pas sur ses feuilles. -->
+                            <div class="plan-volet-tete">
+                                <div class="atelier-plan-identity"><h3><?= prefaEscape($element['reference']) ?></h3><span class="atelier-row-description"><?= prefaEscape($element['libelle']) ?></span>
+                                    <?php if (!$availableDocuments): ?><span class="atelier-missing-file"><?= !empty($attachmentsByRequest[$requestId]) ? 'Le fichier de la demande reste à rattacher à ce plan.' : 'Aucun fichier rattaché à ce plan.' ?></span><?php endif; ?>
+                                </div>
+                                <?php if ($canManageWorkshop && $taken): ?>
+                                    <div class="pv-volet-outils plan-volet-outils">
+                                        <button type="button" class="prefa-toggle atelier-open-plan-edit" data-dialog="atelier-plan-dialog-<?= $requestId ?>" data-element="<?= (int) $element['id'] ?>" data-reference="<?= prefaEscape($element['reference']) ?>" data-description="<?= prefaEscape($element['libelle']) ?>" aria-label="Renommer le plan" title="Renommer le plan"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z" /><path d="m13.5 6.5 4 4" /></svg></button>
                                         <form class="atelier-action atelier-delete-plan" data-endpoint="save_atelier.php" data-plan-name="<?= prefaEscape($element['reference']) ?>">
                                             <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
                                             <input type="hidden" name="id" value="<?= $requestId ?>">
                                             <input type="hidden" name="element" value="<?= (int) $element['id'] ?>">
                                             <input type="hidden" name="operation" value="delete_element">
-                                            <button type="submit" class="prefa-toggle atelier-plan-delete-button">Supprimer le plan</button>
+                                            <button type="submit" class="atelier-plan-delete-button" aria-label="Supprimer le plan" title="Supprimer le plan"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" /></svg></button>
                                             <span class="atelier-message" role="status" aria-live="polite"></span>
                                         </form>
                                     </div>
-                                </div>
-                            <?php endif; ?>
+                                <?php endif; ?>
+                            </div>
 
+                            <section class="plan-volet-section">
                             <h4 class="atelier-plan-titre-section">Affectations</h4>
                             <?php
                             // Les soudures enregistrées sur ce plan : le dénominateur de
@@ -152,7 +157,7 @@ $avancementsAValider = avancementEnAttentePlusieurs($db, $affectationsActives);
                             ?>
                             <div class="atelier-plan-work-grid">
                             <?php foreach ($types as $type => $label): $assignment = $active[$type] ?? null; ?>
-                                <section class="atelier-plan-work"><h4><?= prefaEscape($label) ?></h4>
+                                <section class="atelier-plan-work"><h4><?= $iconesPoste[$type] ?><?= prefaEscape($label) ?></h4>
                                     <?php if ($canManageWorkshop && $taken): ?>
                                         <button type="button" class="atelier-edit-assignment atelier-person-button <?= $assignment ? 'is-assigned' : '' ?>" data-form="<?= $formId ?>" data-type="<?= $type ?>" data-label="<?= prefaEscape($element['reference'] . ' · ' . $label) ?>" data-user="<?= $assignment ? (int) $assignment['id_utilisateur'] : '' ?>" aria-haspopup="menu" aria-expanded="false" title="<?= $assignment ? 'Changer la personne affectée' : 'Affecter une personne' ?> — <?= prefaEscape($label) ?>">
                                             <?= $assignment ? prefaEscape($assignment['utilisateur_nom']) : 'Affecter' ?>
@@ -168,7 +173,7 @@ $avancementsAValider = avancementEnAttentePlusieurs($db, $affectationsActives);
                                     ?>
                                         <span class="atelier-work-status is-<?= $state ?>"><?= $stateLabel ?> · <?= $pct ?> %</span>
                                         <?php if ($canManageWorkshop && $taken): ?>
-                                            <button type="button" class="atelier-edit-progress" data-dialog="atelier-progress-dialog-<?= $requestId ?>" data-affectation="<?= (int) $assignment['id'] ?>" data-revision="<?= (int) $assignment['revision'] ?>" data-avancement="<?= $pct ?>" data-soudures="<?= $soudureTotal ?>" data-origine="<?= prefaEscape($soudureOrigine) ?>" data-commentaire="<?= prefaEscape((string) ($assignment['commentaire'] ?? '')) ?>" data-label="<?= prefaEscape($element['reference'] . ' · ' . $label . ' · ' . $assignment['utilisateur_nom']) ?>">Saisir l’avancement</button>
+                                            <button type="button" class="atelier-edit-progress" data-dialog="atelier-progress-dialog-<?= $requestId ?>" data-affectation="<?= (int) $assignment['id'] ?>" data-revision="<?= (int) $assignment['revision'] ?>" data-avancement="<?= $pct ?>" data-soudures="<?= $soudureTotal ?>" data-origine="<?= prefaEscape($soudureOrigine) ?>" data-commentaire="<?= prefaEscape((string) ($assignment['commentaire'] ?? '')) ?>" data-label="<?= prefaEscape($element['reference'] . ' · ' . $label . ' · ' . $assignment['utilisateur_nom']) ?>" title="Saisir l’avancement">Saisir</button>
                                         <?php endif; ?>
                                         <?php // La bande vient après le bouton : elle occupe toute la largeur, et
                                               // placée avant elle, elle aurait renvoyé le bouton sur la ligne suivante.
@@ -206,6 +211,7 @@ $avancementsAValider = avancementEnAttentePlusieurs($db, $affectationsActives);
                                 </section>
                             <?php endforeach; ?>
                             </div>
+                            </section>
 
                             <?php
                             // Ce que l'atelier a soudé sur ce plan, en une ligne. La liste
@@ -215,7 +221,7 @@ $avancementsAValider = avancementEnAttentePlusieurs($db, $affectationsActives);
                             $faitesIso = avancementSouduresFaites($db, (int) $element['id']);
                             ?>
                             <?php if ($faitesIso || $soudureTotal): ?>
-                                <p class="atelier-soudures-renvoi">
+                                <p class="atelier-soudures-renvoi plan-volet-section">
                                     <span class="atelier-plan-titre-section">Soudures</span>
                                     <strong><?= $faitesIso ?><?= $soudureTotal ? ' / ' . $soudureTotal : '' ?></strong>
                                     <span class="atelier-muted">cordon<?= $faitesIso > 1 ? 's' : '' ?> renseigné<?= $faitesIso > 1 ? 's' : '' ?><?= $soudureTotal ? ' sur ' . $soudureTotal . ' prévu' . ($soudureTotal > 1 ? 's' : '') . ' au plan' : '' ?></span>
@@ -252,14 +258,17 @@ $avancementsAValider = avancementEnAttentePlusieurs($db, $affectationsActives);
                             }, planDocuments($db, $elementIso));
                             ?>
 
-                            <?= planViewerRendu($elementIso, $plansIso, $couleesDisponibles, $modifiableIso) ?>
+                            <section class="plan-volet-section">
+                                <h4 class="atelier-plan-titre-section">Feuilles ISO</h4>
+                                <?= planViewerRendu($elementIso, $plansIso, $couleesDisponibles, $modifiableIso) ?>
+                            </section>
 
                             <?php if ($documentsAnnexes || ($canManageWorkshop && $taken && $optionsAnnexes)): ?>
                                 <!-- Les pièces qui accompagnent le plan sans être des feuilles :
                                      on les télécharge, on ne travaille pas dessus. Repliées,
                                      elles ne prennent pas la place du vrai travail. -->
-                                <details class="atelier-plan-information atelier-file-management">
-                                    <summary>Autres documents de la demande</summary>
+                                <section class="plan-volet-section atelier-file-management">
+                                    <h4 class="atelier-plan-titre-section">Documents</h4>
                                     <?php if ($documentsAnnexes): ?>
                                         <div class="atelier-plan-files atelier-plan-files-inline">
                                             <?php foreach ($documentsAnnexes as $doc): ?>
@@ -270,7 +279,7 @@ $avancementsAValider = avancementEnAttentePlusieurs($db, $affectationsActives);
                                     <?php if ($canManageWorkshop && $taken && $optionsAnnexes): ?>
                                         <form class="atelier-action prefa-form atelier-document-edit" data-endpoint="save_atelier.php">
                                             <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>"><input type="hidden" name="id" value="<?= $requestId ?>"><input type="hidden" name="operation" value="documents"><input type="hidden" name="element" value="<?= (int) $element['id'] ?>">
-                                            <p class="atelier-muted">QMOS et DMOS de la demande à rattacher à ce plan :</p>
+                                            <p class="atelier-muted">QMOS et DMOS de la demande rattachés à ce plan :</p>
                                             <?php $selectedDocuments = array_map(fn($doc) => $doc['type_document'] . ':' . $doc['cle_document'], $element['documents']); ?>
                                             <?php foreach ($optionsAnnexes as $token => $label): ?>
                                                 <label class="atelier-checkbox"><input type="checkbox" name="documents[]" value="<?= prefaEscape($token) ?>" <?= in_array($token, $selectedDocuments, true) ? 'checked' : '' ?>><span><?= prefaEscape($label) ?></span></label>
@@ -278,7 +287,7 @@ $avancementsAValider = avancementEnAttentePlusieurs($db, $affectationsActives);
                                             <div class="atelier-form-actions"><button type="submit">Enregistrer</button><span class="atelier-message" role="status" aria-live="polite"></span></div>
                                         </form>
                                     <?php endif; ?>
-                                </details>
+                                </section>
                             <?php endif; ?>
 
                         <?php if ($canManageWorkshop && $taken): ?>
@@ -307,18 +316,51 @@ $avancementsAValider = avancementEnAttentePlusieurs($db, $affectationsActives);
                                     </div>
                             </div>
                         <?php endif; ?>
-                                <?php if ($history): ?>
-                                    <details class="atelier-plan-information atelier-assignment-history">
-                                        <summary>Historique des affectations (<?= count($history) ?>)</summary>
-                                        <ol class="atelier-history-timeline">
-                                            <?php foreach ($history as $assignment): ?>
-                                                <li>
-                                                    <div class="atelier-history-entry"><strong><?= prefaEscape($assignment['utilisateur_nom']) ?></strong><span class="atelier-history-kind"><?= $types[$assignment['type_affectation']] ?></span><span class="atelier-history-period">Du <?= date('d/m/Y à H:i', strtotime($assignment['date_affectation'])) ?><?php if ($assignment['date_fin_affectation']): ?> au <?= date('d/m/Y à H:i', strtotime($assignment['date_fin_affectation'])) ?><?php endif; ?></span><span class="atelier-history-ended">Affectation terminée <span class="atelier-history-accessible">(ancienne affectation)</span></span><?php if ($assignment['commentaire']): ?><p class="atelier-note"><?= prefaEscape($assignment['commentaire']) ?></p><?php endif; ?></div>
+                                <?php
+                                // L'historique du plan, en frise comme celui des PV : chaque
+                                // affectation, la plus récente en tête — qui, à quel poste, depuis
+                                // quand, et quand elle a pris fin. Il était replié sous un
+                                // « Historique des affectations (1) » qu'on n'ouvrait pas.
+                                $frise = [];
+                                foreach ($element['affectations'] as $affectation) {
+                                    $frise[] = [
+                                        'genre' => $affectation['actif'] ? 'fait' : 'a_faire',
+                                        'titre' => $affectation['utilisateur_nom'] . ' · ' . ($types[$affectation['type_affectation']] ?? $affectation['type_affectation']),
+                                        'texte' => $affectation['actif']
+                                            ? 'Affecté' . ((int) $affectation['avancement'] > 0 ? ' · ' . (int) $affectation['avancement'] . ' %' : '')
+                                            : 'Affectation terminée' . (!empty($affectation['date_fin_affectation']) ? ' le ' . date('d/m/Y à H:i', strtotime($affectation['date_fin_affectation'])) : ''),
+                                        'quand' => (string) $affectation['date_affectation'],
+                                        'commentaire' => (string) ($affectation['commentaire'] ?? ''),
+                                    ];
+                                }
+                                usort($frise, static fn ($a, $b) => strcmp($b['quand'], $a['quand']));
+                                ?>
+                                <section class="plan-volet-section">
+                                    <h4 class="atelier-plan-titre-section">Historique</h4>
+                                    <?php if ($frise): ?>
+                                        <ol class="pv-historique">
+                                            <?php foreach ($frise as $evenement): ?>
+                                                <li class="pv-historique-<?= $evenement['genre'] ?>">
+                                                    <span class="pv-historique-signe" aria-hidden="true">
+                                                        <?php if ($evenement['genre'] === 'fait'): ?>
+                                                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.7-3.6 3.5-5.5 7-5.5s6.3 1.9 7 5.5" /></svg>
+                                                        <?php else: ?>
+                                                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5" stroke-dasharray="3 2.6" /></svg>
+                                                        <?php endif; ?>
+                                                    </span>
+                                                    <div>
+                                                        <strong><?= prefaEscape($evenement['titre']) ?></strong>
+                                                        <p><?= prefaEscape($evenement['texte']) ?></p>
+                                                        <?php if ($evenement['commentaire'] !== ''): ?><p class="plan-historique-note"><?= prefaEscape($evenement['commentaire']) ?></p><?php endif; ?>
+                                                        <time datetime="<?= prefaEscape($evenement['quand']) ?>"><?= prefaEscape(date('d/m/Y à H:i', strtotime($evenement['quand']))) ?></time>
+                                                    </div>
                                                 </li>
                                             <?php endforeach; ?>
                                         </ol>
-                                    </details>
-                                <?php endif; ?>
+                                    <?php else: ?>
+                                        <p class="pv-volet-note">Personne n’est encore affecté à ce plan.</p>
+                                    <?php endif; ?>
+                                </section>
                         </article>
                     <?php endforeach; ?>
 

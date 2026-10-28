@@ -30,7 +30,8 @@ function dashboardMenu(): array
     // Les écrans du plan ISO partagent leur outillage : le visualiseur, les tableaux
     // qu'on y lit, la liste des affectations. C'est le plus lourd du tableau de bord.
     $ressourcesIso = [
-        'styles' => ['dashboard/atelier.css', 'dashboard/plan-viewer.css'],
+        // pv.css : le volet « Plans & affectations » reprend la grammaire des volets des PV.
+        'styles' => ['dashboard/atelier.css', 'dashboard/plan-viewer.css', 'dashboard/pv.css'],
         'scripts' => ['atelier.js', 'plan-viewer.js', 'tableaux-plan.js'],
     ];
 
