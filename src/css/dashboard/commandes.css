@@ -322,16 +322,6 @@
     font-size: 13px;
 }
 
-/* Le libellé d'une colonne sans intitulé visible : la colonne des croix. */
-.sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-}
-
 /* ==========================================================================
    LES ARTICLES DU BON
    ==========================================================================

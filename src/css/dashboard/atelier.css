@@ -3190,16 +3190,6 @@ html .suivi-soudures-detail .suivi-soudures-vide {
     font-size: 13px;
 }
 
-/* L'intitulé de la colonne des commandes : lu par les lecteurs d'écran, pas affiché. */
-#suivi-soudures-page .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-}
-
 /* Une valeur absente reste sourde, même dans une cellule que le thème clair noircit. */
 html .suivi-soudures-detail .atelier-soudures-table .suivi-soudures-sur {
     color: var(--text-muted) !important;
