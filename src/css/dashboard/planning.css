@@ -535,9 +535,9 @@ body.is-panning-gantt .gantt-bar:hover {
     position: relative;
 }
 
-/* La barre est une zone teintée, pas un aplat : la couleur du demandeur à 20 %, un
-   filet de la même teinte à gauche, et le nom de l'affaire écrit dessus en couleur de
-   texte (DA, § couleurs : le plein sert à teinter une zone, jamais à porter du texte). */
+/* La barre est une zone teintée, pas un aplat : la couleur du demandeur à 30 % et un
+   filet de la même teinte à gauche. Elle ne porte pas de texte — la demande est nommée
+   dans la colonne de gauche, et la couleur suffit à dire le demandeur (voir la légende). */
 .gantt-bar {
     position: relative;
     z-index: 3;
@@ -550,7 +550,301 @@ body.is-panning-gantt .gantt-bar:hover {
     border: 0;
     border-left: 3px solid var(--person-fill, var(--person-other));
     border-radius: var(--r-sm);
-    background-color: color-mix(in srgb, var(--person-fill, var(--person-other)) 20%, var(--surface));
+    background-color: color-mix(in srgb, var(--person-fill, var(--person-other)) 30%, var(--surface));
+    background-image: var(--person-hachure, none);
+    color: var(--text);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    overflow: hidden;
+    transition: background-color 0.12s ease;
+}
+
+.gantt-bar:hover {
+    filter: none;
+}
+
+.gantt-layout {
+    --gantt-label-width: 260px;
+    --gantt-day-width: 38px;
+    min-width: calc(var(--gantt-label-width) + var(--gantt-days) * var(--gantt-day-width));
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+/* ----- En-tête -----
+   Le coin et la colonne des affaires restent visibles quand le calendrier defile.
+   Ils ne peuvent pas etre des elements de grille pour cela : le rectangle d'adherence
+   d'un element de grille se limite a sa propre cellule, soit 210 px, et la colonne
+   disparaissait des qu'on defilait au-dela. En flex, le bloc contenant est la ligne
+   entiere, qui fait toute la largeur du calendrier. */
+.gantt-header-row {
+    display: flex;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.gantt-header-cols {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.gantt-weeks-header,
+.gantt-days-header {
+    height: 28px;
+}
+
+/* En-tête de colonne : 12px / 500, sourd, en casse normale (§ 5, § 7 bis). */
+.gantt-header-corner {
+    flex: 0 0 var(--gantt-label-width);
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    display: flex;
+    align-items: flex-end;
+    padding: 0 12px 7px;
+    box-sizing: border-box;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.gantt-weeks-header {
+    display: grid;
+    grid-template-columns: repeat(var(--gantt-days), minmax(0, 1fr));
+    border-bottom: 1px solid var(--border-faint);
+}
+
+/* La semaine se lit à son début, comme un intertitre — pas centrée sur sept cases. */
+.gantt-week-cell {
+    display: flex;
+    align-items: center;
+    padding-left: 8px;
+    border-right: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.gantt-week-cell:last-child {
+    border-right: none;
+}
+
+.gantt-days-header {
+    display: grid;
+    grid-template-columns: repeat(var(--gantt-days), minmax(0, 1fr));
+}
+
+.gantt-day-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-right: 1px solid var(--border-faint);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 450;
+    font-variant-numeric: tabular-nums;
+}
+
+.gantt-day-number.is-weekend {
+    background: var(--carte);
+    color: var(--text-muted);
+}
+
+/* Le jour courant : une pastille d'accent, pas une case repeinte. */
+.gantt-day-number.is-today {
+    position: relative;
+    color: var(--accent-texte);
+    font-weight: 600;
+}
+
+.gantt-day-number.is-today::before {
+    content: "";
+    position: absolute;
+    inset: 4px 5px;
+    z-index: -1;
+    border-radius: var(--r-sm);
+    background: var(--accent-fond);
+}
+
+.gantt-day-number.is-today {
+    isolation: isolate;
+}
+
+/* ----- Corps ----- */
+
+.gantt-body {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.gantt-background-grid {
+    position: absolute;
+    top: 0;
+    left: var(--gantt-label-width);
+    right: 0;
+    bottom: 0;
+    display: grid;
+    grid-template-columns: repeat(var(--gantt-days), minmax(0, 1fr));
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Le filet le plus discret : il se répète quatre-vingts fois (§ 2). */
+.gantt-bg-col {
+    border-right: 1px solid var(--border-faint);
+    height: 100%;
+}
+
+.gantt-bg-col.is-weekend {
+    background: var(--carte);
+}
+
+/* Aujourd'hui : un trait d'accent de 2px, sans halo. Le rouge est réservé au danger (§ 6).
+   Absolu, il prend la colonne de son jour pour bloc contenant — à condition que le
+   balisage la borne (« N / span 1 ») : sans fin de colonne, la zone courait jusqu'au bout
+   de la grille et le trait sortait au 23 novembre pour le 27 octobre. */
+.gantt-today-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(50% - 1px);
+    width: 2px;
+    background: var(--accent);
+    z-index: 6;
+}
+
+/* ----- Lignes : la hauteur d'une ligne de tableau ----- */
+
+.gantt-row {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    min-height: var(--ligne-td);
+    border-bottom: 1px solid var(--border-faint);
+    align-items: stretch;
+}
+
+.gantt-row:last-child {
+    border-bottom: none;
+}
+
+/* La colonne colle à gauche et les barres défilent dessous : son fond doit rester
+   opaque. En sombre, le survol est un blanc translucide — posé seul, il laissait voir la
+   barre au travers, et son texte se mêlait à celui de la ligne. On le pose donc sur la
+   surface. */
+.gantt-row:hover .gantt-label-col {
+    background: linear-gradient(var(--ligne-survol), var(--ligne-survol)), var(--surface);
+}
+
+.gantt-row.is-selected .gantt-label-col {
+    background: linear-gradient(var(--selection-fond), var(--selection-fond)), var(--surface);
+}
+
+/* Colonne des affaires : du texte, pas des boutons encadrés. */
+.gantt-label-col {
+    flex: 0 0 var(--gantt-label-width);
+    min-width: 0;
+    overflow: hidden;
+    box-sizing: border-box;
+    padding: 0 4px;
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    position: sticky;
+    left: 0;
+    /* Au-dessus des barres (3), des barres sélectionnées (5) et du trait du jour (6). */
+    z-index: 7;
+}
+
+.gantt-affaire-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-width: 0;
+    height: var(--h-md);
+    padding: 0 12px;
+    border: 0;
+    border-radius: var(--r-md);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+}
+
+/* La référence en tête de ligne, comme la première colonne des listes. */
+.gantt-ref {
+    flex: none;
+    color: var(--text);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.gantt-nom {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text-muted);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.gantt-urgent {
+    flex: none;
+    display: inline-flex;
+    margin-left: auto;
+    color: var(--attente-texte);
+}
+
+.gantt-urgent .icon {
+    width: 14px;
+    height: 14px;
+}
+
+.gantt-affaire-badge:hover .gantt-nom {
+    color: var(--text);
+}
+
+.gantt-track {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: repeat(var(--gantt-days), minmax(0, 1fr));
+    align-items: center;
+    position: relative;
+}
+
+/* La barre est une zone teintée, pas un aplat : la couleur du demandeur à 30 % et un
+   filet de la même teinte à gauche. Elle ne porte pas de texte — la demande est nommée
+   dans la colonne de gauche, et la couleur suffit à dire le demandeur (voir la légende). */
+.gantt-bar {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    height: var(--h-sm);
+    margin: 0 1px;
+    padding: 0 8px;
+    border: 0;
+    border-left: 3px solid var(--person-fill, var(--person-other));
+    border-radius: var(--r-sm);
+    background-color: color-mix(in srgb, var(--person-fill, var(--person-other)) 30%, var(--surface));
     background-image: var(--person-hachure, none);
     color: var(--text);
     font: inherit;
@@ -570,7 +864,7 @@ body.is-panning-gantt .gantt-bar:hover {
 }
 
 .gantt-bar:hover {
-    background-color: color-mix(in srgb, var(--person-fill, var(--person-other)) 32%, var(--surface));
+    background-color: color-mix(in srgb, var(--person-fill, var(--person-other)) 42%, var(--surface));
 }
 
 .gantt-bar.is-selected {
