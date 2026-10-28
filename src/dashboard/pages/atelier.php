@@ -285,7 +285,7 @@ $anciennes = $stmt->fetchAll();
                                 </td>
                                 <td class="prefa-reference"><?= prefaEscape(prefaReference($plan['demande'])) ?></td>
                                 <td class="prefa-affaire"><?= prefaEscape($plan['affaire'] ?: '—') ?></td>
-                                <td>
+                                <td class="mes-plans-travaux-cellule">
                                     <?php // Un travail, une pastille : son nom et où il en est. Le détail —
                                           // déclarations, étapes, fichiers — est dans le volet. ?>
                                     <span class="mes-plans-travaux">

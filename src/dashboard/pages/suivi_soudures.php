@@ -27,7 +27,9 @@ foreach ($plans as $plan) {
     if ($faites === 0 && $prevu['prevues'] === 0) continue;
 
     $enAttente = [];
+    $soudage = null;
     foreach ($plan['affectations'] as $affectation) {
+        if ($soudage === null && $affectation['type_affectation'] === 'soudage') $soudage = $affectation;
         if (isset($attentes[(int) $affectation['id']])) {
             $enAttente[] = $attentes[(int) $affectation['id']] + ['affectation' => $affectation];
         }
@@ -40,7 +42,10 @@ foreach ($plans as $plan) {
         'lues' => avancementFeuillesPhrase($prevu),
         'faites' => $faites,
         'attentes' => $enAttente,
-        'avancement' => (int) ($plan['affectations'][0]['avancement'] ?? 0),
+        // L'avancement que les cordons font bouger : celui du suivi soudage. La première
+        // affectation venue — rangées par type, c'était le Plan / ISO — restait à 0 % alors
+        // que la validation avait bien écrit 75 % sur le suivi soudage.
+        'avancement' => (int) ($soudage['avancement'] ?? 0),
     ];
 }
 ksort($affaires);

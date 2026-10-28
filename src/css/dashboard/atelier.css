@@ -3261,11 +3261,23 @@ html .suivi-soudures-detail .atelier-soudures-table .suivi-soudures-sur {
     text-overflow: ellipsis;
 }
 
-/* Un travail, une pastille, sur une ligne. */
+/* Un travail, une pastille, sur une seule ligne. La cellule échappe au plafond de 300 px
+   des tableaux d'atelier : trois pastilles le dépassent, et elles débordaient sur
+   « Feuilles » et sur « Mettre à jour ». Elle prend la largeur de ses pastilles ; sur un
+   écran trop étroit, c'est le tableau qui défile, comme les autres listes. */
+html .mes-plans-page .prefa-table td.mes-plans-travaux-cellule {
+    max-width: none;
+    white-space: nowrap;
+}
+
 .mes-plans-travaux {
     display: inline-flex;
     flex-wrap: nowrap;
     gap: 6px;
+}
+
+html .mes-plans-page .mes-plans-commande .prefa-toggle {
+    white-space: nowrap;
 }
 
 html .mes-plans-page .atelier-work-status {
