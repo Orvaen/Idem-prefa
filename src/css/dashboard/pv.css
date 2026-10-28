@@ -873,7 +873,6 @@ body:has(#pv-page .prefa-detail-row:not([hidden]))::before {
 .pv-etat-menu .pv-etat-choix.pv-etat-fait .pv-etat-icone { color: var(--succes-texte); }
 .pv-etat-menu .pv-etat-choix.pv-etat-sans_objet .pv-etat-icone { color: var(--text-muted); }
 
-
 /* Les blocs d'une section respirent autant que ses lignes de propriétés. */
 .pv-volet .pv-form {
     display: flex;

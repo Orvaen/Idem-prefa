@@ -234,8 +234,6 @@
     background: var(--accent-hover);
 }
 
-
-
 .prefa-form button:disabled {
     opacity: .55;
     cursor: not-allowed;
@@ -490,7 +488,6 @@
     color: var(--text-muted);
     line-height: 1.6;
 }
-
 
 /* ==========================================================================
    LES CHAMPS OBLIGATOIRES
