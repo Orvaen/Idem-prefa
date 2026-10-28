@@ -90,10 +90,86 @@
 }
 
 .affaires-note {
-    margin: 0 0 16px;
-    padding: 0 16px;
-    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin: 0 16px 16px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    background: var(--carte);
     color: var(--text-muted);
+    font-size: 13px;
+}
+
+.affaires-note p {
+    flex: 1 1 320px;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.affaires-note strong,
+.affaire-sans-charge strong {
+    color: var(--text);
+    font-weight: 500;
+}
+
+/* Le chemin vers ce qui manque : un bouton encadré, à la taille des barres d'outils. */
+.affaires-note .affaires-creer-charge {
+    flex: none;
+    height: var(--h-lg);
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.affaires-note .affaires-creer-charge:hover {
+    background: var(--hover);
+}
+
+/* Sur la carte : l'intitulé du champ, en petit au-dessus de lui. Sans lui, on lisait
+   « Personne pour l'instant » sans savoir de qui il s'agissait. */
+.affaire-champ {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.affaire-champ-libelle {
+    color: var(--text-muted);
+    font-size: 11.5px;
+    font-weight: 500;
+}
+
+/* Pas de compte à proposer : la phrase et le lien, à la place du champ. */
+.affaire-sans-charge {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.affaire-sans-charge .affaires-creer-charge {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent-texte);
+    font: inherit;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.affaire-sans-charge .affaires-creer-charge:hover {
+    text-decoration: underline;
 }
 
 /* La barre de recherche de l'écran, sous le bandeau. Le compte se tient à côté d'elle :

@@ -28,12 +28,23 @@ $optionsCharge = array_map(
  */
 $choixCharge = static function (array $options, int $idAffaire, ?int $choisi): string {
     return listeFiltrableRendu('charge-' . $idAffaire, 'Chargé d’affaire', $options, $choisi, [
-        'vide' => 'Personne pour l’instant',
+        'vide' => 'Aucun chargé d’affaire',
         'aucun' => 'Aucun chargé d’affaire à ce nom.',
-        'chercher' => 'Personne pour l’instant',
+        // L'invite dit le rôle qu'on cherche : « Personne pour l'instant » ne disait pas
+        // de qui il s'agissait, ni quel compte il fallait créer pour remplir le champ.
+        'chercher' => 'Choisir un chargé d’affaire',
         'tableau' => true,
     ]);
 };
+
+/**
+ * Quand aucun compte « Chargé d'affaire » n'existe, le champ n'aurait rien à proposer : il
+ * est remplacé par ce qui manque, et le bouton qui y mène — la fenêtre « Nouvel
+ * utilisateur », rôle déjà choisi.
+ */
+$sansCharge = static fn (): string => '<p class="affaire-sans-charge">Aucun compte avec le rôle '
+    . '<strong>Chargé d’affaire</strong>. '
+    . '<button type="button" class="affaires-creer-charge">Créer ce compte</button></p>';
 ?>
 <section class="users-page affaires-page" data-csrf="<?= prefaEscape(Session::jeton()) ?>">
     <div class="header-list affaires-entete">
@@ -72,8 +83,12 @@ $choixCharge = static function (array $options, int $idAffaire, ?int $choisi): s
     </div>
 
     <?php if (!$chargesDAffaire): ?>
-        <p class="affaires-note">Aucun compte de chargé d’affaire n’existe encore : créez-en un pour
-            pouvoir leur confier des affaires.</p>
+        <!-- Ce qu'il faut savoir en arrivant : une affaire se confie à un compte qui a le
+             rôle « Chargé d'affaire » — c'est lui qui déposera les demandes. -->
+        <div class="affaires-note">
+            <p>Une affaire se confie à un <strong>chargé d’affaire</strong> : c’est lui qui y déposera les demandes de préfabrication. Aucun compte n’a encore ce rôle.</p>
+            <button type="button" class="affaires-creer-charge">Créer un compte chargé d’affaire</button>
+        </div>
     <?php endif; ?>
 
     <!-- Une carte par affaire, et non une ligne de tableau. Un tableau range des
@@ -109,7 +124,10 @@ $choixCharge = static function (array $options, int $idAffaire, ?int $choisi): s
 
                 <input class="affaire-nom" value="<?= prefaEscape($affaire->nom) ?>" maxlength="255" aria-label="Nom de l’affaire">
 
-                <?= $choixCharge($optionsCharge, $affaire->id, $affaire->idChargeAffaire) ?>
+                <div class="affaire-champ">
+                    <span class="affaire-champ-libelle">Chargé d’affaire</span>
+                    <?= $optionsCharge ? $choixCharge($optionsCharge, $affaire->id, $affaire->idChargeAffaire) : $sansCharge() ?>
+                </div>
 
                 <footer class="affaire-carte-pied">
                     <?php
@@ -184,12 +202,14 @@ $choixCharge = static function (array $options, int $idAffaire, ?int $choisi): s
                 // composant — l'intitulé part en aria-label et le champ tient sur une ligne.
                 // C'est ce qu'il faut ici : les deux champs se ressemblent trait pour trait,
                 // une étiquette au-dessus du second aurait déparé.
-                echo listeFiltrableRendu('charge', 'Chargé d’affaire', $optionsCharge, null, [
-                    'vide' => 'Personne pour l’instant',
-                    'aucun' => 'Aucun chargé d’affaire à ce nom.',
-                    'chercher' => 'Chargé d’affaire',
-                    'tableau' => true,
-                ]);
+                echo $optionsCharge
+                    ? listeFiltrableRendu('charge', 'Chargé d’affaire', $optionsCharge, null, [
+                        'vide' => 'Aucun chargé d’affaire',
+                        'aucun' => 'Aucun chargé d’affaire à ce nom.',
+                        'chercher' => 'Chargé d’affaire (facultatif)',
+                        'tableau' => true,
+                    ])
+                    : $sansCharge();
                 ?>
 
                 <p class="prefa-message fenetre-message" role="status" aria-live="polite"></p>

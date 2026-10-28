@@ -140,7 +140,7 @@
         donnees.set('nom', nom.value.trim());
         // Le champ filtrable dépose son choix dans un champ caché, id_charge ; la clé
         // envoyée reste « charge », c'est ce que l'action attend.
-        donnees.set('charge', this.querySelector('[name="id_charge"]').value);
+        donnees.set('charge', this.querySelector('[name="id_charge"]')?.value || '');
 
         envoyer(donnees).then(({ ok, corps }) => {
             // Un refus garde la fenêtre ouverte, avec la saisie : c'est le nom qu'on
@@ -207,7 +207,7 @@
         donnees.set('id', ligne.dataset.affaire);
         donnees.set('nom', ligne.querySelector('.affaire-nom').value.trim());
         // Le champ filtrable de la ligne range son choix dans son champ caché.
-        donnees.set('charge', ligne.querySelector('.liste-filtrable input[type="hidden"]').value);
+        donnees.set('charge', ligne.querySelector('.liste-filtrable input[type="hidden"]')?.value || '');
 
         envoyer(donnees).then(({ ok, corps }) => {
             const message = corps.message || (ok ? 'Affaire modifiée.' : 'Modification impossible.');
@@ -231,5 +231,28 @@
             if (!ok) return dire(message, true);
             recharger(() => dire(message, false));
         }).catch(() => dire('Suppression impossible. Réessayez.', true));
+    });
+
+    // ===== Aucun chargé d'affaire : créer le compte =====
+    // Le bouton mène à « Utilisateurs » et y ouvre « Nouvel utilisateur », rôle « Chargé
+    // d'affaire » déjà choisi : sans cela, il fallait savoir quel rôle donner, et où.
+    // L'écran arrive par AJAX : on guette sa fenêtre avant de l'ouvrir.
+    const ROLE_CHARGE_AFFAIRE = '5';
+    $(document).on('click', '.affaires-creer-charge', function () {
+        fenetre()?.close();
+        document.getElementById('btn-list-users')?.click();
+        const debut = Date.now();
+        const guetter = setInterval(() => {
+            const bouton = document.querySelector('.utilisateurs-nouveau');
+            const dialogue = document.getElementById('utilisateur-dialogue');
+            if (bouton && dialogue) {
+                clearInterval(guetter);
+                bouton.click();
+                dialogue.querySelector('[role="option"][data-value="' + ROLE_CHARGE_AFFAIRE + '"]')?.click();
+                dialogue.querySelector('[name="prenom"]')?.focus();
+            } else if (Date.now() - debut > 5000) {
+                clearInterval(guetter);
+            }
+        }, 100);
     });
 })();
