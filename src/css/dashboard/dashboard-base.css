@@ -467,9 +467,11 @@ textarea::placeholder {
     display: flex;
     align-items: center;
     gap: 8px;
-    width: min(360px, 42vw);
-    height: var(--h-md);
-    padding: 0 8px;
+    /* Large, comme la barre de Slack : c'est l'entrée de l'application, elle doit se
+       voir d'emblée. Elle garde la place des deux côtés au-delà de 1400 px. */
+    width: min(640px, 44vw);
+    height: var(--h-lg);
+    padding: 0 10px 0 12px;
     border: 1px solid var(--border);
     border-radius: var(--r-md);
     background: var(--carte);
@@ -493,8 +495,8 @@ textarea::placeholder {
 
 .barre-recherche .icon {
     flex: none;
-    width: 14px;
-    height: 14px;
+    width: 15px;
+    height: 15px;
 }
 
 .barre-recherche-texte {
@@ -516,8 +518,8 @@ textarea::placeholder {
     line-height: 1.4;
 }
 
-/* Sous 900 px, la marque et le compte prennent toute la barre : un champ de recherche de
-   360 px les écraserait. La palette reste au clavier, et la recherche de chaque écran est
+/* Sous 900 px, la marque et le compte prennent toute la barre : un champ de recherche
+   les écraserait. La palette reste au clavier, et la recherche de chaque écran est
    dans l'écran. */
 @media (max-width: 900px) {
 
