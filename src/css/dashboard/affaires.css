@@ -89,89 +89,6 @@
     color: var(--text-muted);
 }
 
-.affaires-note {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 8px 16px;
-    margin: 0 16px 16px;
-    padding: 12px 14px;
-    border: 1px solid var(--border);
-    border-radius: var(--r-lg);
-    background: var(--carte);
-    color: var(--text-muted);
-    font-size: 13px;
-}
-
-.affaires-note p {
-    flex: 1 1 320px;
-    margin: 0;
-    line-height: 1.5;
-}
-
-.affaires-note strong,
-.affaire-sans-charge strong {
-    color: var(--text);
-    font-weight: 500;
-}
-
-/* Le chemin vers ce qui manque : un bouton encadré, à la taille des barres d'outils. */
-.affaires-note .affaires-creer-charge {
-    flex: none;
-    height: var(--h-lg);
-    padding: 0 12px;
-    border: 1px solid var(--border);
-    border-radius: var(--r-md);
-    background: var(--surface);
-    color: var(--text);
-    font: inherit;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-}
-
-.affaires-note .affaires-creer-charge:hover {
-    background: var(--hover);
-}
-
-/* Sur la carte : l'intitulé du champ, en petit au-dessus de lui. Sans lui, on lisait
-   « Personne pour l'instant » sans savoir de qui il s'agissait. */
-.affaire-champ {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-}
-
-.affaire-champ-libelle {
-    color: var(--text-muted);
-    font-size: 11.5px;
-    font-weight: 500;
-}
-
-/* Pas de compte à proposer : la phrase et le lien, à la place du champ. */
-.affaire-sans-charge {
-    margin: 0;
-    color: var(--text-muted);
-    font-size: 12px;
-    line-height: 1.5;
-}
-
-.affaire-sans-charge .affaires-creer-charge {
-    padding: 0;
-    border: 0;
-    background: none;
-    color: var(--accent-texte);
-    font: inherit;
-    font-weight: 500;
-    cursor: pointer;
-}
-
-.affaire-sans-charge .affaires-creer-charge:hover {
-    text-decoration: underline;
-}
-
 /* La barre de recherche de l'écran, sous le bandeau. Le compte se tient à côté d'elle :
    c'est lui qui répond quand on tape, avant même qu'on lise la grille. */
 .affaires-filtres {
@@ -196,28 +113,29 @@
     padding: 0 16px 16px;
 }
 
-/* La carte. Elle se détache au survol par son filet et une ombre basse — pas par sa
-   teinte : sur une grille de vingt, vingt fonds qui s'allument font une guirlande. */
+/* ---------- La carte ----------
+   Sur le modèle d'une carte de projet (Linear, Plane) : un en-tête — monogramme, nom,
+   corbeille au survol —, puis des lignes de propriétés comme celles des volets, icône et
+   libellé sourds à gauche, valeur à droite. Elle se détache au survol par son filet et
+   une ombre basse, pas par sa teinte. */
 .affaire-carte {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 12px;
+    gap: 12px;
+    padding: 14px 14px 12px;
     border: 1px solid var(--border);
     border-radius: var(--r-lg);
     background: var(--carte);
     transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
-/* Une carte que la recherche écarte sort de la grille : masquée par « visibility », elle
-   y garderait sa place et laisserait un trou. */
+/* Une carte que la recherche écarte sort de la grille. */
 .affaire-carte.est-masquee {
     display: none;
 }
 
-/* Toute la carte mène aux demandes de l'affaire — sauf ses commandes, qui gardent leur
-   geste et leur curseur. Une affaire sans demande ne mène nulle part : elle n'annonce
-   donc rien, et c'est le bouton du pied qui en décide, posé par le serveur. */
+/* Toute la carte mène aux demandes de l'affaire — sauf ses commandes. Une affaire sans
+   demande ne mène nulle part : c'est le bouton posé par le serveur qui en décide. */
 .affaire-carte:has(button.affaire-demandes) {
     cursor: pointer;
 }
@@ -225,14 +143,14 @@
 .affaire-carte:hover,
 .affaire-carte:focus-within {
     border-color: var(--border-fort);
-    box-shadow: 0 2px 4px -1px rgb(0 0 0 / 10%), 0 4px 6px -1px rgb(0 0 0 / 8%);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 6%), 0 4px 12px rgb(0 0 0 / 8%);
 }
 
 .affaire-carte-haut {
     display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 8px;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
 }
 
 /* Deux lettres dans un carré, à la place du visuel de couverture qu'on n'a pas. */
@@ -240,51 +158,107 @@
     flex: none;
     display: grid;
     place-items: center;
-    width: 36px;
-    height: 36px;
+    width: 28px;
+    height: 28px;
     border-radius: var(--r-md);
-    background: var(--active);
-    color: var(--text-muted);
-    font-size: 13px;
+    background: var(--accent-fond);
+    color: var(--accent-texte);
+    font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.02em;
 }
 
-/* ---------- La saisie sur place ----------
-   Les deux champs sont nus au repos — on lit une carte, pas un formulaire — et prennent
-   leur cadre au survol, puis l'accent au clavier. La marge négative rattrape leur marge
-   intérieure : le texte tombe alors sur le bord de la carte, aligné avec tout le reste,
-   alors que le cadre, lui, déborde de huit pixels de chaque côté. */
-.affaire-carte .affaire-nom,
-.affaire-carte .liste-filtrable-champ {
-    width: calc(100% + 16px);
-    margin: 0 -8px;
-    height: var(--h-lg);
-    padding: 0 8px;
+/* Le nom : un titre qu'on peut corriger sur place. Nu au repos, il prend son cadre au
+   survol de la carte, l'accent au clavier. */
+.affaire-carte .affaire-nom {
+    flex: 1;
+    min-width: 0;
+    height: 30px;
+    margin: 0 -6px;
+    padding: 0 6px;
     border: 1px solid transparent;
-    border-radius: var(--r-sm);
+    border-radius: var(--r-md);
     background: transparent;
     color: var(--text);
     font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    text-overflow: ellipsis;
 }
 
-.affaire-carte .affaire-nom {
-    font-size: 15px;
-    font-weight: 500;
+.affaire-carte:hover .affaire-nom {
+    border-color: var(--border);
+}
+
+/* ---------- Les propriétés ---------- */
+
+.affaire-proprietes {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-faint);
+}
+
+.affaire-proprietes > div {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    min-height: 32px;
+}
+
+.affaire-proprietes dt {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-muted);
+    font-size: 12.5px;
+    white-space: nowrap;
+}
+
+.affaire-proprietes dt .icon {
+    flex: none;
+    width: 14px;
+    height: 14px;
+}
+
+.affaire-proprietes dd {
+    display: flex;
+    justify-content: flex-end;
+    min-width: 0;
+    margin: 0;
+    color: var(--text);
+    font-size: 13px;
+}
+
+/* Le choix du chargé d'affaire : la valeur de la ligne, alignée à droite, nue au repos. */
+.affaire-carte .liste-filtrable {
+    width: 100%;
+    margin: 0;
 }
 
 .affaire-carte .liste-filtrable-champ {
-    /* La croix d'effacement a besoin de sa place à droite. */
-    width: calc(100% + 16px);
-    padding-right: 30px;
+    width: 100%;
+    height: 28px;
+    margin: 0;
+    padding: 0 26px 0 8px;
+    border: 1px solid transparent;
+    border-radius: var(--r-md);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
     font-size: 13px;
-    color: var(--text-muted);
+    font-weight: 500;
+    text-align: right;
 }
 
-.affaire-carte:hover .affaire-nom,
-.affaire-carte:hover .liste-filtrable-champ,
-.affaire-carte:focus-within .affaire-nom,
-.affaire-carte:focus-within .liste-filtrable-champ {
+.affaire-carte .liste-filtrable-champ::placeholder {
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.affaire-carte:hover .liste-filtrable-champ {
     border-color: var(--border);
 }
 
@@ -292,54 +266,80 @@
 .affaire-carte .liste-filtrable-champ:focus {
     border-color: var(--accent);
     background: var(--surface);
-    color: var(--text);
     outline: none;
-}
-
-.affaire-carte .liste-filtrable {
-    width: 100%;
-    margin: 0;
+    text-align: left;
 }
 
 .affaire-carte .liste-filtrable-effacer {
+    right: 2px;
+}
+
+/* La liste déroulante se déploie sur toute la largeur de la carte, pas sur la seule
+   colonne de la valeur. */
+.affaire-carte .liste-filtrable-options {
+    min-width: 200px;
+    left: auto;
     right: 0;
 }
 
-/* ---------- Le pied ----------
-   Le compte à gauche, l'enregistrement à droite, un filet entre le corps et eux : c'est le
-   pied d'une carte de projet, et il sert ici à la même chose — dire son état d'un coup
-   d'œil sans ouvrir. */
-.affaire-carte-pied {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    min-height: var(--h-md);
-    margin-top: 4px;
-    padding-top: 10px;
-    border-top: 1px solid var(--border-faint);
+/* Aucun compte avec ce rôle : ce qui manque, et le lien pour le créer. */
+.affaire-sans-charge {
+    color: var(--text-muted);
+    font-size: 12.5px;
+    white-space: nowrap;
 }
 
+.affaire-sans-charge .affaires-creer-charge,
+.affaire-dialog-sans-charge .affaires-creer-charge {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent-texte);
+    font: inherit;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.affaire-sans-charge .affaires-creer-charge:hover,
+.affaire-dialog-sans-charge .affaires-creer-charge:hover {
+    text-decoration: underline;
+}
+
+.affaire-dialog-sans-charge {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.affaire-dialog-sans-charge strong {
+    color: var(--text);
+    font-weight: 500;
+}
+
+/* Le compte des demandes : un lien discret quand il mène quelque part, un mot sourd
+   sinon. Le chevron n'avance qu'au survol de la carte. */
 .affaire-demandes {
     display: inline-flex;
     align-items: center;
     gap: 2px;
-    height: var(--h-sm);
-    padding: 0 6px 0 8px;
-    border: 1px solid transparent;
-    border-radius: 999px;
-    background: var(--accent-fond);
+    height: 24px;
+    padding: 0 4px 0 8px;
+    border: 0;
+    border-radius: var(--r-md);
+    background: transparent;
     color: var(--accent-texte);
     font: inherit;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 500;
     white-space: nowrap;
     cursor: pointer;
-    transition: border-color 0.12s ease;
 }
 
-/* Le chevron dit que ça mène quelque part. Il n'avance qu'au survol de la carte : au
-   repos, c'est un compte ; sous la main, c'est un chemin. */
+.affaire-demandes:hover {
+    background: var(--accent-fond);
+}
+
 .affaire-demandes .icon {
     width: 13px;
     height: 13px;
@@ -351,35 +351,45 @@
     transform: none;
 }
 
-.affaire-demandes:hover {
-    border-color: var(--filtre-bord);
-}
-
 .affaire-demandes:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
 }
 
-/* Une affaire sans demande ne mène nulle part : le compte redevient un simple état, et
-   la teinte de l'accent n'a plus de raison d'être. */
 .affaire-demandes.est-vide {
-    padding: 0 8px;
-    background: var(--active);
+    padding: 0;
     color: var(--text-muted);
+    font-weight: 400;
     cursor: default;
 }
 
-/* ---------- Les commandes ----------
-   « Enregistrer » n'existe que si quelque chose a changé : tant qu'on n'a rien touché, il
-   n'y a rien à enregistrer, et un bouton éteint dans chaque carte ferait vingt boutons
-   pour rien. Il ne prend pas de place au repos — le pied garde sa hauteur par son
-   « min-height », donc rien ne saute quand il paraît. */
-.affaire-enregistrer {
+/* ---------- Le pied ----------
+   Il n'existe que si la carte a changé : « Modifications non enregistrées » et le bouton
+   plein. Au repos, rien ne l'annonce — vingt boutons éteints ne disent rien. */
+.affaire-carte-pied {
     display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-faint);
+}
+
+.affaire-carte.est-modifiee .affaire-carte-pied {
+    display: flex;
+}
+
+.affaire-pied-texte {
+    color: var(--attente-texte);
+    font-size: 12px;
+}
+
+.affaire-enregistrer {
+    display: inline-flex;
     align-items: center;
     height: var(--h-md);
     padding: 0 10px;
-    border: 1px solid transparent;
+    border: 0;
     border-radius: var(--r-md);
     background: var(--bouton-plein);
     color: var(--bouton-plein-texte);
@@ -390,30 +400,25 @@
     cursor: pointer;
 }
 
-.affaire-carte.est-modifiee .affaire-enregistrer {
-    display: inline-flex;
-}
-
 .affaire-enregistrer:hover {
     background: var(--bouton-plein-hover);
 }
 
-/* La corbeille ne paraît qu'au survol, comme les commandes d'une ligne de la liste des
-   demandes. Sous un doigt, il n'y a pas de survol : la media query la rend toujours
-   visible, sans quoi elle serait inatteignable sur la tablette de l'atelier. */
+/* La corbeille ne paraît qu'au survol ; sous un doigt, toujours (pas de survol). */
 .affaire-supprimer {
+    flex: none;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: var(--h-md);
-    height: var(--h-md);
+    width: 28px;
+    height: 28px;
     padding: 0;
-    border: 1px solid transparent;
+    border: 0;
     border-radius: var(--r-md);
     background: transparent;
     color: var(--text-muted);
     cursor: pointer;
-    transition: opacity 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+    transition: opacity 0.12s ease, color 0.12s ease, background 0.12s ease;
 }
 
 .affaire-supprimer .icon {
@@ -434,7 +439,7 @@
 }
 
 .affaire-supprimer:hover:not([disabled]) {
-    border-color: var(--danger-bord);
+    background: var(--alerte-fond);
     color: var(--danger-texte);
 }
 
@@ -445,10 +450,7 @@
     outline-offset: 2px;
 }
 
-/* Une affaire qui porte des demandes ne se ferme pas : le bouton reste là, éteint, parce
-   que son absence ferait croire qu'on a oublié de l'écrire. */
 .affaire-supprimer[disabled] {
-    color: var(--text-muted);
     cursor: not-allowed;
 }
 

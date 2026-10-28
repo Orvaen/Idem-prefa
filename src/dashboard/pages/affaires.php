@@ -32,7 +32,8 @@ $choixCharge = static function (array $options, int $idAffaire, ?int $choisi): s
         'aucun' => 'Aucun chargé d’affaire à ce nom.',
         // L'invite dit le rôle qu'on cherche : « Personne pour l'instant » ne disait pas
         // de qui il s'agissait, ni quel compte il fallait créer pour remplir le champ.
-        'chercher' => 'Choisir un chargé d’affaire',
+        // La ligne dit déjà « Chargé d'affaire » : l'invite n'a plus qu'à inviter.
+        'chercher' => 'Choisir…',
         'tableau' => true,
     ]);
 };
@@ -42,9 +43,8 @@ $choixCharge = static function (array $options, int $idAffaire, ?int $choisi): s
  * est remplacé par ce qui manque, et le bouton qui y mène — la fenêtre « Nouvel
  * utilisateur », rôle déjà choisi.
  */
-$sansCharge = static fn (): string => '<p class="affaire-sans-charge">Aucun compte avec le rôle '
-    . '<strong>Chargé d’affaire</strong>. '
-    . '<button type="button" class="affaires-creer-charge">Créer ce compte</button></p>';
+$sansCharge = static fn (): string => '<span class="affaire-sans-charge" title="Aucun compte n’a le rôle Chargé d’affaire.">'
+    . 'Aucun compte · <button type="button" class="affaires-creer-charge">Créer</button></span>';
 ?>
 <section class="users-page affaires-page" data-csrf="<?= prefaEscape(Session::jeton()) ?>">
     <div class="header-list affaires-entete">
@@ -82,14 +82,6 @@ $sansCharge = static fn (): string => '<p class="affaire-sans-charge">Aucun comp
         </div>
     </div>
 
-    <?php if (!$chargesDAffaire): ?>
-        <!-- Ce qu'il faut savoir en arrivant : une affaire se confie à un compte qui a le
-             rôle « Chargé d'affaire » — c'est lui qui déposera les demandes. -->
-        <div class="affaires-note">
-            <p>Une affaire se confie à un <strong>chargé d’affaire</strong> : c’est lui qui y déposera les demandes de préfabrication. Aucun compte n’a encore ce rôle.</p>
-            <button type="button" class="affaires-creer-charge">Créer un compte chargé d’affaire</button>
-        </div>
-    <?php endif; ?>
 
     <!-- Une carte par affaire, et non une ligne de tableau. Un tableau range des
          enregistrements qu'on compare colonne par colonne ; une affaire n'a que trois
@@ -109,12 +101,12 @@ $sansCharge = static fn (): string => '<p class="affaire-sans-charge">Aucun comp
             $monogramme = mb_strtoupper(mb_substr(trim($affaire->nom), 0, 2));
             ?>
             <article class="affaire-carte" data-affaire="<?= $affaire->id ?>">
+                <!-- L'en-tête : le monogramme, le nom (modifiable sur place) et la corbeille,
+                     qui ne paraît qu'au survol. -->
                 <div class="affaire-carte-haut">
                     <span class="affaire-monogramme" aria-hidden="true"><?= prefaEscape($monogramme) ?></span>
-
-                    <!-- La suppression ne paraît qu'au survol, comme les commandes d'une
-                         ligne de la liste des demandes. Éteinte quand des demandes sont
-                         rattachées : son infobulle dit pourquoi. -->
+                    <input class="affaire-nom" value="<?= prefaEscape($affaire->nom) ?>" maxlength="255" aria-label="Nom de l’affaire">
+                    <!-- Éteinte quand des demandes sont rattachées : son infobulle dit pourquoi. -->
                     <button type="button" class="affaire-supprimer" aria-label="Supprimer l’affaire <?= prefaEscape($affaire->nom) ?>"<?= $affaire->demandes > 0 ? ' disabled title="Des demandes y sont rattachées."' : ' title="Supprimer l’affaire"' ?>>
                         <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" />
@@ -122,32 +114,36 @@ $sansCharge = static fn (): string => '<p class="affaire-sans-charge">Aucun comp
                     </button>
                 </div>
 
-                <input class="affaire-nom" value="<?= prefaEscape($affaire->nom) ?>" maxlength="255" aria-label="Nom de l’affaire">
+                <!-- Les propriétés, comme dans les volets : icône et libellé à gauche, valeur
+                     à droite. La carte se lit d'un coup d'œil sans être un formulaire. -->
+                <dl class="affaire-proprietes">
+                    <div>
+                        <dt><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.7-3.6 3.5-5.5 7-5.5s6.3 1.9 7 5.5" /></svg>Chargé d’affaire</dt>
+                        <dd><?= $optionsCharge ? $choixCharge($optionsCharge, $affaire->id, $affaire->idChargeAffaire) : $sansCharge() ?></dd>
+                    </div>
+                    <div>
+                        <dt><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z" /><path d="M14 3v5h5" /></svg>Demandes</dt>
+                        <dd>
+                            <?php
+                            // Le nombre dit aussi pourquoi la suppression est refusée. Quand il y
+                            // en a, il mène à ces demandes — c'est le chemin de la carte, et le
+                            // seul atteignable au clavier. À zéro, il n'y a rien à ouvrir.
+                            ?>
+                            <?php if ($affaire->demandes > 0): ?>
+                                <button type="button" class="affaire-demandes" title="Voir les demandes de cette affaire">
+                                    <?= $affaire->demandes ?> demande<?= $affaire->demandes > 1 ? 's' : '' ?>
+                                    <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6" /></svg>
+                                </button>
+                            <?php else: ?>
+                                <span class="affaire-demandes est-vide">Aucune</span>
+                            <?php endif; ?>
+                        </dd>
+                    </div>
+                </dl>
 
-                <div class="affaire-champ">
-                    <span class="affaire-champ-libelle">Chargé d’affaire</span>
-                    <?= $optionsCharge ? $choixCharge($optionsCharge, $affaire->id, $affaire->idChargeAffaire) : $sansCharge() ?>
-                </div>
-
+                <!-- Le pied n'existe que s'il y a quelque chose à enregistrer. -->
                 <footer class="affaire-carte-pied">
-                    <?php
-                    // Le nombre dit aussi pourquoi la suppression est refusée : une affaire
-                    // qui porte des demandes ne se ferme pas d'un clic.
-                    //
-                    // Quand il y en a, il mène à ces demandes — c'est le chemin annoncé de
-                    // la carte, et le seul qui soit atteignable au clavier. À zéro, il n'y
-                    // a rien à ouvrir : ce n'est plus qu'un état.
-                    ?>
-                    <?php if ($affaire->demandes > 0): ?>
-                        <button type="button" class="affaire-demandes" title="Voir les demandes de cette affaire">
-                            <?= $affaire->demandes ?> demande<?= $affaire->demandes > 1 ? 's' : '' ?>
-                            <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="m9 6 6 6-6 6" />
-                            </svg>
-                        </button>
-                    <?php else: ?>
-                        <span class="affaire-demandes est-vide">Aucune demande</span>
-                    <?php endif; ?>
+                    <span class="affaire-pied-texte">Modifications non enregistrées</span>
                     <button type="button" class="affaire-enregistrer">Enregistrer</button>
                 </footer>
             </article>
@@ -209,7 +205,8 @@ $sansCharge = static fn (): string => '<p class="affaire-sans-charge">Aucun comp
                         'chercher' => 'Chargé d’affaire (facultatif)',
                         'tableau' => true,
                     ])
-                    : $sansCharge();
+                    : '<p class="affaire-dialog-sans-charge">Aucun compte n’a encore le rôle <strong>Chargé d’affaire</strong> : l’affaire s’ouvrira sans lui. '
+                        . '<button type="button" class="affaires-creer-charge">Créer ce compte</button></p>';
                 ?>
 
                 <p class="prefa-message fenetre-message" role="status" aria-live="polite"></p>
