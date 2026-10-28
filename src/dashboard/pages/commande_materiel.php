@@ -13,15 +13,6 @@ unset($bon);
 
 $etats = materielEtats();
 
-// Combien restent à lire ou à vérifier : c'est le travail qu'il reste, et c'est la
-// première chose qu'on vient voir sur cet écran.
-$aFaire = 0;
-$affaires = [];
-foreach ($bons as $bon) {
-    if (in_array(materielEtat($bon), ['a_lire', 'a_verifier'], true)) $aFaire++;
-    if ($bon['nom_affaire']) $affaires[$bon['nom_affaire']] = $bon['nom_affaire'];
-}
-ksort($affaires);
 ?>
 <section class="page prefa-page prefa-list atelier-page" id="materiel-page" aria-labelledby="materiel-page-title">
     <div class="prefa-shell">
@@ -33,38 +24,38 @@ ksort($affaires);
             </div>
         </header>
 
+        <?php // La barre de la maison : la recherche à loupe, puis un onglet par état avec son
+              // compte. Trois étiquettes flottantes de 44 px faisaient un formulaire de
+              // recherche au-dessus d'une liste de deux bons ; l'affaire se cherche au champ. ?>
         <div class="prefa-filters" role="search">
-            <div class="floating-field">
-                <label for="materiel-filtre-recherche">Rechercher</label>
-                <input id="materiel-filtre-recherche" class="floating-control" type="search"
-                       placeholder="N° de demande, affaire, n° de commande ou fichier">
+            <div class="filtres-recherche">
+                <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+                <input id="materiel-filtre-recherche" type="search" autocomplete="off" aria-label="Rechercher un bon"
+                       placeholder="Demande, affaire, commande…">
             </div>
-            <div class="floating-field floating-always">
-                <label for="materiel-filtre-etat">Lecture</label>
-                <select id="materiel-filtre-etat" class="floating-control">
-                    <option value="">Tous les bons</option>
-                    <option value="a_faire">À lire ou à vérifier</option>
-                    <?php foreach ($etats as $valeur => $libelle): ?>
-                        <option value="<?= prefaEscape($valeur) ?>"><?= prefaEscape($libelle) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <?php if (count($affaires) > 1): ?>
-                <div class="floating-field floating-always">
-                    <label for="materiel-filtre-affaire">Affaire</label>
-                    <select id="materiel-filtre-affaire" class="floating-control">
-                        <option value="">Toutes les affaires</option>
-                        <?php foreach ($affaires as $nom): ?><option value="<?= prefaEscape($nom) ?>"><?= prefaEscape($nom) ?></option><?php endforeach; ?>
-                    </select>
-                </div>
-            <?php endif; ?>
         </div>
 
-        <p class="prefa-list-summary">
-            <strong id="materiel-compte"><?= count($bons) ?></strong>
-            <span id="materiel-compte-libelle"><?= count($bons) === 1 ? 'bon de commande' : 'bons de commande' ?></span>
-            <?= $aFaire ? ' · ' . $aFaire . ($aFaire === 1 ? ' reste à traiter' : ' restent à traiter') : '' ?>
-        </p>
+        <?php $parEtat = array_fill_keys(array_keys($etats), 0);
+              foreach ($bons as $bon) $parEtat[materielEtat($bon)]++; ?>
+        <div class="prefa-onglets-barre">
+            <div class="prefa-onglets" role="group" aria-label="État des bons">
+                <button type="button" class="prefa-onglet materiel-onglet" data-etat="" aria-pressed="true">
+                    Tous <span class="prefa-onglet-compte"><?= count($bons) ?></span>
+                </button>
+                <?php foreach ($etats as $valeur => $libelle): ?>
+                    <?php // Un état qu'aucun bon ne porte n'a rien à filtrer : « Lecture
+                          // impossible » ne s'affiche que s'il y en a une. ?>
+                    <?php if ($valeur === 'echec' && !$parEtat[$valeur]) continue; ?>
+                    <button type="button" class="prefa-onglet materiel-onglet" data-etat="<?= prefaEscape($valeur) ?>" aria-pressed="false">
+                        <?= prefaEscape($libelle) ?> <span class="prefa-onglet-compte"><?= $parEtat[$valeur] ?></span>
+                    </button>
+                <?php endforeach; ?>
+            </div>
+            <p class="prefa-list-summary">
+                <span><strong id="materiel-compte"><?= count($bons) ?></strong>
+                <span id="materiel-compte-libelle"><?= count($bons) === 1 ? 'bon de commande' : 'bons de commande' ?></span></span>
+            </p>
+        </div>
 
         <div class="prefa-table-scroll" role="region" aria-label="Bons de commande" tabindex="0">
             <table class="prefa-table materiel-liste">
@@ -74,17 +65,16 @@ ksort($affaires);
                         <th scope="col">Affaire</th>
                         <th scope="col">Bon déposé</th>
                         <th scope="col">N° de commande</th>
-                        <th scope="col">Date Livraison</th>
-                        <th scope="col">Articles</th>
-                        <th scope="col">Reçus</th>
-                        <th scope="col">Lecture</th>
-                        <th scope="col">Actions</th>
+                        <th scope="col">Livraison</th>
+                        <th scope="col" class="prefa-nombre">Reçus</th>
+                        <th scope="col">État</th>
+                        <th scope="col"><span class="atelier-sr-only">Actions</span></th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (!$bons): ?>
-                        <tr><td colspan="9" class="prefa-table-empty">
-                            Aucun bon de commande déposé. Le bon se dépose sur la demande, dans « Commande matériel ».
+                        <tr><td colspan="8" class="prefa-table-empty">
+                            Aucun bon de commande déposé. Le bon se dépose sur la demande, dans ses documents.
                         </td></tr>
                     <?php endif; ?>
 
@@ -99,18 +89,20 @@ ksort($affaires);
                         // l'onglet d'aperçu.
                         $url = 'actions/download_materiel.php?ref=' . rawurlencode(prefaReference($idDemande))
                             . '&file=' . rawurlencode((string) $id);
+                        ['recus' => $recus, 'total' => $total] = materielRecus($bon);
                     ?>
                         <tr class="materiel-rang"
                             id="materiel-bon-<?= $id ?>"
                             data-document="<?= $id ?>"
                             data-recherche="<?= prefaEscape($recherche) ?>"
-                            data-affaire="<?= prefaEscape((string) ($bon['nom_affaire'] ?? '')) ?>"
                             data-etat="<?= prefaEscape($etat) ?>"
                             data-demande="<?= prefaEscape(prefaReferenceComplete($idDemande)) ?>"
+                            data-fichier="<?= prefaEscape($url) ?>"
+                            data-nom="<?= prefaEscape($bon['nom']) ?>"
                             data-bon="<?= prefaEscape(json_encode(materielPayload($bon), JSON_UNESCAPED_UNICODE)) ?>">
 
-                            <td><?= prefaEscape(prefaReferenceComplete($idDemande)) ?></td>
-                            <td><?= prefaEscape($bon['nom_affaire'] ?: '—') ?></td>
+                            <td class="prefa-reference"><?= prefaEscape(prefaReference($idDemande)) ?></td>
+                            <td class="prefa-affaire"><?= prefaEscape($bon['nom_affaire'] ?: '—') ?></td>
                             <td>
                                 <a class="prefa-pdf-link materiel-fichier"
                                    href="<?= prefaEscape($url) ?>"
@@ -133,9 +125,9 @@ ksort($affaires);
                                 <?php $echeances = materielEcheancesTexte($bon); ?>
                                 <?= $echeances !== '' ? prefaEscape($echeances) : '<span class="materiel-vide">—</span>' ?>
                             </td>
-                            <td class="materiel-cellule-articles"><?= count($bon['lignes']) ?: '—' ?></td>
-                            <?php ['recus' => $recus, 'total' => $total] = materielRecus($bon); ?>
-                            <td class="materiel-cellule-recus">
+                            <?php // « 1/5 » dit à la fois combien d'articles et combien sont arrivés :
+                                  // la colonne « Articles » le répétait. ?>
+                            <td class="prefa-nombre materiel-cellule-recus">
                                 <?= $total ? prefaEscape($recus . '/' . $total) : '<span class="materiel-vide">—</span>' ?>
                             </td>
                             <td>
@@ -145,10 +137,7 @@ ksort($affaires);
                                 </span>
                             </td>
                             <td class="materiel-actions">
-                                <button type="button" class="prefa-toggle materiel-ouvrir" data-document="<?= $id ?>">
-                                    <?php // Une commande validée ne s'ouvre plus que pour être lue. ?>
-                                    <?= materielEstFige($bon) ? 'Voir' : ($etat === 'a_lire' ? 'Lire le bon' : 'Voir et corriger') ?>
-                                </button>
+                                <button type="button" class="prefa-toggle materiel-ouvrir" data-document="<?= $id ?>">Ouvrir</button>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -159,37 +148,55 @@ ksort($affaires);
         <p class="prefa-table-empty materiel-aucun-resultat" hidden>Aucun bon ne correspond à cette recherche.</p>
     </div>
 
-    <!-- La fenêtre d'édition, une seule pour tout l'écran : elle se remplit du bon qu'on
-         ouvre. Quarante lignes par bon, et autant de fenêtres que de bons dans le
-         balisage, c'était la page entière chargée deux fois. -->
-    <dialog id="materiel-dialog" class="materiel-dialog" aria-labelledby="materiel-dialog-titre">
-        <form class="prefa-form" id="materiel-form">
+    <?php // Le volet d'un bon : le même panneau flottant que les PV, le planning et la fiche
+          // d'une demande. C'était une fenêtre pleine page à part, avec sa propre typographie.
+          // Un seul volet pour l'écran, rempli par commande-materiel.js : quarante lignes par
+          // bon, et un volet par bon dans le balisage, c'était la page chargée deux fois. ?>
+    <div id="materiel-volet" class="prefa-detail-row materiel-volet-rang" hidden>
+        <form class="pv-volet" id="materiel-form" role="dialog" aria-labelledby="materiel-volet-titre">
             <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
             <input type="hidden" name="document" value="">
 
-            <div class="materiel-dialog-entete">
+            <header class="pv-volet-tete">
                 <div>
-                    <?php // Le numero du bon tient lieu de titre : c'est son nom. Ce qui le situe
-                          // - la demande, le nombre d'articles - tient sur la ligne du dessous, et
-                          // l'etat dans sa pastille. Les echeances etaient reprises ici alors
-                          // qu'elles ont leur colonne, et la phrase sur la lecture redisait ce que
-                          // la pastille annonce. ?>
-                    <p class="materiel-dialog-surtitre">Bon de commande</p>
-                    <h2 id="materiel-dialog-titre">Articles du bon</h2>
-                    <p class="materiel-dialog-sous-titre"></p>
-                    <?php // Elle ne parait que lorsqu'il y a quelque chose a faire, ou que la
-                          // lecture a echoue. Devant une liste lue, elle n'apprendrait rien. ?>
-                    <p class="materiel-dialog-note" role="status" aria-live="polite" hidden></p>
+                    <?php // Le numéro du bon tient lieu de titre : c'est son nom. ?>
+                    <h2 id="materiel-volet-titre">Bon de commande</h2>
+                    <p class="materiel-volet-sous-titre"></p>
                 </div>
-                <div class="materiel-dialog-coin">
-                    <span class="materiel-etat materiel-dialog-etat"></span>
-                    <button type="button" class="materiel-fermer modal-close" aria-label="Fermer">
-                        <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg>
+                <div class="pv-volet-outils">
+                    <button type="button" class="prefa-detail-close" data-close-target="materiel-volet" aria-label="Fermer le volet" title="Fermer">
+                        <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 6 12 12M18 6 6 18" /></svg>
                     </button>
                 </div>
-            </div>
+            </header>
 
-            <div class="materiel-dialog-corps">
+            <section class="pv-volet-section">
+                <div class="pv-volet-titre-rang">
+                    <h3 class="pv-volet-titre">Commande</h3>
+                    <span class="pv-puce materiel-volet-etat"></span>
+                </div>
+                <dl class="pv-proprietes">
+                    <div><dt>Demande</dt><dd class="materiel-volet-demande"></dd></div>
+                    <div><dt>Bon déposé</dt><dd><a class="prefa-pdf-link materiel-volet-fichier" href="#" aria-haspopup="dialog"></a></dd></div>
+                    <div><dt>Date de commande</dt><dd class="materiel-volet-date"></dd></div>
+                    <div><dt>Livraison</dt><dd class="materiel-volet-livraison"></dd></div>
+                    <div><dt>Réception</dt><dd class="materiel-volet-reception"></dd></div>
+                </dl>
+                <?php // Ce qu'on attend de vous, ou pourquoi la lecture a échoué. Vide devant une
+                      // liste lue : elle n'apprendrait rien. ?>
+                <p class="pv-volet-note materiel-volet-note" role="status" aria-live="polite" hidden></p>
+            </section>
+
+            <section class="pv-volet-section">
+                <div class="pv-volet-titre-rang">
+                    <h3 class="pv-volet-titre">Articles <span class="materiel-volet-compte"></span></h3>
+                    <div class="materiel-volet-outils">
+                        <button type="button" class="materiel-relire bouton-discret">Lire le bon</button>
+                        <button type="button" class="materiel-ajouter bouton-discret">Ajouter un article</button>
+                        <button type="button" class="materiel-tout-recu bouton-discret">Tout marquer reçu</button>
+                    </div>
+                </div>
+
                 <div class="materiel-dialog-scroll">
                     <table class="materiel-edition">
                         <thead>
@@ -199,34 +206,29 @@ ksort($affaires);
                                 <th scope="col" class="materiel-colonne-recu">Réception</th>
                                 <th scope="col">Référence</th>
                                 <th scope="col">Désignation</th>
-                                <th scope="col">Date Livraison</th>
+                                <th scope="col">Livraison</th>
+                                <th scope="col" class="materiel-champ-nombre">Qté</th>
                                 <th scope="col">Unité</th>
-                                <th scope="col">Quantité</th>
-                                <th scope="col"><span class="sr-only">Retirer</span></th>
+                                <th scope="col"><span class="atelier-sr-only">Retirer</span></th>
                             </tr>
                         </thead>
                         <tbody class="materiel-edition-lignes"></tbody>
                     </table>
                 </div>
                 <p class="materiel-edition-vide" hidden>Aucun article. Lisez le bon déposé, ou ajoutez-les à la main.</p>
-            </div>
+            </section>
 
-            <div class="materiel-dialog-pied">
-                <div class="materiel-dialog-pied-gauche">
-                    <div class="materiel-dialog-outils">
-                        <button type="button" class="materiel-relire bouton-discret">Lire le bon déposé</button>
-                        <button type="button" class="materiel-ajouter bouton-discret">Ajouter un article</button>
-                    </div>
-                    <button type="button" class="materiel-tout-recu bouton-discret">Tout marquer reçu</button>
-                </div>
-                <div class="materiel-dialog-boutons">
-                    <span class="materiel-message" role="status" aria-live="polite"></span>
-                    <button type="button" class="materiel-fermer bouton-discret">Annuler</button>
-                    <button type="submit">Enregistrer</button>
-                </div>
-            </div>
+            <?php // Deux gestes, et non plus un : « Enregistrer » validait la commande, et une
+                  // commande validée ne se modifie plus. Un clic pour garder une correction la
+                  // figeait pour toujours, sans un mot. Enregistrer garde le travail ; Valider
+                  // engage la commande, et le demande avant. ?>
+            <footer class="materiel-volet-pied">
+                <span class="pv-message materiel-message" role="status" aria-live="polite"></span>
+                <button type="submit" name="valider" value="0" class="materiel-enregistrer bouton-discret">Enregistrer</button>
+                <button type="submit" name="valider" value="1" class="pv-enregistrer materiel-valider">Valider la commande</button>
+            </footer>
         </form>
-    </dialog>
+    </div>
 
     <!-- Le gabarit d'une ligne. Il vit dans un template plutôt que dans le script : son
          balisage est celui des lignes rendues par le script, et l'écrire deux fois le
@@ -248,8 +250,8 @@ ksort($affaires);
             <td><input class="materiel-champ materiel-champ-date" data-champ="date_livraison"
                        inputmode="numeric" maxlength="10" placeholder="jj/mm/aaaa"
                        aria-label="Date de livraison" readonly></td>
-            <td><input class="materiel-champ" data-champ="unite" maxlength="16" aria-label="Unité" readonly></td>
             <td><input class="materiel-champ materiel-champ-nombre" data-champ="quantite" inputmode="decimal" aria-label="Quantité" readonly></td>
+            <td><input class="materiel-champ" data-champ="unite" maxlength="16" aria-label="Unité" readonly></td>
             <td>
                 <button type="button" class="materiel-retirer bouton-discret" aria-label="Retirer cet article" title="Retirer">
                     <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg>

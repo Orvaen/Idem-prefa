@@ -173,7 +173,7 @@ function dashboardMenu(): array
             'page' => 'pages/commande_materiel.php',
             'pour' => [Role::ChargeDeProduction, Role::ChefDAtelier],
             'icone' => '<path d="m12 3.5 8 4v9L12 20.5l-8-4v-9z"/><path d="m4 7.5 8 4 8-4M12 11.5v9"/><path d="m8 5.5 8 4"/>',
-            'styles' => ['dashboard/commande-materiel.css'],
+            'styles' => ['dashboard/pv.css', 'dashboard/commande-materiel.css'],
             'scripts' => ['commande-materiel.js'],
         ],
         [

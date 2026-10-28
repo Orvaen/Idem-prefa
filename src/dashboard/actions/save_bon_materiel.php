@@ -26,7 +26,10 @@ $lignes = json_decode((string) ($_POST['lignes'] ?? '[]'), true);
 if (!is_array($lignes)) prefaError(400, 'Liste d’articles illisible.');
 
 try {
-    $articles = materielEnregistrer($db, $idDocument, $lignes, (int) $actor['id']);
+    // « Valider la commande » la fige ; « Enregistrer » garde seulement les corrections.
+    $valider = ($_POST['valider'] ?? '') === '1';
+    if ($valider && !$lignes) prefaError(422, 'Une commande sans article ne se valide pas. Lisez le bon ou ajoutez ses articles.');
+    $articles = materielEnregistrer($db, $idDocument, $lignes, (int) $actor['id'], $valider);
 } catch (DomainException $exception) {
     prefaError(422, $exception->getMessage());
 } catch (Throwable $exception) {
@@ -41,7 +44,9 @@ header('Content-Type: application/json; charset=utf-8');
 echo json_encode([
     'success' => true,
     'document' => materielPayload($document),
-    'message' => $articles
-        ? $articles . ' article' . ($articles > 1 ? 's' : '') . ' enregistré' . ($articles > 1 ? 's' : '') . '.'
-        : 'Liste vidée : ce bon ne porte plus aucun article.',
+    'message' => $valider
+        ? 'Commande validée : ' . $articles . ' article' . ($articles > 1 ? 's' : '') . '. Seule la réception se pointe désormais.'
+        : ($articles
+            ? $articles . ' article' . ($articles > 1 ? 's' : '') . ' enregistré' . ($articles > 1 ? 's' : '') . '. La commande reste à valider.'
+            : 'Liste vidée : ce bon ne porte plus aucun article.'),
 ]);

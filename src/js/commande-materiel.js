@@ -10,7 +10,8 @@
     const PAGE = '#materiel-page';
 
     const page = () => document.querySelector(PAGE);
-    const dialogue = () => document.getElementById('materiel-dialog');
+    // Le volet du bon : un seul pour l'écran, rempli à chaque ouverture.
+    const dialogue = () => document.getElementById('materiel-volet');
     const rang = id => document.getElementById('materiel-bon-' + id);
 
     /** Ce que porte une ligne du tableau : le bon, tel que le serveur l'a mis en forme. */
@@ -29,20 +30,26 @@
         if (!zone) return;
 
         const recherche = (zone.querySelector('#materiel-filtre-recherche')?.value || '').trim().toLowerCase();
-        const etat = zone.querySelector('#materiel-filtre-etat')?.value || '';
-        const affaire = zone.querySelector('#materiel-filtre-affaire')?.value || '';
+        const etat = zone.querySelector('.materiel-onglet[aria-pressed="true"]')?.dataset.etat || '';
 
         let visibles = 0;
+        const comptes = {};
         zone.querySelectorAll('.materiel-rang').forEach(ligne => {
-            // « À lire ou à vérifier » regroupe les deux états sur lesquels il reste
-            // quelque chose à faire : c'est la question qu'on se pose en arrivant.
-            const etatOk = !etat
-                || (etat === 'a_faire' ? ['a_lire', 'a_verifier'].includes(ligne.dataset.etat) : ligne.dataset.etat === etat);
-            const montrer = etatOk
-                && (!affaire || ligne.dataset.affaire === affaire)
+            comptes[ligne.dataset.etat] = (comptes[ligne.dataset.etat] || 0) + 1;
+            const montrer = (!etat || ligne.dataset.etat === etat)
                 && (!recherche || (ligne.dataset.recherche || '').includes(recherche));
             ligne.hidden = !montrer;
             if (montrer) visibles++;
+        });
+
+        // Les comptes des onglets suivent les bons : valider une commande la fait passer
+        // d'« À vérifier » à « Validée » sans recharger l'écran.
+        zone.querySelectorAll('.materiel-onglet').forEach(onglet => {
+            const compte = onglet.querySelector('.prefa-onglet-compte');
+            if (!compte) return;
+            compte.textContent = onglet.dataset.etat
+                ? (comptes[onglet.dataset.etat] || 0)
+                : zone.querySelectorAll('.materiel-rang').length;
         });
 
         const compte = zone.querySelector('#materiel-compte');
@@ -54,7 +61,10 @@
     }
 
     $(document).on('input', '#materiel-filtre-recherche', filtrer);
-    $(document).on('change', '#materiel-filtre-etat, #materiel-filtre-affaire', filtrer);
+    $(document).on('click', '.materiel-onglet', function () {
+        document.querySelectorAll('.materiel-onglet').forEach(o => o.setAttribute('aria-pressed', String(o === this)));
+        filtrer();
+    });
 
     // ------------------------------------------------------- LA FENÊTRE D'ÉDITION
 
@@ -97,7 +107,7 @@
         caseReception(rangee);
         // La date se lit à la française : le format de la base est celui du champ de
         // saisie, et une commande validée n'en a pas.
-        for (const champ of ['reference', 'designation', 'date_livraison_lue', 'unite', 'quantite']) {
+        for (const champ of ['reference', 'designation', 'date_livraison_lue', 'quantite', 'unite']) {
             const cellule = document.createElement('td');
             cellule.textContent = ligne[champ] || '—';
             if (champ === 'quantite') cellule.className = 'materiel-champ-nombre';
@@ -168,35 +178,46 @@
         fenetre.querySelector('.materiel-dialog-scroll').hidden = nombre === 0;
     }
 
-    /** Le haut de la fenêtre : ce qui identifie le bon, et où il en est. */
+    /** Les puces de la maison, par état du bon. */
+    const PUCES = {a_lire: 'pv-puce-sans_objet', a_verifier: 'pv-puce-a_faire', verifie: 'pv-puce-fait', echec: 'pv-puce-echec'};
+
+    /** Le haut du volet et ses propriétés : ce qui identifie le bon, et où il en est. */
     function poserEntete(bon) {
-        const fenetre = dialogue();
+        const volet = dialogue();
         const ligne = rang(bon.id);
+        const texte = (selecteur, valeur) => { volet.querySelector(selecteur).textContent = valeur || '—'; };
 
         // Le numéro est le nom du bon. Sans lui — lecture ratée, en-tête illisible — on
-        // retombe sur un intitulé générique plutôt que sur un titre vide.
-        fenetre.querySelector('#materiel-dialog-titre').textContent = bon.numero || 'Numéro non reconnu';
-        fenetre.querySelector('.materiel-dialog-sous-titre').textContent = [
-            ligne ? ligne.dataset.demande : '',
-            bon.articles ? bon.articles + ' article' + (bon.articles > 1 ? 's' : '') : '',
-            // Ce qui est arrivé se compte ici, en chiffres : c'est l'information qu'on
-            // vient chercher, pas la phrase qui l'enrobait.
-            bon.recus ? bon.recus + ' reçu' + (bon.recus > 1 ? 's' : '') : '',
-            bon.retards ? bon.retards + ' en retard' : '',
-        ].filter(Boolean).join(' · ');
+        // retombe sur un intitulé qui le dit, plutôt que sur un titre vide.
+        volet.querySelector('#materiel-volet-titre').textContent = bon.numero || 'Numéro non reconnu';
+        volet.querySelector('.materiel-volet-sous-titre').textContent = ligne ? ligne.dataset.demande : '';
 
-        const pastille = fenetre.querySelector('.materiel-dialog-etat');
-        pastille.className = 'materiel-etat materiel-dialog-etat materiel-etat-' + bon.etat;
-        pastille.textContent = bon.etat_libelle;
-        pastille.title = bon.resume;
+        const puce = volet.querySelector('.materiel-volet-etat');
+        puce.className = 'pv-puce materiel-volet-etat ' + (PUCES[bon.etat] || '');
+        puce.textContent = bon.etat_libelle;
+        puce.title = bon.resume;
 
-        const note = fenetre.querySelector('.materiel-dialog-note');
+        texte('.materiel-volet-demande', ligne ? ligne.dataset.demande : '');
+        const fichier = volet.querySelector('.materiel-volet-fichier');
+        fichier.href = ligne ? ligne.dataset.fichier : '#';
+        fichier.dataset.name = ligne ? ligne.dataset.nom : '';
+        fichier.textContent = ligne ? ligne.dataset.nom : '—';
+        texte('.materiel-volet-date', bon.date);
+        texte('.materiel-volet-livraison', bon.livraison);
+        // Ce qui est arrivé se compte en chiffres : c'est ce qu'on vient chercher.
+        texte('.materiel-volet-reception', bon.articles
+            ? (bon.recus || 0) + ' sur ' + bon.articles + ' reçu' + ((bon.recus || 0) > 1 ? 's' : '')
+                + (bon.retards ? ' · ' + bon.retards + ' en retard' : '')
+            : '');
+        volet.querySelector('.materiel-volet-compte').textContent = bon.articles ? bon.articles : '';
+
+        const note = volet.querySelector('.materiel-volet-note');
         note.textContent = noteDeLecture(bon);
         note.hidden = note.textContent === '';
 
-        // Une commande validée ne se modifie plus : la fenêtre s'ouvre en lecture, sans
+        // Une commande validée ne se modifie plus : le volet s'ouvre en lecture, sans
         // champ ni bouton d'écriture. La feuille de style se charge de les retirer.
-        fenetre.classList.toggle('est-figee', !!bon.fige);
+        volet.classList.toggle('est-figee', !!bon.fige);
     }
 
     /** Remplit la fenêtre d'un bon et l'ouvre. */
@@ -217,7 +238,10 @@
         compterLignes();
         majCaseTout();
 
-        if (!fenetre.open) fenetre.showModal();
+        // Un seul volet à la fois, comme partout.
+        document.querySelectorAll('.prefa-detail-row:not([hidden])').forEach(v => { if (v !== fenetre) v.hidden = true; });
+        fenetre.hidden = false;
+        fenetre.scrollTop = 0;
     }
 
     /**
@@ -226,10 +250,10 @@
      */
     function noteDeLecture(bon) {
         if (bon.etat === 'a_lire') return 'Lisez le bon, ou saisissez ses articles à la main.';
+        if (bon.etat === 'a_verifier') return 'Relisez les articles et corrigez-les si besoin, puis validez la commande. Une fois validée, elle ne se modifie plus.';
         if (bon.etat === 'echec') return bon.resume;
-        // Sur une commande validée, la pastille le dit et les boutons d'écriture ont
-        // disparu : une phrase de plus ne ferait que redire ce qui se voit. Qui l'a
-        // validée et quand restent au survol de la pastille.
+        // Sur une commande validée, qui l'a validée et quand : c'est ce qui la rend intouchable.
+        if (bon.fige) return bon.resume + '. Seule la réception se pointe encore.';
         return '';
     }
 
@@ -375,19 +399,6 @@
         setTimeout(() => clearInterval(attente), 3000);
     });
 
-    $(document).on('click', '.materiel-fermer', function () {
-        dialogue().close();
-    });
-
-    // Cliquer hors de la fenêtre la referme, comme les autres fenêtres de l'application.
-    $(document).on('click', '#materiel-dialog', function (event) {
-        if (event.target !== this) return;
-        const cadre = this.getBoundingClientRect();
-        const dehors = event.clientX < cadre.left || event.clientX > cadre.right
-            || event.clientY < cadre.top || event.clientY > cadre.bottom;
-        if (dehors) this.close();
-    });
-
     $(document).on('click', '.materiel-ajouter', function () {
         const rangee = ajouterLigne(null, false);
         compterLignes();
@@ -435,7 +446,6 @@
         } else {
             livraison.innerHTML = '<span class="materiel-vide">—</span>';
         }
-        ligne.querySelector('.materiel-cellule-articles').textContent = bon.articles || '—';
         const recus = ligne.querySelector('.materiel-cellule-recus');
         if (recus) {
             if (bon.articles) recus.textContent = (bon.recus || 0) + '/' + bon.articles;
@@ -445,8 +455,6 @@
         etat.className = 'materiel-etat materiel-etat-' + bon.etat;
         etat.textContent = bon.etat_libelle;
         etat.title = bon.resume;
-        ligne.querySelector('.materiel-ouvrir').textContent =
-            bon.etat === 'a_lire' ? 'Lire le bon' : 'Voir et corriger';
         filtrer();
     }
 
@@ -455,7 +463,7 @@
         const message = fenetre.querySelector('.materiel-message');
         const libelle = bouton.textContent;
         bouton.disabled = true;
-        message.textContent = bouton === fenetre.querySelector('.materiel-relire')
+        message.textContent = bouton.classList.contains('materiel-relire')
             ? 'Lecture du bon…' : 'Enregistrement…';
 
         $.ajax({url: 'actions/' + url, method: 'POST', data: donnees, dataType: 'json'})
@@ -487,8 +495,12 @@
             document: id,
         }, this, reponse => {
             fenetre.querySelector('.materiel-edition-lignes').innerHTML = '';
-            (reponse.document.lignes || []).forEach(l => ajouterLigne(l, l.douteuse));
+            // L'identifiant de chaque article lu se pose aussi : sans lui, le bouton de
+            // réception des lignes qu'on venait de lire ne faisait rien jusqu'à la
+            // réouverture du bon.
+            (reponse.document.lignes || []).forEach(l => poserReception(ajouterLigne(l, l.douteuse), l));
             compterLignes();
+            majCaseTout();
             poserEntete(reponse.document);
         });
     });
@@ -496,16 +508,26 @@
     $(document).on('submit', '#materiel-form', function (event) {
         event.preventDefault();
         const fenetre = dialogue();
-        const bouton = this.querySelector('button[type="submit"]');
+        const bouton = event.originalEvent?.submitter || this.querySelector('.materiel-enregistrer');
+        const valider = bouton.value === '1';
+        // Valider engage la commande pour de bon : on le dit avant, pas après.
+        if (valider && !window.confirm('Valider la commande ? Ses articles ne pourront plus être modifiés ; seule la réception restera possible.')) return;
 
         envoyer('save_bon_materiel.php', {
             csrf: this.elements.csrf.value,
             document: this.elements.document.value,
             lignes: JSON.stringify(lignesSaisies()),
+            valider: valider ? '1' : '0',
         }, bouton, reponse => {
+            // Les lignes sont réécrites côté serveur : on reprend les siennes, avec leurs
+            // nouveaux identifiants — le pointage de réception en a besoin.
+            fenetre.querySelector('.materiel-edition-lignes').innerHTML = '';
+            (reponse.document.lignes || []).forEach(l => {
+                poserReception(reponse.document.fige ? ajouterLigneFigee(l) : ajouterLigne(l, false), l);
+            });
+            compterLignes();
+            majCaseTout();
             poserEntete(reponse.document);
-            fenetre.querySelectorAll('.materiel-edition-ligne[title]')
-                .forEach(ligne => ligne.removeAttribute('title'));
         });
     });
 })();

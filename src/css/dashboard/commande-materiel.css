@@ -51,130 +51,132 @@
 }
 
 /* ==========================================================================
-   LA FENÊTRE D'UN BON
+   LE VOLET D'UN BON
    ==========================================================================
 
-   Même registre que la fiche d'une demande : pleine page, une colonne centrée, un titre
-   léger, et de l'air. Ce qui s'y lit est un document — un bon de commande — pas un
-   formulaire : les champs sont du texte tant qu'on ne les ouvre pas, un clic coche la
-   ligne reçue, un double-clic ouvre la case qu'on veut corriger. */
+   Le panneau flottant de la maison (pv.css) : en-tête, sections séparées d'un filet
+   pointillé, lignes de propriétés. C'était une fenêtre pleine page avec sa propre
+   typographie — titre de 26 px en maigre, surtitre en capitales — que rien d'autre dans
+   l'application n'employait. Plus large que les autres volets : un bon porte un tableau
+   d'articles, pas une fiche. */
 
-.materiel-dialog {
-    width: 100vw;
-    max-width: none;
-    height: 100vh;
-    height: 100dvh;
-    max-height: none;
-    margin: 0;
-    padding: 0;
-    border: 0;
-    background: var(--surface);
-    color: var(--text);
+.prefa-detail-row.materiel-volet-rang {
+    top: 8px;
+    right: 8px;
+    bottom: 8px;
+    left: auto;
+    width: min(880px, calc(100vw - 16px));
+    border: 1px solid var(--border);
+    border-radius: var(--r-xl);
+    background: var(--surface) !important;
+    box-shadow: 0 1px 2px rgb(15 15 16 / 6%), 0 24px 64px rgb(15 15 16 / 18%);
+    animation: fiche-tiroir 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.materiel-dialog::backdrop {
-    background: #142235b3;
+html body:has(.prefa-detail-row.materiel-volet-rang:not([hidden]))::before {
+    background: rgb(15 15 16 / 16%);
+    backdrop-filter: blur(2px);
 }
 
-.materiel-dialog[open] {
-    display: flex;
-}
-
-.materiel-dialog form {
+/* Le formulaire porte le volet : il prend toute la hauteur, et le pied reste en bas. */
+.materiel-volet-rang > .pv-volet {
     display: flex;
     flex-direction: column;
-    width: 100%;
-    min-height: 0;
-    max-height: 100dvh;
-}
-
-/* ===== L'EN-TÊTE ===== */
-
-.materiel-dialog-entete {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 24px;
-    width: 100%;
-    max-width: 1180px;
-    margin: 0 auto;
-    padding: 32px 32px 18px;
-}
-
-.materiel-dialog-surtitre {
-    margin: 0 0 6px;
-    color: var(--text-muted);
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-}
-
-.materiel-dialog-entete h2 {
+    min-height: 100%;
+    max-width: none;
     margin: 0;
+    padding: 0;
+    gap: 0;
+}
+
+.materiel-volet-rang .pv-volet-section:nth-of-type(2) {
+    flex: 1;
+}
+
+.materiel-volet-rang .pv-volet-titre .materiel-volet-compte {
+    margin-left: 6px;
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.materiel-volet-rang .materiel-volet-fichier {
+    overflow: hidden;
+    max-width: 100%;
     color: var(--text);
-    font-size: 26px;
-    font-weight: 300;
-    letter-spacing: -.01em;
-    line-height: 1.15;
+    text-decoration: underline;
+    text-decoration-color: var(--border);
+    text-underline-offset: 3px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
-.materiel-dialog-sous-titre {
-    margin: 8px 0 0;
-    color: var(--text-muted);
-    font-size: 13px;
+.materiel-volet-rang .materiel-volet-fichier:hover {
+    text-decoration-color: currentColor;
 }
 
-.materiel-dialog-note {
-    margin: 6px 0 0;
-    color: var(--text-muted);
-    font-size: 12px;
+.pv-puce-echec {
+    background: color-mix(in srgb, var(--danger-texte) 12%, transparent);
+    color: var(--danger-texte);
 }
 
-.materiel-dialog-coin {
+/* Les outils de la liste, à droite de son titre : des boutons encadrés de 28 px. */
+.materiel-volet-outils {
     display: flex;
     align-items: center;
-    gap: 14px;
-    flex-shrink: 0;
+    gap: 6px;
+    flex-wrap: wrap;
 }
 
-.materiel-dialog-etat {
-    font-size: 13px;
-    white-space: nowrap;
-}
-
-.materiel-dialog .modal-close {
-    display: grid;
-    place-items: center;
-    width: var(--ctrl-sm);
-    height: var(--ctrl-sm);
-    border: 0;
-    border-radius: var(--r-sm);
-    background: transparent;
-    color: var(--text-muted);
+html .materiel-volet-rang .materiel-volet-outils button,
+html .materiel-volet-rang .materiel-volet-pied .materiel-enregistrer {
+    display: inline-flex;
+    align-items: center;
+    width: auto;
+    height: var(--h-md, 28px);
+    min-height: 0;
+    margin: 0;
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 12px;
+    box-shadow: none;
     cursor: pointer;
 }
 
-.materiel-dialog .modal-close:hover {
-    background: var(--hover);
-    color: var(--text);
+html .materiel-volet-rang .materiel-volet-pied .materiel-enregistrer {
+    height: var(--h-lg);
+    padding: 0 12px;
+    font-size: 13px;
 }
 
-.materiel-dialog .modal-close .icon {
-    width: 16px;
-    height: 16px;
+html .materiel-volet-rang .materiel-volet-outils button:hover:not(:disabled),
+html .materiel-volet-rang .materiel-volet-pied .materiel-enregistrer:hover:not(:disabled) {
+    background: var(--hover);
+}
+
+html .materiel-volet-rang .materiel-volet-outils button:disabled {
+    opacity: .5;
+    cursor: default;
+}
+
+/* Le pied tient en bas du volet pendant qu'on fait défiler quarante articles. */
+.materiel-volet-pied {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 20px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
 }
 
 /* ===== LA LISTE ===== */
-
-.materiel-dialog-corps {
-    width: 100%;
-    max-width: 1180px;
-    min-height: 0;
-    margin: 0 auto;
-    padding: 0 32px 8px;
-    overflow-y: auto;
-}
 
 .materiel-dialog-scroll {
     overflow-x: auto;
@@ -182,7 +184,7 @@
 
 .materiel-edition {
     width: 100%;
-    min-width: 760px;
+    min-width: 720px;
     table-layout: fixed;
     border-collapse: collapse;
     font-size: 13px;
@@ -194,21 +196,21 @@
     position: sticky;
     top: 0;
     z-index: 1;
-    height: var(--ligne-th);
-    padding: 10px 10px;
+    height: 32px;
+    padding: 0 10px;
     background: var(--surface);
+    border-bottom: 1px solid var(--border);
     color: var(--text-muted);
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: .04em;
+    font-size: 12px;
+    font-weight: 500;
     text-align: left;
-    text-transform: uppercase;
     white-space: nowrap;
 }
 
 /* De l'air : une ligne d'article se lit, elle ne se décrypte pas. */
 .materiel-edition td {
-    height: 46px;
+    height: 40px;
+    border-bottom: 1px solid var(--border-soft, var(--border));
     padding: 0 4px;
     vertical-align: middle;
 }
@@ -217,13 +219,13 @@
     background: var(--hover);
 }
 
-.materiel-edition th:nth-child(1) { width: 112px; }
-.materiel-edition th:nth-child(2) { width: 170px; }
+.materiel-edition th:nth-child(1) { width: 104px; }
+.materiel-edition th:nth-child(2) { width: 132px; }
 .materiel-edition th:nth-child(3) { width: auto; }
-.materiel-edition th:nth-child(4) { width: 150px; }
-.materiel-edition th:nth-child(5) { width: 76px; }
-.materiel-edition th:nth-child(6) { width: 100px; }
-.materiel-edition th:nth-child(7) { width: 40px; }
+.materiel-edition th:nth-child(4) { width: 104px; }
+.materiel-edition th:nth-child(5) { width: 68px; }
+.materiel-edition th:nth-child(6) { width: 60px; }
+.materiel-edition th:nth-child(7) { width: 32px; }
 
 /* ===== LES CASES ===== */
 
@@ -406,107 +408,20 @@
     box-shadow: inset 2px 0 0 var(--succes-texte);
 }
 
-/* ===== LE PIED ===== */
-
-.materiel-dialog-pied {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-    flex-wrap: wrap;
-    width: 100%;
-    max-width: 1180px;
-    margin: 0 auto;
-    padding: 16px 32px 24px;
-    border-top: 1px solid var(--border);
-}
-
-.materiel-dialog-pied-gauche {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-
-.materiel-tout-recu {
-    height: var(--ctrl-sm);
-    padding: 0 14px;
-    border: 1px solid var(--border);
-    border-radius: var(--r-sm);
-    background: transparent;
-    color: var(--text);
-    font: inherit;
-    font-size: 13px;
-    cursor: pointer;
-}
-
-.materiel-tout-recu:hover:not(:disabled) {
-    background: var(--hover);
-}
-
-.materiel-tout-recu:disabled {
-    opacity: .5;
-    cursor: default;
-}
-
-.materiel-dialog-outils,
-.materiel-dialog-boutons {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-
-.materiel-dialog-outils button {
-    height: var(--ctrl-sm);
-    padding: 0 14px;
-    border: 1px solid var(--border);
-    border-radius: var(--r-sm);
-    background: transparent;
-    color: var(--text);
-    font: inherit;
-    font-size: 13px;
-    cursor: pointer;
-}
-
-.materiel-dialog-outils button:hover:not(:disabled) {
-    background: var(--hover);
-}
-
-.materiel-dialog-outils button:disabled {
-    opacity: .55;
-    cursor: progress;
-}
-
-.materiel-message {
-    color: var(--text-muted);
-    font-size: 12px;
-}
-
-.materiel-dialog-boutons .materiel-fermer {
-    height: var(--ctrl-sm);
-    padding: 0 14px;
-    border: 1px solid var(--border);
-    border-radius: var(--r-sm);
-    background: transparent;
-    color: var(--text);
-    font: inherit;
-    font-size: 13px;
-    cursor: pointer;
-}
-
-.materiel-dialog-boutons .materiel-fermer:hover {
-    background: var(--hover);
-}
-
 /* Une commande validée s'ouvre en lecture : plus rien qui écrive. Le serveur refuse de
-   toute façon — ceci évite d'avoir à le lui demander. */
-/* Le sélecteur est lourd à dessein : la forme de référence des boutons de formulaire pèse
-   quatre classes, et « display: inline-flex » y revenait masquer ce « display: none ». */
-.materiel-dialog.est-figee .materiel-dialog-outils,
-.materiel-dialog.est-figee form .materiel-dialog-boutons button[type="submit"],
-.materiel-dialog.est-figee .materiel-retirer {
+   toute façon — ceci évite d'avoir à le lui demander. La réception, elle, reste : la
+   marchandise continue d'arriver après la commande. */
+html .materiel-volet-rang.est-figee .materiel-relire,
+html .materiel-volet-rang.est-figee .materiel-ajouter,
+html .materiel-volet-rang.est-figee .materiel-retirer,
+html .materiel-volet-rang.est-figee .materiel-volet-pied {
     display: none;
+}
+
+/* Les cellules d'une commande validée sont du texte : même retrait que les champs fermés
+   d'une commande qu'on corrige, pour que les colonnes ne bougent pas d'un état à l'autre. */
+.materiel-volet-rang.est-figee .materiel-edition td:not(.materiel-colonne-recu) {
+    padding: 0 10px;
 }
 
 .materiel-liste .materiel-cellule-recus {

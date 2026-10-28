@@ -507,11 +507,15 @@ function materielPointerReception(PDO $db, int $idDocument, array $pointages, in
  * Une ligne corrigée à la main n'est plus douteuse et vaut cent de confiance : c'est une
  * personne qui l'a écrite, pas le lecteur.
  *
+ * Enregistrer et valider sont deux gestes : la validation fige la commande, et elle
+ * partait avec le moindre enregistrement — garder une quantité corrigée suffisait à rendre
+ * le bon intouchable. Elle ne se pose plus que lorsqu'on la demande ($valider).
+ *
  * @param list<array<string, mixed>> $lignes
  * @return int le nombre d'articles enregistrés
  * @throws DomainException sur une saisie qu'on ne peut pas enregistrer
  */
-function materielEnregistrer(PDO $db, int $idDocument, array $lignes, int $idActeur): int
+function materielEnregistrer(PDO $db, int $idDocument, array $lignes, int $idActeur, bool $valider = false): int
 {
     // Le verrou est posé ici et non seulement dans l'action : c'est la fonction qui écrit,
     // et c'est elle qui doit refuser, quel que soit le chemin qui l'appelle un jour.
@@ -581,9 +585,11 @@ function materielEnregistrer(PDO $db, int $idDocument, array $lignes, int $idAct
                 $pointage ? ($pointage['receptionne_par'] ?? null) : null,
             ]);
         }
-        $db->prepare('UPDATE demande_materiel_documents
-            SET verifie_par = ?, date_verification = NOW() WHERE id = ?')
-            ->execute([$idActeur, $idDocument]);
+        if ($valider) {
+            $db->prepare('UPDATE demande_materiel_documents
+                SET verifie_par = ?, date_verification = NOW() WHERE id = ?')
+                ->execute([$idActeur, $idDocument]);
+        }
         $db->commit();
     } catch (Throwable $exception) {
         if ($db->inTransaction()) $db->rollBack();
