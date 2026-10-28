@@ -176,64 +176,94 @@ html .materiel-volet-rang .materiel-volet-outils button:disabled {
     background: var(--surface);
 }
 
-/* ===== LA LISTE ===== */
+/* ==========================================================================
+   LES ARTICLES : RELIRE, PUIS RECEVOIR
+   ==========================================================================
+
+   Deux vues, et le volet n'en montre qu'une : avant la validation on relit le bon, après
+   on le reçoit. « est-figee » fait la bascule. */
+
+.materiel-volet-rang .materiel-reception,
+.materiel-volet-rang.est-figee .materiel-relecture {
+    display: none;
+}
+
+.materiel-volet-rang.est-figee .materiel-reception {
+    display: block;
+}
+
+/* Les outils de la relecture n'ont rien à faire sur une commande validée, et le bouton de
+   lot de la réception rien sur une commande qu'on relit. Le compte du titre se tait quand
+   les segments le disent. */
+html .materiel-volet-rang.est-figee .materiel-relire,
+html .materiel-volet-rang.est-figee .materiel-ajouter,
+html .materiel-volet-rang.est-figee .materiel-volet-pied,
+html .materiel-volet-rang:not(.est-figee) .materiel-tout-recu,
+.materiel-volet-rang.est-figee .materiel-volet-compte {
+    display: none;
+}
+
+/* ----- Relire : le tableau du bon, case par case ----- */
 
 .materiel-dialog-scroll {
     overflow-x: auto;
 }
 
-.materiel-edition {
+html .materiel-volet-rang .materiel-edition {
     width: 100%;
-    min-width: 720px;
+    min-width: 0;
     table-layout: fixed;
     border-collapse: collapse;
     font-size: 13px;
 }
 
-/* L'en-tête tient en haut pendant qu'on fait défiler quarante lignes. Son fond suffit à
-   le détacher. */
-.materiel-edition th {
-    position: sticky;
-    top: 0;
-    z-index: 1;
+html .materiel-volet-rang .materiel-edition th {
     height: 32px;
-    padding: 0 10px;
-    background: var(--surface);
+    padding: 0 8px;
     border-bottom: 1px solid var(--border);
+    background: transparent !important;
     color: var(--text-muted);
     font-size: 12px;
     font-weight: 500;
     text-align: left;
+    vertical-align: middle;
     white-space: nowrap;
 }
 
-/* De l'air : une ligne d'article se lit, elle ne se décrypte pas. */
-.materiel-edition td {
-    height: 40px;
-    border-bottom: 1px solid var(--border-soft, var(--border));
-    padding: 0 4px;
+html .materiel-volet-rang .materiel-edition td {
+    height: 36px;
+    padding: 0 2px;
+    border-bottom: 1px solid var(--border-faint);
+    background: transparent !important;
+    color: var(--text) !important;
     vertical-align: middle;
 }
 
-.materiel-edition tbody tr:hover > td {
-    background: var(--hover);
+html .materiel-volet-rang .materiel-edition tbody tr:last-child td {
+    border-bottom: 0;
 }
 
-.materiel-edition th:nth-child(1) { width: 104px; }
-.materiel-edition th:nth-child(2) { width: 132px; }
-.materiel-edition th:nth-child(3) { width: auto; }
-.materiel-edition th:nth-child(4) { width: 104px; }
-.materiel-edition th:nth-child(5) { width: 68px; }
-.materiel-edition th:nth-child(6) { width: 60px; }
-.materiel-edition th:nth-child(7) { width: 32px; }
+html .materiel-volet-rang .materiel-edition tbody tr:hover td {
+    background: var(--ligne-survol) !important;
+}
 
-/* ===== LES CASES ===== */
+html .materiel-volet-rang .materiel-edition th:first-child {
+    padding-left: 8px;
+}
 
-/* Une case fermée est du texte : la liste se lit comme le bon dont elle sort. Elle ne
-   s'ouvre qu'au double-clic, parce que le clic simple sert à pointer la réception. */
-.materiel-edition input:not([type="checkbox"]) {
+.materiel-edition th:nth-child(1) { width: 160px; }
+.materiel-edition th:nth-child(2) { width: auto; }
+.materiel-edition th:nth-child(3) { width: 108px; }
+.materiel-edition th:nth-child(4) { width: 72px; }
+.materiel-edition th:nth-child(5) { width: 64px; }
+.materiel-edition th:nth-child(6) { width: 32px; }
+
+/* Une case fermée est du texte : la liste se lit comme le bon dont elle sort. Le texte
+   tombe à 8 px du bord, comme celui de l'en-tête. */
+html .materiel-volet-rang .materiel-edition input {
+    box-sizing: border-box;
     width: 100%;
-    height: var(--ctrl-sm);
+    height: 28px;
     padding: 0 6px;
     border: 1px solid transparent;
     border-radius: var(--r-sm);
@@ -249,7 +279,7 @@ html .materiel-volet-rang .materiel-volet-outils button:disabled {
 }
 
 /* Ouverte, elle se voit : c'est la seule case de la ligne qui porte un cadre. */
-.materiel-edition input:not([readonly]):not([type="checkbox"]) {
+html .materiel-volet-rang .materiel-edition input:not([readonly]) {
     border-color: var(--accent);
     background: var(--frame);
     cursor: text;
@@ -267,49 +297,6 @@ html .materiel-volet-rang .materiel-volet-outils button:disabled {
 
 .materiel-champ-date {
     font-variant-numeric: tabular-nums;
-}
-
-/* Une échéance passée sur un article qui n'est pas arrivé : l'ambre des « à faire »,
-   doublée du mot au survol. Un article reçu n'est jamais en retard, quelle que soit sa
-   date : il est là. */
-.materiel-edition td.est-en-retard {
-    color: var(--attente-texte);
-}
-
-.materiel-edition td.est-en-retard input {
-    color: var(--attente-texte);
-    font-weight: 600;
-}
-
-/* Le repère se pose au bord de la cellule, en absolu : à la suite du champ, qui prend
-   toute la largeur, il tombait à la ligne et gonflait le rang de quinze pixels. */
-.materiel-edition td.est-en-retard {
-    position: relative;
-}
-
-.materiel-edition td.est-en-retard input {
-    padding-right: 16px;
-}
-
-.materiel-edition td.est-en-retard::after {
-    content: "!";
-    position: absolute;
-    top: 50%;
-    right: 8px;
-    transform: translateY(-50%);
-    color: var(--attente-texte);
-    font-weight: 700;
-    pointer-events: none;
-}
-
-/* Le bouton de calendrier n'a de sens que sur une case ouverte. */
-.materiel-champ-date::-webkit-calendar-picker-indicator {
-    opacity: 0;
-    cursor: pointer;
-}
-
-.materiel-champ-date:not([readonly])::-webkit-calendar-picker-indicator {
-    opacity: .55;
 }
 
 .materiel-retirer {
@@ -341,182 +328,251 @@ html .materiel-volet-rang .materiel-volet-outils button:disabled {
     height: 14px;
 }
 
-.materiel-edition-vide {
+.materiel-edition-vide,
+.materiel-reception-vide {
     margin: 24px 0;
     color: var(--text-muted);
     font-size: 13px;
     text-align: center;
 }
 
-/* ===== LE POINTAGE DE RÉCEPTION ===== */
+/* ----- Recevoir : une liste à cocher, par livraison ----- */
 
-/* L'état se lit en toutes lettres : une case cochée ne disait pas ce qu'elle voulait dire.
-   Le bouton porte l'état courant et se retourne au clic ; un clic n'importe où sur la ligne
-   fait la même chose — on pointe un bon le document à la main.
-   C'est la seule chose qui reste possible sur une commande validée : on ne retouche pas ce
-   qui a été commandé, mais la marchandise continue d'arriver. */
-.materiel-edition-ligne {
-    cursor: pointer;
-}
-
-.materiel-colonne-recu {
-    width: 112px;
-}
-
-.materiel-recu {
-    display: inline-flex;
+/* Les segments à gauche, la recherche à droite : la barre d'outils de la liste. */
+.materiel-reception-barre {
+    display: flex;
     align-items: center;
-    gap: 7px;
-    height: var(--ctrl-xs);
-    padding: 0 10px;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    background: transparent;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+
+.materiel-segments b {
+    margin-left: 4px;
     color: var(--text-muted);
-    font: inherit;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+}
+
+.materiel-reception-recherche {
+    flex: 0 1 240px;
+}
+
+.materiel-recevoir {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+html .materiel-volet-rang .materiel-recevoir thead th {
+    height: 32px;
+    padding: 0 8px;
+    border-bottom: 1px solid var(--border);
+    background: transparent !important;
+    color: var(--text-muted) !important;
     font-size: 12px;
+    font-weight: 500;
+    text-align: left;
     white-space: nowrap;
-    cursor: pointer;
-    transition: border-color .12s ease, color .12s ease, background .12s ease;
 }
 
-.materiel-recu-point {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: currentColor;
+/* La case, la référence, la quantité et la date prennent leur largeur ; la désignation,
+   ce qu'on lit, prend le reste. */
+.materiel-recevoir .materiel-col-case {
+    width: 36px;
+    padding: 0 !important;
 }
 
-.materiel-recu:hover {
-    border-color: var(--text-muted);
-    color: var(--text);
+.materiel-recevoir .materiel-col-ref {
+    width: 1%;
+    white-space: nowrap;
 }
 
-.materiel-recu[aria-pressed="true"] {
-    border-color: var(--succes-bord);
-    background: var(--succes-fond);
-    color: var(--succes-texte);
+html .materiel-volet-rang .materiel-recevoir .materiel-col-nombre {
+    width: 1%;
+    padding-left: 16px;
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
 }
 
+/* L'en-tête d'une livraison : sa date, son retard, son compte — et de quoi la cocher en
+   entier. Plus gras que les lignes, sans bandeau ni fond, comme les groupes des listes. */
+html .materiel-volet-rang .materiel-groupe-tete th {
+    padding: 18px 0 8px;
+    border-bottom: 1px solid var(--border);
+    background: transparent !important;
+    color: var(--text) !important;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: left;
+}
 
+html .materiel-volet-rang .materiel-recevoir thead + .materiel-groupe .materiel-groupe-tete th {
+    padding-top: 12px;
+}
 
-/* Une commande validée s'ouvre en lecture : plus rien qui écrive. Le serveur refuse de
-   toute façon — ceci évite d'avoir à le lui demander. La réception, elle, reste : la
-   marchandise continue d'arriver après la commande. */
-html .materiel-volet-rang.est-figee .materiel-relire,
-html .materiel-volet-rang.est-figee .materiel-ajouter,
-html .materiel-volet-rang.est-figee .materiel-retirer,
-html .materiel-volet-rang.est-figee .materiel-volet-pied {
+.materiel-groupe-ligne {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 24px;
+}
+
+.materiel-groupe-compte {
+    margin-left: auto;
+    color: var(--text-muted);
+    font-weight: 450;
+    font-variant-numeric: tabular-nums;
+}
+
+.materiel-groupe-retard[hidden] {
     display: none;
 }
 
-/* Les cellules d'une commande validée sont du texte : même retrait que les champs fermés
-   d'une commande qu'on corrige, pour que les colonnes ne bougent pas d'un état à l'autre. */
-.materiel-volet-rang.est-figee .materiel-edition td:not(.materiel-colonne-recu) {
-    padding: 0 10px;
+/* Une livraison arrivée en entier : son titre passe en sourd, comme ses lignes. */
+html .materiel-volet-rang .materiel-groupe.est-complete .materiel-groupe-titre {
+    color: var(--text-muted);
+}
+
+html .materiel-volet-rang .materiel-groupe-tout {
+    display: inline-flex;
+    align-items: center;
+    height: var(--h-sm);
+    margin: 0;
+    padding: 0 8px;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--r-md);
+    background: var(--surface) !important;
+    color: var(--text) !important;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 450;
+    cursor: pointer;
+}
+
+html .materiel-volet-rang .materiel-groupe-tout:hover {
+    background: var(--hover) !important;
+}
+
+.materiel-groupe-tout[hidden] {
+    display: none !important;
+}
+
+/* Les lignes : 36 px, filets fins, toute la ligne se coche. */
+html .materiel-volet-rang .materiel-article td {
+    height: 36px;
+    padding: 0 8px;
+    border-bottom: 1px solid var(--border-faint);
+    background: transparent !important;
+    color: var(--text) !important;
+    vertical-align: middle;
+}
+
+.materiel-article {
+    cursor: pointer;
+}
+
+html .materiel-volet-rang .materiel-article:hover td {
+    background: var(--ligne-survol) !important;
+}
+
+/* La référence : le code qu'on retrouve sur le bon de livraison. En sourd et en chiffres
+   alignés, pour que la désignation soit ce que l'œil lit d'abord. */
+html .materiel-volet-rang .materiel-article .materiel-col-ref {
+    color: var(--text-muted) !important;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
+.materiel-unite {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+html .materiel-volet-rang .materiel-article .materiel-col-recu {
+    color: var(--text-muted) !important;
+    font-size: 12px;
+}
+
+/* Ce qui est arrivé s'efface : la liste se lit d'un coup d'œil, ce qui reste en clair est
+   ce qui manque. */
+html .materiel-volet-rang .materiel-article.est-recue td {
+    color: var(--text-muted) !important;
+}
+
+/* La case : 16 px dans une cible de 36, rayon 4 (DA, § 3). Pleine d'accent quand
+   l'article est là. */
+.materiel-case {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+}
+
+.materiel-case::before {
+    content: "";
+    grid-area: 1 / 1;
+    width: 16px;
+    height: 16px;
+    box-sizing: border-box;
+    border: 1.5px solid var(--border-fort);
+    border-radius: 4px;
+    background: var(--surface);
+    transition: background .12s ease, border-color .12s ease;
+}
+
+.materiel-case .icon {
+    grid-area: 1 / 1;
+    z-index: 1;
+    width: 12px;
+    height: 12px;
+    color: #ffffff;
+    opacity: 0;
+}
+
+.materiel-article:hover .materiel-case::before {
+    border-color: var(--text-muted);
+}
+
+.materiel-case[aria-checked="true"]::before {
+    border-color: var(--accent);
+    background: var(--accent);
+}
+
+.materiel-case[aria-checked="true"] .icon {
+    opacity: 1;
+}
+
+.materiel-case:focus-visible {
+    outline: none;
+}
+
+.materiel-case:focus-visible::before {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* Sur une tablette d'atelier, la case grandit : la ligne reste la vraie cible. */
+@media (pointer: coarse) {
+    .materiel-case::before {
+        width: 20px;
+        height: 20px;
+    }
+
+    html .materiel-volet-rang .materiel-article td {
+        height: 44px;
+    }
 }
 
 .materiel-liste .materiel-cellule-recus {
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
-}
-
-/* ==========================================================================
-   LE TABLEAU DES ARTICLES, COMME LES AUTRES TABLEAUX DE VOLET
-   ==========================================================================
-
-   La grammaire du tableau des cordons, dans le volet des soudures : en-tête de 32 px
-   en casse normale, rangs de 36 px, filets fins, survol à peine marqué. Celui-ci avait
-   ses pastilles encadrées, des rangs de 46 px teintés de vert et une largeur minimale
-   qui faisait défiler le volet de côté. */
-
-html .materiel-volet-rang .materiel-edition {
-    min-width: 0;
-    font-size: 13px;
-}
-
-html .materiel-volet-rang .materiel-edition th {
-    position: static;
-    height: 32px;
-    padding: 0 8px;
-    border-bottom: 1px solid var(--border);
-    background: transparent !important;
-    color: var(--text-muted);
-    font-size: 12px;
-    font-weight: 500;
-    vertical-align: middle;
-}
-
-html .materiel-volet-rang .materiel-edition td {
-    height: 36px;
-    padding: 0 2px;
-    border-bottom: 1px solid var(--border-faint);
-    background: transparent !important;
-    color: var(--text) !important;
-}
-
-/* Le texte d'une case fermée tombe à 8 px du bord, comme celui de l'en-tête. */
-html .materiel-volet-rang .materiel-edition input:not([type="checkbox"]) {
-    height: 28px;
-    padding: 0 6px;
-}
-
-html .materiel-volet-rang .materiel-edition tbody tr:last-child td {
-    border-bottom: 0;
-}
-
-html .materiel-volet-rang .materiel-edition tbody tr:hover td {
-    background: var(--ligne-survol) !important;
-}
-
-html .materiel-volet-rang .materiel-edition th:first-child,
-html .materiel-volet-rang .materiel-edition td:first-child {
-    padding-left: 0;
-}
-
-/* La réception : un point et un mot, comme les états des listes — pas une pastille
-   encadrée par ligne. Elle reste un bouton : c'est là qu'on la pointe. */
-html .materiel-volet-rang .materiel-recu {
-    height: 24px;
-    margin-left: -6px;
-    padding: 0 6px;
-    border: 0;
-    border-radius: var(--r-sm);
-    background: transparent;
-    color: var(--text-muted);
-    font-size: 13px;
-}
-
-html .materiel-volet-rang .materiel-recu:hover {
-    background: var(--hover);
-    color: var(--text);
-}
-
-html .materiel-volet-rang .materiel-recu[aria-pressed="true"] {
-    border: 0;
-    background: transparent;
-    color: var(--succes-texte);
-}
-
-html .materiel-volet-rang .materiel-recu[aria-pressed="true"]:hover {
-    background: var(--hover);
-}
-
-html .materiel-volet-rang .materiel-recu-point {
-    width: 6px;
-    height: 6px;
-}
-
-/* Une commande validée : du texte, au même retrait que les champs. */
-html .materiel-volet-rang.est-figee .materiel-edition td:not(.materiel-colonne-recu) {
-    padding: 0 8px;
-}
-
-
-/* Une échéance dépassée garde son ambre, champ ou texte. */
-html .materiel-volet-rang .materiel-edition td.est-en-retard,
-html .materiel-volet-rang .materiel-edition td.est-en-retard input {
-    color: var(--attente-texte) !important;
 }
 
 /* ==========================================================================

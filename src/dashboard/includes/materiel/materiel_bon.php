@@ -175,6 +175,13 @@ function materielPayload(array $document): array
             'date_livraison_lue' => !empty($ligne['date_livraison'])
                 ? prefaFormatDate($ligne['date_livraison']) : '',
             'en_retard' => materielEnRetard($ligne),
+            // L'échéance est passée, reçu ou non : c'est elle qui fait d'une livraison une
+            // livraison en retard dès qu'on y dépointe un article.
+            'echue' => materielEchue($ligne),
+            // La date de réception courte, pour la colonne « Reçu le » ; la phrase entière,
+            // avec qui l'a pointé, reste dans « recu_le ».
+            'recu_court' => !empty($ligne['recu']) && !empty($ligne['date_reception'])
+                ? substr(prefaFormatDate($ligne['date_reception']), 0, 5) : '',
             'unite' => (string) $ligne['unite'],
             'quantite' => commandeQuantite($ligne['quantite']),
             // Ce que la lecture n'a pas su rendre nettement : la fenêtre marque ces
@@ -195,7 +202,17 @@ function materielPayload(array $document): array
  */
 function materielEnRetard(array $ligne): bool
 {
-    if (empty($ligne['date_livraison']) || !empty($ligne['recu'])) return false;
+    return empty($ligne['recu']) && materielEchue($ligne);
+}
+
+/**
+ * L'échéance d'un article est passée — qu'il soit arrivé ou non.
+ *
+ * @param array<string, mixed> $ligne
+ */
+function materielEchue(array $ligne): bool
+{
+    if (empty($ligne['date_livraison'])) return false;
     $echeance = DateTimeImmutable::createFromFormat('!Y-m-d', (string) $ligne['date_livraison'],
         new DateTimeZone('Europe/Paris'));
     if (!$echeance) return false;

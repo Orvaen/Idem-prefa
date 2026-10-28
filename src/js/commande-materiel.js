@@ -119,7 +119,13 @@
         filtrer();
     });
 
-    // ------------------------------------------------------- LA FENÊTRE D'ÉDITION
+    // ---------------------------------------------------------------- LE VOLET D'UN BON
+    //
+    // Deux tâches, deux vues. Tant que la commande n'est pas validée, on la RELIT : le
+    // tableau du bon, case par case. Validée, on la REÇOIT : une liste à cocher, rangée
+    // par livraison. La feuille de style montre l'une ou l'autre selon « est-figee ».
+
+    // ----- Relire -----
 
     /** Les valeurs saisies, dans l'ordre des lignes. */
     function lignesSaisies() {
@@ -136,42 +142,6 @@
         });
     }
 
-    /** L'état de réception d'une ligne, posé en tête de celle-ci. */
-    function caseReception(rangee) {
-        const cellule = document.createElement('td');
-        cellule.className = 'materiel-colonne-recu';
-        const bouton = document.createElement('button');
-        bouton.type = 'button';
-        // « bouton-discret » : le marqueur qui sort de la forme de référence des boutons
-        // de formulaire, qui sinon les peint tous en bleu plein — reçu comme pas reçu.
-        bouton.className = 'materiel-recu bouton-discret';
-        bouton.setAttribute('aria-pressed', 'false');
-        bouton.innerHTML = '<span class="materiel-recu-point" aria-hidden="true"></span>'
-            + '<span class="materiel-recu-mot">Pas reçu</span>';
-        cellule.appendChild(bouton);
-        rangee.appendChild(cellule);
-        return cellule;
-    }
-
-    /** Une ligne d'une commande validée : du texte, et rien qui se saisisse — sauf sa case. */
-    function ajouterLigneFigee(ligne) {
-        const rangee = document.createElement('tr');
-        rangee.className = 'materiel-edition-ligne';
-        caseReception(rangee);
-        // La date se lit à la française : le format de la base est celui du champ de
-        // saisie, et une commande validée n'en a pas.
-        for (const champ of ['reference', 'designation', 'date_livraison_lue', 'quantite', 'unite']) {
-            const cellule = document.createElement('td');
-            cellule.textContent = ligne[champ] || '—';
-            if (champ === 'quantite') cellule.className = 'materiel-champ-nombre';
-            rangee.appendChild(cellule);
-        }
-        rangee.appendChild(document.createElement('td'));
-        dialogue().querySelector('.materiel-edition-lignes').appendChild(rangee);
-        marquerRetard(rangee, ligne.en_retard);
-        return rangee;
-    }
-
     function ajouterLigne(ligne, douteuse) {
         const corps = dialogue().querySelector('.materiel-edition-lignes');
         const gabarit = document.getElementById('materiel-gabarit');
@@ -183,6 +153,7 @@
             rangee.title = 'Lecture incertaine : reconnaissance peu sûre, ou quantité en désaccord avec le total de la ligne.';
         }
         if (ligne) {
+            if (ligne.id) rangee.dataset.ligne = ligne.id;
             for (const [champ, valeur] of Object.entries(ligne)) {
                 const champSaisie = rangee.querySelector(`[data-champ="${champ}"]`);
                 if (champSaisie) champSaisie.value = valeur ?? '';
@@ -191,37 +162,9 @@
             // la base, et un champ de type date suivait la langue du navigateur.
             const date = rangee.querySelector('[data-champ="date_livraison"]');
             if (date) date.value = ligne.date_livraison_lue || '';
-            marquerRetard(rangee, ligne.en_retard);
         }
         corps.appendChild(neuve);
         return rangee;
-    }
-
-    /** Une échéance passée sur un article qui n'est pas arrivé se signale. */
-    function marquerRetard(rangee, enRetard) {
-        const cellule = rangee.querySelector('[data-champ="date_livraison"]')?.closest('td')
-            || rangee.children[3];
-        if (!cellule) return;
-        cellule.classList.toggle('est-en-retard', !!enRetard);
-        if (enRetard) cellule.title = 'Échéance dépassée : cet article n’est pas arrivé.';
-        else cellule.removeAttribute('title');
-    }
-
-    /** Dit l'état de réception d'une ligne, en toutes lettres. */
-    function direReception(rangee, recu, quand) {
-        const bouton = rangee.querySelector('.materiel-recu');
-        if (!bouton) return;
-        bouton.setAttribute('aria-pressed', String(recu));
-        bouton.querySelector('.materiel-recu-mot').textContent = recu ? 'Reçu' : 'Pas reçu';
-        bouton.title = recu && quand ? quand : (recu ? 'Cliquer pour revenir à « Pas reçu »' : 'Cliquer pour marquer reçu');
-        rangee.classList.toggle('est-recue', recu);
-    }
-
-    /** Pose sur une rangée ce qui la rattache à la base : son identifiant et sa réception. */
-    function poserReception(rangee, ligne) {
-        if (!ligne || !ligne.id) return;
-        rangee.dataset.ligne = ligne.id;
-        direReception(rangee, !!ligne.recu, ligne.recu_le);
     }
 
     function compterLignes() {
@@ -230,6 +173,336 @@
         fenetre.querySelector('.materiel-edition-vide').hidden = nombre > 0;
         fenetre.querySelector('.materiel-dialog-scroll').hidden = nombre === 0;
     }
+
+    // ----- Recevoir -----
+
+    const sansAccents = texte => String(texte || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+    /** Une cellule de texte, sans passer par innerHTML : une désignation peut tout porter. */
+    function cellule(classe, texte) {
+        const td = document.createElement('td');
+        if (classe) td.className = classe;
+        if (texte !== undefined) td.textContent = texte;
+        return td;
+    }
+
+    /** « 13 PCE » : le nombre en clair, l'unité en sourd — une seule colonne, pas deux. */
+    function celluleQuantite(ligne) {
+        const td = cellule('materiel-col-nombre');
+        const nombre = document.createElement('span');
+        nombre.textContent = ligne.quantite;
+        const unite = document.createElement('span');
+        unite.className = 'materiel-unite';
+        unite.textContent = ' ' + (ligne.unite || 'u');
+        td.append(nombre, unite);
+        return td;
+    }
+
+    function rangeeReception(ligne) {
+        const tr = document.createElement('tr');
+        tr.className = 'materiel-article';
+        tr.dataset.ligne = ligne.id;
+        tr.dataset.cherche = sansAccents((ligne.reference || '') + ' ' + ligne.designation);
+
+        // La case : un vrai rôle de case à cocher, que l'espace coche au clavier. Toute la
+        // ligne la coche aussi — c'est une liste à cocher, et sur une tablette d'atelier la
+        // ligne est une cible, la case de seize pixels n'en est pas une.
+        const caseTd = cellule('materiel-col-case');
+        const bouton = document.createElement('button');
+        bouton.type = 'button';
+        bouton.className = 'materiel-case';
+        bouton.setAttribute('role', 'checkbox');
+        bouton.setAttribute('aria-label', 'Reçu : ' + ligne.designation);
+        bouton.innerHTML = '<svg class="icon" aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m3.5 8.5 3 3 6-6.5" /></svg>';
+        caseTd.appendChild(bouton);
+
+        tr.append(
+            caseTd,
+            cellule('materiel-col-ref', ligne.reference || '—'),
+            cellule('materiel-col-nom', ligne.designation),
+            celluleQuantite(ligne),
+            cellule('materiel-col-nombre materiel-col-recu', ''),
+        );
+        dire(tr, !!ligne.recu, ligne.recu_court, ligne.recu_le);
+        return tr;
+    }
+
+    /** L'état d'une ligne : sa case, son ton, et la date d'arrivée. */
+    function dire(tr, recu, court, phrase) {
+        tr.classList.toggle('est-recue', recu);
+        const bouton = tr.querySelector('.materiel-case');
+        bouton.setAttribute('aria-checked', String(recu));
+        const quand = tr.querySelector('.materiel-col-recu');
+        quand.textContent = recu ? (court || '') : '';
+        tr.title = recu ? (phrase || 'Reçu') : '';
+    }
+
+    /** Aujourd'hui, au format de la colonne : la case vient d'être cochée ici même. */
+    function aujourdhui() {
+        const maintenant = new Date();
+        return String(maintenant.getDate()).padStart(2, '0') + '/' + String(maintenant.getMonth() + 1).padStart(2, '0');
+    }
+
+    /**
+     * La liste à cocher : un groupe par date de livraison, dans l'ordre où elles arrivent.
+     * La date se lit une fois, en tête de son groupe, au lieu de seize fois dans une
+     * colonne ; et « en retard » se dit une fois aussi, sur la livraison qui l'est.
+     */
+    function construireReception(bon) {
+        const table = dialogue().querySelector('.materiel-recevoir');
+        table.querySelectorAll('tbody').forEach(corps => corps.remove());
+
+        const groupes = new Map();
+        (bon.lignes || []).forEach(ligne => {
+            const cle = ligne.date_livraison || '';
+            if (!groupes.has(cle)) groupes.set(cle, { date: ligne.date_livraison_lue, lignes: [] });
+            groupes.get(cle).lignes.push(ligne);
+        });
+        // Les dates d'abord, dans l'ordre ; les articles sans date à la fin.
+        const cles = [...groupes.keys()].sort((x, y) => (x === '') - (y === '') || x.localeCompare(y));
+
+        cles.forEach(cle => {
+            const groupe = groupes.get(cle);
+            const corps = document.createElement('tbody');
+            corps.className = 'materiel-groupe';
+            corps.dataset.echue = groupe.lignes.some(l => l.echue) ? '1' : '';
+
+            const tete = document.createElement('tr');
+            tete.className = 'materiel-groupe-tete';
+            const th = document.createElement('th');
+            th.colSpan = 5;
+            th.scope = 'rowgroup';
+            th.innerHTML = '<div class="materiel-groupe-ligne">'
+                + '<span class="materiel-groupe-titre"></span>'
+                + '<span class="pv-puce pv-puce-a_faire materiel-groupe-retard" hidden>En retard</span>'
+                + '<span class="materiel-groupe-compte"></span>'
+                + '<button type="button" class="materiel-groupe-tout" hidden title="Cocher tous les articles de cette livraison">Marquer reçue</button>'
+                + '</div>';
+            th.querySelector('.materiel-groupe-titre').textContent = cle
+                ? 'Livraison prévue le ' + groupe.date
+                : 'Sans date de livraison';
+            tete.appendChild(th);
+            corps.appendChild(tete);
+
+            groupe.lignes.forEach(ligne => corps.appendChild(rangeeReception(ligne)));
+            table.appendChild(corps);
+        });
+
+        majReception();
+    }
+
+    /**
+     * Tout ce qui se compte se recompte ici, à partir des lignes : les segments, chaque
+     * livraison, son retard, et le bouton de lot. Rien n'est tenu à part — une seconde
+     * vérité finirait par contredire la première.
+     */
+    function majReception() {
+        const volet = dialogue();
+        const zone = volet.querySelector('.materiel-reception');
+        const lignes = [...zone.querySelectorAll('.materiel-article')];
+        const recues = lignes.filter(tr => tr.classList.contains('est-recue')).length;
+
+        zone.querySelector('[data-compte="tous"]').textContent = lignes.length;
+        zone.querySelector('[data-compte="attendu"]').textContent = lignes.length - recues;
+        zone.querySelector('[data-compte="recu"]').textContent = recues;
+
+        const groupes = [...zone.querySelectorAll('.materiel-groupe')];
+        groupes.forEach(corps => {
+            const siennes = [...corps.querySelectorAll('.materiel-article')];
+            const faites = siennes.filter(tr => tr.classList.contains('est-recue')).length;
+            const attendues = siennes.length - faites;
+            corps.querySelector('.materiel-groupe-compte').textContent =
+                faites + ' / ' + siennes.length + (siennes.length > 1 ? ' reçus' : ' reçu');
+            // En retard : l'échéance est passée ET il manque encore quelque chose.
+            corps.querySelector('.materiel-groupe-retard').hidden = !(corps.dataset.echue && attendues > 0);
+            // Cocher une livraison entière n'a de sens que s'il y en a plusieurs : avec une
+            // seule, c'est le bouton du haut.
+            corps.querySelector('.materiel-groupe-tout').hidden = groupes.length < 2 || attendues === 0;
+            corps.classList.toggle('est-complete', attendues === 0);
+        });
+
+        const tout = volet.querySelector('.materiel-tout-recu');
+        tout.textContent = lignes.length && recues === lignes.length ? 'Tout marquer non reçu' : 'Tout marquer reçu';
+        tout.disabled = lignes.length === 0;
+
+        filtrerReception();
+    }
+
+    /** Le segment et la recherche : on cache les lignes, puis les livraisons vidées. */
+    function filtrerReception() {
+        const zone = dialogue().querySelector('.materiel-reception');
+        const vue = zone.querySelector('input[name="materiel-vue"]:checked')?.value || '';
+        const cherche = sansAccents(zone.querySelector('.materiel-reception-recherche input').value.trim());
+
+        let visibles = 0;
+        zone.querySelectorAll('.materiel-groupe').forEach(corps => {
+            let dansLeGroupe = 0;
+            corps.querySelectorAll('.materiel-article').forEach(tr => {
+                const recue = tr.classList.contains('est-recue');
+                const garde = (!vue || (vue === 'recu') === recue)
+                    && (!cherche || tr.dataset.cherche.includes(cherche));
+                tr.hidden = !garde;
+                if (garde) dansLeGroupe++;
+            });
+            corps.hidden = dansLeGroupe === 0;
+            visibles += dansLeGroupe;
+        });
+
+        const total = zone.querySelectorAll('.materiel-article').length;
+        const vide = zone.querySelector('.materiel-reception-vide');
+        vide.hidden = visibles > 0;
+        vide.textContent = !total ? 'Cette commande ne porte aucun article.'
+            : cherche ? 'Aucun article ne correspond à cette recherche.'
+            : vue === 'attendu' ? 'Tout est arrivé : il ne reste rien à recevoir.'
+            : 'Rien n’est encore arrivé.';
+        zone.querySelector('.materiel-recevoir thead').hidden = visibles === 0;
+    }
+
+    $(document).on('change', '.materiel-reception input[name="materiel-vue"]', filtrerReception);
+    $(document).on('input', '.materiel-reception-recherche input', filtrerReception);
+
+    // ----- Le pointage -----
+    //
+    // Cocher déclare l'article reçu. Le pointage part tout seul, groupé : on coche rarement
+    // une ligne isolée, et un bouton « enregistrer » de plus ferait hésiter sur ce qu'on
+    // enregistre. Décocher se fait de la même façon, et efface qui et quand.
+
+    let aPointer = {};
+    let minuteur = null;
+
+    function envoyerPointage() {
+        const fenetre = dialogue();
+        const id = fenetre.querySelector('[name="document"]').value;
+        const lot = aPointer;
+        aPointer = {};
+        if (!id || !Object.keys(lot).length) return;
+
+        const mot = fenetre.querySelector('.materiel-message');
+        $.ajax({
+            url: 'actions/receptionner_bon_materiel.php',
+            method: 'POST',
+            data: {
+                csrf: fenetre.querySelector('[name="csrf"]').value,
+                document: id,
+                lignes: JSON.stringify(lot),
+            },
+            dataType: 'json',
+        })
+            .done(reponse => {
+                rafraichirRang(reponse.document);
+                poserEntete(reponse.document);
+                // Ce que le serveur a retenu fait foi — qui a pointé, et quand. Les lignes
+                // qu'on est en train de recocher gardent ce qu'on vient d'y faire.
+                (reponse.document.lignes || []).forEach(ligne => {
+                    if (ligne.id in aPointer) return;
+                    const tr = fenetre.querySelector('.materiel-article[data-ligne="' + ligne.id + '"]');
+                    if (tr) dire(tr, !!ligne.recu, ligne.recu_court, ligne.recu_le);
+                });
+                majReception();
+            })
+            .fail(xhr => {
+                // Le pointage n'est pas passé : on le dit, et l'écran revient à ce que le
+                // serveur sait — rouvrir le bon le relira.
+                mot.textContent = xhr.responseJSON?.message || 'Pointage impossible. Réessayez.';
+            });
+    }
+
+    function pointer(tr, recu) {
+        const id = tr.dataset.ligne;
+        if (!id) return;
+        dire(tr, recu, recu ? aujourdhui() : '', recu ? 'Reçu aujourd’hui' : '');
+        aPointer[id] = recu;
+        clearTimeout(minuteur);
+        minuteur = setTimeout(envoyerPointage, 400);
+    }
+
+    // Toute la ligne coche — sauf quand on vient d'y sélectionner du texte, pour copier
+    // une référence : ce glisser-là n'est pas un pointage.
+    $(document).on('click', '.materiel-article', function (event) {
+        if (!event.target.closest('.materiel-case') && String(window.getSelection() || '').trim()) return;
+        pointer(this, !this.classList.contains('est-recue'));
+        majReception();
+    });
+
+    $(document).on('click', '.materiel-groupe-tout', function () {
+        this.closest('.materiel-groupe').querySelectorAll('.materiel-article:not(.est-recue)')
+            .forEach(tr => pointer(tr, true));
+        majReception();
+    });
+
+    $(document).on('click', '.materiel-tout-recu', function () {
+        const lignes = [...dialogue().querySelectorAll('.materiel-article')];
+        const recu = !lignes.every(tr => tr.classList.contains('est-recue'));
+        // Tout décocher efface les dates de réception de toute la commande : on le
+        // demande avant. Tout cocher se défait ligne par ligne, sans perte.
+        if (!recu && !window.confirm('Marquer toute la commande comme non reçue ? Les dates de réception seront effacées.')) return;
+        lignes.forEach(tr => {
+            if (tr.classList.contains('est-recue') !== recu) pointer(tr, recu);
+        });
+        majReception();
+    });
+
+    // ----- Relire : les cases s'ouvrent au clic -----
+    //
+    // Une case fermée est du texte : la liste se lit comme le bon dont elle sort. Le clic
+    // ouvre la case qu'on vise ; on la quitte, elle se referme.
+    function ouvrirCase(td) {
+        const champ = td.querySelector('.materiel-champ[readonly]');
+        if (!champ) return false;
+        champ.readOnly = false;
+        champ.focus();
+        if (champ.type !== 'date') champ.select();
+        return true;
+    }
+
+    function fermerCases(sauf) {
+        dialogue().querySelectorAll('.materiel-champ:not([readonly])').forEach(champ => {
+            if (champ !== sauf) champ.readOnly = true;
+        });
+    }
+
+    $(document).on('click', '.materiel-edition-ligne td', function (event) {
+        if (event.target.closest('button, label, a')) return;
+        if (event.target.closest('.materiel-champ:not([readonly])')) return;
+        fermerCases(null);
+        ouvrirCase(this);
+    });
+
+    // Entrée ou Échap valent sortie : il n'y a rien à confirmer ligne par ligne, c'est
+    // « Enregistrer » qui écrit.
+    $(document).on('blur', '.materiel-champ', function () {
+        this.readOnly = true;
+    });
+
+    $(document).on('keydown', '.materiel-champ', function (event) {
+        if (event.key !== 'Enter' && event.key !== 'Escape') return;
+        event.preventDefault();
+        this.readOnly = true;
+        this.blur();
+    });
+
+    $(document).on('click', '.materiel-ajouter', function () {
+        const rangee = ajouterLigne(null, false);
+        compterLignes();
+        // Elle est vide : inutile de cliquer encore pour commencer à la remplir.
+        const champ = rangee.querySelector('.materiel-champ');
+        if (champ) {
+            champ.readOnly = false;
+            champ.focus();
+        }
+    });
+
+    $(document).on('click', '.materiel-retirer', function () {
+        this.closest('.materiel-edition-ligne').remove();
+        compterLignes();
+    });
+
+    // Une ligne qu'on vient de corriger n'est plus celle dont la lecture doutait.
+    $(document).on('input', '.materiel-champ', function () {
+        this.closest('.materiel-edition-ligne').removeAttribute('title');
+    });
+
+    // ----- L'en-tête et l'ouverture -----
 
     /** Les puces de la maison, par état du bon. */
     const PUCES = {a_lire: 'pv-puce-sans_objet', a_verifier: 'pv-puce-a_faire', verifie: 'pv-puce-fait', echec: 'pv-puce-echec'};
@@ -268,12 +541,37 @@
         note.textContent = noteDeLecture(bon);
         note.hidden = note.textContent === '';
 
-        // Une commande validée ne se modifie plus : le volet s'ouvre en lecture, sans
-        // champ ni bouton d'écriture. La feuille de style se charge de les retirer.
+        // Validée, la commande se reçoit ; avant, elle se relit. La feuille de style montre
+        // la vue qui va avec, et retire ce qui écrit dans la commande.
         volet.classList.toggle('est-figee', !!bon.fige);
     }
 
-    /** Remplit la fenêtre d'un bon et l'ouvre. */
+    /**
+     * Ce qu'il reste à dire quand la pastille ne suffit pas : ce qu'on attend de vous, ou
+     * pourquoi la lecture a échoué.
+     */
+    function noteDeLecture(bon) {
+        if (bon.etat === 'a_lire') return 'Lisez le bon, ou saisissez ses articles à la main.';
+        if (bon.etat === 'a_verifier') return 'Relisez les articles et corrigez-les si besoin, puis validez la commande. La réception se pointe une fois la commande validée.';
+        if (bon.etat === 'echec') return bon.resume;
+        // Validée : qui l'a validée et quand, c'est ce qui la rend intouchable.
+        if (bon.fige) return bon.resume + '. Cochez les articles à mesure qu’ils arrivent.';
+        return '';
+    }
+
+    /** Les articles du bon, dans la vue qui va avec son état. */
+    function remplirArticles(bon) {
+        const volet = dialogue();
+        volet.querySelector('.materiel-edition-lignes').innerHTML = '';
+        if (bon.fige) {
+            construireReception(bon);
+        } else {
+            (bon.lignes || []).forEach(l => ajouterLigne(l, l.douteuse));
+            compterLignes();
+        }
+    }
+
+    /** Remplit le volet d'un bon et l'ouvre. */
     function ouvrir(id) {
         const ligne = rang(id);
         if (!ligne) return;
@@ -281,157 +579,18 @@
         const fenetre = dialogue();
 
         fenetre.querySelector('[name="document"]').value = id;
-        poserEntete(bon);
         fenetre.querySelector('.materiel-message').textContent = '';
-
-        fenetre.querySelector('.materiel-edition-lignes').innerHTML = '';
-        (bon.lignes || []).forEach(l => {
-            poserReception(bon.fige ? ajouterLigneFigee(l) : ajouterLigne(l, l.douteuse), l);
-        });
-        compterLignes();
-        majCaseTout();
+        // Chaque bon s'ouvre sur tous ses articles, sans la recherche du précédent.
+        fenetre.querySelector('input[name="materiel-vue"][value=""]').checked = true;
+        fenetre.querySelector('.materiel-reception-recherche input').value = '';
+        poserEntete(bon);
+        remplirArticles(bon);
 
         // Un seul volet à la fois, comme partout.
         document.querySelectorAll('.prefa-detail-row:not([hidden])').forEach(v => { if (v !== fenetre) v.hidden = true; });
         fenetre.hidden = false;
         fenetre.scrollTop = 0;
     }
-
-    /**
-     * Ce qu'il reste à dire quand la pastille ne suffit pas : ce qu'on attend de vous, ou
-     * pourquoi la lecture a échoué. Devant une liste lue ou vérifiée, rien.
-     */
-    function noteDeLecture(bon) {
-        if (bon.etat === 'a_lire') return 'Lisez le bon, ou saisissez ses articles à la main.';
-        if (bon.etat === 'a_verifier') return 'Relisez les articles et corrigez-les si besoin, puis validez la commande. Une fois validée, elle ne se modifie plus.';
-        if (bon.etat === 'echec') return bon.resume;
-        // Sur une commande validée, qui l'a validée et quand : c'est ce qui la rend intouchable.
-        if (bon.fige) return bon.resume + '. Seule la réception se pointe encore.';
-        return '';
-    }
-
-    // ---------------------------------------------------- LA RÉCEPTION
-    //
-    // Cocher une ligne la déclare reçue. Le pointage part tout seul, groupé : on coche
-    // rarement une ligne isolée, et un bouton « enregistrer » de plus dans une fenêtre
-    // qui en a déjà un pour la commande ferait hésiter sur ce qu'on enregistre.
-
-    let aPointer = {};
-    let minuteur = null;
-
-    const estRecue = rangee => rangee.classList.contains('est-recue');
-
-    /** Le bouton de lot dit ce qu'il va faire, pas ce qui est. */
-    function majCaseTout() {
-        const fenetre = dialogue();
-        const lignes = [...fenetre.querySelectorAll('.materiel-edition-ligne')];
-        const bouton = fenetre.querySelector('.materiel-tout-recu');
-        if (!bouton) return;
-        const toutes = lignes.length > 0 && lignes.every(estRecue);
-        bouton.textContent = toutes ? 'Tout marquer non reçu' : 'Tout marquer reçu';
-        bouton.disabled = lignes.length === 0;
-    }
-
-    function envoyerPointage() {
-        const fenetre = dialogue();
-        const id = fenetre.querySelector('[name="document"]').value;
-        const lot = aPointer;
-        aPointer = {};
-        if (!id || !Object.keys(lot).length) return;
-
-        const mot = fenetre.querySelector('.materiel-message');
-        mot.textContent = 'Pointage…';
-
-        $.ajax({
-            url: 'actions/receptionner_bon_materiel.php',
-            method: 'POST',
-            data: {
-                csrf: fenetre.querySelector('[name="csrf"]').value,
-                document: id,
-                lignes: JSON.stringify(lot),
-            },
-            dataType: 'json',
-        })
-            .done(reponse => {
-                mot.textContent = reponse.message || '';
-                rafraichirRang(reponse.document);
-                // Le haut de la fenêtre compte les reçus : sans cela il gardait le compte
-                // d'avant le pointage, et contredisait les lignes qu'on venait de changer.
-                poserEntete(reponse.document);
-            })
-            .fail(xhr => {
-                mot.textContent = xhr.responseJSON?.message || 'Pointage impossible. Réessayez.';
-            });
-    }
-
-    function pointer(rangee, recu) {
-        const id = rangee.dataset.ligne;
-        if (!id) return;
-        direReception(rangee, recu, '');
-        // Un article arrivé n'est plus en retard, quelle que soit son échéance.
-        if (recu) marquerRetard(rangee, false);
-        aPointer[id] = recu;
-        clearTimeout(minuteur);
-        minuteur = setTimeout(envoyerPointage, 400);
-    }
-
-    $(document).on('click', '.materiel-recu', function () {
-        const rangee = this.closest('.materiel-edition-ligne');
-        pointer(rangee, !estRecue(rangee));
-        majCaseTout();
-    });
-
-    $(document).on('click', '.materiel-tout-recu', function () {
-        const lignes = [...dialogue().querySelectorAll('.materiel-edition-ligne')];
-        const recu = !lignes.every(estRecue);
-        lignes.forEach(r => pointer(r, recu));
-        majCaseTout();
-    });
-
-    // La réception ne se pointe que par son bouton, dans la première colonne. Un clic sur
-    // la ligne la cochait : viser une case pour lire une quantité, ou cliquer à côté,
-    // suffisait à déclarer un article arrivé — et le pointage part au serveur de
-    // lui-même, « Annuler » ne le défait pas. Un bon de trente articles se pointait ainsi
-    // sans qu'on s'en aperçoive.
-    //
-    // Le clic est donc rendu à ce qu'il fait partout ailleurs : il ouvre la case qu'on
-    // vise. Il fallait un double-clic pour cela, le temps d'écarter le pointage.
-    function ouvrirCase(cellule) {
-        const champ = cellule.querySelector('.materiel-champ[readonly]');
-        if (!champ) return false;
-        champ.readOnly = false;
-        champ.focus();
-        if (champ.type !== 'date') champ.select();
-        return true;
-    }
-
-    function fermerCases(sauf) {
-        dialogue().querySelectorAll('.materiel-champ:not([readonly])').forEach(champ => {
-            if (champ !== sauf) champ.readOnly = true;
-        });
-    }
-
-    $(document).on('click', '.materiel-edition-ligne td', function (event) {
-        // Le bouton de réception et les autres commandes gardent leur propre geste, et une
-        // case déjà ouverte n'est pas un endroit où l'on clique pour l'ouvrir.
-        if (event.target.closest('.materiel-colonne-recu, button, label, a')) return;
-        if (event.target.closest('.materiel-champ:not([readonly])')) return;
-        fermerCases(null);
-        ouvrirCase(this);
-    });
-
-    // Une case se referme dès qu'on la quitte, et Entrée ou Échap valent sortie : il n'y a
-    // rien à confirmer ligne par ligne, c'est « Enregistrer » qui écrit.
-    $(document).on('blur', '.materiel-champ', function () {
-        this.readOnly = true;
-    });
-
-    $(document).on('keydown', '.materiel-champ', function (event) {
-        if (event.key !== 'Enter' && event.key !== 'Escape') return;
-        event.preventDefault();
-        this.readOnly = true;
-        this.blur();
-    });
 
     $(document).on('click', '.materiel-ouvrir', function () {
         ouvrir(this.dataset.document);
@@ -450,27 +609,6 @@
             ouvrir(id);
         }, 50);
         setTimeout(() => clearInterval(attente), 3000);
-    });
-
-    $(document).on('click', '.materiel-ajouter', function () {
-        const rangee = ajouterLigne(null, false);
-        compterLignes();
-        // Elle est vide : inutile de demander un double-clic pour commencer à la remplir.
-        const champ = rangee.querySelector('.materiel-champ');
-        if (champ) {
-            champ.readOnly = false;
-            champ.focus();
-        }
-    });
-
-    $(document).on('click', '.materiel-retirer', function () {
-        this.closest('.materiel-edition-ligne').remove();
-        compterLignes();
-    });
-
-    // Une ligne qu'on vient de corriger n'est plus celle dont la lecture doutait.
-    $(document).on('input', '.materiel-champ', function () {
-        this.closest('.materiel-edition-ligne').removeAttribute('title');
     });
 
     // ------------------------------------------------- LIRE, ET ENREGISTRER
@@ -547,14 +685,8 @@
             csrf: fenetre.querySelector('[name="csrf"]').value,
             document: id,
         }, this, reponse => {
-            fenetre.querySelector('.materiel-edition-lignes').innerHTML = '';
-            // L'identifiant de chaque article lu se pose aussi : sans lui, le bouton de
-            // réception des lignes qu'on venait de lire ne faisait rien jusqu'à la
-            // réouverture du bon.
-            (reponse.document.lignes || []).forEach(l => poserReception(ajouterLigne(l, l.douteuse), l));
-            compterLignes();
-            majCaseTout();
             poserEntete(reponse.document);
+            remplirArticles(reponse.document);
         });
     });
 
@@ -573,14 +705,9 @@
             valider: valider ? '1' : '0',
         }, bouton, reponse => {
             // Les lignes sont réécrites côté serveur : on reprend les siennes, avec leurs
-            // nouveaux identifiants — le pointage de réception en a besoin.
-            fenetre.querySelector('.materiel-edition-lignes').innerHTML = '';
-            (reponse.document.lignes || []).forEach(l => {
-                poserReception(reponse.document.fige ? ajouterLigneFigee(l) : ajouterLigne(l, false), l);
-            });
-            compterLignes();
-            majCaseTout();
+            // nouveaux identifiants. Validée, la commande passe d'elle-même à la réception.
             poserEntete(reponse.document);
+            remplirArticles(reponse.document);
         });
     });
 })();

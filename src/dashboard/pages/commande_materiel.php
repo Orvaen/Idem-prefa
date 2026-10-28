@@ -239,7 +239,13 @@ $etatsManque = manquesEtats();
                 <p class="pv-volet-note materiel-volet-note" role="status" aria-live="polite" hidden></p>
             </section>
 
-            <section class="pv-volet-section">
+            <?php // Les articles servent deux tâches qui ne se ressemblent pas, et le volet
+                  // les sépare. Avant la validation, on RELIT : le tableau du bon, dans son
+                  // ordre, case par case contre le PDF. Après, on REÇOIT : une liste à cocher,
+                  // rangée par livraison, où ce qui manque ressort et ce qui est arrivé
+                  // s'efface. Un seul tableau faisait les deux — on y pointait des réceptions
+                  // sur une commande pas encore validée, et la date se répétait seize fois. ?>
+            <section class="pv-volet-section materiel-articles">
                 <div class="pv-volet-titre-rang">
                     <h3 class="pv-volet-titre">Articles <span class="materiel-volet-compte"></span></h3>
                     <div class="materiel-volet-outils">
@@ -249,25 +255,58 @@ $etatsManque = manquesEtats();
                     </div>
                 </div>
 
-                <div class="materiel-dialog-scroll">
-                    <table class="materiel-edition">
+                <?php // ----- Relire : le bon tel qu'il est imprimé ----- ?>
+                <div class="materiel-relecture">
+                    <div class="materiel-dialog-scroll">
+                        <table class="materiel-edition">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Référence</th>
+                                    <th scope="col">Désignation</th>
+                                    <th scope="col">Livraison</th>
+                                    <th scope="col" class="materiel-champ-nombre">Qté</th>
+                                    <th scope="col">Unité</th>
+                                    <th scope="col"><span class="atelier-sr-only">Retirer</span></th>
+                                </tr>
+                            </thead>
+                            <tbody class="materiel-edition-lignes"></tbody>
+                        </table>
+                    </div>
+                    <p class="materiel-edition-vide" hidden>Aucun article. Lisez le bon déposé, ou ajoutez-les à la main.</p>
+                </div>
+
+                <?php // ----- Recevoir : une liste à cocher, par livraison ----- ?>
+                <div class="materiel-reception">
+                    <div class="materiel-reception-barre">
+                        <?php // Le choix en trois segments, comme l'état d'un PV : de vrais boutons
+                              // radio, que les flèches du clavier parcourent. ?>
+                        <div class="pv-segments materiel-segments" role="radiogroup" aria-label="Articles à montrer">
+                            <label><input type="radio" name="materiel-vue" value="" checked><span>Tous <b data-compte="tous">0</b></span></label>
+                            <label><input type="radio" name="materiel-vue" value="attendu"><span>À recevoir <b data-compte="attendu">0</b></span></label>
+                            <label><input type="radio" name="materiel-vue" value="recu"><span>Reçus <b data-compte="recu">0</b></span></label>
+                        </div>
+                        <?php // Le bon de livraison en main, on cherche sa ligne : par la référence,
+                              // qui est imprimée sur les deux papiers. ?>
+                        <div class="filtres-recherche materiel-reception-recherche">
+                            <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+                            <input type="search" autocomplete="off" aria-label="Rechercher un article" placeholder="Référence, désignation…">
+                        </div>
+                    </div>
+
+                    <table class="materiel-recevoir">
                         <thead>
                             <tr>
-                                <?php // L'état de réception se lit en toutes lettres : une case cochée
-                                      // ne disait pas ce qu'elle voulait dire. ?>
-                                <th scope="col" class="materiel-colonne-recu">Réception</th>
-                                <th scope="col">Référence</th>
+                                <th scope="col" class="materiel-col-case"><span class="atelier-sr-only">Reçu</span></th>
+                                <th scope="col" class="materiel-col-ref">Référence</th>
                                 <th scope="col">Désignation</th>
-                                <th scope="col">Livraison</th>
-                                <th scope="col" class="materiel-champ-nombre">Qté</th>
-                                <th scope="col">Unité</th>
-                                <th scope="col"><span class="atelier-sr-only">Retirer</span></th>
+                                <th scope="col" class="materiel-col-nombre">Qté</th>
+                                <th scope="col" class="materiel-col-nombre">Reçu le</th>
                             </tr>
                         </thead>
-                        <tbody class="materiel-edition-lignes"></tbody>
+                        <?php // Un <tbody> par livraison, posé par le script. ?>
                     </table>
+                    <p class="materiel-reception-vide" hidden></p>
                 </div>
-                <p class="materiel-edition-vide" hidden>Aucun article. Lisez le bon déposé, ou ajoutez-les à la main.</p>
             </section>
 
             <?php // Deux gestes, et non plus un : « Enregistrer » validait la commande, et une
@@ -287,16 +326,9 @@ $etatsManque = manquesEtats();
          ferait diverger au premier champ ajouté. -->
     <template id="materiel-gabarit">
         <tr class="materiel-edition-ligne">
-            <td class="materiel-colonne-recu">
-                <button type="button" class="materiel-recu bouton-discret" aria-pressed="false">
-                    <span class="materiel-recu-point" aria-hidden="true"></span>
-                    <span class="materiel-recu-mot">Pas reçu</span>
-                </button>
-            </td>
             <?php // readonly par défaut : la case s'ouvre au clic, et se referme dès qu'on
-                  // la quitte. La réception, elle, ne se pointe que par son bouton — un
-                  // clic sur la ligne la cochait, et il suffisait de viser une case pour
-                  // déclarer un article arrivé. ?>
+                  // la quitte. La réception n'est pas ici : elle se pointe une fois la
+                  // commande validée, dans la liste à cocher. ?>
             <td><input class="materiel-champ" data-champ="reference" maxlength="80" aria-label="Référence" readonly></td>
             <td><input class="materiel-champ" data-champ="designation" maxlength="180" aria-label="Désignation" readonly></td>
             <td><input class="materiel-champ materiel-champ-date" data-champ="date_livraison"
