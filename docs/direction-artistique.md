@@ -290,6 +290,62 @@ seulement un refus de celle-là.
 
 ---
 
+## 10. Les alertes : la fenêtre de la maison, plus celle du navigateur
+
+Vingt-cinq `alert`, `confirm` et `prompt`, et un `hx-confirm`. Chacun ouvrait la boîte du
+système — grise sous Windows, coiffée de « localhost:8080 indique » — et les deux `prompt`
+faisaient taper le numéro d'un bon de commande au lieu de montrer la liste des bons.
+
+**Trois fonctions, dans `src/js/alerte.js`**, chargé par le socle comme les toasts :
+
+| Appel | Rend | Pour |
+|---|---|---|
+| `alerte(titre, {texte, ton})` | une promesse, à la fermeture | un refus, un fait dont il faut prendre acte |
+| `confirmer(titre, {texte, action, annuler, ton})` | `true` / `false` | une question avant d'agir |
+| `choisir(titre, libelles, {texte, tous})` | le rang, `'tous'` ou `null` | un choix dans une courte liste |
+
+Elles rendent une promesse, parce que la boîte du système arrêtait le script et que la
+nôtre le laisse courir : une confirmation s'écrit `if (!await window.confirmer(…)) return;`.
+Un `hx-confirm` passe par la même fenêtre ; l'élément dit le reste par
+`data-confirmer-texte` et `data-confirmer-action`, et `est-destructrice` le met au rouge.
+
+**Le dessin est celui de `dialog.fenetre`** — même boîte, même voile, mêmes boutons — réglé
+sur l'*Alert Dialog* de Propel là où il s'écarte d'une fenêtre de saisie : 440 px et
+centrée, une pastille d'intention au-dessus du titre, pas de filet au-dessus du pied, pas
+de croix. Sous 640 px, une feuille posée en bas, boutons empilés en pleine largeur.
+
+| Ton | Pastille | Bouton d'action | Quand |
+|---|---|---|---|
+| `danger` | `--alerte-fond` / `--danger-texte` | rouge plein, `--danger-plein` | on ne pourra pas revenir en arrière |
+| `attention` | `--attente-fond` / `--attente-texte` | plein | une confirmation qui engage sans détruire |
+| `info` | `--accent-fond` / `--accent-texte` | plein | un fait, sans perte |
+
+**Le comportement, d'après Propel.** « Annuler » vient d'abord et prend le focus — Entrée
+ne supprime rien par mégarde. Échap annule. **Un clic à côté ne ferme rien** : une question
+qui supprime ne se balaie pas d'un geste distrait.
+
+**Un seul texte par chaîne.** Le titre porte la question ; le texte, ce que la réponse
+emporte (« Ses dates seront effacées. »). Un message du serveur est déjà rédigé : il va au
+titre tel quel, sans titre générique au-dessus qui le répéterait. Le bouton reprend le
+verbe de la question — « Supprimer », pas « OK ».
+
+**Pourquoi `--danger-plein`.** Le `--danger-fond` sombre est le `red-500` de Plane : le blanc
+n'y tient qu'à 4,42:1, sous le seuil de 4,5 pour un libellé de 13 px. Le jeton du bouton
+garde la teinte et descend de trois points et demi de clarté : 5,15:1. En clair, il vaut
+`#BF2C22`, à 5,84:1.
+
+**Deux pièges, réglés une fois pour toutes.**
+
+- *La fenêtre est une couche à part.* Ses clics et ses touches ne remontent pas jusqu'au
+  document. Sans cela, « Annuler » comptait pour un clic à côté — il vidait la sélection de
+  lignes et refermait le menu des comptes — et Échap refermait aussi le volet posé dessous.
+- *Ouvrir une confirmation sur un `keydown` Échap demande `preventDefault()`.* Sinon le
+  navigateur traite la touche une fois l'événement passé, trouve la fenêtre qui vient de
+  s'ouvrir, et la referme aussitôt. Vérifié par une vraie frappe : sans l'appel, la
+  question ne reste pas à l'écran.
+
+---
+
 ## Les écarts à combler
 
 Par ordre de visibilité. Rien n'est fait tant que ce document n'est pas validé.

@@ -362,14 +362,17 @@
         }
     }, true);
 
-    $(document).on('submit', '.atelier-action', function (event) {
+    $(document).on('submit', '.atelier-action', async function (event) {
         event.preventDefault();
         const form = $(this);
         const endpoint = this.dataset.endpoint;
         if (!['save_atelier.php', 'update_atelier.php'].includes(endpoint)) return;
-        if (this.classList.contains('atelier-delete-plan') && !window.confirm(
-            'Supprimer le plan « ' + this.dataset.planName + ' » ? Ses affectations et leur suivi seront supprimés. Les fichiers joints à la demande seront conservés.'
-        )) return;
+        if (this.classList.contains('atelier-delete-plan') && !await window.confirmer(
+            'Supprimer le plan « ' + this.dataset.planName + ' » ?', {
+                texte: 'Ses affectations et leur suivi seront supprimés. Les fichiers joints à la demande seront conservés.',
+                action: 'Supprimer',
+                ton: 'danger',
+            })) return;
         const data = new URLSearchParams(form.serialize());
         // serialize() ignore le bouton qui a envoyé le formulaire : deux boutons dans un
         // même formulaire ont donc besoin qu’on les relise ici.

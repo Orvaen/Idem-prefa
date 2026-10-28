@@ -30,13 +30,17 @@
         ligne.querySelector('input').focus();
     });
 
-    $(document).on('click', '.commande-retirer', function () {
+    $(document).on('click', '.commande-retirer', async function () {
         const zone = bloc(this);
         const ligne = this.closest('.commande-ligne');
         const numero = ligne.querySelector('[name="commande[numero][]"]').value.trim();
         // On ne demande confirmation que pour une ligne déjà remplie : retirer une ligne
         // qu'on vient d'ajouter par erreur ne mérite pas une question.
-        if (numero && !window.confirm('Retirer la commande « ' + numero + ' » ? Elle sera supprimée à l’enregistrement.')) return;
+        if (numero && !await window.confirmer('Retirer la commande « ' + numero + ' » ?', {
+            texte: 'Elle sera supprimée à l’enregistrement.',
+            action: 'Retirer',
+            ton: 'danger',
+        })) return;
         // La rangée des articles suit la sienne : laissée seule, elle rattacherait ses
         // articles à la commande du dessus.
         const articles = ligne.nextElementSibling;
@@ -269,23 +273,21 @@
 
     // Le bouton de l'en-tête : il marche même quand aucune commande n'existe encore, ce
     // qui est le cas normal — on dépose le bon justement pour la créer.
-    $(document).on('click', '.commandes-lire-bons', function () {
+    $(document).on('click', '.commandes-lire-bons', async function () {
         const zone = bloc(this);
         const pdfs = documentsDuPv(zone);
         if (!pdfs.length) {
             zone.querySelector('.commandes-mot').textContent = 'Déposez d’abord le bon en PDF ci-dessous, puis enregistrez.';
             return;
         }
+        // Plusieurs bons : on les montre, un clic en lit un, le bouton du pied les lit tous.
         let choisis = pdfs;
         if (pdfs.length > 1) {
-            const noms = pdfs.map((p, i) => (i + 1) + ' — ' + p.nom).join('\n');
-            const reponse = window.prompt('Quel bon lire ? (laissez vide pour tous)\n' + noms, '');
-            if (reponse === null) return;
-            const index = Number(reponse) - 1;
-            if (reponse.trim() !== '') {
-                if (!(index >= 0 && index < pdfs.length)) return;
-                choisis = [pdfs[index]];
-            }
+            const choix = await window.choisir('Quel bon lire ?', pdfs.map(p => p.nom), {
+                tous: 'Lire les ' + pdfs.length + ' bons',
+            });
+            if (choix === null) return;
+            if (choix !== 'tous') choisis = [pdfs[choix]];
         }
         const bouton = this;
         bouton.disabled = true;
@@ -304,7 +306,7 @@
     });
 
     // Le bouton sous une commande : relit un bon pour cette commande-là.
-    $(document).on('click', '.commande-lire-bon', function () {
+    $(document).on('click', '.commande-lire-bon', async function () {
         const rang = this.closest('.commande-articles-rang');
         const mot = rang.querySelector('.commande-articles-mot');
         const pdfs = documentsDuPv(rang);
@@ -316,11 +318,9 @@
         // Plusieurs bons sur le même PV : on demande lequel plutôt que d'en choisir un.
         let choisi = pdfs[0];
         if (pdfs.length > 1) {
-            const noms = pdfs.map((p, i) => (i + 1) + ' — ' + p.nom).join('\n');
-            const reponse = window.prompt('Quel bon lire ?\n' + noms, '1');
-            const index = Number(reponse) - 1;
-            if (!(index >= 0 && index < pdfs.length)) return;
-            choisi = pdfs[index];
+            const choix = await window.choisir('Quel bon lire ?', pdfs.map(p => p.nom));
+            if (choix === null) return;
+            choisi = pdfs[choix];
         }
 
         const bouton = this;

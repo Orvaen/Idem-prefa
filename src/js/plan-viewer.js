@@ -569,7 +569,7 @@
     // Remplacer une feuille : même point d'entrée que le dépôt, à qui l'on dit cette fois
     // quelle feuille céder la place. Elle emporte ce qui a été posé dessus, donc on le dit
     // avant d'envoyer quoi que ce soit.
-    $(document).on('change', '.plan-viewer-remplacer input[type="file"]', function () {
+    $(document).on('change', '.plan-viewer-remplacer input[type="file"]', async function () {
         const champ = this;
         const viewer = champ.closest('.plan-viewer');
         const section = champ.closest('.plan-viewer-plans');
@@ -577,12 +577,17 @@
         champ.value = '';
         if (!fichier) return;
 
+        // Rouge seulement quand la feuille emporte des cases : remplacer un dessin vierge
+        // ne fait rien perdre.
         const nom = viewer.querySelector('.plan-viewer-nom').textContent.trim();
         const posees = tousReperes(viewer).length;
         const pluriel = posees > 1 ? 's' : '';
-        if (!window.confirm('Remplacer ' + nom + ' par ' + fichier.name + ' ?'
-            + (posees ? '\n\nLes ' + posees + ' case' + pluriel + ' de coulée posée' + pluriel
-                + ' sur cette feuille et sa liste de soudures seront effacées.' : ''))) return;
+        if (!await window.confirmer('Remplacer ' + nom + ' par ' + fichier.name + ' ?', {
+            texte: posees ? 'Les ' + posees + ' case' + pluriel + ' de coulée posée' + pluriel
+                + ' sur cette feuille et sa liste de soudures seront effacées.' : '',
+            action: 'Remplacer',
+            ton: posees ? 'danger' : 'attention',
+        })) return;
 
         const donnees = new FormData();
         donnees.append('csrf', viewer.dataset.csrf || '');
@@ -603,7 +608,7 @@
     // Retirer une feuille : ce qui a été relevé dessus s'en va avec elle, donc on le dit
     // avant d'envoyer quoi que ce soit. La liste des soudures n'est pas comptée ici — elle
     // vit dans le volet, pas dans la fenêtre — mais la réponse du serveur la nomme.
-    $(document).on('click', '.plan-viewer-supprimer', function () {
+    $(document).on('click', '.plan-viewer-supprimer', async function () {
         const bouton = this;
         const viewer = bouton.closest('.plan-viewer');
         const section = bouton.closest('.plan-viewer-plans');
@@ -612,11 +617,14 @@
         const nom = viewer.querySelector('.plan-viewer-nom').textContent.trim();
         const posees = tousReperes(viewer).length;
         const pluriel = posees > 1 ? 's' : '';
-        if (!window.confirm('Retirer la feuille ' + nom + ' de ce plan ?'
-            + (posees ? '\n\nLes ' + posees + ' case' + pluriel + ' de coulée posée' + pluriel
+        if (!await window.confirmer('Retirer la feuille ' + nom + ' de ce plan ?', {
+            texte: (posees ? 'Les ' + posees + ' case' + pluriel + ' de coulée posée' + pluriel
                 + ' dessus et sa liste de soudures seront supprimées.'
-                : '\n\nSa liste de soudures sera supprimée.')
-            + '\nLe PDF quitte aussi les fichiers de la demande s’il ne sert à aucun autre plan.')) return;
+                : 'Sa liste de soudures sera supprimée.')
+                + ' Le PDF quitte aussi les fichiers de la demande s’il ne sert à aucun autre plan.',
+            action: 'Retirer',
+            ton: 'danger',
+        })) return;
 
         bouton.disabled = true;
         const donnees = new URLSearchParams();
@@ -673,7 +681,7 @@
         majSelection(section);
     });
 
-    $(document).on('click', '.plan-viewer-supprimer-lot', function () {
+    $(document).on('click', '.plan-viewer-supprimer-lot', async function () {
         const bouton = this;
         const barre = bouton.closest('.plan-viewer-selection');
         const section = bouton.closest('.plan-viewer-plans');
@@ -684,12 +692,15 @@
         // Les cases de coulée vivent dans la fenêtre de chaque feuille, ouverte ou non :
         // on peut donc dire ce que le lot emporte avant de l'envoyer.
         const posees = lot.reduce((total, viewer) => total + tousReperes(viewer).length, 0);
-        if (!window.confirm('Retirer ' + lot.length + ' feuille' + (lot.length > 1 ? 's' : '')
-            + ' de ce plan ?'
-            + (posees ? '\n\nLes ' + posees + ' case' + (posees > 1 ? 's' : '') + ' de coulée posée'
+        if (!await window.confirmer('Retirer ' + lot.length + ' feuille' + (lot.length > 1 ? 's' : '')
+            + ' de ce plan ?', {
+            texte: (posees ? 'Les ' + posees + ' case' + (posees > 1 ? 's' : '') + ' de coulée posée'
                 + (posees > 1 ? 's' : '') + ' dessus et leurs listes de soudures seront supprimées.'
-                : '\n\nLeurs listes de soudures seront supprimées.')
-            + '\nLes PDF quittent aussi les fichiers de la demande s’ils ne servent à aucun autre plan.')) return;
+                : 'Leurs listes de soudures seront supprimées.')
+                + ' Les PDF quittent aussi les fichiers de la demande s’ils ne servent à aucun autre plan.',
+            action: 'Retirer',
+            ton: 'danger',
+        })) return;
 
         bouton.disabled = true;
         const donnees = new URLSearchParams();

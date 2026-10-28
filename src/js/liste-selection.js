@@ -78,10 +78,13 @@
     async function supprimer(table) {
         const cibles = choisies(table);
         const noms = cibles.map(l => l.dataset.nom || l.dataset.id);
-        const quoi = cibles.length === 1
-            ? noms[0]
-            : cibles.length + ' ' + (table.dataset.selectionLibelle || 'ligne') + 's';
-        if (!window.confirm('Supprimer ' + quoi + ' ? Cette action est définitive.')) return;
+        const libelle = table.dataset.selectionLibelle || 'ligne';
+        const quoi = cibles.length === 1 ? noms[0] : cibles.length + ' ' + libelle + 's';
+        if (!await window.confirmer('Supprimer ' + quoi + ' ?', {
+            texte: 'Cette action est définitive.',
+            action: 'Supprimer',
+            ton: 'danger',
+        })) return;
 
         const corps = new URLSearchParams();
         corps.set('csrf', table.dataset.csrf || '');
@@ -98,20 +101,29 @@
             });
             const resultat = await reponse.json().catch(() => ({}));
             if (!reponse.ok || !resultat.success) {
-                window.alert(resultat.message || 'Suppression impossible. Réessayez.');
+                window.alerte(resultat.message || 'Suppression impossible. Réessayez.', { ton: 'danger' });
                 return;
             }
+            // L'alerte n'arrête plus le script : la liste se recharge derrière elle, et
+            // l'on voit ce qui reste en la refermant. Les nombres sont connus, on accorde —
+            // pas de « supprimé(s) ».
             if (resultat.resistants) {
-                window.alert(resultat.supprimes + ' supprimé(s). ' + resultat.resistants
-                    + ' n’ont pas pu l’être : ils ont déjà travaillé sur des demandes.');
+                const restes = resultat.resistants;
+                const faits = resultat.supprimes;
+                window.alerte(restes + ' ' + libelle + (restes > 1
+                    ? 's n’ont pas pu être supprimés' : ' n’a pas pu être supprimé'), {
+                    texte: (restes > 1 ? 'Ils ont' : 'Il a') + ' déjà travaillé sur des demandes.'
+                        + (faits ? (faits > 1 ? ' Les ' + faits + ' autres ont été supprimés.' : ' L’autre a été supprimé.') : ''),
+                    ton: 'attention',
+                });
             } else if (resultat.moiEcarte) {
-                window.alert('Votre propre compte a été laissé de côté : on ne se supprime pas soi-même.');
+                window.alerte('Votre propre compte a été laissé de côté', { texte: 'On ne se supprime pas soi-même.' });
             }
             document.getElementById('selection-barre')?.remove();
             // La liste se recharge seule : elle écoute cet événement depuis htmx.
             document.body.dispatchEvent(new CustomEvent('usersChanged'));
         } catch (erreur) {
-            window.alert('Le serveur ne répond pas. Réessayez.');
+            window.alerte('Le serveur ne répond pas. Réessayez.', { ton: 'danger' });
         } finally {
             if (bouton) bouton.disabled = false;
         }

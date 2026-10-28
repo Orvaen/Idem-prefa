@@ -321,12 +321,22 @@ $(document).on('click', '.edit-prefa', function () {
  * Dans la fenêtre de modification, quitter la referme ; sur l'écran « Nouvelle demande »,
  * on revient à la liste.
  */
-function quitterFormulairePrefa() {
+async function quitterFormulairePrefa() {
     const formulaire = document.getElementById('prefa-form');
-    if (formulaire?.dataset.modifie === '1'
-        && !window.confirm('Quitter sans enregistrer ? Les modifications seront perdues.')) return;
     const fenetre = document.getElementById('prefa-edition');
-    if (fenetre?.open) {
+    // Lu avant de poser la question : la fenêtre peut se refermer pendant qu'on y répond —
+    // le navigateur ne laisse retenir Échap qu'une fois par geste —, et ce n'est pas une
+    // raison pour partir vers la liste.
+    const dansLaFenetre = !!fenetre?.open;
+    // « Annuler » ne peut pas nommer l'issue sûre : c'est le bouton qu'on vient de presser
+    // pour sortir. Elle dit donc ce qu'elle fait.
+    if (formulaire?.dataset.modifie === '1' && !await window.confirmer('Quitter sans enregistrer ?', {
+        texte: 'Les modifications seront perdues.',
+        action: 'Quitter',
+        annuler: 'Continuer la saisie',
+        ton: 'danger',
+    })) return;
+    if (dansLaFenetre) {
         fenetre.close();
         return;
     }
@@ -346,18 +356,28 @@ document.addEventListener('keydown', function (event) {
     if (event.key !== 'Escape' || event.defaultPrevented) return;
     if (!document.getElementById('prefa-form')) return;
     if (document.querySelector(OUVERT_AVANT_LE_FORMULAIRE)) return;
+    // La touche est à nous : sans cela, le navigateur la traite à son tour une fois
+    // l'événement passé, et referme la confirmation qui vient tout juste de s'ouvrir.
+    event.preventDefault();
     quitterFormulairePrefa();
 });
 
-$(document).on('click', '.delete-prefa', function () {
+$(document).on('click', '.delete-prefa', async function () {
     const id = this.dataset.id;
-    if (!window.confirm('Supprimer cette demande ? Cette action est irréversible.')) return;
+    if (!await window.confirmer('Supprimer cette demande ?', {
+        texte: 'Cette action est irréversible.',
+        action: 'Supprimer',
+        ton: 'danger',
+    })) return;
     const button = $(this).prop('disabled', true);
     $.ajax({
         url: 'actions/delete_prefa.php', method: 'POST', dataType: 'json',
         data: {id: id, csrf: this.dataset.csrf},
         success: function (response) { refreshPrefaList(); },
-        error: function (xhr) { window.alert(xhr.responseJSON?.message || 'Suppression impossible. Réessayez.'); button.prop('disabled', false); }
+        error: function (xhr) {
+            window.alerte(xhr.responseJSON?.message || 'Suppression impossible. Réessayez.', { ton: 'danger' });
+            button.prop('disabled', false);
+        }
     });
 });
 

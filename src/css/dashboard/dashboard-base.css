@@ -171,6 +171,10 @@
     --danger-texte: var(--red-800);
     --danger-bord: var(--red-200);
     --danger-fond: var(--red-500);
+    /* Le plein d'un bouton qui supprime, celui des alertes. « danger-fond » est le red-500
+       de Plane : il ne porte le blanc qu'à 4,42:1, sous le seuil de 4,5 pour un libellé de
+       13 px. Même teinte, même chroma, trois points et demi de clarté en moins : 5,15:1. */
+    --danger-plein: oklch(56% 0.1956 28.51);
 
     /* Les bandeaux de résultat — « enregistré », « impossible ». Leurs couleurs étaient
        écrites en dur dans quatre feuilles, pensées pour le fond sombre : sur le thème clair,

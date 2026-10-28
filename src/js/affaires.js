@@ -216,11 +216,14 @@
         }).catch(() => dire('Modification impossible. Réessayez.', true));
     });
 
-    $(document).on('click', '.affaire-supprimer', function () {
+    $(document).on('click', '.affaire-supprimer', async function () {
         const ligne = this.closest('[data-affaire]');
         const nom = ligne.querySelector('.affaire-nom').value.trim();
         // Une affaire supprimée ne se retrouve pas : on demande avant.
-        if (!window.confirm('Supprimer l’affaire « ' + nom + ' » ?')) return;
+        if (!await window.confirmer('Supprimer l’affaire « ' + nom + ' » ?', {
+            action: 'Supprimer',
+            ton: 'danger',
+        })) return;
 
         const donnees = new URLSearchParams();
         donnees.set('operation', 'fermer');

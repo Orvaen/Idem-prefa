@@ -72,7 +72,7 @@
             .fail(xhr => {
                 ligne.querySelectorAll('button').forEach(b => { b.disabled = false; });
                 bouton.title = xhr.responseJSON?.message || 'Opération impossible. Réessayez.';
-                window.alert(bouton.title);
+                window.alerte(bouton.title, { ton: 'danger' });
             });
     });
 
@@ -430,12 +430,16 @@
         majReception();
     });
 
-    $(document).on('click', '.materiel-tout-recu', function () {
+    $(document).on('click', '.materiel-tout-recu', async function () {
         const lignes = [...dialogue().querySelectorAll('.materiel-article')];
         const recu = !lignes.every(tr => tr.classList.contains('est-recue'));
         // Tout décocher efface les dates de réception de toute la commande : on le
         // demande avant. Tout cocher se défait ligne par ligne, sans perte.
-        if (!recu && !window.confirm('Marquer toute la commande comme non reçue ? Les dates de réception seront effacées.')) return;
+        if (!recu && !await window.confirmer('Marquer toute la commande comme non reçue ?', {
+            texte: 'Les dates de réception seront effacées.',
+            action: 'Tout marquer non reçu',
+            ton: 'danger',
+        })) return;
         lignes.forEach(tr => {
             if (tr.classList.contains('est-recue') !== recu) pointer(tr, recu);
         });
@@ -672,14 +676,17 @@
             });
     }
 
-    $(document).on('click', '.materiel-relire', function () {
+    $(document).on('click', '.materiel-relire', async function () {
         const fenetre = dialogue();
         const id = fenetre.querySelector('[name="document"]').value;
         if (!id) return;
         // Une relecture remplace ce qui est à l'écran : on relit un bon pour corriger une
         // première lecture, pas pour en empiler une seconde.
         if (fenetre.querySelectorAll('.materiel-edition-ligne').length
-            && !window.confirm('Relire le bon remplacera les articles affichés. Continuer ?')) return;
+            && !await window.confirmer('Relire le bon ?', {
+                texte: 'Les articles affichés seront remplacés par ceux de la nouvelle lecture.',
+                action: 'Relire',
+            })) return;
 
         envoyer('lire_bon_materiel.php', {
             csrf: fenetre.querySelector('[name="csrf"]').value,
@@ -690,13 +697,16 @@
         });
     });
 
-    $(document).on('submit', '#materiel-form', function (event) {
+    $(document).on('submit', '#materiel-form', async function (event) {
         event.preventDefault();
         const fenetre = dialogue();
         const bouton = event.originalEvent?.submitter || this.querySelector('.materiel-enregistrer');
         const valider = bouton.value === '1';
         // Valider engage la commande pour de bon : on le dit avant, pas après.
-        if (valider && !window.confirm('Valider la commande ? Ses articles ne pourront plus être modifiés ; seule la réception restera possible.')) return;
+        if (valider && !await window.confirmer('Valider la commande ?', {
+            texte: 'Ses articles ne pourront plus être modifiés ; seule la réception restera possible.',
+            action: 'Valider',
+        })) return;
 
         envoyer('save_bon_materiel.php', {
             csrf: this.elements.csrf.value,

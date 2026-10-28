@@ -74,7 +74,9 @@ function userRow(array $user, int $moi): void
                     <button type="button" role="menuitem" class="est-destructrice"
                             hx-post="/dashboard/actions/delete_user.php"
                             hx-vals='<?= prefaEscape(json_encode(['id' => $id, 'csrf' => Session::jeton()])) ?>'
-                            hx-confirm="Supprimer <?= prefaEscape($nom) ?> ? Cette action est définitive."
+                            hx-confirm="Supprimer <?= prefaEscape($nom) ?> ?"
+                            data-confirmer-texte="Cette action est définitive."
+                            data-confirmer-action="Supprimer"
                             hx-target="closest tr" hx-swap="outerHTML">Supprimer</button>
                 <?php endif; ?>
             </div>

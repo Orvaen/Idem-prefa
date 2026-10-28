@@ -123,7 +123,7 @@
             donneesDev.set('csrf', menu.dataset.csrf);
             donneesDev.set('compte', devenir.dataset.compte);
             const erreurDev = await envoyer(donneesDev, devenir, 'dev_connexion.php');
-            if (erreurDev) window.alert(erreurDev);
+            if (erreurDev) window.alerte(erreurDev, { ton: 'danger' });
             return;
         }
 
@@ -132,16 +132,17 @@
         if (!retrait && !bascule) return;
         if (bascule && menu.classList.contains('is-managing')) return;
         if (bascule && bascule.classList.contains('is-current')) { ouvrirMenu(false); return; }
-        if (retrait && !window.confirm(
-            'Retirer « ' + retrait.dataset.nom + ' » de cet appareil ? Son mot de passe sera redemandé pour y revenir.'
-        )) return;
+        if (retrait && !await window.confirmer('Retirer « ' + retrait.dataset.nom + ' » de cet appareil ?', {
+            texte: 'Son mot de passe sera redemandé pour y revenir.',
+            action: 'Retirer',
+        })) return;
         const bouton = retrait || bascule;
         const donnees = new FormData();
         donnees.set('csrf', menu.dataset.csrf);
         donnees.set('operation', retrait ? 'remove' : 'switch');
         donnees.set('compte', bouton.dataset.compte);
         const erreur = await envoyer(donnees, bouton);
-        if (erreur) window.alert(erreur);
+        if (erreur) window.alerte(erreur, { ton: 'danger' });
     });
 
     dialog.addEventListener('click', event => {

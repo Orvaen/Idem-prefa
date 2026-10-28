@@ -469,3 +469,189 @@ dialog.fenetre .liste-filtrable-vide {
         height: 44px;
     }
 }
+
+/* ==========================================================================
+   L'ALERTE — une question, ou un fait dont il faut prendre acte
+   ==========================================================================
+
+   window.alert, confirm et prompt ouvraient la boîte du navigateur ; alerte.js ouvre
+   celle-ci. C'est la fenêtre de la maison — même boîte, même voile, mêmes boutons —, réglée
+   sur l'Alert Dialog de Propel là où il s'écarte d'une fenêtre de saisie :
+
+   - plus étroite, et centrée : elle ne porte qu'une phrase ou deux ;
+   - une pastille d'intention au-dessus du titre, qui dit avant qu'on lise si l'on va
+     perdre quelque chose ;
+   - pas de filet au-dessus du pied : il n'y a pas de saisie à séparer de ses boutons ;
+   - pas de croix : « Annuler » est déjà là, et c'est lui qui a le focus. */
+
+dialog.fenetre.alerte {
+    width: min(440px, calc(100vw - 32px));
+    margin: auto;
+}
+
+/* Le cadre fait ce que fait le formulaire des autres fenêtres : une colonne bornée par la
+   hauteur de la boîte, dont le corps défile sous un pied qui reste — une longue liste de
+   bons ne pousse pas les boutons hors de l'écran. */
+dialog.fenetre.alerte > .alerte-cadre {
+    display: flex;
+    flex-direction: column;
+    max-height: inherit;
+}
+
+dialog.fenetre.alerte .alerte-corps {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 24px 24px 0;
+}
+
+dialog.fenetre.alerte .alerte-pastille {
+    display: grid;
+    place-items: center;
+    align-self: flex-start;
+    flex: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    background: var(--accent-fond);
+    color: var(--accent-texte);
+}
+
+dialog.fenetre.alerte .alerte-pastille.est-danger {
+    background: var(--alerte-fond);
+    color: var(--danger-texte);
+}
+
+dialog.fenetre.alerte .alerte-pastille.est-attention {
+    background: var(--attente-fond);
+    color: var(--attente-texte);
+}
+
+dialog.fenetre.alerte .alerte-pastille .icon {
+    width: 20px;
+    height: 20px;
+}
+
+dialog.fenetre.alerte .alerte-intro {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+/* « anywhere » : un nom de fichier sans espace tient dans la largeur au lieu de la percer. */
+dialog.fenetre.alerte .alerte-intro h2 {
+    margin: 0;
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+dialog.fenetre.alerte .alerte-intro p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+/* Les choix : des lignes de menu, comme les cases d'une fenêtre — pas des cartes. */
+dialog.fenetre.alerte .alerte-choix {
+    display: flex;
+    flex-direction: column;
+    margin: 0 -8px;
+}
+
+dialog.fenetre.alerte .alerte-choix button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: var(--h-xl);
+    margin: 0;
+    padding: 6px 8px;
+    border: 0;
+    border-radius: var(--r-md);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+}
+
+dialog.fenetre.alerte .alerte-choix button:hover {
+    background: var(--hover);
+}
+
+dialog.fenetre.alerte .alerte-choix button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+}
+
+dialog.fenetre.alerte .alerte-choix .icon {
+    color: var(--text-muted);
+}
+
+dialog.fenetre.alerte .alerte-choix span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+dialog.fenetre.alerte .fenetre-pied {
+    padding: 24px;
+    border-top: 0;
+}
+
+/* Le bouton qui supprime : le rouge plein, pas le noir. Il porte son propre jeton, voir
+   « --danger-plein » dans dashboard-base.css. */
+dialog.fenetre.alerte .fenetre-pied .fenetre-valider.est-danger {
+    border-color: var(--danger-plein);
+    background: var(--danger-plein);
+    color: #ffffff;
+}
+
+dialog.fenetre.alerte .fenetre-pied .fenetre-valider.est-danger:hover:not(:disabled) {
+    border-color: color-mix(in oklab, var(--danger-plein), black 12%);
+    background: color-mix(in oklab, var(--danger-plein), black 12%);
+}
+
+/* Sous 640 px, une feuille posée en bas, comme chez Propel : le pouce y est. Le texte se
+   centre sous une pastille plus grande, et les deux boutons s'empilent en pleine largeur,
+   l'action au-dessus. */
+@media (max-width: 639px) {
+
+    dialog.fenetre.alerte {
+        width: calc(100vw - 32px);
+        margin: auto 16px 16px;
+    }
+
+    dialog.fenetre.alerte .alerte-corps {
+        text-align: center;
+    }
+
+    dialog.fenetre.alerte .alerte-pastille {
+        align-self: center;
+        width: 48px;
+        height: 48px;
+    }
+
+    dialog.fenetre.alerte .alerte-choix {
+        text-align: left;
+    }
+
+    dialog.fenetre.alerte .fenetre-pied {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+
+    dialog.fenetre.alerte .fenetre-pied button {
+        justify-content: center;
+    }
+}

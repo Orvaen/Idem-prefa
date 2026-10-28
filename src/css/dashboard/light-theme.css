@@ -29,6 +29,8 @@ body[data-theme="light"],
     --danger-texte: #BF2C22;
     --danger-bord: #F2C0BC;
     --danger-fond: #BF2C22;
+    /* Voir le commentaire du même jeton dans dashboard-base.css. 5,84:1 sous le blanc. */
+    --danger-plein: #BF2C22;
     --succes-texte: #2F934B;
     --succes-fond: #E4F6E9;
     --succes-bord: #A9DCBA;

@@ -138,8 +138,12 @@
             });
     });
 
-    $(document).on('click', '.pv-retirer-document', function () {
-        if (!window.confirm('Retirer « ' + this.dataset.nom + ' » ? Le fichier sera supprimé.')) return;
+    $(document).on('click', '.pv-retirer-document', async function () {
+        if (!await window.confirmer('Retirer « ' + this.dataset.nom + ' » ?', {
+            texte: 'Le fichier sera supprimé.',
+            action: 'Retirer',
+            ton: 'danger',
+        })) return;
         const form = this.closest('.pv-form');
         const donnees = new FormData();
         donnees.set('csrf', form.elements.csrf.value);

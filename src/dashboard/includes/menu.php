@@ -377,6 +377,9 @@ function dashboardRessources(Utilisateur $utilisateur): array
         // Les toasts : ce que l'application répond. Tous les écrans y ont droit, et le
         // composant ne coûte rien tant que personne ne l'appelle.
         'js/toast.js',
+        // Les alertes : ce que l'application demande, à la place de window.alert, confirm
+        // et prompt. Même raison que les toasts, et elle reprend aussi les hx-confirm.
+        'js/alerte.js',
         'js/dashboard-sidebar.js',
         'js/dashboard-accounts.js',
         // L'œil des mots de passe : la fenêtre d'ajout de compte en a un, l'écran de

@@ -570,8 +570,12 @@
     }
 
     $(document).on('submit', '#planning-edit-form', function (event) { event.preventDefault(); save('save'); });
-    $(document).on('click', '#planning-remove', () => {
-        if (window.confirm('Retirer cette demande du planning ? Ses dates seront effacées.')) save('remove');
+    $(document).on('click', '#planning-remove', async () => {
+        if (await window.confirmer('Retirer cette demande du planning ?', {
+            texte: 'Ses dates seront effacées.',
+            action: 'Retirer',
+            ton: 'danger',
+        })) save('remove');
     });
     $(document).on('submit', '#planning-filters', function (event) { event.preventDefault(); reload(); });
     $(document).on('change', '#planning-filters input, #planning-filters select', () => reload());
