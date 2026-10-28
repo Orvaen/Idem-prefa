@@ -1932,9 +1932,25 @@ tbody tr:last-child > td {
     gap: 4px;
 }
 
-/* Au pied de la barre de navigation, le nom et le rôle tenaient sur deux lignes. En haut,
-   la place est horizontale : le nom suffit, le rôle se lit dans le menu qui s'ouvre. */
+/* Le nom, et le rôle dessous en petit : on sait sous quel compte on travaille sans
+   ouvrir le menu. Le métier (« Soudeur »…) reste dans le menu, faute de place. */
+.toolbar-compte .nav-subfooter {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    text-align: left;
+}
+
 .toolbar-compte .nav-subfooter .subtitle {
+    display: block;
+    color: var(--text-muted);
+    font-size: 11px;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.toolbar-compte .nav-subfooter .subtitle-metier {
     display: none;
 }
 
@@ -1942,7 +1958,7 @@ tbody tr:last-child > td {
     display: flex;
     align-items: center;
     gap: 8px;
-    height: 30px;
+    height: 36px;
     padding: 0 6px 0 5px;
     border: 0;
     border-radius: 6px;

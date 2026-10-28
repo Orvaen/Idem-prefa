@@ -258,10 +258,7 @@ function planningIcone(string $nom): string
 <section class="page prefa-page prefa-list atelier-page planning-page" id="planning-page" aria-labelledby="planning-title" data-days-per-inch="<?= prefaEscape($hoursSettings['days']) ?>" data-hours-per-inch="<?= prefaEscape($hoursSettings['rate']) ?>" data-selected-id="<?= (int) ($initialSelectedId ?: 0) ?>">
   <div class="prefa-shell">
     <header class="prefa-heading prefa-list-heading">
-        <div>
-            <h1 id="planning-title">Planning</h1>
-            <p>Les demandes validées, rangées par affaire : cliquez une affaire pour sa vue d’ensemble, une demande pour la planifier.</p>
-        </div>
+        <h1 id="planning-title">Planning</h1>
         <div class="prefa-vue-outils">
             <button type="button" class="pv-outil" id="planning-refresh">
                 <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
@@ -289,6 +286,9 @@ function planningIcone(string $nom): string
             </button>
         </div>
         <span class="planning-periode"><?= prefaEscape($rangeLabel) ?></span>
+        <?php if ($nextRequest): ?>
+            <span class="planning-outside-period"><span><?= count($outside) ?> demande<?= count($outside) > 1 ? 's planifiées' : ' planifiée' ?> hors de cette période</span><button type="button" class="planning-button planning-button-discret" data-planning-go-to="<?= prefaEscape($nextRequest['date_debut_planifiee']) ?>" data-planning-target="<?= (int) $nextRequest['id'] ?>">Voir le <?= prefaEscape(prefaFormatDate($nextRequest['date_debut_planifiee'])) ?></button></span>
+        <?php endif; ?>
         <div class="planning-reglages">
             <div class="planning-champ">
                 <label for="planning-start" class="sr-only">Semaine du</label>
@@ -315,9 +315,6 @@ function planningIcone(string $nom): string
     </form>
     <p id="planning-page-message" class="planning-feedback" role="status" aria-live="polite"></p>
 
-    <?php if ($nextRequest): ?>
-        <div class="planning-outside-period"><span><?= count($outside) ?> demande<?= count($outside) > 1 ? 's planifiées' : ' planifiée' ?> hors de cette période</span><button type="button" class="planning-button planning-button-discret" data-planning-go-to="<?= prefaEscape($nextRequest['date_debut_planifiee']) ?>" data-planning-target="<?= (int) $nextRequest['id'] ?>">Voir le <?= prefaEscape(prefaFormatDate($nextRequest['date_debut_planifiee'])) ?></button></div>
-    <?php endif; ?>
 
     <div class="gantt-outer-container">
         <div class="gantt-scroll-wrapper" role="region" aria-label="Planning Gantt des affaires" tabindex="0">
