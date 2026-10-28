@@ -73,67 +73,101 @@
         return data ? Object.entries(JSON.parse(data.textContent)) : [];
     }
 
-    function selectAffaire(affaireId) {
-        const idNum = Number(affaireId);
-        if (!idNum) return;
-        const reqList = requests();
-        const req = reqList.find(item => Number(item.id) === idNum);
-        if (!req) return;
-
-        // Mettre à jour l'attribut data-selected-id
+    /** La demande qu'on vise, et sa mise en évidence sur le calendrier. */
+    function marquer(idNum) {
         const rootEl = root();
-        if (rootEl) rootEl.dataset.selectedId = idNum;
-
-        // Mise à jour visuelle des lignes et barres de Gantt
+        if (rootEl) rootEl.dataset.selectedId = idNum || 0;
         $('.gantt-row').removeClass('is-selected');
         $('.gantt-bar').removeClass('is-selected');
+        if (!idNum) return;
         const activeRow = $(`.gantt-row[data-affaire-id="${idNum}"]`);
         activeRow.addClass('is-selected');
         activeRow.find('.gantt-bar').addClass('is-selected');
+    }
 
-        // BLOC 1: INFORMATION GÉNÉRALE
-        $('#detail-date-debut').text(displayDate(req.date_debut_planifiee));
-        $('#detail-date-fin').text(displayDate(req.date_fin_planifiee));
-        $('#detail-personnel').text(req.personnel_atelier_nom || 'Non affecté');
-        $('#detail-matiere').text(req.matiere_libelle || 'Non précisée');
-        
-        const planContainer = $('#detail-plan').empty();
-        if (req.plans && req.plans.length > 0) {
-            const firstPlan = req.plans[0];
-            const isPdf = /\.pdf$/i.test(firstPlan.name);
-            const planLink = $('<a>')
-                .attr('href', `actions/download_prefa_attachment.php?ref=${encodeURIComponent(req.reference_demande)}&file=${encodeURIComponent(firstPlan.key)}`)
-                .attr('data-name', firstPlan.name)
-                .text(firstPlan.name)
-                .appendTo(planContainer);
-            if (isPdf) {
-                planLink.addClass('prefa-pdf-link').attr('aria-haspopup', 'dialog');
-            } else {
-                planLink.attr('target', '_blank').attr('rel', 'noopener');
+    const initiales = nom => String(nom || '').trim().split(/\s+/).slice(0, 2).map(m => m[0] || '').join('').toUpperCase() || '—';
+
+    /**
+     * Ouvre le volet d'une demande — un seul objet pour tout : la planifier, lire ce
+     * qu'elle est, suivre son avancement. Il remplace la fenêtre de planification et les
+     * quatre cartes qui s'ouvraient ensemble sous le calendrier.
+     */
+    function selectAffaire(affaireId) {
+        const idNum = Number(affaireId);
+        if (!idNum) return;
+        const req = requests().find(item => Number(item.id) === idNum);
+        const volet = root()?.querySelector('#planning-volet');
+        if (!req || !volet) return;
+        marquer(idNum);
+
+        const planifiee = Boolean(req.date_debut_planifiee && req.date_fin_planifiee);
+        $('#planning-volet-titre').text(req.reference_demande);
+        $('#planning-volet-sous-titre').text([req.nom_affaire || 'Sans affaire', req.urgent ? 'Urgente' : ''].filter(Boolean).join(' · '));
+        $('#planning-volet-etat')
+            .attr('class', 'pv-puce ' + (planifiee ? 'pv-puce-fait' : 'pv-puce-a_faire'))
+            .text(planifiee ? 'Planifiée' : 'À planifier');
+
+        const hours = getHoursForRequest(req);
+        const inches = parseInt(req.pouces_total_iso || 0, 10);
+        const jours = Math.max(1, Math.ceil(hours / 24));
+        $('#planning-volet-charge').text(
+            (inches > 0 ? inches + ' pouce' + (inches > 1 ? 's' : '') + ' ISO · ' : '')
+            + Math.round(hours).toLocaleString('fr-FR') + ' h · ' + jours + ' j');
+
+        // La planification : un formulaire pour l'encadrement, deux dates pour les autres.
+        const form = document.getElementById('planning-edit-form');
+        if (form) {
+            form.reset();
+            form.elements.id.value = req.id;
+            form.elements.revision.value = req.planning_revision;
+            let debut = req.date_debut_planifiee;
+            if (!debut) {
+                const validation = req.date_validation ? req.date_validation.slice(0, 10) : '';
+                const candidat = date(validation) || date(document.getElementById('planning-start')?.value) || new Date();
+                debut = iso(adjustToWorkingDay(candidat));
             }
-            if (req.plans.length > 1) {
-                $('<span>').text(` (+${req.plans.length - 1})`).appendTo(planContainer);
-            }
-        } else if (req.plan_bpe_iso) {
-            $('<span>').text(req.plan_bpe_iso).appendTo(planContainer);
+            form.elements.start.value = debut;
+            form.elements.end.value = req.date_fin_planifiee || computeEndDate(debut, hours);
+            $('#planning-save-message').removeClass('error').text('');
+            document.getElementById('planning-remove').hidden = !planifiee;
+            form.querySelector('.pv-enregistrer').textContent = planifiee ? 'Enregistrer' : 'Planifier';
+            preview();
         } else {
-            $('<span>').text('Aucun plan associé').appendTo(planContainer);
+            $('#planning-volet-debut').text(planifiee ? displayDate(req.date_debut_planifiee) : '—');
+            $('#planning-volet-fin').text(planifiee ? displayDate(req.date_fin_planifiee) : '—');
         }
 
-        $('#btn-edit-general').attr('data-plan-id', req.id);
+        // La demande.
+        const demandeur = $('#planning-volet-demandeur').empty();
+        $('<span class="prefa-personne">')
+            .append($('<span class="prefa-avatar" aria-hidden="true">').text(initiales(req.demandeur)))
+            .append(document.createTextNode(req.demandeur || '—'))
+            .appendTo(demandeur);
+        $('#planning-volet-personnel').text(req.personnel_atelier_nom || 'Non affecté');
+        $('#planning-volet-matiere').text(req.matiere_libelle || 'Non précisée');
+        $('#planning-volet-depart').text(displayDate(req.date_fin_prevue));
+        $('#planning-volet-reception').text(displayDate(req.date_livraison_prevue));
 
-        // BLOC 2: DÉTAIL AVANCEMENT (MATRICE)
+        const plan = $('#planning-volet-plan').empty();
+        if (req.plans && req.plans.length) {
+            const premier = req.plans[0];
+            const lien = $('<a class="planning-lien">')
+                .attr('href', `actions/download_prefa_attachment.php?ref=${encodeURIComponent(req.reference_demande)}&file=${encodeURIComponent(premier.key)}`)
+                .attr('data-name', premier.name)
+                .text(premier.name)
+                .appendTo(plan);
+            if (/\.pdf$/i.test(premier.name)) lien.addClass('prefa-pdf-link').attr('aria-haspopup', 'dialog');
+            else lien.attr('target', '_blank').attr('rel', 'noopener');
+            if (req.plans.length > 1) $('<span class="planning-plus">').text(` +${req.plans.length - 1}`).appendTo(plan);
+        } else {
+            plan.text(req.plan_bpe_iso || 'Aucun plan');
+        }
+
         renderAvancementMatrix(req);
-
-        // BLOC 3: COMMENTAIRES
         renderCommentsList(req);
 
-        // BLOC 4: LIVRAISON
-        $('#detail-depart-livraison').text(displayDate(req.date_fin_prevue));
-        $('#detail-reception-livraison').text(displayDate(req.date_livraison_prevue));
-        $('#btn-edit-livraison').attr('data-plan-id', req.id);
-        const panel = rootEl?.querySelector('#planning-details-panel');
-        if (panel) panel.hidden = false;
+        volet.hidden = false;
+        volet.scrollTop = 0;
     }
 
     function stepStatus(element, key) {
@@ -150,7 +184,7 @@
         });
         const tbody = $('#matrix-body').empty();
         if (!elements.length) {
-            $('<tr>').append($('<td>').text('Aucun élément / ISO associé à cette demande.')).appendTo(tbody);
+            $('<tr>').append($('<td class="planning-vide">').text('Aucun plan ISO sur cette demande.')).appendTo(tbody);
             return;
         }
         standardSteps().forEach(([key, label]) => {
@@ -159,7 +193,8 @@
             elements.forEach(elem => {
                 const status = stepStatus(elem, key);
                 const statusClass = { OK: 'status-ok', 'Non OK': 'status-non-ok', RAS: 'status-ras' }[status] || 'status-unset';
-                $('<td>').addClass(statusClass).text(status)
+                // « Non renseigné » sur chaque case noyait les trois états qui comptent.
+                $('<td>').addClass(statusClass).text(status === 'Non renseigné' ? '—' : status)
                     .attr('title', `${label} - ${elem.reference || 'Repère'}`).appendTo(tr);
             });
         });
@@ -169,14 +204,17 @@
         const comments = req.commentaires || [];
 
         if (comments.length === 0) {
-            $('<p class="planning-empty-text">').text('Aucun commentaire pour cette affaire.').appendTo(container);
+            $('<p class="planning-vide">').text('Aucun commentaire.').appendTo(container);
             return;
         }
 
         comments.forEach(c => {
-            const item = $('<div class="comment-item">').appendTo(container);
-            $('<div class="comment-meta">').text(`Le ${c.date} par ${c.auteur}`).appendTo(item);
-            $('<p class="comment-text">').text(c.texte).appendTo(item);
+            const item = $('<div class="planning-commentaire">').appendTo(container);
+            $('<div class="planning-commentaire-meta">')
+                .append($('<strong>').text(c.auteur))
+                .append(document.createTextNode(' · ' + c.date))
+                .appendTo(item);
+            $('<p>').text(c.texte).appendTo(item);
         });
     }
 
@@ -239,15 +277,18 @@
             const next = root();
             window.PlanningGantt?.recentrer();
             
-            const targetId = Number(focusId || (!removed && current.dataset.selectedId) || 0);
-            if (targetId && next?.querySelector(`[data-select-affaire="${targetId}"], [data-plan-id="${targetId}"], [data-view-plan-id="${targetId}"]`)) {
-                selectAffaire(targetId);
-                const block = next?.querySelector(`.gantt-bar[data-plan-id="${Number(targetId)}"]`);
-                if (block) {
-                    block.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-                }
+            // Après un enregistrement, la barre se met en évidence ; le volet, lui, se
+            // referme — c'est le toast qui confirme.
+            const targetId = Number(focusId || 0);
+            if (targetId) {
+                marquer(targetId);
+                const block = next?.querySelector(`.gantt-bar[data-ouvrir="${targetId}"]`);
+                if (block) block.scrollIntoView({ block: 'nearest', inline: 'nearest' });
             }
-            if (message) $(next).find('#planning-page-message').removeClass('is-error is-success is-removed').addClass(removed ? 'is-removed' : 'is-success').text(message);
+            if (message) {
+                if (window.toast) window.toast(message);
+                else $(next).find('#planning-page-message').text(message);
+            }
         }).fail((xhr, status) => {
             if (status !== 'abort' && root() === current) {
                 $(current).find('#planning-page-message').addClass('is-error').text('Impossible de charger le planning. Réessayez.');
@@ -262,33 +303,15 @@
         const last = date(form.elements.end.value);
         form.elements.end.min = form.elements.start.value;
         form.elements.end.setCustomValidity(first && last && last < first ? 'La fin doit suivre le début du planning.' : '');
-        const box = $('#planning-preview').empty();
-        if (!first || !last) {
-            box.html('<span class="planning-preview-placeholder"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Sélectionnez les dates de début et de fin.</span>');
-            return;
-        }
-        if (last < first) {
-            box.html('<span class="planning-preview-error"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> La date de fin doit être postérieure au début.</span>');
-            return;
-        }
-        const workingDays = countWorkingDays(first, last);
-        const $content = $('<div class="planning-preview-content"></div>');
-        const $dates = $('<div class="planning-preview-dates"></div>');
-        $dates.append($('<span class="preview-date-item"></span>').text(displayDate(form.elements.start.value)));
-        $dates.append($('<span class="preview-arrow">➔</span>'));
-        $dates.append($('<span class="preview-date-item"></span>').text(displayDate(form.elements.end.value)));
-        $content.append($dates);
-        $content.append($('<div class="planning-preview-badge"></div>').text(workingDays + ' j ouvré' + (workingDays > 1 ? 's' : '')));
-        box.append($content);
+        const box = $('#planning-preview').removeClass('est-erreur');
+        if (!first || !last) { box.text('—'); return; }
+        if (last < first) { box.addClass('est-erreur').text('La fin précède le début'); return; }
+        const n = countWorkingDays(first, last);
+        box.text(n + ' jour' + (n > 1 ? 's' : '') + ' ouvré' + (n > 1 ? 's' : ''));
     }
 
     // Initialiser au chargement la première affaire sélectionnée
-    $(() => {
-        const rootEl = root();
-        if (rootEl && rootEl.dataset.selectedId) {
-            selectAffaire(rootEl.dataset.selectedId);
-        }
-    });
+
 
     // Clic pour sélectionner une affaire
     // Le calendrier ne se fait plus glisser a la souris depuis le retrait de la
@@ -434,95 +457,20 @@
 
     // Les actions du planning passent par ces clics : on trace leur arrivee pour
     // savoir si un clic s'est perdu en route.
-    $(document).on('click', '[data-plan-id], [data-view-plan-id], [data-select-affaire]', function () {
+    $(document).on('click', '[data-ouvrir]', function () {
         trace('clic recu par une action du planning', { cible: nomCourt(this) });
     });
 
-    $(document).on('click', '[data-select-affaire]', function () {
-        selectAffaire(this.dataset.selectAffaire);
-    });
-    $(document).on('click', '[data-view-plan-id]', function () {
-        selectAffaire(this.dataset.viewPlanId);
-        const panel = document.getElementById('planning-details-panel');
-        const page = root();
-        if (!panel || !page) return;
-        // Ne défiler que si le panneau n’est pas déjà visible, sinon la page saute à chaque clic.
-        const cible = panel.getBoundingClientRect();
-        const vue = page.getBoundingClientRect();
-        if (cible.top < vue.top || cible.top > vue.bottom - 80) {
-            panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+    $(document).on('click', '[data-ouvrir]', function () {
+        selectAffaire(this.dataset.ouvrir);
     });
     document.addEventListener('planning:select', event => selectAffaire(event.detail.id));
-    document.addEventListener('planning:edit', event => {
-        const button = root()?.querySelector(`.gantt-bar[data-plan-id="${Number(event.detail.id)}"]`);
-        if (button) button.click();
-    });
+    document.addEventListener('planning:edit', event => selectAffaire(event.detail.id));
 
     // Boutons d'export
     $(document).on('click', '#btn-export-avancement', exportAvancement);
     $(document).on('click', '#btn-export-commentaires', exportCommentaires);
 
-    // Clic pour modifier une planification (ouvre le modal)
-    $(document).on('click', '[data-plan-id]', function (e) {
-        const planId = Number(this.dataset.planId);
-        selectAffaire(planId);
-
-        // Si ce clic vient spécifiquement de l'étiquette ou sélection, ne pas ouvrir directement le modal
-        if ($(this).hasClass('gantt-affaire-badge')) return;
-
-        const request = requests().find(item => Number(item.id) === planId);
-        const dialog = document.getElementById('planning-dialog');
-        const form = document.getElementById('planning-edit-form');
-        if (!request || !dialog || !form) return;
-        form.reset();
-        form.elements.id.value = request.id;
-        form.elements.revision.value = request.planning_revision;
-
-        let startDateStr = request.date_debut_planifiee;
-        if (!startDateStr) {
-            const rawValidation = request.date_validation ? request.date_validation.slice(0, 10) : '';
-            const candidate = date(rawValidation) || date(document.getElementById('planning-start')?.value) || new Date();
-            startDateStr = iso(adjustToWorkingDay(candidate));
-        }
-
-        const hours = getHoursForRequest(request);
-        let endDateStr = request.date_fin_planifiee;
-        if (!endDateStr) {
-            endDateStr = computeEndDate(startDateStr, hours);
-        }
-
-        form.elements.start.value = startDateStr;
-        form.elements.end.value = endDateStr;
-        $('#planning-dialog-title').text('Demande ' + (request.reference_complete || request.reference_demande));
-        const durationDays = Math.ceil(hours / 24);
-        const inches = parseInt(request.pouces_total_iso || 0, 10);
-        
-        const $desc = $('#planning-request-description').empty();
-        const $chipDemandeur = $('<div class="planning-meta-chip"><span class="meta-label">Demandeur</span><strong class="meta-val"></strong></div>');
-        $chipDemandeur.find('.meta-val').text(request.demandeur || '—');
-        $desc.append($chipDemandeur);
-        if (inches > 0) {
-            // « 100 pouces ISO (100 j) » laisse croire a une coincidence : on montre les
-            // heures, qui font le lien entre les deux (100 pouces x 24 h = 2 400 h = 100 j).
-            const $chipChiffrage = $('<div class="planning-meta-chip"><span class="meta-label">Charge estimée</span><strong class="meta-val"></strong></div>');
-            $chipChiffrage.find('.meta-val').text(
-                inches + ' pouce' + (inches > 1 ? 's' : '') + ' ISO'
-                + ' · ' + Math.round(hours).toLocaleString('fr-FR') + ' h'
-                + ' (' + durationDays + ' j)');
-            $desc.append($chipChiffrage);
-        }
-        const $chipLivraison = $('<div class="planning-meta-chip"><span class="meta-label">Livraison max</span><strong class="meta-val"></strong></div>');
-        $chipLivraison.find('.meta-val').text(displayDate(request.date_livraison_prevue));
-        $desc.append($chipLivraison);
-
-        $('#planning-save-message').removeClass('is-error is-success').text('');
-        document.getElementById('planning-remove').hidden = !request.date_debut_planifiee;
-        preview();
-        dialog.showModal();
-    });
-
-    $(document).on('click', '[data-planning-close]', () => document.getElementById('planning-dialog')?.close());
     $(document).on('change input', '#planning-task-start', function () {
         const currentId = document.getElementById('planning-edit-form')?.elements.id?.value;
         const request = requests().find(item => Number(item.id) === Number(currentId));
@@ -545,10 +493,11 @@
         params.set('operation', operation);
         const buttons = $(form).find('button');
         buttons.prop('disabled', true);
-        $('#planning-save-message').removeClass('is-error').text('Enregistrement…');
+        $('#planning-save-message').removeClass('error').text('Enregistrement…');
         $.ajax({ url: 'actions/save_planning.php', method: 'POST', data: params.toString(), dataType: 'json' }).done(result => {
             if (root() !== current) return;
-            document.getElementById('planning-dialog')?.close();
+            const volet = document.getElementById('planning-volet');
+            if (volet) volet.hidden = true;
             if (result.planning) {
                 const first = date(result.planning.start);
                 document.getElementById('planning-start').value = iso(addDays(first, -((first.getUTCDay() + 6) % 7)));
@@ -557,12 +506,14 @@
             }
             reload(result.message, result.planning?.id, operation === 'remove');
         }).fail(xhr => {
-            if (root() === current) $('#planning-save-message').addClass('is-error').text(xhr.responseJSON?.message || 'Impossible d’enregistrer le planning.');
+            if (root() === current) $('#planning-save-message').addClass('error').text(xhr.responseJSON?.message || 'Impossible d’enregistrer le planning.');
         }).always(() => buttons.prop('disabled', false));
     }
 
     $(document).on('submit', '#planning-edit-form', function (event) { event.preventDefault(); save('save'); });
-    $(document).on('click', '#planning-remove', () => save('remove'));
+    $(document).on('click', '#planning-remove', () => {
+        if (window.confirm('Retirer cette demande du planning ? Ses dates seront effacées.')) save('remove');
+    });
     $(document).on('submit', '#planning-filters', function (event) { event.preventDefault(); reload(); });
     $(document).on('change', '#planning-filters input, #planning-filters select', () => reload());
     $(document).on('click', '#planning-refresh', () => reload());

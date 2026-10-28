@@ -16,20 +16,10 @@
      border-subtle-1, rayon 8, sans ombre (§ 1, § 8).
    - Le bouton plein reste noir (§ 6). */
 
+/* Le conteneur est celui des listes (.page.prefa-list) : en-tête, barre d'outils et
+   marges viennent de prefa-list.css et filtres.css. Cette feuille ne pose que le
+   calendrier, ses couleurs et le volet. */
 .planning-page {
-    height: 100%;
-    overflow-y: auto;
-    /* Gouttière réservée en permanence : sans elle, l'apparition de la barre de
-       défilement rétrécit la page de ~15 px, la timeline se redessine, la hauteur
-       retombe, la barre disparaît… et le bas de la page oscille sans fin. */
-    scrollbar-gutter: stable;
-    /* Les mêmes 18 et 16 pixels que les autres écrans. */
-    padding: 18px 16px 48px;
-    background: var(--surface);
-    color: var(--text);
-    font-family: var(--font, inherit);
-    font-size: 13px;
-
     /* ===== UNE COULEUR PAR DEMANDEUR =====
        Trois teintes dont la séparation est vérifiée (vision normale et daltonismes) sur les
        deux surfaces de l'application, doublées d'une hachure à 45° pour les demandeurs 4 à
@@ -54,38 +44,6 @@
     width: 16px;
     height: 16px;
     flex: 0 0 16px;
-}
-
-/* ===== EN-TÊTE ===== */
-
-.planning-heading {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 16px;
-}
-
-.planning-page h1 {
-    margin: 0;
-    font-size: 20px;
-    line-height: 28px;
-    font-weight: 600;
-    color: var(--text);
-}
-
-.planning-subtitle {
-    margin: 3px 0 0;
-    font-size: 13px;
-    line-height: 1.54;
-    color: var(--text-muted);
-}
-
-.planning-page h2 {
-    margin: 0;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text);
 }
 
 /* ===== BOUTONS ===== */
@@ -150,22 +108,21 @@
 }
 
 /* ===== BARRE D'OUTILS =====
-   Pas une carte (§ 8) : elle vit à même la surface. Tous ses contrôles à 32px. */
+   La barre des listes (.prefa-filters) : recherche, période, puis les réglages poussés à
+   droite. Tous les contrôles à 32 px. */
 
-.planning-toolbar {
+.planning-periode {
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.planning-reglages {
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 8px 12px;
-    margin-bottom: 8px;
-}
-
-.planning-recherche {
-    flex: 0 1 200px;
-}
-
-.planning-recherche input {
-    height: var(--h-lg);
+    gap: 8px;
+    margin-left: auto;
 }
 
 .planning-date-nav {
@@ -259,22 +216,7 @@
     padding: 8px 12px;
 }
 
-/* ===== TITRE DE LA PÉRIODE ET DEMANDES HORS PÉRIODE ===== */
-
-.planning-calendar-heading {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 8px;
-}
-
-.planning-calendar-heading h2 {
-    color: var(--text);
-    font-size: 13px;
-    font-weight: 600;
-}
+/* ===== DEMANDES HORS PÉRIODE ===== */
 
 /* Une ligne d'information, pas un bandeau : texte sourd et lien d'action. */
 .planning-outside-period {
@@ -282,9 +224,13 @@
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
-    margin-bottom: 8px;
+    margin: 0 16px 8px;
     color: var(--text-muted);
     font-size: 12px;
+}
+
+.planning-feedback:empty {
+    display: none;
 }
 
 /* ==========================================================================
@@ -294,9 +240,9 @@
 /* Un tableau n'est pas une carte (§ 8) : pas de fond, pas de cadre latéral, pas d'ombre.
    Un filet franc en haut et en bas délimite la zone ; les filets discrets font le reste. */
 .gantt-outer-container {
-    border-top: 1px solid var(--border-fort);
+    border-top: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
-    margin-bottom: 16px;
+    margin: 4px 0 12px;
 }
 
 .gantt-scroll-wrapper {
@@ -327,7 +273,7 @@ body.is-panning-gantt .gantt-bar:hover {
 }
 
 .gantt-layout {
-    --gantt-label-width: 210px;
+    --gantt-label-width: 260px;
     --gantt-day-width: 38px;
     min-width: calc(var(--gantt-label-width) + var(--gantt-days) * var(--gantt-day-width));
     display: flex;
@@ -511,6 +457,8 @@ body.is-panning-gantt .gantt-bar:hover {
 /* Colonne des affaires : du texte, pas des boutons encadrés. */
 .gantt-label-col {
     flex: 0 0 var(--gantt-label-width);
+    min-width: 0;
+    overflow: hidden;
     box-sizing: border-box;
     padding: 0 4px;
     border-right: 1px solid var(--border);
@@ -524,30 +472,54 @@ body.is-panning-gantt .gantt-bar:hover {
 }
 
 .gantt-affaire-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     width: 100%;
+    min-width: 0;
     height: var(--h-md);
-    padding: 0 8px;
+    padding: 0 12px;
     border: 0;
     border-radius: var(--r-md);
     background: transparent;
     color: var(--text);
     font: inherit;
     font-size: 13px;
-    font-weight: 500;
     text-align: left;
     cursor: pointer;
+}
+
+/* La référence en tête de ligne, comme la première colonne des listes. */
+.gantt-ref {
+    flex: none;
+    color: var(--text);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.gantt-nom {
+    min-width: 0;
     overflow: hidden;
+    color: var(--text-muted);
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.gantt-affaire-badge:hover {
-    color: var(--accent-texte);
+.gantt-urgent {
+    flex: none;
+    display: inline-flex;
+    margin-left: auto;
+    color: var(--attente-texte);
 }
 
-.gantt-row.is-selected .gantt-affaire-badge {
-    color: var(--accent-texte);
-    font-weight: 600;
+.gantt-urgent .icon {
+    width: 14px;
+    height: 14px;
+}
+
+.gantt-affaire-badge:hover .gantt-nom {
+    color: var(--text);
 }
 
 .gantt-track {
@@ -559,26 +531,42 @@ body.is-panning-gantt .gantt-bar:hover {
     position: relative;
 }
 
-/* La barre ne porte pas de texte : son nom est à gauche, sa couleur dit le demandeur et
-   l'infobulle donne le détail. Hauteur d'un contrôle de ligne (24px), rayon 4, à plat. */
+/* La barre est une zone teintée, pas un aplat : la couleur du demandeur à 20 %, un
+   filet de la même teinte à gauche, et le nom de l'affaire écrit dessus en couleur de
+   texte (DA, § couleurs : le plein sert à teinter une zone, jamais à porter du texte). */
 .gantt-bar {
     position: relative;
     z-index: 3;
+    display: flex;
+    align-items: center;
+    min-width: 0;
     height: var(--h-sm);
     margin: 0 1px;
-    padding: 0;
+    padding: 0 8px;
     border: 0;
+    border-left: 3px solid var(--person-fill, var(--person-other));
     border-radius: var(--r-sm);
+    background-color: color-mix(in srgb, var(--person-fill, var(--person-other)) 20%, var(--surface));
+    background-image: var(--person-hachure, none);
+    color: var(--text);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: left;
     cursor: pointer;
     overflow: hidden;
-    background-color: var(--person-fill, var(--person-other));
-    background-image: var(--person-hachure, none);
-    color: var(--person-ink);
-    transition: filter 0.12s ease;
+    transition: background-color 0.12s ease;
+}
+
+.gantt-bar-texte {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .gantt-bar:hover {
-    filter: brightness(1.08);
+    background-color: color-mix(in srgb, var(--person-fill, var(--person-other)) 32%, var(--surface));
 }
 
 .gantt-bar.is-selected {
@@ -598,20 +586,9 @@ body.is-panning-gantt .gantt-bar:hover {
 .planning-person-4,
 .planning-person-5,
 .planning-person-6 {
-    --person-hachure: repeating-linear-gradient(45deg, rgb(0 0 0 / 26%) 0 5px, transparent 5px 10px);
+    --person-hachure: repeating-linear-gradient(45deg, color-mix(in srgb, var(--person-fill) 22%, transparent) 0 4px, transparent 4px 9px);
     /* Pas resserré : dans une pastille de légende, la hachure doit rester lisible. */
     --person-hachure-pastille: repeating-linear-gradient(45deg, rgb(0 0 0 / 34%) 0 2px, transparent 2px 4px);
-}
-
-/* L'urgence se lit à la forme, pas à la teinte : elle reste visible sur toutes les couleurs. */
-.gantt-bar.is-urgent {
-    outline: 2px dashed var(--person-ink);
-    outline-offset: -4px;
-}
-
-.gantt-bar.is-urgent.is-selected {
-    outline: 2px solid var(--accent);
-    outline-offset: 1px;
 }
 
 .gantt-empty-notice {
@@ -633,7 +610,7 @@ body.is-panning-gantt .gantt-bar:hover {
     align-items: center;
     flex-wrap: wrap;
     gap: 8px 16px;
-    margin: 0 0 16px;
+    margin: 0 16px 8px;
 }
 
 .planning-legend-title {
@@ -662,124 +639,200 @@ body.is-panning-gantt .gantt-bar:hover {
 
 .planning-legend-swatch {
     flex-shrink: 0;
-    width: 16px;
+    width: 14px;
     height: 10px;
+    border-left: 3px solid var(--person-fill, var(--person-other));
     border-radius: 2px;
-    background-color: var(--person-fill, var(--person-other));
-    background-image: var(--person-hachure-pastille, none);
+    background-color: color-mix(in srgb, var(--person-fill, var(--person-other)) 20%, var(--surface));
+    background-image: var(--person-hachure, none);
 }
 
 /* ==========================================================================
-   DÉTAIL DE L'AFFAIRE SÉLECTIONNÉE : 4 CARTES
+   À PLANIFIER — un groupe sous le calendrier
    ========================================================================== */
 
-.planning-details-panel {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 12px;
-    margin: 0 0 16px;
+.planning-attente {
+    margin: 8px 0 32px;
 }
 
-.planning-details-panel[hidden] {
-    display: none;
-}
-
-@media (max-width: 1024px) {
-    .planning-details-panel {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (max-width: 640px) {
-    .planning-details-panel {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* Une carte : layer-1, filet border-subtle-1, rayon 8, sans ombre (§ 1, § 8). */
-.planning-page .planning-card {
+.planning-attente-titre {
     display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    border: 1px solid var(--border);
-    border-radius: var(--r-lg);
-    background: var(--carte);
-    box-shadow: none;
-}
-
-.planning-card-header {
-    padding: 12px 14px 0;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    padding: 12px 16px 8px;
+    border-bottom: 1px solid var(--border);
     color: var(--text);
     font-size: 13px;
     font-weight: 600;
 }
 
-.planning-card-body {
-    flex: 1;
-    max-height: 220px;
-    overflow-y: auto;
-    padding: 10px 14px 12px;
-    color: var(--text);
-    font-size: 13px;
-}
-
-.planning-card-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    padding: 0 14px 12px;
-}
-
-.planning-card-footer .planning-button {
-    height: var(--h-md);
-    padding: 0 10px;
-    font-size: 12px;
-}
-
-/* Bloc 1 : information générale — libellé sourd à gauche, valeur à droite. */
-.planning-info-list {
+.planning-attente-liste {
     margin: 0;
-    display: flex;
-    flex-direction: column;
+    padding: 0;
+    list-style: none;
 }
 
-.planning-info-item {
+/* Une ligne de tableau : 36 px, filet discret, survol teinté — et toute la ligne ouvre
+   le volet, comme dans les listes. */
+.planning-attente-ligne {
     display: flex;
-    justify-content: space-between;
-    align-items: baseline;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    min-height: var(--ligne-td, 36px);
+    padding: 0 16px;
+    border: 0;
+    border-bottom: 1px solid var(--border-faint, var(--border));
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.planning-attente-ligne:hover {
+    background: var(--ligne-survol, var(--hover));
+}
+
+.planning-attente-nom {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.planning-attente-meta {
+    flex: none;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.planning-attente-action {
+    flex: none;
+    color: var(--accent-texte);
+    font-weight: 500;
+}
+
+@media (max-width: 860px) {
+    .planning-attente-meta {
+        display: none;
+    }
+}
+
+/* ==========================================================================
+   LE VOLET D'UNE DEMANDE
+   ==========================================================================
+
+   Le volet des PV (pv.css) : carte flottante à droite, sections, lignes de propriétés.
+   Cette feuille ne pose que sa place et ce qui est propre au planning. */
+
+.prefa-detail-row.planning-volet-rang {
+    top: 8px;
+    right: 8px;
+    bottom: 8px;
+    left: auto;
+    width: min(560px, calc(100vw - 16px));
+    border: 1px solid var(--border);
+    border-radius: var(--r-xl);
+    background: var(--surface) !important;
+    box-shadow: 0 1px 2px rgb(15 15 16 / 6%), 0 24px 64px rgb(15 15 16 / 18%);
+    animation: fiche-tiroir 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+html body:has(.prefa-detail-row.planning-volet-rang:not([hidden]))::before {
+    background: rgb(15 15 16 / 16%);
+    backdrop-filter: blur(2px);
+}
+
+.planning-volet-rang .pv-volet {
+    max-width: none;
+    margin: 0;
+}
+
+.planning-volet-rang .pv-volet input.pv-volet-champ {
+    width: 168px;
+}
+
+#planning-preview.est-erreur {
+    color: var(--alerte-texte);
+}
+
+.planning-volet-actions {
+    display: flex;
+    align-items: center;
     gap: 12px;
-    padding: 6px 0;
-    border-bottom: 1px solid var(--border-faint);
 }
 
-.planning-info-item:last-child {
-    border-bottom: none;
-}
-
-.planning-info-item dt {
+.planning-volet-actions .pv-message {
+    flex: 1;
+    min-width: 0;
     color: var(--text-muted);
     font-size: 12px;
-    font-weight: 450;
+    text-align: right;
 }
 
-.planning-info-item dd {
-    margin: 0;
-    color: var(--text);
+.planning-volet-actions .pv-message.error {
+    color: var(--alerte-texte);
+}
+
+/* Retirer du planning : une action qui défait, discrète, à gauche du bouton plein. */
+.planning-retirer,
+.planning-exporter {
+    height: var(--h-md);
+    padding: 0 10px;
+    border: 0;
+    border-radius: var(--r-md);
+    background: transparent;
+    font: inherit;
     font-size: 12px;
     font-weight: 500;
-    text-align: right;
-    word-break: break-word;
+    cursor: pointer;
 }
 
-.planning-info-item dd a {
+.planning-retirer {
+    margin-left: -10px;
+    color: var(--danger-texte);
+}
+
+.planning-retirer:hover {
+    background: var(--alerte-fond);
+    color: var(--alerte-texte);
+}
+
+.planning-retirer[hidden] {
+    display: none;
+}
+
+.planning-exporter {
+    color: var(--text-muted);
+}
+
+.planning-exporter:hover {
+    background: var(--hover);
+    color: var(--text);
+}
+
+.planning-lien {
     color: var(--accent-texte);
-    text-decoration: underline;
-    text-underline-offset: 2px;
+    text-decoration: none;
+    overflow-wrap: anywhere;
 }
 
-/* Bloc 2 : la matrice d'avancement — un tableau, donc des filets de ligne seulement. */
-.planning-table-container {
-    padding: 4px 14px 12px;
+.planning-lien:hover {
+    text-decoration: underline;
+}
+
+.planning-plus {
+    margin-left: 4px;
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+/* La matrice d'avancement : un tableau, filets discrets, états par couleur de texte. */
+.planning-matrice-scroll {
     overflow-x: auto;
 }
 
@@ -791,541 +844,70 @@ body.is-panning-gantt .gantt-bar:hover {
 
 .planning-matrix-table th,
 .planning-matrix-table td {
-    height: 28px;
-    padding: 0 6px;
-    border-bottom: 1px solid var(--border-faint);
+    height: 30px;
+    padding: 0 8px;
+    border-bottom: 1px solid var(--border-faint, var(--border));
     text-align: center;
     white-space: nowrap;
 }
 
 .planning-matrix-table th {
-    border-bottom-color: var(--border);
     color: var(--text-muted);
     font-weight: 500;
 }
 
-.planning-matrix-table tbody tr:last-child > td {
-    border-bottom: 0;
-}
-
-.planning-matrix-table td.step-label {
+.planning-matrix-table th:first-child,
+.planning-matrix-table td:first-child {
     padding-left: 0;
     color: var(--text);
-    font-weight: 500;
     text-align: left;
 }
 
-.planning-matrix-table td.status-ok {
-    color: var(--succes-texte);
-    font-weight: 500;
+.planning-matrix-table tr:last-child td {
+    border-bottom: 0;
 }
 
-.planning-matrix-table td.status-non-ok {
-    color: var(--alerte-texte);
-    font-weight: 500;
-}
+/* « !important » : le thème clair force la couleur de toutes les cellules de tableau. */
+.planning-matrix-table td.status-ok { color: var(--succes-texte) !important; font-weight: 500; }
+.planning-matrix-table td.status-non-ok { color: var(--alerte-texte) !important; font-weight: 500; }
+.planning-matrix-table td.status-ras,
+.planning-matrix-table td.status-unset { color: var(--text-muted) !important; }
 
-.planning-matrix-table td.status-ras {
-    color: var(--text-muted);
-}
-
-/* Bloc 3 : commentaires — une liste, séparée par des filets. */
-.planning-comments-container {
+#planning-edit-form {
     display: flex;
     flex-direction: column;
-}
-
-.comment-item {
-    padding: 8px 0;
-    border-bottom: 1px solid var(--border-faint);
-}
-
-.comment-item:first-child {
-    padding-top: 0;
-}
-
-.comment-item:last-child {
-    border-bottom: none;
-}
-
-.comment-meta {
-    margin-bottom: 2px;
-    color: var(--text-muted);
-    font-size: 12px;
-    font-weight: 500;
-}
-
-.comment-text {
-    margin: 0;
-    color: var(--text);
-    font-size: 13px;
-    line-height: 1.54;
-}
-
-.planning-empty-text {
-    margin: 16px 0;
-    color: var(--text-muted);
-    font-size: 12px;
-    text-align: center;
-}
-
-/* Bloc 4 : livraison. */
-.planning-delivery-info {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.planning-delivery-info p {
-    margin: 0;
-    color: var(--text-muted);
-    font-size: 12px;
-}
-
-.planning-delivery-info strong {
-    display: block;
-    margin-top: 2px;
-    color: var(--text);
-    font-size: 13px;
-    font-weight: 500;
-}
-
-/* ==========================================================================
-   DEMANDES EN ATTENTE DE PLANIFICATION
-   ========================================================================== */
-
-/* Une section repliable : une carte (§ 8). */
-.planning-page .planning-backlog {
-    border: 1px solid var(--border);
-    border-radius: var(--r-lg);
-    background: var(--carte);
-    overflow: hidden;
-}
-
-.planning-backlog-summary {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    height: 40px;
-    padding: 0 14px;
-    color: var(--text);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    list-style: none;
-}
-
-.planning-backlog-summary::-webkit-details-marker {
-    display: none;
-}
-
-.planning-backlog-summary:hover {
-    background: var(--hover);
-}
-
-.planning-backlog-summary:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: -2px;
-}
-
-.planning-page .planning-backlog-chevron {
-    width: 14px;
-    height: 14px;
-    flex-basis: 14px;
-    color: var(--text-muted);
-    transition: transform 0.12s ease;
-}
-
-.planning-backlog[open] .planning-backlog-chevron {
-    transform: rotate(90deg);
-}
-
-/* Le compteur : une pastille sourde, comme ceux des onglets et de la barre latérale. */
-.planning-badge-count {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 20px;
-    height: 18px;
-    padding: 0 6px;
-    box-sizing: border-box;
-    border-radius: 999px;
-    background: var(--hover);
-    color: var(--text-muted);
-    font-size: 11px;
-    font-weight: 500;
-    font-variant-numeric: tabular-nums;
-}
-
-.planning-backlog-list {
-    max-height: 240px;
-    overflow-y: auto;
-    padding: 0 14px;
-    border-top: 1px solid var(--border);
-}
-
-.planning-backlog-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    min-height: var(--ligne-td);
-    border-bottom: 1px solid var(--border-faint);
-}
-
-.planning-backlog-item:last-child {
-    border-bottom: none;
-}
-
-.planning-backlog-item > div:first-child {
-    flex: 1;
-    min-width: 0;
-}
-
-.planning-backlog-item strong {
-    font-weight: 500;
-    font-variant-numeric: tabular-nums;
-}
-
-.planning-backlog-owner {
-    margin-left: 8px;
-    color: var(--text-muted);
-}
-
-.planning-backlog-meta {
-    color: var(--text-muted);
-    font-size: 12px;
-    font-variant-numeric: tabular-nums;
-}
-
-.planning-backlog-item .planning-button {
-    height: var(--h-sm);
-    padding: 0 8px;
-    font-size: 12px;
-}
-
-/* La pastille « Urgente », la même que dans la liste des demandes. */
-.planning-urgent-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    margin-left: 6px;
-    padding: 1px 8px;
-    border-radius: var(--r-sm);
-    background: var(--alerte-fond);
-    color: var(--alerte-texte);
-    font-size: 12px;
-    font-weight: 500;
-}
-
-.planning-urgent-badge::before {
-    content: "";
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: currentColor;
-}
-
-/* ==========================================================================
-   FENÊTRE DE PLANIFICATION
-   ========================================================================== */
-
-/* Une surface flottante : trois tons — surface, filet, ombre (§ 7 quinquies) — et le
-   rayon 12 d'une boîte de dialogue (§ 3). */
-dialog#planning-dialog {
-    position: fixed;
-    inset: 0;
-    margin: auto;
-    width: 480px;
-    max-width: calc(100vw - 32px);
-    height: fit-content;
-    max-height: calc(100vh - 40px);
-    padding: 0;
-    overflow-y: auto;
-    border: 1px solid var(--border);
-    border-radius: var(--r-xl);
-    background: var(--surface);
-    color: var(--text);
-    box-shadow: 0 1px 2px rgb(15 15 16 / 6%), 0 24px 64px rgb(15 15 16 / 18%);
-}
-
-dialog#planning-dialog::backdrop {
-    background: rgb(15 15 16 / 16%);
-}
-
-.planning-dialog-form {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    padding: 20px;
-}
-
-.planning-dialog-heading {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
     gap: 12px;
 }
 
-.planning-dialog-title-wrap {
+.planning-matrix-table td.planning-vide {
+    color: var(--text-muted);
+    text-align: left;
+}
+
+.planning-commentaires {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-}
-
-.planning-dialog-badge {
-    color: var(--text-muted);
-    font-size: 12px;
-    font-weight: 450;
-}
-
-.planning-page .planning-dialog-heading h2,
-.planning-dialog-heading h2 {
-    margin: 0;
-    color: var(--text);
-    font-size: 16px;
-    line-height: 1.3;
-    font-weight: 600;
-}
-
-/* Un bouton d'icône : 28px, rayon 4 (§ 3). */
-.planning-dialog-close {
-    display: grid;
-    place-items: center;
-    flex: none;
-    width: var(--h-md);
-    height: var(--h-md);
-    padding: 0;
-    border: 0;
-    border-radius: var(--r-sm);
-    background: transparent;
-    color: var(--text-muted);
-    cursor: pointer;
-}
-
-.planning-dialog-close:hover {
-    background: var(--hover);
-    color: var(--text);
-}
-
-.planning-dialog-close .icon {
-    width: 14px;
-    height: 14px;
-}
-
-/* Les faits de la demande : lignes de propriété, libellé sourd à gauche, valeur à droite. */
-.planning-request-chips {
-    display: grid;
-    gap: 6px;
-    margin: 0;
-}
-
-.planning-meta-chip {
-    display: flex;
-    justify-content: space-between;
-    gap: 16px;
-    font-size: 13px;
-}
-
-.planning-meta-chip .meta-label {
-    color: var(--text-muted);
-    font-size: 12px;
-}
-
-.planning-meta-chip .meta-val {
-    color: var(--text);
-    font-weight: 500;
-    text-align: right;
-}
-
-.planning-dialog-fields {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
     gap: 12px;
 }
 
-.planning-field-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+.planning-commentaire p {
+    margin: 2px 0 0;
+    white-space: pre-wrap;
 }
 
-.planning-label {
+.planning-commentaire-meta {
     color: var(--text-muted);
     font-size: 12px;
-    font-weight: 500;
-    white-space: nowrap;
 }
 
-/* Un champ de formulaire : 36px, rayon 6 (§ 3, § 4). */
-.planning-date-input {
-    box-sizing: border-box;
-    width: 100%;
-    min-width: 0;
-    height: var(--h-xl);
-    padding: 0 12px;
-    border: 1px solid var(--border);
-    border-radius: var(--r-md);
-    background: var(--surface);
+.planning-commentaire-meta strong {
     color: var(--text);
-    font: inherit;
-    font-size: 13px;
-}
-
-.planning-date-input:focus {
-    border-color: var(--accent);
-    outline: 2px solid var(--accent);
-    outline-offset: -1px;
-}
-
-.planning-help-text {
-    margin-top: -8px;
-    color: var(--text-muted);
-    font-size: 12px;
-    line-height: 1.4;
-}
-
-.planning-preview {
-    display: flex;
-    align-items: center;
-    min-height: 24px;
-}
-
-.planning-preview-content {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    width: 100%;
-}
-
-.planning-preview-dates {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-    color: var(--text);
-    font-size: 12px;
-}
-
-.preview-arrow {
-    color: var(--text-muted);
-    font-size: 12px;
-}
-
-.planning-preview-badge {
-    color: var(--text-muted);
-    font-size: 12px;
-    white-space: nowrap;
-}
-
-.planning-preview-placeholder,
-.planning-preview-error {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12px;
-}
-
-.planning-preview-placeholder {
-    color: var(--text-muted);
-}
-
-.planning-preview-error {
-    color: var(--alerte-texte);
     font-weight: 500;
 }
 
-#planning-dialog .icon-sm {
-    width: 14px;
-    height: 14px;
-    flex: 0 0 14px;
-}
-
-#planning-save-message:empty {
-    display: none;
-}
-
-.planning-dialog-actions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding-top: 4px;
-}
-
-.planning-dialog-actions-right {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-left: auto;
-}
-
-/* Les trois boutons de la fenêtre : 32px, rayon 6 (§ 3, § 4). */
-.planning-btn-remove,
-.planning-btn-cancel,
-.planning-btn-submit {
-    display: inline-flex;
-    align-items: center;
-    height: var(--h-lg);
-    padding: 0 12px;
-    border-radius: var(--r-md);
-    font: inherit;
-    font-size: 13px;
-    font-weight: 500;
-    white-space: nowrap;
-    cursor: pointer;
-    transition: background 0.12s ease;
-}
-
-/* Retirer : une action de danger, en texte, sans plein (§ 6). */
-.planning-btn-remove {
-    margin-left: -12px;
-    border: 0;
-    background: transparent;
-    color: var(--alerte-texte);
-}
-
-.planning-btn-remove:hover {
-    background: var(--alerte-fond);
-}
-
-.planning-btn-cancel {
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text);
-}
-
-.planning-btn-cancel:hover {
-    background: var(--hover);
-}
-
-/* Le bouton plein reste noir (§ 6). */
-.planning-btn-submit {
-    border: 0;
-    background: var(--bouton-plein);
-    color: var(--bouton-plein-texte);
-}
-
-.planning-btn-submit:hover {
-    background: var(--bouton-plein-hover);
-}
-
-#planning-dialog button:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-}
-
-@media (max-width: 420px) {
-    .planning-dialog-fields {
-        grid-template-columns: 1fr;
-    }
-
-    .planning-preview-content {
-        flex-wrap: wrap;
-        gap: 6px;
-    }
+.planning-vide {
+    margin: 0;
+    color: var(--text-muted);
 }
 
 .sr-only {

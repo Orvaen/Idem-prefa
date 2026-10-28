@@ -170,7 +170,8 @@ function dashboardMenu(): array
             'page' => 'pages/planning.php',
             'pour' => [Role::ChargeDeProduction, Role::ChefDAtelier],
             'icone' => '<path d="M5 6h14a1.5 1.5 0 0 1 1.5 1.5V19a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19V7.5A1.5 1.5 0 0 1 5 6z"/><path d="M3.5 10.5h17M8 3.5V7M16 3.5V7"/><path d="M7.5 14.5h4M7.5 17.5h7"/>',
-            'styles' => ['dashboard/planning.css'],
+            // Le volet d'une demande est celui des PV : sa feuille vient avec.
+            'styles' => ['dashboard/pv.css', 'dashboard/planning.css'],
             'scripts' => ['planning.js'],
         ],
         [

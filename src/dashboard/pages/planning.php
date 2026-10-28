@@ -202,48 +202,66 @@ if ($outside) {
 }
 
 $initialSelectedId = null;
+
+/** Les icônes du volet : le trait des volets des PV, 16 px, la couleur du texte sourd. */
+function planningIcone(string $nom): string
+{
+    $traces = [
+        'debut' => '<rect x="3.5" y="5" width="17" height="15" rx="2" /><path d="M3.5 10h17M8 3v4M16 3v4" />',
+        'fin' => '<rect x="3.5" y="5" width="17" height="15" rx="2" /><path d="M3.5 10h17M8 3v4M16 3v4M9.5 15l2 2 3.5-3.5" />',
+        'duree' => '<circle cx="12" cy="12" r="8.5" /><path d="M12 7v5l3 2" />',
+        'charge' => '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />',
+        'personne' => '<circle cx="12" cy="8" r="3.5" /><path d="M5 20c.7-3.6 3.5-5.5 7-5.5s6.3 1.9 7 5.5" />',
+        'atelier' => '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3.5 17.5l3 3 5.8-5.8a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z" />',
+        'matiere' => '<path d="M4 8.5 12 4l8 4.5v7L12 20l-8-4.5z" /><path d="m4 8.5 8 4.5 8-4.5M12 13v7" />',
+        'plan' => '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z" /><path d="M14 3v5h5" />',
+        'camion' => '<path d="M3 6.5h11v9H3zM14 9.5h4l3 3v3h-7" /><circle cx="7" cy="17.5" r="1.8" /><circle cx="17.5" cy="17.5" r="1.8" />',
+    ];
+    return '<svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">'
+        . ($traces[$nom] ?? '') . '</svg>';
+}
 ?>
-<section class="planning-page" aria-labelledby="planning-title" data-days-per-inch="<?= prefaEscape($hoursSettings['days']) ?>" data-hours-per-inch="<?= prefaEscape($hoursSettings['rate']) ?>" data-selected-id="<?= (int) ($initialSelectedId ?: 0) ?>">
-    <header class="planning-heading">
+<section class="page prefa-page prefa-list atelier-page planning-page" id="planning-page" aria-labelledby="planning-title" data-days-per-inch="<?= prefaEscape($hoursSettings['days']) ?>" data-hours-per-inch="<?= prefaEscape($hoursSettings['rate']) ?>" data-selected-id="<?= (int) ($initialSelectedId ?: 0) ?>">
+  <div class="prefa-shell">
+    <header class="prefa-heading prefa-list-heading">
         <div>
-            <h1 id="planning-title">Planning d'atelier</h1>
-            <p class="planning-subtitle">Visualisation et ordonnancement temporel des demandes de préfabrication.</p>
+            <h1 id="planning-title">Planning</h1>
+            <p>Les demandes validées dans le temps de l’atelier : cliquez une barre pour la planifier ou la suivre.</p>
         </div>
-        <button type="button" class="planning-button planning-refresh-button" id="planning-refresh">
-            <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-2l2 3M4 16l2 3a7 7 0 0 1 12-2" />
-            </svg>
-            Actualiser
-        </button>
+        <div class="prefa-vue-outils">
+            <button type="button" class="pv-outil" id="planning-refresh">
+                <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-2l2 3M4 16l2 3a7 7 0 0 1 12-2" />
+                </svg>
+                Actualiser
+            </button>
+        </div>
     </header>
 
-    <!-- La barre d'outils suit la DA : contrôles de 32 px, libellés courts à côté du champ
-         plutôt qu'étiquettes flottantes de 44 px. -->
-    <form id="planning-filters" class="planning-toolbar" role="search">
-        <div class="filtres-recherche planning-recherche">
+    <!-- La barre d'outils des listes : recherche à gauche, puis la période, puis les
+         réglages de vue, tous à 32 px. -->
+    <form id="planning-filters" class="prefa-filters planning-toolbar" role="search">
+        <div class="filtres-recherche">
             <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
             <input id="planning-request-filter" type="search" name="request" value="<?= prefaEscape($requestSearch) ?>" placeholder="N° de demande" aria-label="Numéro de demande">
         </div>
         <div class="planning-date-nav" role="group" aria-label="Période">
             <button type="button" class="planning-button planning-icon-button" data-planning-shift="-1" aria-label="Période précédente" title="Période précédente">
-                <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="m14 6-6 6 6 6" />
-                </svg>
+                <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m14 6-6 6 6 6" /></svg>
             </button>
             <button type="button" class="planning-button" data-planning-today>Aujourd’hui</button>
             <button type="button" class="planning-button planning-icon-button" data-planning-shift="1" aria-label="Période suivante" title="Période suivante">
-                <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="m10 6 6 6-6 6" />
-                </svg>
+                <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m10 6 6 6-6 6" /></svg>
             </button>
         </div>
-        <div class="planning-champ">
-            <label for="planning-start">Semaine du</label>
-            <input class="planning-controle planning-controle-date" id="planning-start" type="date" name="start" value="<?= $start->format('Y-m-d') ?>" required>
-        </div>
-        <div class="planning-champ">
-            <label for="planning-period">Vue</label>
+        <span class="planning-periode"><?= prefaEscape($rangeLabel) ?></span>
+        <div class="planning-reglages">
+            <div class="planning-champ">
+                <label for="planning-start" class="sr-only">Semaine du</label>
+                <input class="planning-controle planning-controle-date" id="planning-start" type="date" name="start" value="<?= $start->format('Y-m-d') ?>" required title="Semaine du">
+            </div>
             <span class="planning-select">
+                <label for="planning-period" class="sr-only">Vue</label>
                 <select class="planning-controle" id="planning-period" name="period">
                     <option value="7" <?= $length === 7 ? 'selected' : '' ?>>1 semaine</option>
                     <option value="28" <?= $length === 28 ? 'selected' : '' ?>>4 semaines</option>
@@ -252,12 +270,10 @@ $initialSelectedId = null;
                 </select>
                 <svg class="planning-select-chevron" aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m4.5 6.5 3.5 3.5 3.5-3.5" /></svg>
             </span>
-        </div>
-        <div class="planning-champ">
-            <label for="planning-creator-filter">Demandeur</label>
             <span class="planning-select">
+                <label for="planning-creator-filter" class="sr-only">Demandeur</label>
                 <select class="planning-controle" id="planning-creator-filter" name="creator">
-                    <option value="">Tous</option><?php foreach ($creators as $creator): ?><option value="<?= (int) $creator['id'] ?>" <?= $creatorFilter === (int) $creator['id'] ? 'selected' : '' ?>><?= prefaEscape($creator['nom']) ?></option><?php endforeach; ?>
+                    <option value="">Tous les demandeurs</option><?php foreach ($creators as $creator): ?><option value="<?= (int) $creator['id'] ?>" <?= $creatorFilter === (int) $creator['id'] ? 'selected' : '' ?>><?= prefaEscape($creator['nom']) ?></option><?php endforeach; ?>
                 </select>
                 <svg class="planning-select-chevron" aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m4.5 6.5 3.5 3.5 3.5-3.5" /></svg>
             </span>
@@ -265,9 +281,6 @@ $initialSelectedId = null;
     </form>
     <p id="planning-page-message" class="planning-feedback" role="status" aria-live="polite"></p>
 
-    <div class="planning-calendar-heading">
-        <h2><?= prefaEscape($rangeLabel) ?></h2>
-    </div>
     <?php if ($nextRequest): ?>
         <div class="planning-outside-period"><span><?= count($outside) ?> demande<?= count($outside) > 1 ? 's planifiées' : ' planifiée' ?> hors de cette période</span><button type="button" class="planning-button planning-button-discret" data-planning-go-to="<?= prefaEscape($nextRequest['date_debut_planifiee']) ?>" data-planning-target="<?= (int) $nextRequest['id'] ?>">Voir le <?= prefaEscape(prefaFormatDate($nextRequest['date_debut_planifiee'])) ?></button></div>
     <?php endif; ?>
@@ -279,7 +292,7 @@ $initialSelectedId = null;
                 <!-- En-tête des colonnes -->
                 <div class="gantt-header-row">
                     <!-- Coin supérieur gauche (label affaire) -->
-                    <div class="gantt-header-corner">Affaires</div>
+                    <div class="gantt-header-corner">Demande</div>
 
                     <div class="gantt-header-cols">
                     <!-- Ligne 1 : Semaines -->
@@ -327,18 +340,22 @@ $initialSelectedId = null;
                             <div class="gantt-row <?= $r['id'] == $initialSelectedId ? 'is-selected' : '' ?>" data-affaire-id="<?= (int) $r['id'] ?>">
                                 <!-- Étiquette blanche à gauche -->
                                 <div class="gantt-label-col">
-                                    <button type="button" class="gantt-affaire-badge" data-select-affaire="<?= (int) $r['id'] ?>" title="<?= prefaEscape($titleAffaire) ?>">
-                                        <?= prefaEscape($titleAffaire) ?>
+                                    <button type="button" class="gantt-affaire-badge" data-ouvrir="<?= (int) $r['id'] ?>" title="<?= prefaEscape($r['reference_demande'] . ' · ' . $titleAffaire) ?>">
+                                        <span class="gantt-ref"><?= prefaEscape($r['reference_demande']) ?></span>
+                                        <span class="gantt-nom"><?= prefaEscape($titleAffaire) ?></span>
+                                        <?php if ($r['urgent']): ?><span class="gantt-urgent" title="Urgente" aria-label="Urgente">
+                                            <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3 4.5 13.5H11l-1 7.5 8.5-10.5H12z" /></svg>
+                                        </span><?php endif; ?>
                                     </button>
                                 </div>
                                 <!-- Piste de la barre de Gantt -->
                                 <div class="gantt-track">
                                     <?php if ($row['isVisible']): ?>
-                                        <button type="button" class="gantt-bar <?= $row['colorClass'] ?> <?= $r['urgent'] ? 'is-urgent' : '' ?> <?= $r['id'] == $initialSelectedId ? 'is-selected' : '' ?>"
-                                            <?= $isAdmin ? 'data-plan-id' : 'data-view-plan-id' ?>="<?= (int) $r['id'] ?>"
+                                        <button type="button" class="gantt-bar <?= $row['colorClass'] ?> <?= $r['id'] == $initialSelectedId ? 'is-selected' : '' ?>"
+                                            data-ouvrir="<?= (int) $r['id'] ?>"
                                             style="grid-column: <?= $row['colStart'] ?> / span <?= $row['span'] ?>;"
                                             title="<?= prefaEscape('Demande ' . $r['reference_demande'] . ' · ' . $titleAffaire . ' · ' . prefaFormatDate($r['date_debut_planifiee']) . ' au ' . prefaFormatDate($r['date_fin_planifiee'])) ?>"
-                                            aria-label="<?= prefaEscape('Demande ' . $r['reference_demande'] . ' · ' . $titleAffaire . ' · ' . prefaFormatDate($r['date_debut_planifiee']) . ' au ' . prefaFormatDate($r['date_fin_planifiee'])) ?>"></button>
+                                            aria-label="<?= prefaEscape('Demande ' . $r['reference_demande'] . ' · ' . $titleAffaire . ' · ' . prefaFormatDate($r['date_debut_planifiee']) . ' au ' . prefaFormatDate($r['date_fin_planifiee'])) ?>"><span class="gantt-bar-texte"><?= prefaEscape($titleAffaire) ?></span></button>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -377,170 +394,118 @@ $initialSelectedId = null;
         </div>
     <?php endif; ?>
 
-    <!-- PANNEAU INFÉRIEUR : 4 BLOCS (Disposition de la maquette) -->
-    <section class="planning-details-panel" id="planning-details-panel" aria-labelledby="planning-panel-title" hidden>
-        <h2 id="planning-panel-title" class="sr-only">Détails de l'affaire sélectionnée</h2>
-
-        <!-- BLOC 1: INFORMATION GÉNÉRALE -->
-        <div class="planning-card planning-card-info">
-            <div class="planning-card-header">Information générale</div>
-            <div class="planning-card-body">
-                <dl class="planning-info-list">
-                    <div class="planning-info-item">
-                        <dt>Date de début :</dt>
-                        <dd id="detail-date-debut">-</dd>
-                    </div>
-                    <div class="planning-info-item">
-                        <dt>Date de fin :</dt>
-                        <dd id="detail-date-fin">-</dd>
-                    </div>
-                    <div class="planning-info-item">
-                        <dt>Personnel associé :</dt>
-                        <dd id="detail-personnel">-</dd>
-                    </div>
-                    <div class="planning-info-item">
-                        <dt>Matière :</dt>
-                        <dd id="detail-matiere">-</dd>
-                    </div>
-                    <div class="planning-info-item">
-                        <dt>Plan :</dt>
-                        <dd id="detail-plan">-</dd>
-                    </div>
-                </dl>
-            </div>
-            <div class="planning-card-footer">
-                <button type="button" class="planning-button planning-action-btn" id="btn-edit-general" <?= !$isAdmin ? 'disabled' : '' ?>>Modifier</button>
-            </div>
-        </div>
-
-        <!-- BLOC 2: DÉTAIL AVANCEMENT -->
-        <div class="planning-card planning-card-avancement">
-            <div class="planning-card-header">Détail avancement</div>
-            <div class="planning-card-body planning-table-container">
-                <table class="planning-matrix-table" id="matrix-avancement">
-                    <thead id="matrix-head">
-                        <tr>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody id="matrix-body">
-                        <!-- Rempli dynamiquement en JS -->
-                    </tbody>
-                </table>
-            </div>
-            <div class="planning-card-footer">
-                <button type="button" class="planning-button" id="btn-export-avancement">Exporter avancement</button>
-            </div>
-        </div>
-
-        <!-- BLOC 3: COMMENTAIRE -->
-        <div class="planning-card planning-card-comments">
-            <div class="planning-card-header">Commentaire</div>
-            <div class="planning-card-body planning-comments-container" id="comments-list">
-                <p class="planning-empty-text">Sélectionnez une affaire.</p>
-            </div>
-            <div class="planning-card-footer">
-                <button type="button" class="planning-button" id="btn-export-commentaires">Exporter commentaires</button>
-            </div>
-        </div>
-
-        <!-- BLOC 4: LIVRAISON -->
-        <div class="planning-card planning-card-livraison">
-            <div class="planning-card-header">Livraison</div>
-            <div class="planning-card-body">
-                <div class="planning-delivery-info">
-                    <p>Départ de livraison prévu le : <strong id="detail-depart-livraison">-</strong></p>
-                    <p>Réception de livraison prévu le : <strong id="detail-reception-livraison">-</strong></p>
-                </div>
-            </div>
-            <div class="planning-card-footer">
-                <button type="button" class="planning-button planning-action-btn" id="btn-edit-livraison" <?= !$isAdmin ? 'disabled' : '' ?>>Modifier</button>
-            </div>
-        </div>
-    </section>
-
-    <!-- SECTION DEMANDES À PLANIFIER (COLLAPSIBLE) -->
+    <!-- Les demandes sans dates : un groupe sous le calendrier, comme les groupes des
+         listes, et non une carte repliée qu'on oubliait d'ouvrir. -->
     <?php if ($unplanned): ?>
-        <details class="planning-backlog" id="planning-backlog-section">
-            <summary class="planning-backlog-summary">
-                <svg class="icon planning-backlog-chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg>
-                <span>Demandes en attente de planification</span> <span class="planning-badge-count"><?= count($unplanned) ?></span>
-            </summary>
-            <div class="planning-backlog-list">
-                <?php foreach ($unplanned as $request): ?>
-                    <div class="planning-backlog-item">
-                        <div>
-                            <strong><?= prefaEscape($request['reference_demande']) ?></strong>
-                            <?php if ($request['urgent']): ?><span class="planning-urgent-badge">Urgente</span><?php endif; ?>
-                            <span class="planning-backlog-owner"><?= prefaEscape($request['nom_affaire'] ?: $request['demandeur']) ?></span>
-                        </div>
-                        <div class="planning-backlog-meta">
-                            <span><?= prefaEscape(prefaFormatDays((float) $request['heures_chiffrees'] / 24)) ?></span>
-                        </div>
-                        <button type="button" class="planning-button" <?= $isAdmin ? 'data-plan-id' : 'data-view-plan-id' ?>="<?= (int) $request['id'] ?>"><?= $isAdmin ? 'Planifier' : 'Détails' ?></button>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        </details>
-    <?php endif; ?>
-
-    <!-- MODAL DE PLANIFICATION -->
-    <?php if ($isAdmin): ?>
-        <dialog id="planning-dialog" class="planning-dialog" aria-labelledby="planning-dialog-title">
-            <form id="planning-edit-form" class="planning-dialog-form" data-static-fields>
-                <div class="planning-dialog-heading">
-                    <div class="planning-dialog-title-wrap">
-                        <span class="planning-dialog-badge">Planifier la demande</span>
-                        <h2 id="planning-dialog-title">Demande</h2>
-                    </div>
-                    <button type="button" class="planning-dialog-close" data-planning-close aria-label="Fermer">
-                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                    </button>
-                </div>
-
-                <div id="planning-request-description" class="planning-request-chips"></div>
-
-                <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
-                <input type="hidden" name="id">
-                <input type="hidden" name="revision">
-
-                <div class="planning-dialog-fields">
-                    <div class="planning-field-group">
-                        <label for="planning-task-start" class="planning-label">
-                            Début planifié
-                        </label>
-                        <input id="planning-task-start" name="start" type="date" class="planning-date-input" required>
-                    </div>
-
-                    <div class="planning-field-group">
-                        <label for="planning-task-end" class="planning-label">
-                            Fin planifiée
-                        </label>
-                        <input id="planning-task-end" name="end" type="date" class="planning-date-input" required>
-                    </div>
-                </div>
-                <small class="planning-help-text">Fin calculée selon le chiffrage en jours ouvrés.</small>
-
-                <div id="planning-preview" class="planning-preview" aria-live="polite"></div>
-                <p id="planning-save-message" class="planning-feedback" role="status" aria-live="polite"></p>
-
-                <div class="planning-dialog-actions">
-                    <button type="button" class="planning-btn-remove" id="planning-remove">
-                        Retirer du planning
-                    </button>
-                    <div class="planning-dialog-actions-right">
-                        <button type="button" class="planning-btn-cancel" data-planning-close>Annuler</button>
-                        <button type="submit" class="planning-btn-submit">
-                            Enregistrer
+        <section class="planning-attente" aria-labelledby="planning-attente-titre">
+            <h2 id="planning-attente-titre" class="planning-attente-titre">À planifier <span class="prefa-groupe-compte"><?= count($unplanned) ?></span></h2>
+            <ul class="planning-attente-liste">
+                <?php foreach ($unplanned as $request):
+                    $heures = (int) $request['pouces_total_iso'] > 0
+                        ? (int) $request['pouces_total_iso'] * (float) $hoursSettings['rate']
+                        : (float) $request['heures_chiffrees']; ?>
+                    <li>
+                        <button type="button" class="planning-attente-ligne" data-ouvrir="<?= (int) $request['id'] ?>">
+                            <span class="gantt-ref"><?= prefaEscape($request['reference_demande']) ?></span>
+                            <span class="planning-attente-nom"><?= prefaEscape($request['nom_affaire'] ?: '—') ?></span>
+                            <?php if ($request['urgent']): ?><span class="pv-puce pv-puce-a_faire">Urgente</span><?php endif; ?>
+                            <span class="planning-attente-meta"><?= prefaEscape($request['demandeur'] ?: '—') ?></span>
+                            <span class="planning-attente-meta"><?= prefaEscape(prefaFormatDays($heures / 24)) ?></span>
+                            <span class="planning-attente-meta">Livraison <?= prefaEscape(prefaFormatDate($request['date_livraison_prevue'])) ?></span>
+                            <span class="planning-attente-action"><?= $isAdmin ? 'Planifier' : 'Voir' ?></span>
                         </button>
-                    </div>
-                </div>
-            </form>
-        </dialog>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        </section>
     <?php endif; ?>
+  </div>
+
+    <!-- Le volet d'une demande : le même panneau flottant que les PV et la fiche d'une
+         demande. Il remplace la fenêtre de planification ET les quatre cartes du bas — un
+         clic ouvrait les deux, l'une par-dessus les autres. Rempli par planning.js. -->
+    <div id="planning-volet" class="prefa-detail-row planning-volet-rang" hidden>
+        <div class="pv-volet" role="dialog" aria-labelledby="planning-volet-titre">
+            <header class="pv-volet-tete">
+                <div>
+                    <h2 id="planning-volet-titre">Demande</h2>
+                    <p id="planning-volet-sous-titre"></p>
+                </div>
+                <div class="pv-volet-outils">
+                    <button type="button" class="prefa-detail-close" data-close-target="planning-volet" aria-label="Fermer le volet" title="Fermer">
+                        <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 6 12 12M18 6 6 18" /></svg>
+                    </button>
+                </div>
+            </header>
+
+            <section class="pv-volet-section">
+                <div class="pv-volet-titre-rang">
+                    <h3 class="pv-volet-titre">Planification</h3>
+                    <span id="planning-volet-etat" class="pv-puce"></span>
+                </div>
+                <?php if ($isAdmin): ?>
+                    <form id="planning-edit-form" data-static-fields>
+                        <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
+                        <input type="hidden" name="id">
+                        <input type="hidden" name="revision">
+                        <dl class="pv-proprietes">
+                            <div><dt><?= planningIcone('debut') ?><label for="planning-task-start">Début</label></dt>
+                                <dd><input id="planning-task-start" class="pv-volet-champ" name="start" type="date" required></dd></div>
+                            <div><dt><?= planningIcone('fin') ?><label for="planning-task-end">Fin</label></dt>
+                                <dd><input id="planning-task-end" class="pv-volet-champ" name="end" type="date" required></dd></div>
+                            <div><dt><?= planningIcone('duree') ?>Durée</dt><dd id="planning-preview"></dd></div>
+                            <div><dt><?= planningIcone('charge') ?>Charge estimée</dt><dd id="planning-volet-charge"></dd></div>
+                        </dl>
+                        <p class="pv-volet-note">La fin se recalcule sur le chiffrage, en jours ouvrés, quand on change le début.</p>
+                        <div class="planning-volet-actions">
+                            <button type="button" class="planning-retirer" id="planning-remove">Retirer du planning</button>
+                            <span id="planning-save-message" class="pv-message" role="status" aria-live="polite"></span>
+                            <button type="submit" class="pv-enregistrer">Enregistrer</button>
+                        </div>
+                    </form>
+                <?php else: ?>
+                    <dl class="pv-proprietes">
+                        <div><dt><?= planningIcone('debut') ?>Début</dt><dd id="planning-volet-debut"></dd></div>
+                        <div><dt><?= planningIcone('fin') ?>Fin</dt><dd id="planning-volet-fin"></dd></div>
+                        <div><dt><?= planningIcone('charge') ?>Charge estimée</dt><dd id="planning-volet-charge"></dd></div>
+                    </dl>
+                <?php endif; ?>
+            </section>
+
+            <section class="pv-volet-section">
+                <h3 class="pv-volet-titre">Demande</h3>
+                <dl class="pv-proprietes">
+                    <div><dt><?= planningIcone('personne') ?>Demandeur</dt><dd id="planning-volet-demandeur"></dd></div>
+                    <div><dt><?= planningIcone('atelier') ?>Personnel atelier</dt><dd id="planning-volet-personnel"></dd></div>
+                    <div><dt><?= planningIcone('matiere') ?>Matière</dt><dd id="planning-volet-matiere"></dd></div>
+                    <div><dt><?= planningIcone('plan') ?>Plan</dt><dd id="planning-volet-plan"></dd></div>
+                    <div><dt><?= planningIcone('camion') ?>Départ livraison</dt><dd id="planning-volet-depart"></dd></div>
+                    <div><dt><?= planningIcone('camion') ?>Réception</dt><dd id="planning-volet-reception"></dd></div>
+                </dl>
+            </section>
+
+            <section class="pv-volet-section">
+                <div class="pv-volet-titre-rang">
+                    <h3 class="pv-volet-titre">Avancement</h3>
+                    <button type="button" class="planning-exporter" id="btn-export-avancement">Exporter</button>
+                </div>
+                <div class="planning-matrice-scroll">
+                    <table class="planning-matrix-table" id="matrix-avancement">
+                        <thead id="matrix-head"><tr><th></th></tr></thead>
+                        <tbody id="matrix-body"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="pv-volet-section">
+                <div class="pv-volet-titre-rang">
+                    <h3 class="pv-volet-titre">Commentaires</h3>
+                    <button type="button" class="planning-exporter" id="btn-export-commentaires">Exporter</button>
+                </div>
+                <div id="comments-list" class="planning-commentaires"></div>
+            </section>
+        </div>
+    </div>
 
     <!-- DONNÉES JSON EMBARQUÉES POUR LE CLIENT -->
     <script id="planning-data" type="application/json">
