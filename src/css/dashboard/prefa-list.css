@@ -1869,6 +1869,111 @@ tbody tr:last-child > td {
 .accueil-evenement.est-validation .accueil-texte { border-left-color: #16a34a; }
 .accueil-evenement.est-refus .accueil-texte { border-left-color: #dc2626; }
 
+/* ===== NOUVELLES AFFAIRES =====
+   Ce que la pastille « +N » de l'entrée Accueil annonçait : la même carte que le journal,
+   au-dessus de lui, une ligne par affaire confiée. Le point d'accent dit « nouveau » ; la
+   ligne propose ce qu'on fait d'une affaire qu'on vient de recevoir. */
+.accueil-affaires {
+    padding: 16px 18px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    background: var(--carte);
+}
+
+.accueil-affaires h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 6px;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.accueil-affaires-compte {
+    display: inline-flex;
+    align-items: center;
+    height: 18px;
+    padding: 0 7px;
+    border-radius: 999px;
+    background: var(--accent-fond);
+    color: var(--accent-texte);
+    font-size: 11.5px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.accueil-affaires-liste {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.accueil-affaire {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-faint);
+    font-size: 13px;
+}
+
+.accueil-affaire:last-child {
+    border-bottom: 0;
+}
+
+.accueil-affaire-pastille {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent-texte);
+}
+
+.accueil-affaire-texte {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.accueil-affaire-texte strong {
+    overflow: hidden;
+    color: var(--text);
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.accueil-affaire-texte span,
+.accueil-affaire-quand {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.accueil-affaire-quand {
+    flex: none;
+    font-variant-numeric: tabular-nums;
+}
+
+.accueil-affaire-action {
+    flex: none;
+    height: var(--h-md);
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.accueil-affaire-action:hover {
+    background: var(--hover);
+}
+
 /* Un journal vide est l'état normal d'un début de matinée. Une phrase grise collée sous le
    titre le faisait passer pour un écran en panne ; il se dit maintenant au centre de sa
    carte, et dit aussi ce qui le remplira. */

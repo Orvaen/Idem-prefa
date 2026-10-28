@@ -6,6 +6,7 @@ require_once __DIR__ . '/includes/comptes.php';
 require_once __DIR__ . '/includes/vue/user_display.php';
 require_once __DIR__ . '/includes/menu.php';
 require_once __DIR__ . '/includes/demande/accueil.php';
+require_once __DIR__ . '/includes/demande/affaires_nouvelles.php';
 
 Session::demarrer();
 header('Cache-Control: no-store');
@@ -73,10 +74,16 @@ if ($vueFiltre !== '') {
 // L'accueil : les chiffres du métier de cette personne, et ce qui a bougé aujourd'hui.
 // Deux requêtes qu'on ne fait que si c'est bien lui qu'on affiche — elles tournaient
 // jusqu'ici même quand l'adresse demandait un autre écran.
-$tuiles = $activite = [];
+$tuiles = $activite = $affairesNouvelles = [];
+// Les affaires confiées et pas encore vues : la pastille « +N » de l'entrée Accueil.
+// L'accueil les montre, et les avoir montrées vaut lecture : la pastille repart à zéro.
+$affairesNouvellesCompte = affairesNouvellesCompte($db, $utilisateur->id);
 if ($vue['id'] === 'accueil') {
     $tuiles = accueilTuiles($db, $utilisateur);
     $activite = accueilActivite($db, $utilisateur);
+    $affairesNouvelles = affairesNouvelles($db, $utilisateur->id);
+    affairesNouvellesMarquerVues($db, $utilisateur->id, $affairesNouvelles);
+    $affairesNouvellesCompte = 0;
 }
 
 // Nombre de demandes urgentes en attente, affiché à l'administrateur
@@ -241,6 +248,12 @@ $pvAFaire = ($isAdmin || $isWorkshopChief) ? pvAFaireTotal($db) : 0;
                         <button id="btn-<?= $entree['id'] ?>" class="nav-btn nav-btn-avant<?= $entree['id'] === $vue['id'] ? ' is-active' : '' ?>" type="button" data-page="<?= htmlspecialchars($entree['page'], ENT_QUOTES, 'UTF-8') ?>" <?= $entree['id'] === $vue['id'] ? ' aria-current="page"' : '' ?>>
                             <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><?= $entree['icone'] ?></svg>
                             <span><?= htmlspecialchars($libelle, ENT_QUOTES, 'UTF-8') ?></span>
+                            <?php if ($entree['id'] === 'accueil'): ?>
+                                <!-- « +1 » : une affaire vient d'être confiée et n'a pas encore été vue.
+                                     flux.js la pose en direct, l'accueil la remet à zéro. -->
+                                <span class="nav-urgent-badge" data-compteur="affaires" title="Nouvelles affaires confiées"
+                                      aria-label="<?= (int) $affairesNouvellesCompte ?> nouvelle(s) affaire(s)"<?= $affairesNouvellesCompte ? '' : ' hidden' ?>>+<?= (int) $affairesNouvellesCompte ?></span>
+                            <?php endif; ?>
                         </button>
                     <?php endforeach; ?>
 

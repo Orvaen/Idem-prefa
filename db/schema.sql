@@ -30,6 +30,7 @@ CREATE TABLE `Utilisateur` (
   `prenom` varchar(256) NOT NULL,
   `identifiant` varchar(256) NOT NULL,
   `date_creation` datetime DEFAULT CURRENT_TIMESTAMP,
+  `dernier_evenement_vu` bigint unsigned NOT NULL DEFAULT '0' COMMENT 'le dernier événement que la personne a vu sur son accueil',
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`),
   UNIQUE KEY `email_2` (`email`)

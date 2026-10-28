@@ -49,7 +49,7 @@ $(function () {
 // Les tuiles de l'accueil ouvrent l'écran où l'on agit sur le chiffre qu'elles montrent.
 // Elles passent par le bouton du menu plutôt que de charger la page elles-mêmes : la
 // rubrique se marque ainsi comme active, exactement comme si on l'avait cliquée.
-$(document).on('click', '.accueil-tuile[data-ouvre]', function () {
+$(document).on('click', '.accueil-tuile[data-ouvre], .accueil-affaire-action[data-ouvre]', function () {
     document.getElementById(this.dataset.ouvre)?.click();
 });
 

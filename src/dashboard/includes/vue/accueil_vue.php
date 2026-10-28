@@ -8,7 +8,7 @@
  * non dans l'un des deux — il y était, et l'entrée « Accueil » de la barre n'aurait eu
  * aucune page à ouvrir.
  *
- * Attend : $prenom, $name, $tuiles, $activite.
+ * Attend : $prenom, $name, $tuiles, $activite, et $affairesNouvelles (vide par défaut).
  */
 ?>
 <!-- L'accueil répond aux deux questions qu'on se pose en arrivant : combien en attente de
@@ -44,6 +44,27 @@
                 </button>
             <?php endforeach; ?>
         </div>
+
+        <?php if (!empty($affairesNouvelles)): ?>
+            <!-- Les affaires qu'on vient de vous confier : ce que la pastille « +N » de
+                 l'entrée Accueil annonçait. Elles ne s'affichent qu'une fois. -->
+            <section class="accueil-affaires" aria-labelledby="accueil-affaires-titre">
+                <h2 id="accueil-affaires-titre">Nouvelles affaires <span class="accueil-affaires-compte"><?= count($affairesNouvelles) ?></span></h2>
+                <ul class="accueil-affaires-liste">
+                    <?php foreach ($affairesNouvelles as $affaire): ?>
+                        <li class="accueil-affaire">
+                            <span class="accueil-affaire-pastille" aria-hidden="true"></span>
+                            <span class="accueil-affaire-texte">
+                                <strong><?= htmlspecialchars($affaire['affaire']) ?></strong>
+                                <span><?= $affaire['par'] !== '' ? 'Confiée par ' . htmlspecialchars($affaire['par']) : 'Confiée à vous' ?></span>
+                            </span>
+                            <span class="accueil-affaire-quand"><?= htmlspecialchars((new DateTimeImmutable($affaire['quand']))->format('d/m à H:i')) ?></span>
+                            <button type="button" class="accueil-affaire-action" data-ouvre="btn-prefa">Déposer une demande</button>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </section>
+        <?php endif; ?>
 
         <section class="accueil-journal" aria-labelledby="accueil-journal-titre">
             <h2 id="accueil-journal-titre">Aujourd’hui</h2>

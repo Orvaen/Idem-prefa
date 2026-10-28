@@ -32,7 +32,7 @@ passe sont décidés à un seul endroit.
 ## `migrations/` — pour une base déjà remplie
 
 **Sur une base neuve, il n'y a rien à lancer ici.** `db/schema.sql` contient déjà le
-résultat de toutes ces migrations : 35 tables, 277 colonnes et 54 clés étrangères,
+résultat de toutes ces migrations : 35 tables, 278 colonnes et 54 clés étrangères,
 vérifiées identiques à la base en service. Installez le schéma, c'est tout.
 
 Ces scripts ne servent qu'à **rattraper une base créée avant un changement** — typiquement
@@ -66,6 +66,7 @@ savoir laquelle avant de la lancer sur une base en service.
 | `2026-10-13_evenements` | **Supprime les événements de plus de sept jours** |
 | `2026-10-14_plan_numeros_de_ligne` | Relit les plans qui n'ont aucun numéro de ligne — plusieurs secondes par plan |
 | `2026-10-27_pv_refonte` | **Fusionne le PV « Conformité » dans « Fin de fabrication »** de la même demande : documents déplacés (lignes et fichiers), commentaires mis bout à bout, état fusionné. Ajoute la catégorie « photo » aux documents |
+| `2026-10-28_affaires_vues` | Ajoute `Utilisateur.dernier_evenement_vu` et le cale sur le dernier événement du journal, pour qu'aucune ancienne affaire ne s'annonce comme nouvelle |
 
 Les vingt et une autres ne font qu'ajouter des tables et des colonnes.
 

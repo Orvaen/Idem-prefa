@@ -216,6 +216,13 @@ html[data-theme="light"] #left-panel .nav-btn .nav-urgent-badge[data-compteur="p
     color: var(--bl-neutre-texte) !important;
 }
 
+/* Les affaires nouvelles : une bonne nouvelle, pas une alerte — l'accent, pas l'orangé. */
+#left-panel .nav-btn .nav-urgent-badge[data-compteur="affaires"],
+html[data-theme="light"] #left-panel .nav-btn .nav-urgent-badge[data-compteur="affaires"] {
+    background: var(--accent-fond) !important;
+    color: var(--accent-texte) !important;
+}
+
 #left-panel .nav-btn .nav-urgent-badge[hidden] {
     display: none;
 }

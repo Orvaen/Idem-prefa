@@ -37,6 +37,7 @@
 require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/autoload.php';
 require_once __DIR__ . '/../dashboard/includes/demande/prefa_visibilite.php';
+require_once __DIR__ . '/../dashboard/includes/demande/affaires_nouvelles.php';
 
 /** Durée d'une connexion, en secondes. Au-delà, on raccroche et le navigateur rappelle. */
 const FLUX_DUREE = 60;
@@ -79,7 +80,7 @@ function fluxEcrire(string $type, array $donnees, ?int $id = null): void
 $visible = prefaDemandesVisibles($utilisateur);
 
 /** Les compteurs que les pastilles et les tuiles affichent, relus en base. */
-$compteurs = static function () use ($db, $visible): array {
+$compteurs = static function () use ($db, $visible, $utilisateur): array {
     $compte = static function (string $condition) use ($db, $visible): int {
         $lecture = $db->prepare('SELECT COUNT(*) FROM demande_prefabrication d' . $visible['where'] . $condition);
         foreach ($visible['params'] as $nom => $valeur) $lecture->bindValue(':' . $nom, $valeur);
@@ -90,6 +91,8 @@ $compteurs = static function () use ($db, $visible): array {
     return [
         'enAttente' => $compte(' AND d.id_statut = 1'),
         'urgentes' => $compte(' AND d.id_statut = 1 AND d.urgent = 1'),
+        // Les affaires confiées pas encore vues : la pastille « +N » de l'entrée Accueil.
+        'affairesNouvelles' => affairesNouvellesCompte($db, $utilisateur->id),
     ];
 };
 

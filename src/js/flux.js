@@ -68,7 +68,16 @@
 
     // Les compteurs sont posés, jamais incrémentés : deux onglets ouverts, une alerte
     // ratée pendant une reconnexion, et un compteur incrémenté dérive sans qu'on le voie.
-    function poserCompteurs({ enAttente, urgentes }) {
+    function poserCompteurs({ enAttente, urgentes, affairesNouvelles }) {
+        // La pastille de l'entrée Accueil : « +1 » pour une affaire confiée pas encore vue.
+        // Sur l'accueil même, elle reste éteinte — la liste est sous les yeux à la prochaine
+        // ouverture, et c'est l'ouverture qui vaut lecture.
+        const pastille = document.querySelector('.nav-urgent-badge[data-compteur="affaires"]');
+        if (pastille && typeof affairesNouvelles === 'number') {
+            pastille.textContent = '+' + affairesNouvelles;
+            pastille.setAttribute('aria-label', affairesNouvelles + ' nouvelle(s) affaire(s)');
+            pastille.hidden = affairesNouvelles === 0;
+        }
         if (typeof urgentes === 'number' && typeof window.updateUrgentBadge === 'function') {
             window.updateUrgentBadge(urgentes);
         }
@@ -98,8 +107,9 @@
         'affaire.confiee': e => ({
             titre: 'Une affaire vous est confiée',
             detail: e.affaire,
-            // Le chargé d'affaire n'a rien à examiner : il a une demande à déposer.
-            ouvre: 'btn-prefa',
+            // Le clic mène à l'accueil, qui la montre parmi les nouvelles affaires — et
+            // éteint la pastille.
+            ouvre: 'btn-accueil',
         }),
         'demande.refusee': e => ({
             titre: 'Demande refusée',
@@ -110,6 +120,14 @@
             urgente: true,
         }),
     };
+
+    // Ouvrir l'accueil vaut lecture : la pastille s'éteint tout de suite, sans attendre le
+    // prochain compte du serveur.
+    document.addEventListener('click', event => {
+        if (!event.target.closest('#btn-accueil')) return;
+        const pastille = document.querySelector('.nav-urgent-badge[data-compteur="affaires"]');
+        if (pastille) pastille.hidden = true;
+    });
 
     const flux = new EventSource('/api/flux.php');
 
