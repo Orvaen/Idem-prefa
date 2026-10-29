@@ -898,6 +898,34 @@
     overflow: hidden;
 }
 
+/* Le visa : le nom de celui qui a validé, écrit comme une signature — la même écriture que
+   celle que le plan final embarque (ecriture_visa.php), réduite aux caractères latins.
+   Ni gras ni crénage : le PDF écrit lettre après lettre, l'écran doit montrer la même
+   chose. */
+@font-face {
+    font-family: "Great Vibes";
+    src: url("../../assets/fonts/great-vibes.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* Le nom est un texte SVG, posé sur sa ligne de base et réglé sur son encre (dessinerVisa) :
+   il déborde de la case, en retrait des traits, pour occuper la ligne. */
+.plan-soudure-visa svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.plan-soudure-visa text {
+    font-family: "Great Vibes", cursive;
+    font-weight: 400;
+    font-kerning: none;
+    fill: currentColor;
+    text-anchor: middle;
+}
+
 /* Les lignes ajoutées sous le tableau quand le bureau d'études n'en a pas prévu assez.
    Même encre et même épaisseur que les traits imprimés — mesurée sur l'image par le
    script — pour que le tableau prolongé ne se lise pas comme un rajout. */

@@ -144,11 +144,20 @@ function planLignesSoudures(PDO $db, int $elementId, int $documentId, ?array $so
 }
 
 /**
+ * La case VISA est la huitième de la liste soudure, après les trois contrôles. Le nom de
+ * celui qui a validé s'y écrit comme une signature (ecriture_visa.php).
+ */
+const PLAN_LIGNES_VISA = 7;
+
+/**
  * Où écrire chaque valeur de la liste soudure, et quels traits ajouter sous le tableau
  * quand il manque des lignes. Même calcul que le lecteur (remplirSoudures).
  *
+ * Le nom de la case VISA est marqué « visa » : il s'écrit comme une signature, dans
+ * l'écriture du visa, et non dans le gras du reste de la liste.
+ *
  * @param array<int, list<string>> $valeurs
- * @return array{textes: list<array{texte:string, x:float, y:float, w:float, h:float}>,
+ * @return array{textes: list<array{texte:string, x:float, y:float, w:float, h:float, visa?:bool}>,
  *               traits: list<array{x1:float, y1:float, x2:float, y2:float}>}
  */
 function planLignesSoudureDessin(?array $soudures, array $valeurs): array
@@ -190,7 +199,8 @@ function planLignesSoudureDessin(?array $soudures, array $valeurs): array
             // une ligne remplie à la main, porte son texte — le doubler le rend illisible.
             if (!empty($ecrites[$index])) continue;
             $textes[] = ['texte' => $texte, 'x' => (float) $colonne['x'], 'y' => (float) $ligne['y'],
-                'w' => (float) $colonne['w'], 'h' => (float) $ligne['h']];
+                'w' => (float) $colonne['w'], 'h' => (float) $ligne['h']]
+                + ($index === PLAN_LIGNES_VISA ? ['visa' => true] : []);
         }
     }
     return ['textes' => $textes, 'traits' => $traits];

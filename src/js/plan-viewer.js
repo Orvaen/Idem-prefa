@@ -1166,6 +1166,51 @@
      * des soudures » du volet, qui porte les contrôles et le visa. Le plan les montre,
      * il ne les édite pas — sans quoi la même donnée aurait deux endroits où changer.
      */
+    /**
+     * La case VISA : la huitième colonne de la liste soudure (PLAN_LIGNES_VISA côté serveur).
+     * Le nom de celui qui a validé s'y écrit comme une signature, dans l'écriture que le
+     * plan final embarque (plan-viewer.css).
+     */
+    const VISA = 7;
+    /** La hauteur de l'encre du nom, en hauteurs de case : PLAN_FINAL_VISA côté serveur. */
+    const VISA_ENCRE = 1.4;
+    let mesureVisa = null;
+
+    /**
+     * Le nom dans sa case, réglé sur sa propre encre — même calcul que le plan final
+     * (planFinalVisa) : du haut de sa plus haute boucle au bas de son plus long jambage, il
+     * occupe la ligne à une fine marge près, centré ; trop long, il rétrécit.
+     *
+     * L'encre se mesure dans un canevas, sur l'écriture chargée. Le nom s'écrit ensuite en
+     * texte SVG, posé sur sa ligne de base : un texte HTML se centre sur sa boîte, pas sur ce
+     * qu'il dessine. La boîte de vue est en pixels de la case : le zoom l'agrandit d'un bloc.
+     */
+    function dessinerVisa(cellule, texte) {
+        const largeur = cellule.offsetWidth;
+        const hauteur = cellule.offsetHeight;
+        if (!largeur || !hauteur) return;
+        const contexte = (mesureVisa ??= document.createElement('canvas').getContext('2d'));
+        contexte.font = '100px "Great Vibes"';
+        if ('fontKerning' in contexte) contexte.fontKerning = 'none';
+        const mesure = contexte.measureText(texte);
+        const haut = mesure.actualBoundingBoxAscent / 100;
+        const bas = mesure.actualBoundingBoxDescent / 100;
+        const corps = Math.min(hauteur * VISA_ENCRE / Math.max(0.2, haut + bas), largeur / Math.max(0.01, mesure.width / 100));
+
+        const ns = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(ns, 'svg');
+        svg.setAttribute('viewBox', '0 0 ' + largeur + ' ' + hauteur);
+        svg.setAttribute('aria-hidden', 'true');
+        const ecrit = document.createElementNS(ns, 'text');
+        ecrit.setAttribute('x', String(largeur / 2));
+        // La ligne de base sous le milieu de la case : l'encre s'y centre.
+        ecrit.setAttribute('y', String(hauteur / 2 + (haut - bas) / 2 * corps));
+        ecrit.setAttribute('font-size', String(corps));
+        ecrit.textContent = texte;
+        svg.appendChild(ecrit);
+        cellule.replaceChildren(svg);
+    }
+
     function remplirSoudures(scene, tableau, valeurs) {
         scene.querySelectorAll('.plan-soudure, .plan-soudure-trait, .plan-soudure-bord')
             .forEach(element => element.remove());
@@ -1200,7 +1245,7 @@
                 const texte = (donnees[index] || '').trim();
                 if (texte === '' || ecrites[index]) return;
                 const cellule = document.createElement('div');
-                cellule.className = 'plan-soudure';
+                cellule.className = 'plan-soudure' + (index === VISA ? ' plan-soudure-visa' : '');
                 // Le texte vit dans son propre élément : c'est lui qu'on mesure pour
                 // ajuster la police, et lui qui coupe si la mention reste trop longue.
                 const valeur = document.createElement('span');
@@ -1212,7 +1257,14 @@
                 cellule.style.width = (colonne.w * 100).toFixed(4) + '%';
                 cellule.style.height = (ligne.h * 100).toFixed(4) + '%';
                 scene.appendChild(cellule);
-                ajusterPolice(cellule);
+                if (index !== VISA) {
+                    ajusterPolice(cellule);
+                    return;
+                }
+                // Le nom se mesure sur l'écriture elle-même : mesuré avant qu'elle arrive, il
+                // le serait dans la police de secours, d'autres proportions.
+                if (document.fonts) document.fonts.load('100px "Great Vibes"').then(() => dessinerVisa(cellule, texte));
+                else dessinerVisa(cellule, texte);
             });
         });
     }

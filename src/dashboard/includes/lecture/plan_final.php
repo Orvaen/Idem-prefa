@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/pdf.php';
 require_once __DIR__ . '/plan_lignes.php';
+require_once __DIR__ . '/ecriture_visa.php';
 
 /**
  * Le plan final : le plan du bureau d'études, avec par-dessus ce que l'atelier y a porté.
@@ -61,7 +62,10 @@ function planFinalPoint(float $fx, float $fy, array $page): array
  *
  * Le texte est tourné comme la page pour rester lisible une fois la page redressée.
  *
- * @param list<array{texte:string, x:float, y:float, w:float, h:float, police?:float}> $textes positions en fractions
+ * Un texte marqué « visa » s'écrit dans l'écriture du visa (ecriture_visa.php) : la police
+ * doit alors avoir été ajoutée au PDF (planFinalEcritureVisa()).
+ *
+ * @param list<array{texte:string, x:float, y:float, w:float, h:float, police?:float, visa?:bool}> $textes positions en fractions
  * @param list<array{x1:float, y1:float, x2:float, y2:float}> $traits
  */
 function planFinalFlux(array $textes, array $traits, array $page, float $epaisseurTrait): string
@@ -92,6 +96,11 @@ function planFinalFlux(array $textes, array $traits, array $page, float $epaisse
         $texte = trim($champ['texte']);
         if ($texte === '') continue;
 
+        if (!empty($champ['visa'])) {
+            $flux .= planFinalVisa($texte, $champ, $page, $cote, $matrice);
+            continue;
+        }
+
         // Même règle qu'à l'écran : la police vaut 1,24 fois la hauteur de la case, qui est
         // en retrait des traits. Le texte sort ainsi à la taille des lettres imprimées.
         $corps = $champ['h'] * $cote['h'] * ($champ['police'] ?? PLAN_FINAL_POLICE);
@@ -117,6 +126,50 @@ function planFinalFlux(array $textes, array $traits, array $page, float $epaisse
     return $flux . "Q\n";
 }
 
+/**
+ * Le visa dans sa case : le nom, dans l'écriture du visa, réglé sur sa propre encre.
+ *
+ * Une écriture manuscrite a de grandes capitales, de longs jambages et de petites
+ * minuscules. Réglé comme le reste de la liste — sur la hauteur de la case —, le nom laissait
+ * du blanc au-dessus et au-dessous de ses minuscules, et se lisait mal. Il se règle donc sur
+ * l'encre de ses lettres (visaEncre()) : du haut de sa plus haute boucle au bas de son plus
+ * long jambage, elle occupe toute la ligne à une fine marge près, centrée. Un nom trop long
+ * rétrécit pour tenir en largeur. Même calcul qu'à l'écran (plan-viewer.js, dessinerVisa).
+ *
+ * @param array{x:float, y:float, w:float, h:float} $champ la case, en fractions de la page
+ * @param array{h:float, l:float} $cote les côtés de la page affichée, en points
+ * @param list<float> $matrice l'orientation du texte
+ */
+function planFinalVisa(string $texte, array $champ, array $page, array $cote, array $matrice): string
+{
+    $encre = visaEncre($texte);
+    $hauteurEncre = max(0.2, $encre['haut'] - $encre['bas']);
+    $largeurMax = $champ['w'] * $cote['l'];
+    $corps = min($champ['h'] * $cote['h'] * PLAN_FINAL_VISA / $hauteurEncre,
+        $largeurMax / max(0.01, visaLargeur($texte, 1)));
+    if ($corps < 0.5) return '';
+
+    // L'encre centrée sur le milieu de la case : la ligne de base tombe sous le milieu de la
+    // demi-somme de son haut et de son bas.
+    $fx = $champ['x'] + ($champ['w'] - visaLargeur($texte, $corps) / $cote['l']) / 2;
+    $fy = $champ['y'] + $champ['h'] / 2 + ($encre['haut'] + $encre['bas']) / 2 * $corps / $cote['h'];
+    [$x, $y] = planFinalPoint($fx, $fy, $page);
+
+    return sprintf("BT /%s %.2f Tf %.4f %.4f %.4f %.4f %.2f %.2f Tm (%s) Tj ET\n",
+        PLAN_FINAL_VISA_NOM, $corps,
+        $matrice[0], $matrice[1], $matrice[2], $matrice[3], $x, $y,
+        PdfPlan::chaine($texte));
+}
+
+/**
+ * L'écriture du visa dans le PDF : son nom de ressource, et la hauteur que son encre prend
+ * par rapport à la case. La case est en retrait des traits, aux deux tiers de la ligne :
+ * 1,4 fois sa hauteur, c'est 90 % de la ligne — une fine marge reste sous chaque trait. Le
+ * même facteur qu'à l'écran (VISA_ENCRE, plan-viewer.js).
+ */
+const PLAN_FINAL_VISA_NOM = 'PlanFinalVisa';
+const PLAN_FINAL_VISA = 1.4;
+
 /** La police du calque, en gras : le numéro doit se distinguer du dessin sous lui. */
 const PLAN_FINAL_POLICE_NOM = 'PlanFinalF1';
 /** Même facteur qu'à l'écran : mesuré sur les lettres du bureau d'études. */
@@ -130,24 +183,14 @@ const PLAN_FINAL_POLICE = 1.24;
  * page — c'est ainsi qu'un cahier ressort entier, chaque isométrique portant sa liste.
  *
  * @param string $brut le PDF d'origine, ou le retour d'un appel précédent
+ * @param int|null $ecritureVisa l'objet de l'écriture du visa, quand la page en porte
+ *        (planFinalEcritureVisa()) : elle rejoint les polices de la page
  * @return string le PDF complet, original intact suivi de la révision
  * @throws RuntimeException si le fichier n'a pas la forme attendue
  */
-function planFinalComposer(string $brut, string $flux, int $page = 1): string
+function planFinalComposer(string $brut, string $flux, int $page = 1, ?int $ecritureVisa = null): string
 {
-    if (strncmp($brut, '%PDF-', 5) !== 0) {
-        throw new RuntimeException('Le plan n’est pas un PDF lisible.');
-    }
-    // Les PDF récents rangent leurs objets dans des flux compressés : les retrouver
-    // demanderait de décompresser tout le fichier. Les plans d'AutoCAD n'en ont pas.
-    if (preg_match('~/Type\s*/ObjStm~', $brut)) {
-        throw new RuntimeException('Ce PDF est compressé d’une façon que le plan final ne sait pas annoter.');
-    }
-    if (!preg_match('/startxref\s+(\d+)\s*%%EOF\s*$/s', $brut, $fin)) {
-        throw new RuntimeException('Ce PDF n’a pas de table de références exploitable.');
-    }
-    $xrefPrecedent = (int) $fin[1];
-
+    planFinalVerifier($brut);
     [$numeroPage, $dictionnaire] = planFinalTrouverPage($brut, $page);
     $maxObjet = planFinalDernierObjet($brut);
 
@@ -164,30 +207,97 @@ function planFinalComposer(string $brut, string $flux, int $page = 1): string
     $calque = "Q\n" . $flux;
 
     $contenus = planFinalContenus($brut, $dictionnaire);
-    $ressources = planFinalRessources($dictionnaire, $objPolice);
+    $polices = '/' . PLAN_FINAL_POLICE_NOM . ' ' . $objPolice . ' 0 R'
+        . ($ecritureVisa !== null ? ' /' . PLAN_FINAL_VISA_NOM . ' ' . $ecritureVisa . ' 0 R' : '');
+    $ressources = planFinalRessources($dictionnaire, $polices);
     // Le nouveau dictionnaire de page : mêmes clés, /Contents et /Resources remplacés.
     $nouvellePage = planFinalRemplacerCle($dictionnaire, 'Contents',
         '[' . $objOuvre . ' 0 R ' . substr($contenus, 1) . ' ' . $objFlux . ' 0 R]');
     $nouvellePage = planFinalRemplacerCle($nouvellePage, 'Resources', $ressources);
     $nouvellePage = planFinalNettoyerAnnotations($brut, $nouvellePage);
 
+    return planFinalRevision($brut, [
+        $objPolice => '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>',
+        $objOuvre => '<< /Length ' . strlen($ouverture) . " >>\nstream\n" . $ouverture . 'endstream',
+        $objFlux => '<< /Length ' . strlen($calque) . " >>\nstream\n" . $calque . 'endstream',
+        $numeroPage => '<<' . $nouvellePage . '>>',
+    ]);
+}
+
+/**
+ * Ajoute au PDF l'écriture du visa — la police, embarquée — en une révision à elle.
+ *
+ * Une seule fois pour tout le document, avant les pages : chaque page qui porte un visa la
+ * nomme dans ses ressources (planFinalComposer()), sans la recopier. Quinze feuilles visées
+ * ne pèsent pas quinze polices.
+ *
+ * Elle est déclarée en TrueType simple, encodée en WinAnsi comme le reste du calque : ses
+ * chasses, sa boîte et ses hauteurs viennent du fichier (visaEcriture()), et le fichier
+ * lui-même part compressé.
+ *
+ * @return array{0: string, 1: int} le PDF complété, et le numéro d'objet de la police
+ */
+function planFinalEcritureVisa(string $brut): array
+{
+    planFinalVerifier($brut);
+    $ecriture = visaEcriture();
+    $maxObjet = planFinalDernierObjet($brut);
+    [$objPolice, $objDescripteur, $objFichier] = [$maxObjet + 1, $maxObjet + 2, $maxObjet + 3];
+
+    $compresse = gzcompress($ecriture['fichier'], 9);
+    $nom = '/' . $ecriture['nom'];
+    return [planFinalRevision($brut, [
+        $objPolice => '<< /Type /Font /Subtype /TrueType /BaseFont ' . $nom
+            . ' /FirstChar 32 /LastChar 255 /Widths [' . implode(' ', $ecriture['chasses']) . ']'
+            . ' /Encoding /WinAnsiEncoding /FontDescriptor ' . $objDescripteur . ' 0 R >>',
+        // Drapeau 32 : une police « non symbolique », dont les caractères se lisent par
+        // leur code Unicode — c'est ce qui fait trouver « é » dans la table du fichier.
+        $objDescripteur => '<< /Type /FontDescriptor /FontName ' . $nom . ' /Flags 32'
+            . ' /FontBBox [' . implode(' ', $ecriture['boite']) . '] /ItalicAngle 0'
+            . ' /Ascent ' . $ecriture['ascendante'] . ' /Descent ' . $ecriture['descendante']
+            . ' /CapHeight ' . $ecriture['capitales'] . ' /StemV 80 /FontFile2 ' . $objFichier . ' 0 R >>',
+        $objFichier => '<< /Length ' . strlen($compresse) . ' /Length1 ' . strlen($ecriture['fichier'])
+            . " /Filter /FlateDecode >>\nstream\n" . $compresse . "\nendstream",
+    ]), $objPolice];
+}
+
+/**
+ * Le PDF se laisse-t-il compléter ?
+ *
+ * @throws RuntimeException si le fichier n'a pas la forme attendue
+ */
+function planFinalVerifier(string $brut): void
+{
+    if (strncmp($brut, '%PDF-', 5) !== 0) {
+        throw new RuntimeException('Le plan n’est pas un PDF lisible.');
+    }
+    // Les PDF récents rangent leurs objets dans des flux compressés : les retrouver
+    // demanderait de décompresser tout le fichier. Les plans d'AutoCAD n'en ont pas.
+    if (preg_match('~/Type\s*/ObjStm~', $brut)) {
+        throw new RuntimeException('Ce PDF est compressé d’une façon que le plan final ne sait pas annoter.');
+    }
+    if (!preg_match('/startxref\s+(\d+)\s*%%EOF\s*$/s', $brut)) {
+        throw new RuntimeException('Ce PDF n’a pas de table de références exploitable.');
+    }
+}
+
+/**
+ * Écrit une révision à la suite du PDF : les objets donnés, leur table de références, et la
+ * remorque qui renvoie à la table précédente pour tout le reste.
+ *
+ * @param array<int, string> $objets numéro d'objet => son contenu, entre « obj » et « endobj »
+ */
+function planFinalRevision(string $brut, array $objets): string
+{
+    preg_match('/startxref\s+(\d+)\s*%%EOF\s*$/s', $brut, $fin);
+    $maxObjet = planFinalDernierObjet($brut);
+
     $ajout = "\n";
     $positions = [];
-
-    $positions[$objPolice] = strlen($brut) + strlen($ajout);
-    $ajout .= $objPolice . " 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold"
-        . " /Encoding /WinAnsiEncoding >>\nendobj\n";
-
-    $positions[$objOuvre] = strlen($brut) + strlen($ajout);
-    $ajout .= $objOuvre . " 0 obj\n<< /Length " . strlen($ouverture) . " >>\nstream\n"
-        . $ouverture . "endstream\nendobj\n";
-
-    $positions[$objFlux] = strlen($brut) + strlen($ajout);
-    $ajout .= $objFlux . " 0 obj\n<< /Length " . strlen($calque) . " >>\nstream\n"
-        . $calque . "endstream\nendobj\n";
-
-    $positions[$numeroPage] = strlen($brut) + strlen($ajout);
-    $ajout .= $numeroPage . " 0 obj\n<<" . $nouvellePage . ">>\nendobj\n";
+    foreach ($objets as $numero => $contenu) {
+        $positions[$numero] = strlen($brut) + strlen($ajout);
+        $ajout .= $numero . " 0 obj\n" . $contenu . "\nendobj\n";
+    }
 
     // La table de références de la révision : seuls les objets réécrits y figurent, et
     // /Prev renvoie à la table d'origine pour tout le reste.
@@ -201,9 +311,8 @@ function planFinalComposer(string $brut, string $flux, int $page = 1): string
     }
 
     $debutXref = strlen($brut) + strlen($ajout);
-    $racine = planFinalRacine($brut);
-    $ajout .= $xref . "trailer\n<< /Size " . ($maxObjet + 4) . ' ' . $racine
-        . ' /Prev ' . $xrefPrecedent . " >>\nstartxref\n" . $debutXref . "\n%%EOF\n";
+    $ajout .= $xref . "trailer\n<< /Size " . (max($maxObjet, ...array_keys($objets)) + 1) . ' ' . planFinalRacine($brut)
+        . ' /Prev ' . (int) $fin[1] . " >>\nstartxref\n" . $debutXref . "\n%%EOF\n";
 
     return $brut . $ajout;
 }
@@ -324,15 +433,15 @@ function planFinalContenus(string $brut, string $dictionnaire): string
 }
 
 /**
- * Les ressources de la page, avec notre police ajoutée.
+ * Les ressources de la page, avec nos polices ajoutées.
  *
  * Le dictionnaire est pris tel quel et seule l'entrée /Font est touchée : les calques,
  * les états graphiques et les polices du bureau d'études restent intacts.
+ *
+ * @param string $police nos entrées de police, prêtes : « /PlanFinalF1 12 0 R … »
  */
-function planFinalRessources(string $dictionnaire, int $objPolice): string
+function planFinalRessources(string $dictionnaire, string $police): string
 {
-    $police = '/' . PLAN_FINAL_POLICE_NOM . ' ' . $objPolice . ' 0 R';
-
     if (!preg_match('~/Resources\s*<<~', $dictionnaire)) {
         // Une page sans ressources propres les hérite de son parent. On ne touche pas au
         // parent : la page reçoit les siennes, qui ne contiennent que notre police.

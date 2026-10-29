@@ -90,11 +90,10 @@ try {
         $dessin = planLignesSoudureDessin($soudures, $liste['valeurs']);
 
         $textes = array_merge($couleesDeLaPage($db, $elementId, (int) $plan['id'], $numero), $dessin['textes']);
-        if ($textes || $dessin['traits']) $contenu++;
-
         if (!$textes && !$dessin['traits']) continue;
-        $aEcrire[$numero] = ['textes' => $textes, 'traits' => $dessin['traits'],
-                             'geometrie' => $geometrie];
+        $contenu++;
+        $aEcrire[$numero] = ['textes' => $textes, 'traits' => $dessin['traits'], 'geometrie' => $geometrie,
+                             'visa' => (bool) array_filter($textes, static fn (array $t): bool => !empty($t['visa']))];
     }
 
     // prefaError s'arrête ici même, avant d'avoir composé quoi que ce soit.
@@ -102,12 +101,17 @@ try {
         prefaError(409, 'Rien à écrire sur ce plan : aucune coulée posée ni soudure numérotée.');
     }
 
+    // L'écriture du visa entre une fois dans le document, avant les pages qui la nomment :
+    // un cahier de quinze feuilles visées ne l'embarque pas quinze fois.
+    $ecritureVisa = null;
+    if (array_filter(array_column($aEcrire, 'visa'))) [$pdf, $ecritureVisa] = planFinalEcritureVisa($pdf);
+
     foreach ($aEcrire as $numero => $quoi) {
         // Les traits ajoutés ont l'épaisseur de ceux du plan : un point à 100 dpi, la
         // résolution à laquelle les tableaux ont été lus.
         $epaisseur = max(0.3, min($quoi['geometrie']['largeur'], $quoi['geometrie']['hauteur']) / 1169 * 1.0);
         $pdf = planFinalComposer($pdf, planFinalFlux($quoi['textes'], $quoi['traits'],
-            $quoi['geometrie'], $epaisseur), $numero);
+            $quoi['geometrie'], $epaisseur), $numero, $quoi['visa'] ? $ecritureVisa : null);
     }
 } catch (Throwable $erreur) {
     // Le message dit ce qui bloque : un PDF d'un autre gabarit n'est pas une panne, c'est
