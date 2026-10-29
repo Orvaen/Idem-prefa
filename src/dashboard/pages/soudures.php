@@ -6,6 +6,7 @@ require_once __DIR__ . '/../includes/vue/plan_viewer.php';
 require_once __DIR__ . '/../includes/vue/filtres.php';
 require_once __DIR__ . '/../includes/vue/manques.php';
 require_once __DIR__ . '/../includes/vue/liste_filtrable.php';
+require_once __DIR__ . '/../includes/materiel/unites.php';
 if (!$isWorkshopPersonnel) prefaError(403, 'Cette page est réservée au personnel atelier.');
 
 // Comment une feuille se nomme : par son numéro de ligne, celui qui est imprimé sur le
@@ -333,9 +334,26 @@ $libelleFeuilles = static fn (int $n): string => $n === 0 ? 'en attente du dessi
                                autocomplete="off" placeholder="Article qui manque — bride DN40, tube Ø48,3…" aria-label="Article qui manque">
                     </div>
 
+                    <?php // L'unité se choisit dans la liste que tient le chargé de production
+                          // (Paramètres → Matériel) : on tape pour chercher, comme pour
+                          // l'article. Sans liste — pas encore créée sur ce serveur, ou vidée —
+                          // elle reste un champ libre. ?>
+                    <?php $unitesManque = unitesMateriel($db); ?>
                     <div class="soudures-manque-quantite">
                         <input class="fenetre-champ" name="quantite" inputmode="decimal" placeholder="Quantité" aria-label="Quantité">
-                        <input class="fenetre-champ" name="unite" maxlength="16" placeholder="Unité (u, m, kg…)" aria-label="Unité">
+                        <?php if ($unitesManque): ?>
+                            <?= listeFiltrableRendu('manque-unite', 'Unité', array_map(static fn (array $unite): array => [
+                                'id' => $unite['libelle'],
+                                'libelle' => $unite['libelle'],
+                            ], $unitesManque), null, [
+                                'nom' => 'unite',
+                                'aucun' => 'Pas dans la liste : demandez au chargé de production de l’ajouter.',
+                                'chercher' => 'Unité',
+                                'tableau' => true,
+                            ]) ?>
+                        <?php else: ?>
+                            <input class="fenetre-champ" name="unite" maxlength="<?= UNITE_LONGUEUR ?>" placeholder="Unité (u, m, kg…)" aria-label="Unité">
+                        <?php endif; ?>
                     </div>
 
                     <?= listeFiltrableRendu('manque-motif', 'Motif', array_map(static fn (string $cle, string $libelle): array => [

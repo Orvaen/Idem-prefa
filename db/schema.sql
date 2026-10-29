@@ -632,6 +632,15 @@ CREATE TABLE `type_passivation` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `unite_materiel` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `libelle` varchar(16) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_unite_materiel_libelle` (`libelle`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -647,3 +656,4 @@ CREATE TABLE `type_passivation` (
 INSERT INTO `role` (`id`, `name`) VALUES (1,'Administrateur'),(2,'Gestionnaire'),(3,'Utilisateur'),(5,'Demandeur');
 INSERT INTO `statut_demande` (`id`, `libelle`) VALUES (1,'En attente'),(3,'Refusée'),(2,'Validée');
 INSERT INTO `parametrage_prefabrication` (`id`, `heures_par_pouce`, `duree_heures`, `duree_minutes`) VALUES (1,24.0000,24,0);
+INSERT INTO `unite_materiel` (`libelle`) VALUES ('u'),('PCE'),('m'),('kg'),('barre'),('lot');

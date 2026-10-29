@@ -11,10 +11,11 @@
  * qu'à celui qui peut les écrire. Les actions le revérifient de toute façon.
  *
  * Rendue avec le tableau de bord, et non chargée à l'ouverture : elle s'ouvre sans attendre
- * le réseau, et ce qu'elle lit en base tient en deux petites requêtes.
+ * le réseau, et ce qu'elle lit en base tient en quelques petites requêtes.
  */
 
 require_once __DIR__ . '/../demande/prefa_hours.php';
+require_once __DIR__ . '/../materiel/unites.php';
 require_once __DIR__ . '/passivation_row.php';
 require_once __DIR__ . '/user_display.php';
 
@@ -56,6 +57,8 @@ function parametresRubriques(Utilisateur $utilisateur): array
         $groupes['Administration'] = [
             'fabrication' => ['libelle' => 'Fabrication', 'icone' => '<circle cx="12" cy="13.5" r="7"/><path d="M12 10v3.5l2.5 1.5M10 3h4M12 3v3.5"/>'],
             'passivation' => ['libelle' => 'Passivation', 'icone' => '<path d="M12 3.5c3 3.6 5.5 6.6 5.5 10a5.5 5.5 0 0 1-11 0c0-3.4 2.5-6.4 5.5-10Z"/>'],
+            // La même caisse que l'entrée « Commande matériel » de la barre.
+            'materiel' => ['libelle' => 'Matériel', 'icone' => '<path d="m12 3.5 8 4v9L12 20.5l-8-4v-9z"/><path d="m4 7.5 8 4 8-4M12 11.5v9"/>'],
         ];
     }
 
@@ -71,6 +74,8 @@ function parametresRendu(PDO $db, Utilisateur $utilisateur): void
     $administre = isset($groupes['Administration']);
     $cadence = $administre ? prefaHoursSettings($db) : null;
     $types = $administre ? $db->query('SELECT id, libelle FROM type_passivation ORDER BY libelle')->fetchAll() : [];
+    $unitesPretes = $administre && unitesEnBase($db);
+    $unites = $unitesPretes ? unitesMateriel($db) : [];
     $metier = roleComplement($utilisateur->idRole);
     $jeton = prefaEscape(Session::jeton());
     // data-static-fields : floating-fields.js laisse les étiquettes à leur place. Sans lui,
@@ -251,6 +256,36 @@ function parametresRendu(PDO $db, Utilisateur $utilisateur): void
                                         <?php endif; ?>
                                     </tbody>
                                 </table>
+                            </section>
+                        </section>
+
+                        <section class="parametres-rubrique" id="parametres-materiel" data-rubrique="materiel" aria-labelledby="parametres-materiel-titre" hidden>
+                            <h3 class="parametres-rubrique-titre" id="parametres-materiel-titre">Matériel</h3>
+
+                            <section class="parametres-section" data-cherche="unités unité mesure manque quantité pièce mètre">
+                                <h4>Unités</h4>
+                                <p class="parametres-section-aide">Proposées au personnel d’atelier quand il signale un manque de matériel. Retirer ou renommer une unité ne change pas les manques déjà signalés.</p>
+                                <?php if (!$unitesPretes): ?>
+                                    <p class="parametres-section-aide">La liste arrive avec la migration <code>2026-10-29_unites_materiel</code>, pas encore passée sur ce serveur : le personnel écrit l’unité à la main.</p>
+                                <?php else: ?>
+                                    <form id="unites-form" class="parametre" novalidate>
+                                        <input type="hidden" name="csrf" value="<?= $jeton ?>">
+                                        <input type="hidden" name="operation" value="ajouter">
+                                        <div class="parametre-texte">
+                                            <label class="parametre-titre" for="unites-libelle">Ajouter une unité</label>
+                                            <span class="prefa-message parametre-message" role="status" aria-live="polite"></span>
+                                        </div>
+                                        <div class="parametre-controle">
+                                            <input id="unites-libelle" class="parametres-champ" name="libelle" maxlength="<?= UNITE_LONGUEUR ?>"
+                                                   placeholder="m², litre, rouleau…" autocomplete="off" required>
+                                            <button type="submit" class="parametres-bouton">Ajouter</button>
+                                        </div>
+                                    </form>
+
+                                    <table class="parametres-liste unites-liste" data-csrf="<?= $jeton ?>">
+                                        <tbody id="unites-lignes"><?= unitesLignesRendu($unites) ?></tbody>
+                                    </table>
+                                <?php endif; ?>
                             </section>
                         </section>
                     <?php endif; ?>

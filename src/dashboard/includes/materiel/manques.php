@@ -92,8 +92,9 @@ function manqueSignaler(PDO $db, int $demandeId, int $auteurId, array $saisie): 
     $motif = (string) ($saisie['motif'] ?? '');
     if (!isset(manquesMotifs()[$motif])) throw new DomainException('Choisissez le motif du manque.');
 
-    $unite = trim((string) ($saisie['unite'] ?? ''));
-    $unite = $unite === '' ? 'u' : mb_substr($unite, 0, 16);
+    // Choisie dans la liste des paramètres, quand elle existe (unites.php).
+    require_once __DIR__ . '/unites.php';
+    $unite = uniteDuManque($db, (string) ($saisie['unite'] ?? ''));
 
     $commentaire = trim((string) ($saisie['commentaire'] ?? ''));
     if (mb_strlen($commentaire) > 1000) throw new DomainException('Le commentaire tient en 1 000 caractères.');

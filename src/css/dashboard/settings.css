@@ -430,22 +430,24 @@ dialog.fenetre.parametres .parametres-liste td {
     vertical-align: middle;
 }
 
-dialog.fenetre.parametres .parametres-liste tr:not(.passivation-empty) td:first-child {
+dialog.fenetre.parametres .parametres-liste tr[data-id] td:first-child {
     display: none;
 }
 
-dialog.fenetre.parametres .parametres-liste tr:not(.passivation-empty) td:last-child {
+dialog.fenetre.parametres .parametres-liste tr:not(.passivation-empty, .parametres-liste-vide) td:last-child {
     width: 1%;
     padding-left: 16px;
     text-align: right;
     white-space: nowrap;
 }
 
-dialog.fenetre.parametres .parametres-liste .passivation-empty td {
+dialog.fenetre.parametres .parametres-liste .passivation-empty td,
+dialog.fenetre.parametres .parametres-liste .parametres-liste-vide td {
     color: var(--text-muted);
 }
 
-dialog.fenetre.parametres .parametres-liste .edit-passivation {
+dialog.fenetre.parametres .parametres-liste .edit-passivation,
+dialog.fenetre.parametres .parametres-liste .parametres-ligne-action {
     height: var(--h-md);
     margin: 0;
     padding: 0 10px;
@@ -458,37 +460,51 @@ dialog.fenetre.parametres .parametres-liste .edit-passivation {
     cursor: pointer;
 }
 
-dialog.fenetre.parametres .parametres-liste .edit-passivation + .edit-passivation {
+dialog.fenetre.parametres .parametres-liste .edit-passivation + .edit-passivation,
+dialog.fenetre.parametres .parametres-liste .parametres-ligne-action + .parametres-ligne-action {
     margin-left: 6px;
 }
 
-dialog.fenetre.parametres .parametres-liste .edit-passivation:hover {
+dialog.fenetre.parametres .parametres-liste .edit-passivation:hover,
+dialog.fenetre.parametres .parametres-liste .parametres-ligne-action:hover {
     background: var(--hover);
+}
+
+/* Supprimer ne prend sa teinte d'alerte qu'au survol, comme dans les menus d'actions. */
+dialog.fenetre.parametres .parametres-liste .parametres-ligne-action.est-destructrice:hover {
+    border-color: var(--danger-bord);
+    background: var(--alerte-fond);
+    color: var(--danger-texte);
 }
 
 /* « Modifier » s'efface au repos, comme les commandes de ligne des tableaux, et revient au
    survol ou au clavier. Pas sur une tablette : elle n'a pas de survol. */
 @media (hover: hover) {
 
-    dialog.fenetre.parametres .parametres-liste tr:not(:has(form)) .edit-passivation {
+    dialog.fenetre.parametres .parametres-liste tr:not(:has(form)) .edit-passivation,
+    dialog.fenetre.parametres .parametres-liste tr:not(:has(form)) .parametres-ligne-action {
         opacity: 0;
         transition: opacity .12s ease;
     }
 
     dialog.fenetre.parametres .parametres-liste tr:hover .edit-passivation,
-    dialog.fenetre.parametres .parametres-liste tr:focus-within .edit-passivation {
+    dialog.fenetre.parametres .parametres-liste tr:focus-within .edit-passivation,
+    dialog.fenetre.parametres .parametres-liste tr:hover .parametres-ligne-action,
+    dialog.fenetre.parametres .parametres-liste tr:focus-within .parametres-ligne-action {
         opacity: 1;
     }
 }
 
-dialog.fenetre.parametres .parametres-liste .passivation-name form {
+dialog.fenetre.parametres .parametres-liste .passivation-name form,
+dialog.fenetre.parametres .parametres-liste .unite-libelle form {
     display: flex;
     flex-direction: column;
     gap: 4px;
     margin: 0;
 }
 
-dialog.fenetre.parametres .parametres-liste .passivation-name input {
+dialog.fenetre.parametres .parametres-liste .passivation-name input,
+dialog.fenetre.parametres .parametres-liste .unite-libelle input {
     box-sizing: border-box;
     width: 100%;
     max-width: 320px;
@@ -502,7 +518,8 @@ dialog.fenetre.parametres .parametres-liste .passivation-name input {
     font-size: 13px;
 }
 
-dialog.fenetre.parametres .parametres-liste .passivation-name input:focus {
+dialog.fenetre.parametres .parametres-liste .passivation-name input:focus,
+dialog.fenetre.parametres .parametres-liste .unite-libelle input:focus {
     border-color: var(--accent);
     outline: none;
 }

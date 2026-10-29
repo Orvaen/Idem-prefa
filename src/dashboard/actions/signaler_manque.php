@@ -42,8 +42,9 @@ try {
 // ferait chercher au chef ce qui n'existe pas.
 manquesPrevenirEncadrement($db, (int) $plan['id_demande'], (int) $actor['id'], [
     'affaire' => (string) ($plan['nom_affaire'] ?? ''),
+    // L'unité sous le nom de la liste, comme elle a été rangée : « pce » choisi dit « PCE ».
     'article' => trim((string) $saisie['designation']) . ' × '
-        . manqueQuantite(str_replace(',', '.', (string) $_POST['quantite'])) . ' ' . (trim((string) ($_POST['unite'] ?? '')) ?: 'u'),
+        . manqueQuantite(str_replace(',', '.', (string) $_POST['quantite'])) . ' ' . uniteDuManque($db, (string) ($_POST['unite'] ?? '')),
     'plan' => (string) $plan['reference'],
     'auteur' => trim($utilisateur->prenom . ' ' . $utilisateur->nom),
 ]);

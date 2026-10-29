@@ -6,7 +6,8 @@
 // rubrique, cherche, et transmet ce qu'on règle.
 //
 // Un réglage s'applique dès qu'on le touche. Le thème vit dans theme.js ; la cadence et les
-// passivations partent par les gestionnaires de dashboard-forms.js, ceux de l'ancien écran.
+// passivations partent par les gestionnaires de dashboard-forms.js, ceux de l'ancien écran ;
+// les unités du matériel, par ceux d'ici.
 (() => {
     'use strict';
 
@@ -158,6 +159,111 @@
 
     // Le menu du thème, dans la barre du haut, peut aussi changer le thème.
     document.addEventListener('theme:choisi', cocherTheme);
+
+    // ---------------------------------------------------------------- les unités du matériel
+    //
+    // La liste se tient sur place : « Ajouter » en tête, « Modifier » et « Supprimer » au bout
+    // de chaque ligne. Chaque réponse rend la liste entière, dans son ordre
+    // (actions/unite_materiel.php) : on la remplace d'un bloc, sans chercher où ranger.
+
+    const lignesUnites = fenetre.querySelector('#unites-lignes');
+    const formUnite = fenetre.querySelector('#unites-form');
+    // La ligne telle qu'elle était avant « Modifier » : « Annuler » la remet.
+    const avantEdition = new WeakMap();
+
+    /** Envoie une opération ; le refus s'écrit sous le champ, ou en toast faute de place. */
+    async function envoyerUnite(champs, message) {
+        if (message) {
+            message.textContent = '';
+            message.classList.remove('error');
+        }
+        try {
+            const reponse = await fetch('actions/unite_materiel.php', {
+                method: 'POST',
+                credentials: 'same-origin',
+                body: new URLSearchParams({ csrf: formUnite.elements.csrf.value, ...champs }),
+            });
+            const corps = await reponse.json().catch(() => null);
+            if (!reponse.ok || !corps?.success) throw new Error(corps?.message || 'Enregistrement impossible. Réessayez.');
+            lignesUnites.innerHTML = corps.html;
+            window.toast?.(corps.message);
+            return true;
+        } catch (erreur) {
+            if (message) {
+                message.textContent = erreur.message;
+                message.classList.add('error');
+            } else {
+                window.toast?.(erreur.message, { erreur: true });
+            }
+            return false;
+        }
+    }
+
+    function annulerEdition(ligne) {
+        if (ligne && avantEdition.has(ligne)) ligne.innerHTML = avantEdition.get(ligne);
+    }
+
+    function editer(ligne) {
+        // Une seule ligne à la fois : celle qu'on quitte reprend sa forme.
+        lignesUnites.querySelectorAll('tr:has(.unite-edition)').forEach(autre => { if (autre !== ligne) annulerEdition(autre); });
+        avantEdition.set(ligne, ligne.innerHTML);
+        const cellule = ligne.querySelector('.unite-libelle');
+        const actuel = cellule.textContent.trim();
+        cellule.innerHTML = '<form class="unite-edition" novalidate>'
+            + '<input name="libelle" maxlength="16" autocomplete="off" aria-label="Nouveau nom de l’unité">'
+            + '<p class="prefa-message" role="alert"></p></form>';
+        const champ = cellule.querySelector('input');
+        champ.value = actuel;
+        ligne.lastElementChild.innerHTML = '<button type="button" class="parametres-ligne-action" data-unite-enregistrer>Enregistrer</button>'
+            + '<button type="button" class="parametres-ligne-action" data-unite-annuler>Annuler</button>';
+        champ.focus();
+        champ.select();
+    }
+
+    function enregistrer(ligne) {
+        const champ = ligne.querySelector('.unite-edition input');
+        if (!champ) return;
+        envoyerUnite({ operation: 'renommer', id: ligne.dataset.unite, libelle: champ.value },
+            ligne.querySelector('.unite-edition .prefa-message'));
+    }
+
+    formUnite?.addEventListener('submit', async evenement => {
+        evenement.preventDefault();
+        const champ = formUnite.elements.libelle;
+        if (await envoyerUnite({ operation: 'ajouter', libelle: champ.value }, formUnite.querySelector('.parametre-message'))) {
+            champ.value = '';
+            champ.focus();
+        }
+    });
+
+    lignesUnites?.addEventListener('click', async evenement => {
+        const bouton = evenement.target.closest('button');
+        const ligne = bouton?.closest('tr[data-unite]');
+        if (!ligne) return;
+        if (bouton.hasAttribute('data-unite-modifier')) editer(ligne);
+        else if (bouton.hasAttribute('data-unite-annuler')) annulerEdition(ligne);
+        else if (bouton.hasAttribute('data-unite-enregistrer')) enregistrer(ligne);
+        else if (bouton.hasAttribute('data-unite-supprimer')) {
+            const nom = ligne.querySelector('.unite-libelle').textContent.trim();
+            if (!await window.confirmer('Supprimer l’unité « ' + nom + ' » ?', {
+                texte: 'Elle ne sera plus proposée au personnel d’atelier. Les manques déjà signalés la gardent.',
+                action: 'Supprimer',
+                ton: 'danger',
+            })) return;
+            envoyerUnite({ operation: 'supprimer', id: ligne.dataset.unite }, null);
+        }
+    });
+
+    // Entrée enregistre le nouveau nom ; Échap l'abandonne sans refermer la fenêtre.
+    lignesUnites?.addEventListener('submit', evenement => {
+        evenement.preventDefault();
+        enregistrer(evenement.target.closest('tr[data-unite]'));
+    });
+    lignesUnites?.addEventListener('keydown', evenement => {
+        if (evenement.key !== 'Escape' || !evenement.target.closest('.unite-edition')) return;
+        evenement.preventDefault();
+        annulerEdition(evenement.target.closest('tr[data-unite]'));
+    });
 
     // ---------------------------------------------------------------- l'ouvrir
 

@@ -629,6 +629,7 @@
             else champ.value = plan;
         }
         choisirDans(fenetre, 'manque-motif', '');
+        choisirDans(fenetre, 'manque-unite', '');
         poserArticles(fenetre);
         const message = form.querySelector('.fenetre-message');
         message.textContent = '';
@@ -645,13 +646,26 @@
     });
 
     // Un article du bon apporte son unité : « m » pour un tube, « u » pour une bride. On ne
-    // l'écrase pas si la personne en a déjà tapé une.
+    // l'écrase pas si la personne en a déjà choisi une.
+    //
+    // Quand l'unité se choisit dans la liste des paramètres, celle du bon n'est reprise que
+    // si la liste la connaît — sans égard aux majuscules : « pce » lu sur le bon retient
+    // « PCE ». Une unité que la liste n'a pas reste à choisir.
     $(document).on('change', '#soudures-manque input[name="designation"]', function () {
         const fenetre = fenetreManque();
         const unite = fenetre.querySelector('[name="unite"]');
         const option = [...fenetre.querySelectorAll('[data-liste-filtrable="manque-article"] [role="option"]')]
             .find(o => o.dataset.value === this.value);
-        if (option && option.dataset.unite && !unite.value) unite.value = option.dataset.unite;
+        const duBon = option?.dataset.unite || '';
+        if (!duBon || unite.value) return;
+        const liste = fenetre.querySelector('[data-liste-filtrable="manque-unite"]');
+        if (!liste) {
+            unite.value = duBon;
+            return;
+        }
+        const connue = [...liste.querySelectorAll('[role="option"]')]
+            .find(o => o.dataset.value.toLowerCase() === duBon.toLowerCase());
+        if (connue) choisirDans(fenetre, 'manque-unite', connue.dataset.value);
     });
 
     $(document).on('click', '[data-fermer-manque]', function () {

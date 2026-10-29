@@ -34,7 +34,7 @@ La traduction des trois noms d'un rôle, elle, vit dans `Role::depuisLeTexte()`.
 ## `migrations/` — pour une base déjà remplie
 
 **Sur une base neuve, il n'y a rien à lancer ici.** `db/schema.sql` contient déjà le
-résultat de toutes ces migrations : 35 tables, 280 colonnes et 55 clés étrangères,
+résultat de toutes ces migrations : 36 tables, 283 colonnes et 55 clés étrangères,
 vérifiées identiques à la base en service. Installez le schéma, c'est tout.
 
 Ces scripts ne servent qu'à **rattraper une base créée avant un changement** — typiquement
@@ -48,11 +48,11 @@ Deux propriétés les rendent maniables :
   là »). Les relancer sur une base à jour ne refait pas le travail — à une exception près :
   `2026-10-13_evenements` purge à chaque passage les événements de plus de sept jours.
 
-Pour autant, ils ne sont pas tous inoffensifs : dix d'entre eux réécrivent des données, et
+Pour autant, ils ne sont pas tous inoffensifs : onze d'entre eux écrivent des données, et
 deux en suppriment. La liste est juste en dessous — lisez-la avant d'en lancer un sur une
 base en service.
 
-### Dix d'entre elles touchent aux données
+### Onze d'entre elles touchent aux données
 
 Le mot « migration » laisse croire qu'on ne change que la forme des tables. Ce n'est pas
 vrai de toutes : celles-ci réécrivent aussi ce qu'elles contiennent, et il vaut mieux
@@ -70,6 +70,7 @@ savoir laquelle avant de la lancer sur une base en service.
 | `2026-10-14_plan_numeros_de_ligne` | Relit les plans qui n'ont aucun numéro de ligne — plusieurs secondes par plan |
 | `2026-10-27_pv_refonte` | **Fusionne le PV « Conformité » dans « Fin de fabrication »** de la même demande : documents déplacés (lignes et fichiers), commentaires mis bout à bout, état fusionné. Ajoute la catégorie « photo » aux documents |
 | `2026-10-28_affaires_vues` | Ajoute `Utilisateur.dernier_evenement_vu` et le cale sur le dernier événement du journal, pour qu'aucune ancienne affaire ne s'annonce comme nouvelle |
+| `2026-10-29_unites_materiel` | Crée la liste des unités du matériel et y pose six unités de départ (u, PCE, m, kg, barre, lot) — seulement si elle est vide. Les manques déjà signalés ne sont pas touchés |
 
 Les vingt et une autres ne font qu'ajouter des tables et des colonnes.
 
@@ -85,7 +86,7 @@ run migration -- scripts/migrations/2026-10-07_approvisionnement.php
 ```
 
 Il n'y a pas de commande qui les lance toutes : le tableau ci-dessus est à lire avant,
-et dix d'entre elles touchent aux données.
+et onze d'entre elles touchent aux données.
 
 ---
 
