@@ -60,7 +60,8 @@ if (Session::connectee()) {
 <body>
     <main class="connexion-panneau">
         <div class="connexion-marque">
-            <img src="assets/logo-idem.png" alt="IDEM">
+            <img class="connexion-logo-clair" src="assets/logo-idem.png" alt="IDEM">
+            <img class="connexion-logo-sombre" src="assets/logo-idem-sombre.png" alt="IDEM">
         </div>
 
         <div class="connexion-corps">

@@ -90,12 +90,21 @@ body {
     aspect-ratio: 470 / 213;
 }
 
-/* Le fond blanc du logo n'est utile que sur le thème sombre : le dessin est bleu clair
-   et blanc, il disparaîtrait sur le cadre. */
-:root:not([data-theme="light"]) .connexion-marque img {
-    padding: 3px 6px;
-    border-radius: var(--r-md);
-    background: #ffffff;
+/* Le dessin est fait pour du papier blanc : ses contours gris foncé disparaissent sur le
+   fond sombre. La plaque blanche qu'on posait derrière faisait une pièce claire collée
+   dans l'écran ; le thème sombre sert logo-idem-sombre.png, comme la barre du tableau de
+   bord. Celui qu'on cache est en display: none, donc hors de l'arbre d'accessibilité :
+   les deux peuvent porter le même alt. */
+.connexion-marque .connexion-logo-sombre {
+    display: none;
+}
+
+:root:not([data-theme="light"]) .connexion-logo-clair {
+    display: none;
+}
+
+:root:not([data-theme="light"]) .connexion-logo-sombre {
+    display: block;
 }
 
 /* Le bloc central flotte entre la marque et le pied : « margin: auto » le centre
