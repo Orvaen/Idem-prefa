@@ -501,7 +501,6 @@ $manquesNouveaux = ($isAdmin || $isWorkshopChief) ? manquesNouveauxCompte($db) :
 
     <!-- All scripts js -->
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.11/dist/htmx.js" integrity="sha384-gmJEF2eAKY4e+FDN+qtKIivWyb6ANwDB7JUdUybKgQspPKyEX/pIRZG/0uaRoW2C" crossorigin="anonymous"></script>
-    <script src="https://code.jquery.com/jquery-4.0.0.min.js" integrity="sha256-OaVG6prZf4v69dPg6PhVattBXkcOWQB62pdZ3ORyrao=" crossorigin="anonymous"></script>
 
     <?php foreach ($ressources['scripts'] as $script): ?>
         <script src="../<?= $script ?>?v=<?= hash_file('sha256', __DIR__ . '/../' . $script) ?>"></script>
