@@ -1476,8 +1476,11 @@ html body:has(.prefa-detail-row:not([hidden]) > td > .prefa-table-detail)::befor
 
 /* Le menu est en position fixe, posee par le script : la cellule qui le porte est dans un
    tableau qui defile, et un menu en position absolue y serait decoupe. C'est le meme parti
-   que le menu des comptes, dans dashboard-accounts.js. */
-.prefa-actions-menu {
+   que le menu des comptes, dans dashboard-accounts.js.
+
+   Le sous-menu est la meme boite, posee par le script contre son menu. */
+.prefa-actions-menu,
+.prefa-sous-menu {
     position: fixed;
     z-index: 60;
     min-width: 204px;
@@ -1522,6 +1525,66 @@ html body:has(.prefa-detail-row:not([hidden]) > td > .prefa-table-detail)::befor
 .prefa-actions-menu .est-destructrice:hover,
 .prefa-actions-menu .est-destructrice:focus-visible {
     background: var(--alerte-fond);
+}
+
+/* ---------- Le sous-menu « Plan final » ----------
+   Une demande porte plusieurs plans, et chacun plusieurs feuilles : un plan final par
+   feuille. Le sous-menu les range sous leur plan et defile au-dela de l'ecran. Les noms de
+   fichier du bureau d'etudes sont longs : ils se coupent, le titre de l'entree les donne
+   en entier. */
+.prefa-sous-menu {
+    max-width: 320px;
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+}
+
+/* L'entree qui ouvre un sous-menu l'annonce par un chevron, au bout de la ligne, et reste
+   marquee tant qu'il est ouvert : on voit de quelle entree il sort. */
+.prefa-sous-menu-declencheur .icon {
+    width: 14px;
+    height: 14px;
+    margin-left: auto;
+    color: var(--text-muted);
+}
+
+.prefa-actions-menu .prefa-sous-menu-declencheur[aria-expanded="true"] {
+    background: var(--hover);
+}
+
+/* Le plan, au-dessus de ses feuilles : un intitule de groupe, pas une entree. */
+.prefa-sous-menu-titre {
+    margin: 0;
+    padding: 6px 10px 2px;
+    overflow: hidden;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.prefa-sous-menu [role="group"] + [role="group"] {
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid var(--border-faint);
+}
+
+.prefa-actions-menu .prefa-plan-final {
+    gap: 12px;
+}
+
+.prefa-sous-menu-nom {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.prefa-sous-menu-note {
+    flex: none;
+    margin-left: auto;
+    color: var(--text-muted);
+    font-size: 12px;
 }
 
 /* ===== TABLEAUX =====

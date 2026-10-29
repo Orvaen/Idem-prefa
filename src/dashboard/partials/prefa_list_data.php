@@ -8,6 +8,7 @@ require_once __DIR__ . '/../includes/materiel/commandes.php';
 require_once __DIR__ . '/../includes/materiel/materiel_bon.php';
 require_once __DIR__ . '/../includes/demande/prefa_documents.php';
 require_once __DIR__ . '/../includes/demande/prefa_retard.php';
+require_once __DIR__ . '/../includes/atelier/plan_document.php';
 $workshopUsers = $canManageWorkshop ? prefaWorkshopPersonnel($db) : [];
 
 $q = trim((string) ($_GET['q'] ?? ''));
@@ -145,6 +146,7 @@ $dmosByRequest = [];
 $materielByRequest = [];
 $ccpuByRequest = [];
 $commandesByRequest = [];
+$plansFinauxByRequest = [];
 if ($requests) {
     $requestIds = array_column($requests, 'id');
     $placeholders = implode(',', array_fill(0, count($requestIds), '?'));
@@ -172,6 +174,12 @@ if ($requests) {
     // Le matériel commandé ne s'affiche que dans la fiche de ceux qui tiennent les PV :
     // inutile d'aller le chercher pour les autres.
     if ($canFillPv) $commandesByRequest = commandesParDemandes($db, $requestIds);
+
+    // Le plan final s'offre dans le menu de la ligne, à l'administrateur et au chargé
+    // d'affaire. Celui-ci ne voit ici que ses demandes, et le téléchargement refait la même
+    // vérification (download_plan_final.php). Le chef d'atelier a le droit de télécharger
+    // mais pas l'entrée : il le trouve dans la visionneuse, où il travaille.
+    if ($isAdmin || $isRequester) $plansFinauxByRequest = planFinalParDemandes($db, $requestIds);
 }
 
 $urgentPending = $canViewAllPrefa

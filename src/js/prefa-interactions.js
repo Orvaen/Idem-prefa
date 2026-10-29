@@ -1102,16 +1102,52 @@ $(document).on('input change', '#controles-pt-value', function (event) {
         menu.style.top = Math.max(MARGE, haut) + 'px';
     }
 
+    // Un sous-menu s'ouvre contre son menu, à hauteur de son entrée. Sur sa droite si la place
+    // le permet, sinon sur sa gauche — le cas ordinaire, puisque la colonne des actions est
+    // la dernière du tableau et que le menu y est déjà aligné contre le bord.
+    function placerSousMenu(declencheur, sousMenu) {
+        const entree = declencheur.getBoundingClientRect();
+        const menu = declencheur.closest('.prefa-actions-menu').getBoundingClientRect();
+        const largeur = sousMenu.offsetWidth;
+        const hauteur = sousMenu.offsetHeight;
+
+        let gauche = menu.right + 2;
+        if (gauche + largeur > window.innerWidth - MARGE) gauche = menu.left - 2 - largeur;
+        // Le padding du sous-menu remonté : sa première entrée tombe en face de la sienne.
+        const haut = Math.min(entree.top - 4, window.innerHeight - MARGE - hauteur);
+
+        sousMenu.style.left = Math.max(MARGE, gauche) + 'px';
+        sousMenu.style.top = Math.max(MARGE, haut) + 'px';
+    }
+
+    function fermerSousMenus(menu) {
+        menu.querySelectorAll('.prefa-sous-menu:not([hidden])').forEach(sousMenu => {
+            sousMenu.hidden = true;
+            sousMenu.previousElementSibling?.setAttribute('aria-expanded', 'false');
+        });
+    }
+
     function fermerTout(sauf) {
         document.querySelectorAll('.prefa-actions-menu:not([hidden])').forEach(menu => {
             if (menu === sauf) return;
+            fermerSousMenus(menu);
             menu.hidden = true;
             menu.previousElementSibling?.setAttribute('aria-expanded', 'false');
         });
     }
 
+    // Les entrées du menu lui-même, sans celles de son sous-menu : les flèches parcourent un
+    // niveau à la fois.
     function entrees(menu) {
-        return Array.from(menu.querySelectorAll('button'));
+        return Array.from(menu.querySelectorAll(menu.classList.contains('prefa-sous-menu') ? 'button' : ':scope > button'));
+    }
+
+    function ouvrirSousMenu(declencheur) {
+        const sousMenu = declencheur.nextElementSibling;
+        sousMenu.hidden = false;
+        declencheur.setAttribute('aria-expanded', 'true');
+        placerSousMenu(declencheur, sousMenu);
+        return sousMenu;
     }
 
     $(document).on('click', '.prefa-actions-declencheur', function (evenement) {
@@ -1128,10 +1164,30 @@ $(document).on('input change', '#controles-pt-value', function (event) {
 
     // Une commande choisie referme son menu. Le gestionnaire de l'action, délégué lui aussi,
     // s'exécute dans le même événement : masquer le bouton ne l'empêche pas de répondre.
-    $(document).on('click', '.prefa-actions-menu button', function () {
+    //
+    // Sauf l'entrée d'un sous-menu, qui ouvre plutôt qu'elle n'agit.
+    $(document).on('click', '.prefa-actions-menu button:not(.prefa-sous-menu-declencheur)', function () {
         const menu = this.closest('.prefa-actions-menu');
+        fermerSousMenus(menu);
         menu.hidden = true;
         menu.previousElementSibling?.setAttribute('aria-expanded', 'false');
+    });
+
+    // L'entrée d'un sous-menu l'ouvre, et ne le referme pas : le survol l'a souvent ouvert
+    // juste avant le clic, qui le fermerait sous la souris. Ouvert au clavier — Entrée ou
+    // Espace, qui produisent un clic sans position —, il donne le focus à sa première entrée.
+    $(document).on('click', '.prefa-sous-menu-declencheur', function (evenement) {
+        const sousMenu = this.nextElementSibling.hidden ? ouvrirSousMenu(this) : this.nextElementSibling;
+        if (evenement.detail === 0) entrees(sousMenu)[0]?.focus();
+    });
+
+    // À la souris, il s'ouvre au survol de son entrée et se referme au survol d'une autre.
+    $(document).on('mouseover', '.prefa-actions-menu > button', function () {
+        if (this.classList.contains('prefa-sous-menu-declencheur')) {
+            if (this.nextElementSibling.hidden) ouvrirSousMenu(this);
+        } else {
+            fermerSousMenus(this.closest('.prefa-actions-menu'));
+        }
     });
 
     document.addEventListener('click', function (evenement) {
@@ -1140,6 +1196,30 @@ $(document).on('input change', '#controles-pt-value', function (event) {
 
     document.addEventListener('keydown', function (evenement) {
         const ouvert = document.querySelector('.prefa-actions-menu:not([hidden])');
+
+        // Dans un sous-menu, les flèches le parcourent ; Échap et la flèche gauche le
+        // referment seul, et rendent le focus à son entrée.
+        const sousMenu = evenement.target.closest?.('.prefa-sous-menu');
+        if (sousMenu) {
+            if (evenement.key === 'Escape' || evenement.key === 'ArrowLeft') {
+                evenement.preventDefault();
+                const declencheur = sousMenu.previousElementSibling;
+                fermerSousMenus(sousMenu.closest('.prefa-actions-menu'));
+                declencheur.focus();
+            } else if (evenement.key === 'ArrowDown' || evenement.key === 'ArrowUp') {
+                evenement.preventDefault();
+                const liste = entrees(sousMenu);
+                const pas = evenement.key === 'ArrowDown' ? 1 : -1;
+                liste[(liste.indexOf(document.activeElement) + pas + liste.length) % liste.length]?.focus();
+            }
+            return;
+        }
+
+        if (evenement.key === 'ArrowRight' && evenement.target.matches?.('.prefa-sous-menu-declencheur')) {
+            evenement.preventDefault();
+            entrees(ouvrirSousMenu(evenement.target))[0]?.focus();
+            return;
+        }
 
         if (evenement.key === 'Escape' && ouvert) {
             const declencheur = ouvert.previousElementSibling;
@@ -1182,12 +1262,25 @@ $(document).on('input change', '#controles-pt-value', function (event) {
             const dehors = repere.bottom < 0 || repere.top > window.innerHeight
                 || repere.right < 0 || repere.left > window.innerWidth;
             if (dehors) fermerTout(null);
-            else placer(declencheur, menu);
+            else {
+                placer(declencheur, menu);
+                menu.querySelectorAll('.prefa-sous-menu:not([hidden])').forEach(sousMenu =>
+                    placerSousMenu(sousMenu.previousElementSibling, sousMenu));
+            }
         });
     }, true);
 
     window.addEventListener('resize', () => fermerTout(null));
 }());
+
+
+/* ---------- Le plan final, depuis le menu d'une ligne ----------
+ *
+ * Une feuille choisie s'ouvre dans la fenêtre du plan (ouvrirLecteurPlanFinal).
+ */
+$(document).on('click', '.prefa-plan-final', function () {
+    ouvrirLecteurPlanFinal(this.dataset.plan, this.dataset.document);
+});
 
 
 /* ---------- Le formulaire s'ouvre quand l'affaire est choisie ----------

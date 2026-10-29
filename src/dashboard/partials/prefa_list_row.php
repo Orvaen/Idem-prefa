@@ -18,6 +18,10 @@ $enRetard = $joursDeRetard > 0;
 
 // La décision se prend sur la ligne quand c'est elle que la ligne attend.
 $decisionEnLigne = $isAdmin && $isPending;
+
+// Les plans de la demande et leurs feuilles ISO : un plan final par feuille. Vide tant que
+// le chef n'a rien rattaché, et pour qui n'a pas encore l'entrée (prefa_list_data.php).
+$plansFinaux = $plansFinauxByRequest[$requestId] ?? [];
 ?>
 <tbody class="prefa-request<?= $isUrgentPending ? ' is-urgent-pending' : '' ?>">
     <tr>
@@ -116,6 +120,37 @@ $decisionEnLigne = $isAdmin && $isPending;
                 <button type="button" role="menuitem" class="prefa-toggle" aria-expanded="false" aria-controls="prefa-detail-<?= $requestId ?>">
                     <?= $isAdmin && $isPending ? 'Examiner' : 'Détails' ?>
                 </button>
+                <?php // Le plan final n'était qu'au bout du visualiseur, dans Plans / ISO : il
+                      // fallait savoir où chercher. Il s'ouvre d'ici, feuille par feuille, rangé
+                      // sous son plan, dans la fenêtre du plan (ouvrirLecteurPlanFinal). Une
+                      // feuille où rien n'est encore posé le dit : on y verrait le plan nu. ?>
+                <?php if ($plansFinaux): ?>
+                    <button type="button" role="menuitem" class="prefa-sous-menu-declencheur"
+                            aria-haspopup="menu" aria-expanded="false" aria-controls="plan-final-<?= $requestId ?>">
+                        Plan final
+                        <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6" /></svg>
+                    </button>
+                    <div id="plan-final-<?= $requestId ?>" class="prefa-sous-menu" role="menu" aria-label="Plan final" hidden>
+                        <?php foreach ($plansFinaux as $planFinal): ?>
+                            <div role="group" aria-label="<?= prefaEscape($planFinal['reference']) ?>">
+                                <p class="prefa-sous-menu-titre" aria-hidden="true"><?= prefaEscape($planFinal['reference']) ?></p>
+                                <?php foreach ($planFinal['feuilles'] as $feuille): ?>
+                                    <button type="button" role="menuitem" class="prefa-plan-final"
+                                            data-plan="<?= (int) $planFinal['id'] ?>" data-document="<?= (int) $feuille['id'] ?>"
+                                            title="<?= prefaEscape($feuille['posee']
+                                                ? $feuille['nom'] . ', avec les numéros de coulée, la liste des soudures et les visas'
+                                                : 'Rien n’est encore posé sur cette feuille : aucune coulée placée, aucun cordon numéroté.') ?>">
+                                        <span class="prefa-sous-menu-nom"><?= prefaEscape($feuille['nom']) ?></span>
+                                        <span class="prefa-sous-menu-note"><?= prefaEscape($feuille['posee']
+                                            ? ($feuille['pages'] > 1 ? $feuille['pages'] . ' p.' : '')
+                                            : 'rien de posé') ?></span>
+                                    </button>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
                 <?php if ($canEditPrefa): ?>
                     <button type="button" role="menuitem" class="edit-prefa" data-id="<?= $requestId ?>">Modifier</button>
                 <?php endif; ?>

@@ -44,6 +44,54 @@ function planDocuments(PDO $db, int $elementId): array
 }
 
 /**
+ * Les plans finaux que l'on peut sortir de chaque demande : ses plans, et leurs feuilles.
+ *
+ * Une demande n'a pas un plan final mais un par feuille ISO, puisque chacune reçoit ses
+ * coulées et sa liste soudure (download_plan_final.php). Le menu d'une ligne de la liste
+ * les propose tous, et il lui faut toutes les demandes affichées d'un coup : une requête
+ * pour la page, pas une par ligne.
+ *
+ * « posee » dit si l'atelier a mis quelque chose sur la feuille : une coulée placée, ou un
+ * cordon numéroté. C'est une approximation faite pour le menu — le plan final n'écrit que
+ * les cordons validés, et relire chaque PDF pour le savoir coûterait trop cher sur une
+ * liste. Le téléchargement reste juge : s'il n'a rien à écrire, il le dit.
+ *
+ * @param list<int> $demandeIds
+ * @return array<int, list<array{id:int, reference:string,
+ *                                feuilles:list<array{id:int, nom:string, pages:int, posee:bool}>}>>
+ */
+function planFinalParDemandes(PDO $db, array $demandeIds): array
+{
+    if (!$demandeIds) return [];
+
+    $marqueurs = implode(',', array_fill(0, count($demandeIds), '?'));
+    $stmt = $db->prepare("SELECT e.id_demande, e.id AS id_element, e.reference, doc.id, doc.cle_document, doc.pages,
+            EXISTS (SELECT 1 FROM plan_nomenclature n WHERE n.id_element = e.id AND n.id_document = doc.id
+                        AND n.numero_coulee <> '' AND n.pos_x IS NOT NULL)
+            OR EXISTS (SELECT 1 FROM plan_soudure s WHERE s.id_element = e.id AND s.id_document = doc.id
+                        AND s.numero <> '') AS posee
+        FROM element_atelier e
+        JOIN element_atelier_document doc ON doc.id_element = e.id AND doc.type_document = 'plan'
+        WHERE e.id_demande IN ($marqueurs)
+        ORDER BY e.reference, e.id, doc.id");
+    $stmt->execute(array_values($demandeIds));
+
+    $parDemande = [];
+    foreach ($stmt->fetchAll() as $ligne) {
+        $demande = (int) $ligne['id_demande'];
+        $element = (int) $ligne['id_element'];
+        $parDemande[$demande][$element] ??= ['id' => $element, 'reference' => (string) $ligne['reference'], 'feuilles' => []];
+        $parDemande[$demande][$element]['feuilles'][] = [
+            'id' => (int) $ligne['id'],
+            'nom' => preg_replace('/^[a-f0-9]{32}-/', '', (string) $ligne['cle_document']),
+            'pages' => max(1, (int) $ligne['pages']),
+            'posee' => (bool) $ligne['posee'],
+        ];
+    }
+    return array_map('array_values', $parDemande);
+}
+
+/**
  * Les numéros de ligne tels qu'ils sortent de la base.
  *
  * La colonne est à NULL pour un plan déposé avant qu'on les relève, et pour celui dont le
