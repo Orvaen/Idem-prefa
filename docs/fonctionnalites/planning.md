@@ -34,4 +34,4 @@ confirmation). Le chef d'atelier voit le même écran en lecture seule.
 | `src/dashboard/pages/planning.php` | Le Gantt. Les colonnes sont passées à la feuille en variables CSS (`--debut`, `--duree`). |
 | `src/dashboard/includes/atelier/planning.php` | Le calcul des périodes et des jours ouvrés |
 | `src/dashboard/actions/save_planning.php` | L'enregistrement — chargé de production seulement |
-| `src/js/planning.js`, `src/css/dashboard/planning.css` | L'interaction et le dessin |
+| `src/js/ecrans/planning.js`, `src/css/dashboard/planning.css` | L'interaction et le dessin |

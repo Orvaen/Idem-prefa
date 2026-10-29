@@ -48,6 +48,6 @@ tuile « Mes affaires » de l'accueil y mène.
 
 | Fichier | Rôle |
 | --- | --- |
-| `src/dashboard/pages/affaires.php`, `src/js/affaires.js` | L'écran et sa fenêtre ; « Mes affaires » quand `$enLecture` |
+| `src/dashboard/pages/affaires.php`, `src/js/ecrans/affaires.js` | L'écran et sa fenêtre ; « Mes affaires » quand `$enLecture` |
 | `src/dashboard/actions/affaires.php` | `ouvrir`, `modifier`, `fermer` — réservé au chargé de production |
 | `src/modeles/Affaire.php` | Le modèle : unicité du nom, renommage des demandes, suppression. `Affaire::pour()` donne les affaires d'un chargé d'affaire |

@@ -32,7 +32,7 @@ function dashboardMenu(): array
     $ressourcesIso = [
         // pv.css : le volet « Plans & affectations » reprend la grammaire des volets des PV.
         'styles' => ['dashboard/atelier.css', 'dashboard/plan-viewer.css', 'dashboard/pv.css'],
-        'scripts' => ['atelier.js', 'plan-viewer.js', 'tableaux-plan.js'],
+        'scripts' => ['ecrans/atelier.js', 'plan-viewer.js', 'ecrans/tableaux-plan.js'],
     ];
 
     return [
@@ -73,7 +73,7 @@ function dashboardMenu(): array
             'pour' => [Role::ChargeDeProduction, Role::ChargeDAffaire],
             'icone' => '<path d="M3.5 7A1.5 1.5 0 0 1 5 5.5h4l2 2.5h8A1.5 1.5 0 0 1 20.5 9.5V18a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 18z"/><path d="M3.5 11h17"/>',
             'styles' => ['dashboard/affaires.css'],
-            'scripts' => ['affaires.js'],
+            'scripts' => ['ecrans/affaires.js'],
         ],
         // « Nouvelle demande » n'est plus une entrée du menu : elle se crée depuis « Mes
         // demandes », dans une fenêtre au-dessus de la liste (prefa-interactions.js).
@@ -120,7 +120,7 @@ function dashboardMenu(): array
             // Un cordon, et son repère.
             'icone' => '<path d="M3.5 16c1.4 0 1.4-2 2.8-2s1.4 2 2.8 2 1.4-2 2.8-2 1.4 2 2.8 2 1.4-2 2.8-2 1.4 2 2.5 2"/><path d="M3.5 20h17"/><path d="M8 9.5 6.5 6M12 8.5V4.5M16 9.5 17.5 6"/>',
             'styles' => [...$ressourcesIso['styles'], 'dashboard/soudures.css'],
-            'scripts' => [...$ressourcesIso['scripts'], 'soudures.js'],
+            'scripts' => [...$ressourcesIso['scripts'], 'ecrans/soudures.js'],
         ],
         [
             // Le pendant de « Mes soudures » côté encadrement : l'atelier entier d'un coup,
@@ -132,7 +132,7 @@ function dashboardMenu(): array
             'pour' => [Role::ChargeDeProduction, Role::ChefDAtelier],
             'icone' => '<path d="M3.5 16c1.4 0 1.4-2 2.8-2s1.4 2 2.8 2 1.4-2 2.8-2 1.4 2 2.8 2 1.4-2 2.8-2 1.4 2 2.5 2"/><path d="M3.5 20h17"/><path d="m9 7.5 2 2 4-4"/>',
             'styles' => ['dashboard/atelier.css'],
-            'scripts' => ['atelier.js', 'suivi-soudures.js'],
+            'scripts' => ['ecrans/atelier.js', 'ecrans/suivi-soudures.js'],
         ],
         [
             'id' => 'plans-iso',
@@ -142,7 +142,7 @@ function dashboardMenu(): array
             'pour' => [Role::ChargeDeProduction, Role::ChefDAtelier],
             'icone' => '<path d="M3.5 8.5H10a6.5 6.5 0 0 1 6.5 6.5v5.5"/><path d="M3.5 13H10a2 2 0 0 1 2 2v5.5"/><path d="M3.5 7v7.5M10.5 20.5h7.5"/>',
             'styles' => $ressourcesIso['styles'],
-            'scripts' => [...$ressourcesIso['scripts'], 'iso.js'],
+            'scripts' => [...$ressourcesIso['scripts'], 'ecrans/iso.js'],
         ],
         [
             'id' => 'planning',
@@ -153,7 +153,7 @@ function dashboardMenu(): array
             'icone' => '<path d="M5 6h14a1.5 1.5 0 0 1 1.5 1.5V19a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19V7.5A1.5 1.5 0 0 1 5 6z"/><path d="M3.5 10.5h17M8 3.5V7M16 3.5V7"/><path d="M7.5 14.5h4M7.5 17.5h7"/>',
             // Le volet d'une demande est celui des PV : sa feuille vient avec.
             'styles' => ['dashboard/pv.css', 'dashboard/planning.css'],
-            'scripts' => ['planning.js'],
+            'scripts' => ['ecrans/planning.js'],
         ],
         [
             // Le bon de commande est déposé sur la demande, mais il ne se lit pas dans sa
@@ -167,7 +167,7 @@ function dashboardMenu(): array
             'pour' => [Role::ChargeDeProduction, Role::ChefDAtelier],
             'icone' => '<path d="m12 3.5 8 4v9L12 20.5l-8-4v-9z"/><path d="m4 7.5 8 4 8-4M12 11.5v9"/><path d="m8 5.5 8 4"/>',
             'styles' => ['dashboard/pv.css', 'dashboard/commande-materiel.css'],
-            'scripts' => ['commande-materiel.js'],
+            'scripts' => ['ecrans/commande-materiel.js'],
         ],
         [
             'id' => 'pv',
@@ -178,7 +178,7 @@ function dashboardMenu(): array
             'icone' => '<path d="M9 4.5H6.5A1.5 1.5 0 0 0 5 6v13a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19V6a1.5 1.5 0 0 0-1.5-1.5H15"/><rect x="9" y="3" width="6" height="3" rx="1"/><path d="M8.5 16.5h2l1.5-3 1.5 4 1.5-2.5h.5"/>',
             // Le tableau des commandes fournisseur vit dans le PV « Réception matériel ».
             'styles' => ['dashboard/pv.css', 'dashboard/commandes.css'],
-            'scripts' => ['pv.js', 'commandes.js'],
+            'scripts' => ['ecrans/pv.js', 'ecrans/commandes.js'],
         ],
         [
             'id' => 'urgent-prefa',
@@ -352,43 +352,43 @@ function dashboardRessources(Utilisateur $utilisateur): array
         'css/dashboard/barre-laterale.css',
     ];
     $scripts = [
-        'js/suggestions.js',
-        'js/dashboard-navigation.js',
-        'js/dashboard-forms.js',
-        'js/prefa-interactions.js',
+        'js/composants/suggestions.js',
+        'js/coquille/dashboard-navigation.js',
+        'js/coquille/dashboard-forms.js',
+        'js/ecrans/prefa-interactions.js',
         // Le formulaire de demande s'ouvre depuis deux entrées — « Créer une affaire » et
         // la modification depuis la liste — et par deux rôles différents. Dix kilo-octets
         // pour tout le monde plutôt qu'un écran dont les listes déroulantes ne répondent
         // pas selon par où on y est entré.
-        'js/liste-filtrable.js',
+        'js/composants/liste-filtrable.js',
         // Le champ date, pour les mêmes raisons que sa feuille : le planning, les PV, les
         // soudures et les bons de livraison en ont tous, et il s'habille tout seul.
-        'js/champ-date.js',
+        'js/composants/champ-date.js',
         // La palette Ctrl+K : elle lit les entrées dans la barre latérale, donc elle vaut
         // pour tous les rôles sans rien savoir d'eux.
-        'js/palette.js',
+        'js/coquille/palette.js',
         // Les toasts : ce que l'application répond. Tous les écrans y ont droit, et le
         // composant ne coûte rien tant que personne ne l'appelle.
-        'js/toast.js',
+        'js/composants/toast.js',
         // Les alertes : ce que l'application demande, à la place de window.alert, confirm
         // et prompt. Même raison que les toasts, et elle reprend aussi les hx-confirm.
-        'js/alerte.js',
+        'js/composants/alerte.js',
         // Les paramètres : une fenêtre et non plus un écran, que chacun ouvre depuis le
         // pied de la barre, le menu du compte ou Ctrl+, (includes/vue/parametres.php).
         'js/parametres.js',
-        'js/dashboard-sidebar.js',
-        'js/dashboard-accounts.js',
+        'js/coquille/dashboard-sidebar.js',
+        'js/coquille/dashboard-accounts.js',
         // L'œil des mots de passe : la fenêtre d'ajout de compte en a un, l'écran de
         // création d'utilisateur aussi.
-        'js/mot-de-passe.js',
+        'js/composants/mot-de-passe.js',
         // La sélection de lignes : une table marquée data-selection suffit à l'activer.
-        'js/liste-selection.js',
+        'js/composants/liste-selection.js',
         // La barre de filtres à pastilles.
-        'js/filtres.js',
+        'js/composants/filtres.js',
         // Le flux d'événements : la page écoute ce que le serveur annonce. Chacun n'y
         // reçoit que ce qu'il a le droit de voir — c'est le serveur qui filtre, avec la
         // règle de prefa_visibilite.php, la même que la liste des demandes.
-        'js/flux.js',
+        'js/coquille/flux.js',
     ];
 
     foreach (dashboardMenuVisible($utilisateur) as $entree) {

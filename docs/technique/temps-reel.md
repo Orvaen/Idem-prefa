@@ -59,4 +59,4 @@ demande. L'auteur d'un événement n'est jamais prévenu de son propre geste.
 
 1. Le déclarer dans `Evenement` et l'émettre par `Evenement::noter()` **après** le `commit`.
 2. Dire à qui il s'adresse : un destinataire nommé, ou la règle de visibilité de sa demande.
-3. Le traiter dans `src/js/flux.js`.
+3. Le traiter dans `src/js/coquille/flux.js`.

@@ -121,4 +121,4 @@ Le menu d'une ligne ouvre sa fiche, dans un volet :
 | `src/dashboard/actions/deposer_document.php` | Déposer un document depuis la fiche |
 | `src/modeles/Demande.php` | Le modèle : visibilité, décision, planification, suppression |
 | `src/dashboard/includes/demande/prefa_references.php` | Le compteur des références |
-| `src/js/prefa-interactions.js` | La liste, la fiche et le formulaire côté navigateur |
+| `src/js/ecrans/prefa-interactions.js` | La liste, la fiche et le formulaire côté navigateur |

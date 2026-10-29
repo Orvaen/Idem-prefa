@@ -55,4 +55,4 @@ vérifie le droit de les voir.
 | `src/dashboard/includes/demande/pv.php` | Les types de PV, les états, ce qui reste à faire |
 | `src/dashboard/actions/pv.php` | Enregistrer, changer un état, retirer un document — `$canFillPv` |
 | `src/dashboard/actions/lire_bon_commande.php` | La lecture d'un bon dans le PV réception |
-| `src/js/pv.js`, `src/js/commandes.js` | Le volet, et le tableau des commandes fournisseur |
+| `src/js/ecrans/pv.js`, `src/js/ecrans/commandes.js` | Le volet, et le tableau des commandes fournisseur |

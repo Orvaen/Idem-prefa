@@ -296,7 +296,7 @@ Vingt-cinq `alert`, `confirm` et `prompt`, et un `hx-confirm`. Chacun ouvrait la
 système — grise sous Windows, coiffée de « localhost:8080 indique » — et les deux `prompt`
 faisaient taper le numéro d'un bon de commande au lieu de montrer la liste des bons.
 
-**Trois fonctions, dans `src/js/alerte.js`**, chargé par le socle comme les toasts :
+**Trois fonctions, dans `src/js/composants/alerte.js`**, chargé par le socle comme les toasts :
 
 | Appel | Rend | Pour |
 |---|---|---|

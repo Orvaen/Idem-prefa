@@ -73,7 +73,7 @@ circuit, enregistré dans `bon_livraison`. Voir [PV de préfabrication](/fonctio
 
 | Fichier | Rôle |
 | --- | --- |
-| `src/dashboard/pages/commande_materiel.php`, `src/js/commande-materiel.js` | L'écran |
+| `src/dashboard/pages/commande_materiel.php`, `src/js/ecrans/commande-materiel.js` | L'écran |
 | `src/dashboard/actions/lire_bon_materiel.php` | La lecture d'un bon |
 | `src/dashboard/actions/save_bon_materiel.php` | Les corrections, et la validation |
 | `src/dashboard/actions/receptionner_bon_materiel.php` | Les pointages de réception |

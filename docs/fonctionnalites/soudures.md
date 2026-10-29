@@ -155,15 +155,15 @@ condition dans `prefa_list_data.php`.
 
 | Fichier | Rôle |
 | --- | --- |
-| `src/dashboard/pages/soudures.php`, `src/js/soudures.js` | Mes soudures, et la fenêtre « Signaler un manque » |
-| `src/dashboard/pages/suivi_soudures.php`, `src/js/suivi-soudures.js` | Le suivi de l'encadrement |
+| `src/dashboard/pages/soudures.php`, `src/js/ecrans/soudures.js` | Mes soudures, et la fenêtre « Signaler un manque » |
+| `src/dashboard/pages/suivi_soudures.php`, `src/js/ecrans/suivi-soudures.js` | Le suivi de l'encadrement |
 | `src/dashboard/includes/atelier/soudure_atelier.php` | Les règles de saisie du soudeur |
 | `src/dashboard/actions/soudures_feuille.php`, `save_soudures_atelier.php` | La feuille et son enregistrement — personnel affecté au plan |
 | `src/dashboard/actions/save_soudure.php`, `save_nomenclature.php` | La liste des soudures et les cases de coulée — encadrement |
 | `src/dashboard/actions/detecter_lignes.php` | La reconnaissance du tableau sur le PDF |
 | `src/dashboard/actions/download_plan_final.php` | Le plan final |
 | `planFinalParDemandes()` dans `src/dashboard/includes/atelier/plan_document.php`, `src/dashboard/partials/prefa_list_row.php` | Le sous-menu « Plan final » de la liste des demandes |
-| `src/dashboard/actions/plan_final_lecteur.php`, `ouvrirLecteurPlanFinal()` dans `src/js/prefa-interactions.js` | La visionneuse en consultation, servie à la demande pour le sous-menu |
+| `src/dashboard/actions/plan_final_lecteur.php`, `ouvrirLecteurPlanFinal()` dans `src/js/ecrans/prefa-interactions.js` | La visionneuse en consultation, servie à la demande pour le sous-menu |
 | `src/js/plan-viewer.js` | La visionneuse et ses cases |
 | `avancementViserCordons()` dans `src/dashboard/includes/atelier/avancement.php` | Les contrôles et le visa posés en validant |
 | `src/dashboard/includes/lecture/ecriture_visa.php`, `planFinalEcritureVisa()` dans `plan_final.php` | L'écriture du visa : ses mesures, lues dans la police, et son embarquement dans le PDF |

@@ -37,7 +37,7 @@ Un compte se crée aussi depuis le terminal, avec un mot de passe tiré au sort 
 | `src/dashboard/includes/vue/user_row.php` | Une ligne, en lecture ou en saisie |
 | `src/dashboard/actions/create_users.php`, `edit_user.php`, `delete_user.php`, `check_identifiant.php` | Les écritures — chargé de production seulement |
 | `src/api/User.php` | La fabrication de l'identifiant, le hachage du mot de passe (bcrypt) |
-| `src/js/liste-selection.js` | La sélection de lignes et la suppression en lot |
+| `src/js/composants/liste-selection.js` | La sélection de lignes et la suppression en lot |
 
 ## Paramètres
 

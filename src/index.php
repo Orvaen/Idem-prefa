@@ -45,16 +45,16 @@ if (Session::connectee()) {
     <!-- Le thème est posé avant le premier rendu, sinon l'écran clignote le temps que la
          feuille s'applique. theme.js décide : le choix mémorisé s'il y en a un, celui du
          système sinon. -->
-    <script src="js/theme.js?v=<?= filemtime(__DIR__ . '/js/theme.js') ?>"></script>
+    <script src="js/composants/theme.js?v=<?= filemtime(__DIR__ . '/js/composants/theme.js') ?>"></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.20.0/axios.min.js" integrity="sha512-OVq+Gfa9PIjbTC0jWOccSFSp/vzkBQ5pMcbHQrNZLl+izmdFmusmAMlX4LT550ivvSnMXMEeG7CxEtjIz6Dn2Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
     <link href="css/index.css?v=<?= filemtime(__DIR__ . '/css/index.css') ?>" rel="stylesheet" />
     <link href="css/floating-fields.css?v=<?= filemtime(__DIR__ . '/css/floating-fields.css') ?>" rel="stylesheet" />
 
-    <script src="js/floating-fields.js?v=<?= filemtime(__DIR__ . '/js/floating-fields.js') ?>" defer></script>
-    <script src="js/mot-de-passe.js?v=<?= filemtime(__DIR__ . '/js/mot-de-passe.js') ?>" defer></script>
-    <script src="js/login.js?v=<?= filemtime(__DIR__ . '/js/login.js') ?>" defer></script>
+    <script src="js/composants/floating-fields.js?v=<?= filemtime(__DIR__ . '/js/composants/floating-fields.js') ?>" defer></script>
+    <script src="js/composants/mot-de-passe.js?v=<?= filemtime(__DIR__ . '/js/composants/mot-de-passe.js') ?>" defer></script>
+    <script src="js/connexion/login.js?v=<?= filemtime(__DIR__ . '/js/connexion/login.js') ?>" defer></script>
 </head>
 
 <body>

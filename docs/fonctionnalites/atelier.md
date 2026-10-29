@@ -96,4 +96,4 @@ Le serveur n'accepte l'enregistrement des étapes que sur **sa propre** affectat
 | `src/dashboard/actions/save_atelier.php` | Plans et affectations : `element`, `update_element`, `delete_element`, `documents`, `assign`, `revoke` |
 | `src/dashboard/actions/update_atelier.php` | Étapes, déclarations, validations, saisie directe |
 | `src/dashboard/actions/upload_plan.php`, `delete_plan.php` | Les feuilles PDF |
-| `src/js/atelier.js`, `src/js/plan-viewer.js` | Le volet et la visionneuse |
+| `src/js/ecrans/atelier.js`, `src/js/plan-viewer.js` | Le volet et la visionneuse |

@@ -111,14 +111,14 @@ $manquesNouveaux = ($isAdmin || $isWorkshopChief) ? manquesNouveauxCompte($db) :
     <!-- Le thème est posé avant le premier rendu, sinon l'écran clignote le temps que la
          feuille s'applique. Il ne peut donc pas attendre le chargement différé du socle.
          theme.js décide : le choix mémorisé s'il y en a un, celui du système sinon. -->
-    <script src="../js/theme.js?v=<?= filemtime(__DIR__ . '/../js/theme.js') ?>"></script>
+    <script src="../js/composants/theme.js?v=<?= filemtime(__DIR__ . '/../js/composants/theme.js') ?>"></script>
 
     <!-- Les feuilles de style des écrans que ce rôle peut ouvrir, et elles seules : la
          liste est déclarée avec le menu, dans includes/menu.php. -->
     <?php foreach ($ressources['styles'] as $feuille): ?>
         <link rel="stylesheet" href="../<?= $feuille ?>?v=<?= filemtime(__DIR__ . '/../' . $feuille) ?>" />
     <?php endforeach; ?>
-    <script src="../js/floating-fields.js?v=<?= filemtime(__DIR__ . '/../js/floating-fields.js') ?>" defer></script>
+    <script src="../js/composants/floating-fields.js?v=<?= filemtime(__DIR__ . '/../js/composants/floating-fields.js') ?>" defer></script>
 </head>
 
 <body>
