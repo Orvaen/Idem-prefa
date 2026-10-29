@@ -362,6 +362,23 @@
         }
     }, true);
 
+    // Les contrôles d'une validation. La case « Tous les cordons » d'une colonne la coche ou
+    // la décoche entière ; elle se recoche d'elle-même quand chaque cordon l'est, et se
+    // décoche dès qu'un seul ne l'est plus. Elle n'a pas de nom : elle ne part pas avec le
+    // formulaire, seules les cases des cordons comptent.
+    //
+    // « :scope > tbody » et non « tbody » : la liste vit dans la ligne d'un autre tableau, et
+    // le sélecteur seul trouvait aussi le tbody de celui-ci — la case « Tous » se comptait
+    // alors parmi les cordons, et ne se recochait jamais.
+    $(document).on('change', '.soudure-controles .soudure-croix', function () {
+        const table = this.closest('table');
+        const controle = this.dataset.controle;
+        const cases = table.querySelectorAll(`:scope > tbody .soudure-croix[data-controle="${controle}"]`);
+        const tout = table.querySelector(`.soudure-controles-tout[data-controle="${controle}"]`);
+        if (this === tout) cases.forEach(caseCordon => { caseCordon.checked = tout.checked; });
+        else if (tout) tout.checked = Array.from(cases).every(caseCordon => caseCordon.checked);
+    });
+
     $(document).on('submit', '.atelier-action', async function (event) {
         event.preventDefault();
         const form = $(this);

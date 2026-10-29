@@ -192,6 +192,7 @@ $avancementsAValider = avancementEnAttentePlusieurs($db, $affectationsActives);
                                                     <input type="hidden" name="operation" value="valider">
                                                     <input type="hidden" name="affectation" value="<?= (int) $assignment['id'] ?>">
                                                     <input type="hidden" name="declaration" value="<?= (int) $declaration['id'] ?>">
+                                                    <?= soudureControlesRendu(avancementCordonsAValider($db, (int) $element['id'], (int) $assignment['id_utilisateur']), $utilisateur->nomComplet()) ?>
                                                     <button type="submit" name="decision" value="valider" title="L’avancement du plan prendra ce chiffre.">Valider</button>
                                                     <button type="submit" name="decision" value="refuser" class="bouton-discret" title="L’avancement ne change pas ; la personne affectée pourra déclarer autre chose.">Refuser</button>
                                                     <span class="atelier-message" role="status" aria-live="polite"></span>

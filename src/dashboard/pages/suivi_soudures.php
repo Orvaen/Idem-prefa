@@ -14,7 +14,7 @@ $plans = soudureSuiviPlans($db);
 // le plan n'a pas encore de suivi soudage, « Valider » l'ouvre à son nom. Une affectation
 // par soudeur suffit — c'est elle qui dit que l'encadrement l'a mis sur ce plan. « Fait » se
 // lit comme partout : un procédé ou une date.
-$soudeursAffectes = $db->prepare("SELECT MIN(a.id) AS affectation, TRIM(CONCAT(u.prenom, ' ', u.name)) AS nom
+$soudeursAffectes = $db->prepare("SELECT MIN(a.id) AS affectation, a.id_utilisateur AS soudeur, TRIM(CONCAT(u.prenom, ' ', u.name)) AS nom
     FROM affectation_atelier a
     JOIN Utilisateur u ON u.id = a.id_utilisateur
     WHERE a.id_element = ? AND a.actif = 1 AND u.id_role = ?
@@ -222,6 +222,7 @@ $etatDuPlan = static function (array $ligne): array {
                                                     <input type="hidden" name="operation" value="valider">
                                                     <input type="hidden" name="affectation" value="<?= (int) $attente['affectation']['id'] ?>">
                                                     <input type="hidden" name="declaration" value="<?= (int) $attente['id'] ?>">
+                                                    <?= soudureControlesRendu(avancementCordonsAValider($db, $elementId, (int) $attente['affectation']['id_utilisateur']), $utilisateur->nomComplet()) ?>
                                                     <button type="submit" name="decision" value="valider" title="L’avancement du plan prendra ce chiffre.">Valider</button>
                                                     <button type="submit" name="decision" value="refuser" class="bouton-discret" title="L’avancement ne change pas ; la personne affectée pourra déclarer autre chose.">Refuser</button>
                                                     <span class="atelier-message" role="status" aria-live="polite"></span>
@@ -258,6 +259,7 @@ $etatDuPlan = static function (array $ligne): array {
                                                         <input type="hidden" name="affectation" value="<?= (int) $ligne['soudage']['id'] ?>">
                                                         <input type="hidden" name="revision" value="<?= (int) $ligne['soudage']['revision'] ?>">
                                                         <input type="hidden" name="soudures" value="<?= $soudures ?>">
+                                                        <?= soudureControlesRendu(avancementCordonsAValider($db, $elementId, (int) $ligne['soudage']['id_utilisateur']), $utilisateur->nomComplet()) ?>
                                                         <button type="submit" title="L’avancement du suivi soudage prendra ce chiffre.">Valider</button>
                                                         <span class="atelier-message" role="status" aria-live="polite"></span>
                                                     </form>
@@ -271,6 +273,7 @@ $etatDuPlan = static function (array $ligne): array {
                                                         <input type="hidden" name="operation" value="cordons">
                                                         <input type="hidden" name="affectation" value="<?= (int) $soudeur['affectation'] ?>">
                                                         <input type="hidden" name="soudures" value="<?= $soudures ?>">
+                                                        <?= soudureControlesRendu(avancementCordonsAValider($db, $elementId, (int) $soudeur['soudeur']), $utilisateur->nomComplet()) ?>
                                                         <button type="submit" title="Le suivi soudage du plan prendra ce chiffre.">Valider<?= count($soudeurs) > 1 ? ' · suivi par ' . prefaEscape($soudeur['nom']) : '' ?></button>
                                                         <span class="atelier-message" role="status" aria-live="polite"></span>
                                                     </form>
@@ -298,9 +301,9 @@ $etatDuPlan = static function (array $ligne): array {
                                                     <th scope="col">N°</th><th scope="col">Feuille</th>
                                                     <th scope="col">Soudeur</th><th scope="col">Date</th>
                                                     <th scope="col">Type</th>
-                                                    <th scope="col" class="soudure-controle" title="Radiographie — se coche dans la fenêtre du plan">RT</th>
-                                                    <th scope="col" class="soudure-controle" title="Contrôle visuel — se coche dans la fenêtre du plan">VI</th>
-                                                    <th scope="col" class="soudure-controle" title="Ressuage — se coche dans la fenêtre du plan">PT</th>
+                                                    <th scope="col" class="soudure-controle" title="Radiographie — se coche en validant, ou dans la fenêtre du plan">RT</th>
+                                                    <th scope="col" class="soudure-controle" title="Contrôle visuel — se coche en validant, ou dans la fenêtre du plan">VT</th>
+                                                    <th scope="col" class="soudure-controle" title="Ressuage — se coche en validant, ou dans la fenêtre du plan">PT</th>
                                                     <th scope="col">Visa</th>
                                                 </tr></thead>
                                                 <tbody>

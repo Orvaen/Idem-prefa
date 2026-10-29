@@ -53,7 +53,9 @@ $avancementsAValider = [];
 if ($estValidee && $canManageWorkshop) {
     require_once __DIR__ . '/../includes/atelier/avancement.php';
     require_once __DIR__ . '/../includes/atelier/atelier.php';
-    $attente = $db->prepare("SELECT h.*, a.id AS id_affectation, a.type_affectation, e.reference,
+    require_once __DIR__ . '/../includes/atelier/soudure.php';
+    $attente =$db->prepare("SELECT h.*, a.id AS id_affectation, a.type_affectation, a.id_element,
+            a.id_utilisateur AS id_titulaire, e.reference,
             TRIM(CONCAT(u.prenom, ' ', u.name)) AS auteur
         FROM avancement_atelier h
         JOIN affectation_atelier a ON a.id = h.id_affectation
@@ -188,6 +190,7 @@ $decisionComment = trim((string) ($row['commentaire_validation'] ?? ''));
                     <input type="hidden" name="operation" value="valider">
                     <input type="hidden" name="affectation" value="<?= (int) $declaration['id_affectation'] ?>">
                     <input type="hidden" name="declaration" value="<?= (int) $declaration['id'] ?>">
+                    <?= soudureControlesRendu(avancementCordonsAValider($db, (int) $declaration['id_element'], (int) $declaration['id_titulaire']), $utilisateur->nomComplet()) ?>
                     <button type="submit" name="decision" value="valider" title="L’avancement du plan prendra ce chiffre.">Valider</button>
                     <button type="submit" name="decision" value="refuser" class="bouton-discret" title="L’avancement ne change pas ; la personne affectée pourra déclarer autre chose.">Refuser</button>
                     <span class="atelier-message" role="status" aria-live="polite"></span>

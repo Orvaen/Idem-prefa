@@ -19,6 +19,15 @@
 const SOUDURE_CROIX = 'X';
 
 /**
+ * Les trois contrôles, et le nom que leur donne le plan.
+ *
+ * La colonne du contrôle visuel s'appelle « vi » en base, mais le bureau d'études imprime
+ * « VT » en tête de sa liste soudure (plan_table.php), et c'est le mot de l'atelier. L'écran
+ * dit donc VT.
+ */
+const SOUDURE_CONTROLES = ['rt' => 'RT', 'vi' => 'VT', 'pt' => 'PT'];
+
+/**
  * La liste des soudures d'un plan : les soudures enregistrées, suivies des pointages qui
  * n'en nourrissent encore aucune.
  *
@@ -146,7 +155,7 @@ function soudureSuiviPlans(PDO $db): array
         ORDER BY e.id_demande DESC, e.reference")->fetchAll();
     if (!$plans) return [];
 
-    $stmt = $db->prepare("SELECT a.id, a.avancement, a.revision, a.type_affectation,
+    $stmt = $db->prepare("SELECT a.id, a.id_utilisateur, a.avancement, a.revision, a.type_affectation,
             TRIM(CONCAT(u.prenom, ' ', u.name)) AS personne
         FROM affectation_atelier a JOIN Utilisateur u ON u.id = a.id_utilisateur
         WHERE a.id_element = ? AND a.actif = 1
@@ -352,7 +361,7 @@ function soudureRendu(array $lignes, array $soudeurs, int $elementId, int $docum
     $html .= '<table class="nomenclature-table soudure-table"><thead><tr>'
         . '<th scope="col">N°</th><th scope="col">Soudeur</th><th scope="col">Date</th>'
         . '<th scope="col">Type de soudure</th><th scope="col" class="soudure-controle">RT</th>'
-        . '<th scope="col" class="soudure-controle">VI</th><th scope="col" class="soudure-controle">PT</th>'
+        . '<th scope="col" class="soudure-controle">VT</th><th scope="col" class="soudure-controle">PT</th>'
         . '<th scope="col">Visa</th>'
         . ($modifiable ? '<th scope="col"><span class="sr-only">Retirer</span></th>' : '')
         . '</tr></thead><tbody>';
@@ -417,7 +426,7 @@ function soudureLigneRendu(array $ligne, array $soudeurs, bool $modifiable): str
     $controle = static fn (string $nom, string $actuel): string =>
         '<input type="checkbox" class="soudure-croix" name="' . $nom . '" value="' . SOUDURE_CROIX . '"'
         . (trim($actuel) !== '' ? ' checked' : '')
-        . ' aria-label="Contrôle ' . strtoupper($nom) . ' conforme">';
+        . ' aria-label="Contrôle ' . SOUDURE_CONTROLES[$nom] . ' conforme">';
 
     // Une ligne issue d'un pointage emporte son origine : lui donner un numéro la
     // rattache, et le pointage cesse alors d'apparaître comme en attente.
@@ -446,4 +455,71 @@ function soudureLigneRendu(array $ligne, array $soudeurs, bool $modifiable): str
         . '<td class="soudure-visa">' . prefaEscape($visa !== '' ? $visa : '—') . '</td>'
         . '<td><button type="button" class="tableau-retirer" aria-label="Retirer la soudure ' . $valeur('numero') . '">✕</button></td>'
         . '</tr>';
+}
+
+/**
+ * Les contrôles à poser en validant : un cordon par ligne, une croix par contrôle.
+ *
+ * Il s'écrit dans le formulaire de validation lui-même : les cases partent avec « Valider »,
+ * et seulement avec lui — refuser ne pose rien. Le champ « controles_vus » dit au serveur
+ * que le chef a eu la liste sous les yeux, même vide ; c'est ce qui l'autorise à exiger
+ * qu'elle n'ait pas changé (avancementViserCordons()).
+ *
+ * Une case cochée est une croix sur le plan : le contrôle est OK. Une case vide n'écrit
+ * rien. Les cases arrivent cochées si l'encadrement les avait déjà posées dans la fenêtre
+ * du plan.
+ *
+ * Valider ces cordons, c'est aussi les viser : leur case VISA recevra le nom de
+ * $signataire, écrit comme une signature. On le dit ici, avant le clic.
+ *
+ * @param list<array<string, mixed>> $cordons ce que rend avancementCordonsAValider()
+ */
+function soudureControlesRendu(array $cordons, string $signataire): string
+{
+    $html = '<input type="hidden" name="controles_vus" value="1">';
+    if (!$cordons) return $html;
+
+    $html .= '<div class="soudure-controles">'
+        . '<p class="soudure-controles-titre">Contrôles · une croix quand c’est OK — « Valider » les vise à votre nom, '
+        . prefaEscape($signataire) . '</p>'
+        . '<table class="atelier-soudures-table soudure-controles-table"><thead><tr>'
+        . '<th scope="col">N°</th><th scope="col">Feuille</th><th scope="col">Date</th><th scope="col">Procédé</th>';
+    foreach (SOUDURE_CONTROLES as $libelle) {
+        $html .= '<th scope="col" class="soudure-controle">' . $libelle . '</th>';
+    }
+    $html .= '</tr>';
+
+    // Un cahier compte vite vingt cordons : cocher VT sur chacun, c'est vingt clics pour
+    // dire une seule chose. Une case par colonne les coche tous ; on décoche ensuite ceux
+    // qui ne passent pas.
+    if (count($cordons) > 1) {
+        $html .= '<tr class="soudure-controles-tous"><td colspan="4">Tous les cordons</td>';
+        foreach (SOUDURE_CONTROLES as $cle => $libelle) {
+            $tous = !array_filter($cordons, static fn (array $cordon): bool => trim((string) $cordon[$cle]) === '');
+            $html .= '<td class="soudure-controle"><input type="checkbox" class="soudure-croix soudure-controles-tout"'
+                . ' data-controle="' . $cle . '"' . ($tous ? ' checked' : '')
+                . ' aria-label="' . $libelle . ' OK sur tous les cordons"></td>';
+        }
+        $html .= '</tr>';
+    }
+    $html .= '</thead><tbody>';
+
+    foreach ($cordons as $cordon) {
+        $id = (int) $cordon['id'];
+        $numero = prefaEscape((string) $cordon['numero']);
+        $feuille = preg_replace('/\.pdf$/i', '', preg_replace('/^[a-f0-9]{32}-/', '', (string) ($cordon['cle_document'] ?? '')));
+        $html .= '<tr><td>' . $numero . '<input type="hidden" name="cordons[]" value="' . $id . '"></td>'
+            . '<td title="' . prefaEscape($feuille) . '">' . prefaEscape($feuille ?: '—')
+            . ((int) ($cordon['pages'] ?? 1) > 1 ? '<span class="suivi-soudures-sur"> · p. ' . (int) $cordon['page'] . '</span>' : '') . '</td>'
+            . '<td>' . ($cordon['date_soudure'] ? prefaEscape(date('d/m/Y', strtotime((string) $cordon['date_soudure']))) : '—') . '</td>'
+            . '<td>' . prefaEscape((string) ($cordon['type_soudure'] ?: '—')) . '</td>';
+        foreach (SOUDURE_CONTROLES as $cle => $libelle) {
+            $html .= '<td class="soudure-controle"><input type="checkbox" class="soudure-croix" name="controles[' . $cle . '][]"'
+                . ' value="' . $id . '" data-controle="' . $cle . '"'
+                . (trim((string) $cordon[$cle]) !== '' ? ' checked' : '')
+                . ' aria-label="Cordon ' . $numero . ' : ' . $libelle . ' OK"></td>';
+        }
+        $html .= '</tr>';
+    }
+    return $html . '</tbody></table></div>';
 }

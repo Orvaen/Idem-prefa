@@ -22,6 +22,23 @@ try {
     if (!$assignment) { $db->rollBack(); prefaError(404, 'Affectation introuvable ou retirée.'); }
     $comment = trim((string) ($_POST['commentaire'] ?? ''));
     if (mb_strlen($comment) > 2000) { $db->rollBack(); prefaError(400, 'Commentaire trop long.'); }
+
+    // Les contrôles RT, VT, PT que le chef coche en validant, et son visa — son nom, dans la
+    // case VISA —, sur les cordons que la validation couvre. Ils se posent avant elle : une
+    // fois validés, ces cordons ne se distinguent plus des autres. Seuls les formulaires qui
+    // les montrent les envoient — la saisie libre d'un pourcentage, dans Plans / ISO, n'en
+    // porte pas.
+    $poserControles = static function () use ($db, $assignment, $canManageWorkshop, $actor): void {
+        if (!$canManageWorkshop || !isset($_POST['controles_vus'])) return;
+        try {
+            avancementViserCordons($db, (int) $assignment['id_element'], (int) $assignment['id_utilisateur'],
+                (int) $actor['id'], $_POST['cordons'] ?? [], $_POST['controles'] ?? []);
+        } catch (DomainException $erreur) {
+            $db->rollBack();
+            prefaError(409, $erreur->getMessage());
+        }
+    };
+
     if ($operation === 'steps') {
         $revision = filter_var($_POST['etapes_revision'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
         $values = $_POST['etapes'] ?? null;
@@ -60,6 +77,7 @@ try {
         $decision = $_POST['decision'] ?? '';
         if (!$declaration || !in_array($decision, ['valider', 'refuser'], true)) { $db->rollBack(); prefaError(400, 'Décision invalide.'); }
         try {
+            if ($decision === 'valider') $poserControles();
             $tranchee = avancementTrancher($db, $id, $declaration, $actor['id'], $decision === 'valider');
         } catch (DomainException $erreur) {
             // Quelqu’un d’autre l’a déjà tranchée, ou l’ouvrier l’a remplacée entre-temps.
@@ -85,6 +103,7 @@ try {
         $total = avancementSouduresPrevues($db, $elementId)['prevues'];
         $soudures = filter_var($_POST['soudures'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 0, 'max_range' => max(0, $total)]]);
         if ($total < 1 || $soudures === false) { $db->rollBack(); prefaError(409, 'La liste des soudures de ce plan a changé. Actualisez avant de réessayer.'); }
+        $poserControles();
         $suivi = avancementSuiviSoudage($db, $elementId, (int) $assignment['id_utilisateur']);
         avancementPoser($db, $suivi['id'], $actor['id'], avancementPourcentage($soudures, $total), $soudures, $total, null);
         $reponse = 'Cordons validés : ' . $soudures . ' sur ' . $total . '.';
@@ -126,6 +145,8 @@ try {
         // Le total est rangé avec la déclaration, pas relu à l’affichage : la liste des
         // soudures grandit, et « sept sur sept » doit rester vrai quand le plan en compte douze.
         $totalRetenu = $soudures === null ? null : $total;
+
+        $poserControles();
 
         // Seul le chef arrive ici (refus plus haut) : son chiffre est posé d'office.
         avancementPoser($db, $id, $actor['id'], $progress, $soudures, $totalRetenu, $comment ?: null);

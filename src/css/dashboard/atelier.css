@@ -1304,6 +1304,35 @@
     font-size: 12px;
 }
 
+/* Les contrôles posés en validant : les cordons que la validation couvre, entre le chiffre
+   et les boutons. Le formulaire range ses enfants en ligne ; la liste prend toute sa
+   largeur, et les boutons passent dessous. */
+.soudure-controles {
+    flex: 1 0 100%;
+    min-width: 0;
+    margin: 2px 0 4px;
+    overflow-x: auto;
+}
+
+.soudure-controles-titre {
+    margin: 0 0 4px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+/* « Tous les cordons » est une commande, pas un cordon : sourde, sans la graisse du numéro
+   qui ouvre les autres lignes. */
+.soudure-controles-table .soudure-controles-tous td {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.soudure-controles-table .soudure-croix {
+    margin: 0;
+    vertical-align: middle;
+}
+
 /* Côté atelier : ce qui a été annoncé et qui attend encore. Même filet d'attente que la
    bande du chef, pour que les deux écrans parlent visiblement du même objet. */
 .atelier-attente {

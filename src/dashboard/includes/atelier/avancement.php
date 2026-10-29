@@ -333,6 +333,77 @@ function avancementCordonValide(array $soudure, array $jusqua): bool
 }
 
 /**
+ * Les cordons qu'une validation va couvrir : ceux de ce soudeur, sur ce plan, saisis depuis
+ * sa dernière validation.
+ *
+ * Valider écrit une date, et tout ce que le soudeur avait saisi avant elle passe sur le
+ * plan (avancementCordonValide). C'est donc le moment où le chef engage ces cordons-là, et
+ * celui où il pose leurs contrôles : il les a sous les yeux, un par un. Une ligne sans date
+ * ni procédé n'est pas une soudure faite et n'en fait pas partie.
+ *
+ * @return list<array<string, mixed>> des lignes de soudureRelevees(), dans le même ordre
+ */
+function avancementCordonsAValider(PDO $db, int $elementId, int $soudeurId): array
+{
+    require_once __DIR__ . '/soudure.php';
+    $jusqua = avancementValideJusqua($db, $elementId);
+    return array_values(array_filter(soudureRelevees($db, $elementId), static fn (array $cordon): bool =>
+        (int) $cordon['id_soudeur'] === $soudeurId
+        && (trim((string) $cordon['type_soudure']) !== '' || !empty($cordon['date_soudure']))
+        && !avancementCordonValide($cordon, $jusqua)));
+}
+
+/**
+ * Les contrôles cochés en validant, et le visa, posés sur les cordons que la validation
+ * couvre.
+ *
+ * Appelée avant d'écrire la validation : après, ces cordons sont couverts et ne se
+ * distinguent plus des autres. La liste reçue doit être celle que le chef avait sous les
+ * yeux — un cordon saisi entre l'affichage et le clic passerait sur le plan sans qu'il
+ * l'ait vu, avec des contrôles qu'il n'a pas choisis et sous son nom.
+ *
+ * Valider, c'est viser : le visa est le nom de celui qui valide, tiré de son compte, et la
+ * date. Rien à dessiner — la case VISA du plan l'écrit comme une signature
+ * (ecriture_visa.php).
+ *
+ * Les lignes sont mises à jour sur place, sans être réécrites : leur date de saisie est ce
+ * qui les range sous une validation, et la toucher les ferait retomber en attente.
+ *
+ * L'appelant tient la transaction.
+ *
+ * @param mixed $vus les identifiants des cordons affichés (cordons[])
+ * @param mixed $controles les cases cochées, par contrôle : ['rt' => [id, …], 'vi' => …]
+ * @throws DomainException si la liste a changé depuis l'affichage
+ */
+function avancementViserCordons(PDO $db, int $elementId, int $soudeurId, int $acteurId, $vus, $controles): void
+{
+    require_once __DIR__ . '/soudure.php';
+    $entiers = static fn ($valeurs): array => array_map('intval', array_filter(is_array($valeurs) ? $valeurs : [], 'is_scalar'));
+
+    $attendus = array_map(static fn (array $cordon): int => (int) $cordon['id'],
+        avancementCordonsAValider($db, $elementId, $soudeurId));
+    $recus = $entiers($vus);
+    sort($attendus);
+    sort($recus);
+    if ($attendus !== $recus) {
+        throw new DomainException('Les cordons à valider ont changé depuis l’affichage. Actualisez avant de valider.');
+    }
+
+    if (!$attendus) return;
+
+    $controles = is_array($controles) ? $controles : [];
+    $coches = [];
+    foreach (['rt', 'vi', 'pt'] as $cle) $coches[$cle] = array_flip($entiers($controles[$cle] ?? []));
+
+    $poser = $db->prepare('UPDATE plan_soudure SET rt = ?, vi = ?, pt = ?, vise_par = ?, date_visa = NOW()
+        WHERE id = ? AND id_element = ?');
+    foreach ($attendus as $id) {
+        $croix = static fn (string $cle): string => isset($coches[$cle][$id]) ? SOUDURE_CROIX : '';
+        $poser->execute([$croix('rt'), $croix('vi'), $croix('pt'), $acteurId, $id, $elementId]);
+    }
+}
+
+/**
  * La déclaration en attente d'une affectation, s'il y en a une.
  *
  * Une seule à la fois : déclarer de nouveau remplace la précédente — voir

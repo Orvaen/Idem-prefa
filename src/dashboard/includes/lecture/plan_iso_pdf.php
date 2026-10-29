@@ -81,10 +81,11 @@ function planIsoListeSoudure(PdfPlan $pdf, float $gauche, float $haut, float $dr
     // Ils portent sur la pièce entière, pas sur une soudure, d'où la bande à part.
     $hautTableau = planIsoBandeTuyauteur($pdf, $gauche, $haut + 7, $droite, $entete);
 
-    // RT, VI et PT doivent loger « Non OK » : 8 mm n'y suffisaient pas.
+    // RT, VT et PT doivent loger « Non OK » : 8 mm n'y suffisaient pas. VT et non VI : c'est
+    // l'en-tête que le bureau d'études imprime sur ses listes soudure.
     $colonnes = [
         ['N°', 7.0], ['NOM DU SOUDEUR', 24.0], ['DATE', 15.0], ['TYPE DE SOUDURE', 17.0],
-        ['RT', 11.5], ['VI', 11.5], ['PT', 11.5], ['VISA', 17.5],
+        ['RT', 11.5], ['VT', 11.5], ['PT', 11.5], ['VISA', 17.5],
     ];
     // Huit lignes, comme sur le plan papier : le tableau ne s'étire pas jusqu'au cartouche,
     // ce qui éviterait une dizaine de lignes vides inutilement encadrées.
