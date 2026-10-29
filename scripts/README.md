@@ -45,13 +45,14 @@ Deux propriétés les rendent maniables :
 - **ils sont datés** — le nom porte le jour où le changement est né, donc l'ordre se lit
   sans ouvrir un fichier ;
 - **ils sont relançables** — chacun vérifie ce qui existe déjà et le dit (« Colonne X déjà
-  là »). Les relancer tous, dans l'ordre, sur une base à jour ne refait pas le travail.
+  là »). Les relancer sur une base à jour ne refait pas le travail — à une exception près :
+  `2026-10-13_evenements` purge à chaque passage les événements de plus de sept jours.
 
-Pour autant, ils ne sont pas tous inoffensifs : neuf d'entre eux réécrivent des données, et
-deux en suppriment. La liste est juste en dessous — lisez-la avant de tout lancer sur une
+Pour autant, ils ne sont pas tous inoffensifs : dix d'entre eux réécrivent des données, et
+deux en suppriment. La liste est juste en dessous — lisez-la avant d'en lancer un sur une
 base en service.
 
-### Neuf d'entre elles touchent aux données
+### Dix d'entre elles touchent aux données
 
 Le mot « migration » laisse croire qu'on ne change que la forme des tables. Ce n'est pas
 vrai de toutes : celles-ci réécrivent aussi ce qu'elles contiennent, et il vaut mieux
@@ -94,7 +95,7 @@ et dix d'entre elles touchent aux données.
 |---|---|
 | `app-entrypoint.sh` | Point d'entrée du conteneur web. Lancé par Docker, jamais à la main — le `Dockerfile` le copie à part. |
 | `ccpu_lire.php` | Lit un certificat matière en ligne de commande et affiche ce qui a été reconnu. Sert à essayer la lecture sur un nouveau modèle de certificat avant de s'y fier. |
-| `start-app.cmd` | Démarre les conteneurs et ouvre le navigateur sur l'application. |
+| `start-app.cmd` | Ouvre l'application dans une fenêtre Edge ou Chrome, sans barre d'adresse. Il ne démarre pas les conteneurs : `run up` d'abord. |
 | `count-lines.cmd` / `.ps1` | Compte les lignes de code du projet, par extension. |
 
 ---
