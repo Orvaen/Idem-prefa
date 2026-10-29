@@ -493,6 +493,112 @@ $(document).on('click', '.prefa-pdf-link', function (event) {
     document.body.classList.add('prefa-viewer-open');
 });
 
+/**
+ * Le plan final en PDF, depuis la barre de la fenêtre du plan.
+ *
+ * Il est composé au moment où on le demande, et le serveur peut répondre qu'il n'a rien à
+ * écrire, ou qu'il ne sait pas annoter ce PDF. Un lien « download » enregistrerait alors ce
+ * refus dans un fichier nommé .pdf, illisible : on le demande soi-même, et un refus se lit
+ * dans un toast, avec les mots du serveur.
+ */
+async function telechargerPlanFinal(adresse) {
+    // Un cahier de quinze feuilles se compose en quelques secondes : on dit qu'on s'en occupe.
+    const attente = window.toast?.('Préparation du PDF…', { duree: 60000 });
+    let refus = 'Le plan final n’a pas pu être préparé.';
+    try {
+        const reponse = await fetch(adresse, { credentials: 'same-origin' });
+        if (!reponse.ok) {
+            refus = (await reponse.json().catch(() => null))?.message || refus;
+            throw new Error(refus);
+        }
+        const disposition = reponse.headers.get('Content-Disposition') || '';
+        const nom = /filename="([^"]+)"/.exec(disposition)?.[1] || 'Plan-final.pdf';
+        const fichier = URL.createObjectURL(await reponse.blob());
+        const lien = document.createElement('a');
+        lien.href = fichier;
+        lien.download = nom;
+        document.body.appendChild(lien);
+        lien.click();
+        lien.remove();
+        setTimeout(() => URL.revokeObjectURL(fichier), 1000);
+    } catch {
+        window.toast?.(refus, { erreur: true });
+    } finally {
+        // Retiré sans clic : un clic remonterait jusqu'au document, où d'autres l'écoutent.
+        attente?.remove();
+    }
+}
+
+// Le lien garde son adresse : Ctrl + clic, ou le clic du milieu, l'ouvrent encore à part.
+$(document).on('click', '.plan-dialog-telecharger', function (event) {
+    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0) return;
+    event.preventDefault();
+    telechargerPlanFinal(this.href);
+});
+
+/**
+ * Une feuille et une ressource de la fenêtre du plan, chargées si la page ne les a pas.
+ *
+ * Le tableau de bord n'envoie la fenêtre qu'aux rôles qui ont un écran du plan ISO. Le
+ * chargé d'affaire n'en a pas, et ne l'ouvre que pour regarder un plan final : il la reçoit
+ * à ce moment-là, une fois. La feuille se glisse avant le thème clair, qui doit rester la
+ * dernière à parler.
+ */
+function chargerRessource(adresse, feuille) {
+    const chemin = adresse.split('?')[0];
+    const deja = feuille
+        ? document.querySelector(`link[rel="stylesheet"][href*="${chemin.replace('../', '')}"]`)
+        : document.querySelector(`script[src*="${chemin.replace('../', '')}"]`);
+    if (deja) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+        const element = document.createElement(feuille ? 'link' : 'script');
+        if (feuille) {
+            element.rel = 'stylesheet';
+            element.href = adresse;
+        } else {
+            element.src = adresse;
+        }
+        element.onload = resolve;
+        element.onerror = reject;
+        const theme = feuille && document.querySelector('link[href*="light-theme.css"]');
+        if (theme) theme.before(element);
+        else document.head.appendChild(element);
+    });
+}
+
+/**
+ * Le plan final d'une feuille, dans la fenêtre du plan, en consultation : le dessin, et
+ * par-dessus les coulées, la liste soudure validée, ses croix et ses visas — ce que le PDF
+ * y écrit. Il s'ouvrait dans le lecteur PDF du navigateur, étranger à l'application.
+ *
+ * La fenêtre est rendue à la demande (plan_final_lecteur.php) et posée dans un bloc à part,
+ * hors du contenu : elle survit au rafraîchissement de la liste qui l'a ouverte.
+ */
+async function ouvrirLecteurPlanFinal(element, documentId) {
+    try {
+        const adresse = `actions/plan_final_lecteur.php?plan=${encodeURIComponent(element)}&document=${encodeURIComponent(documentId)}`;
+        const reponse = await fetch(adresse, { credentials: 'same-origin' });
+        const corps = await reponse.json().catch(() => null);
+        if (!reponse.ok || !corps?.html) throw new Error(corps?.message || '');
+
+        await Promise.all([
+            ...(corps.styles || []).map(feuille => chargerRessource(feuille, true)),
+            ...(corps.scripts || []).map(script => chargerRessource(script, false)),
+        ]);
+
+        let bloc = document.getElementById('plan-final-lecteur');
+        if (!bloc) {
+            bloc = document.createElement('div');
+            bloc.id = 'plan-final-lecteur';
+            document.body.appendChild(bloc);
+        }
+        bloc.innerHTML = corps.html;
+        bloc.querySelector('.plan-viewer-ouvrir')?.click();
+    } catch (erreur) {
+        window.toast?.(erreur.message || 'Le plan n’a pas pu s’ouvrir. Réessayez.', { erreur: true });
+    }
+}
+
 $(document).on('click', '.prefa-toggle[aria-controls]:not(.plans-iso-toggle)', function () {
     const details = document.getElementById(this.getAttribute('aria-controls'));
     if (!details) return;

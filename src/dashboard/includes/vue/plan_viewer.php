@@ -112,12 +112,10 @@ function planViewerRendu(int $elementId, array $plans, array $coulees, bool $mod
                 <span class="plan-viewer-nom"><?= prefaEscape($plan['nom']) ?></span>
                 <?php if ($resume): ?><span class="plan-viewer-resume"><?= prefaEscape(implode(' · ', $resume)) ?></span><?php endif; ?>
                 <span class="plan-viewer-boutons">
+                    <?php // « Ouvrir » montre le plan final : le dessin avec, par-dessus, ce que le
+                          // PDF y écrira. Le PDF lui-même se télécharge depuis la barre de la
+                          // fenêtre — on le regarde avant de l'enregistrer. ?>
                     <button type="button" class="plan-viewer-ouvrir"><?= $modifiable ? 'Ouvrir' : 'Voir' ?></button>
-                    <a class="plan-viewer-final"
-                       href="actions/download_plan_final.php?plan=<?= $elementId ?>&amp;document=<?= (int) $plan['id'] ?>"
-                       download title="Cette feuille avec les numéros de coulée et la liste des soudures">
-                        Télécharger
-                    </a>
                     <?php if ($modifiable): ?>
                         <!-- Une feuille déposée par erreur, ou reçue en révision, se remplace sur
                              place : le nouveau PDF prend sa ligne. Ce qui était posé dessus part
@@ -183,6 +181,14 @@ function planViewerRendu(int $elementId, array $plans, array $coulees, bool $mod
                                  qu'elle se range. -->
                             <button type="button" class="plan-dialog-liste-ouvrir">Liste des soudures</button>
                         <?php endif; ?>
+
+                        <?php // Le plan final en PDF : ce que la fenêtre montre, composé sur le plan
+                              // d'origine. Le lien garde son adresse — le script le demande pour
+                              // pouvoir dire un refus (rien à écrire) au lieu d'enregistrer un
+                              // fichier illisible. ?>
+                        <a class="plan-dialog-telecharger"
+                           href="actions/download_plan_final.php?plan=<?= $elementId ?>&amp;document=<?= (int) $plan['id'] ?>"
+                           title="Le plan final : cette feuille avec les numéros de coulée, la liste des soudures et les visas">Télécharger le PDF</a>
 
                         <?php if ($modifiable): ?>
                             <!-- La seule commande qui écrit : c'est elle qu'on remplit. -->

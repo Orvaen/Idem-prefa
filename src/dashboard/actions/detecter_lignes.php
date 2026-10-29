@@ -21,7 +21,15 @@ if (!$elementId) prefaError(400, 'Plan invalide.');
 // pourtant sur le plan qu'il télécharge.
 //
 // Il reste tenu à SES plans : l'affectation est la porte, et elle est vérifiée ici.
-if (!$canManageWorkshop) {
+// Le demandeur lit aussi les tableaux du plan de ses demandes : c'est ce qui fait paraître la
+// liste soudure dans la fenêtre où il regarde le plan final (plan_final_lecteur.php). Lire
+// ne pose rien — les cases ne se placent qu'avec le jeton d'écriture, que sa fenêtre n'a pas.
+if ($isRequester) {
+    $demandeur = $db->prepare('SELECT 1 FROM element_atelier e JOIN demande_prefabrication d ON d.id = e.id_demande
+        WHERE e.id = ? AND d.idUsers = ?');
+    $demandeur->execute([$elementId, $actor['id']]);
+    if (!$demandeur->fetchColumn()) prefaError(403, 'Ce plan n’appartient pas à vos demandes.');
+} elseif (!$canManageWorkshop) {
     require_once __DIR__ . '/../includes/atelier/soudure_atelier.php';
     if (!$isWorkshopPersonnel || !soudureAtelierAffectation($db, $elementId, (int) $actor['id'])) {
         prefaError(403, 'Ce plan ne vous est pas affecté.');
