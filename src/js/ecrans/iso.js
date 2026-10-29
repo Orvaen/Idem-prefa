@@ -1,6 +1,8 @@
 (() => {
-    $(document).on('click', '.plans-iso-toggle', function () {
-        const row = document.getElementById(this.getAttribute('aria-controls'));
+    document.addEventListener('click', evenement => {
+        const commande = evenement.target.closest('.plans-iso-toggle');
+        if (!commande) return;
+        const row = document.getElementById(commande.getAttribute('aria-controls'));
         if (!row) return;
         const ouvrir = row.hidden;
         if (ouvrir) {
@@ -54,23 +56,30 @@
         if (aucune) aucune.hidden = visibles > 0;
     }
 
-    $(document).on('click', '.plans-iso-onglet', function () {
+    document.addEventListener('click', evenement => {
+        const choisi = evenement.target.closest('.plans-iso-onglet');
+        if (!choisi) return;
         document.querySelectorAll('.plans-iso-onglet').forEach(onglet => {
-            onglet.setAttribute('aria-pressed', String(onglet === this));
+            onglet.setAttribute('aria-pressed', String(onglet === choisi));
         });
         appliquerFiltres();
     });
 
-    $(document).on('input', '#plans-iso-filter-search', appliquerFiltres);
+    document.addEventListener('input', evenement => {
+        if (evenement.target.closest('#plans-iso-filter-search')) appliquerFiltres();
+    });
 
-    $(document).on('click', '#refresh-plans-iso', function () {
-        $('#content').load('pages/plans_iso.php');
+    document.addEventListener('click', evenement => {
+        if (!evenement.target.closest('#refresh-plans-iso')) return;
+        window.chargerDans('#content', 'pages/plans_iso.php');
     });
 })();
 
 // Fermer un volet par sa croix rend la main à toutes ses commandes, ligne et menu.
-$(document).on('click', '.plans-iso-page .prefa-detail-close', function () {
-    const cible = this.dataset.closeTarget || this.closest('.prefa-detail-row')?.id;
+document.addEventListener('click', evenement => {
+    const croix = evenement.target.closest('.plans-iso-page .prefa-detail-close');
+    if (!croix) return;
+    const cible = croix.dataset.closeTarget || croix.closest('.prefa-detail-row')?.id;
     if (!cible) return;
     document.querySelectorAll(`[aria-controls="${cible}"]`).forEach(bouton => bouton.setAttribute('aria-expanded', 'false'));
 });

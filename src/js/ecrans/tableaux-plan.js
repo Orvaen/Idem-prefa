@@ -50,8 +50,10 @@
         return copie;
     }
 
-    $(document).on('click', '.tableau-ajouter', function () {
-        const bloc = this.closest('.tableau-editable');
+    document.addEventListener('click', evenement => {
+        const bouton = evenement.target.closest('.tableau-ajouter');
+        if (!bouton) return;
+        const bloc = bouton.closest('.tableau-editable');
         const corps = (lignes(bloc)[0] || {}).parentNode || bloc.querySelector('tbody');
         const copie = ligneNeuve(bloc);
         if (!corps || !copie) return;
@@ -61,29 +63,34 @@
         if (premier) premier.focus();
     });
 
-    $(document).on('click', '.tableau-retirer', function () {
-        const bloc = this.closest('.tableau-editable');
-        const tr = this.closest('tr');
+    document.addEventListener('click', evenement => {
+        const bouton = evenement.target.closest('.tableau-retirer');
+        if (!bouton) return;
+        const bloc = bouton.closest('.tableau-editable');
+        const tr = bouton.closest('tr');
         // On garde toujours une ligne : elle sert de modèle pour les suivantes.
         if (lignes(bloc).length === 1) vider(tr); else tr.remove();
         renumeroter(bloc);
     });
 
     // Nomenclature : « Saisir un autre numéro » découvre le champ libre de coulée.
-    $(document).on('change', 'select[name="coulee_liste"]', function () {
-        const champ = this.closest('td').querySelector('input[name="coulee"]');
-        if (this.value === '__autre') {
+    document.addEventListener('change', evenement => {
+        const liste = evenement.target.closest('select[name="coulee_liste"]');
+        if (!liste) return;
+        const champ = liste.closest('td').querySelector('input[name="coulee"]');
+        if (liste.value === '__autre') {
             champ.hidden = false;
             champ.value = '';
             champ.focus();
         } else {
             champ.hidden = true;
-            champ.value = this.value;
+            champ.value = liste.value;
         }
     });
 
-    $(document).on('click', '.tableau-enregistrer', function () {
-        const bouton = this;
+    document.addEventListener('click', evenement => {
+        const bouton = evenement.target.closest('.tableau-enregistrer');
+        if (!bouton) return;
         const bloc = bouton.closest('.tableau-editable');
         if (bouton.disabled) return;
         bouton.disabled = true;

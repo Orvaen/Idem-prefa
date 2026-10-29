@@ -31,6 +31,10 @@
         if (compte) compte.textContent = String(visibles);
     }
 
-    $(document).on('input', '#suivi-soudures-recherche', filtrer);
-    $(document).on('change', '#suivi-soudures-etat, #suivi-soudures-affaire', filtrer);
+    document.addEventListener('input', evenement => {
+        if (evenement.target.closest('#suivi-soudures-recherche')) filtrer();
+    });
+    document.addEventListener('change', evenement => {
+        if (evenement.target.closest('#suivi-soudures-etat, #suivi-soudures-affaire')) filtrer();
+    });
 })();

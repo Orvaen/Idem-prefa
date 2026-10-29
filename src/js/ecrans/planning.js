@@ -77,12 +77,33 @@
     function marquer(idNum) {
         const rootEl = root();
         if (rootEl) rootEl.dataset.selectedId = idNum || 0;
-        $('.gantt-row').removeClass('is-selected');
-        $('.gantt-bar').removeClass('is-selected');
+        document.querySelectorAll('.gantt-row.is-selected, .gantt-bar.is-selected')
+            .forEach(el => el.classList.remove('is-selected'));
         if (!idNum) return;
-        const activeRow = $(`.gantt-row[data-affaire-id="${idNum}"]`);
-        activeRow.addClass('is-selected');
-        activeRow.find('.gantt-bar').addClass('is-selected');
+        document.querySelectorAll(`.gantt-row[data-affaire-id="${idNum}"]`).forEach(ligne => {
+            ligne.classList.add('is-selected');
+            ligne.querySelectorAll('.gantt-bar').forEach(barre => barre.classList.add('is-selected'));
+        });
+    }
+
+    /** Un élément neuf, sa classe et son texte. */
+    function creer(balise, classe, texte) {
+        const el = document.createElement(balise);
+        if (classe) el.className = classe;
+        if (texte !== undefined) el.textContent = texte;
+        return el;
+    }
+
+    /** Le texte d'un élément de la page, s'il y est. */
+    function ecrire(id, texte) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = texte;
+        return el;
+    }
+
+    /** Le message du formulaire de planification, en erreur ou non. */
+    function messageEnregistrement(texte, erreur) {
+        ecrire('planning-save-message', texte)?.classList.toggle('error', erreur);
     }
 
     const initiales = nom => String(nom || '').trim().split(/\s+/).slice(0, 2).map(m => m[0] || '').join('').toUpperCase() || '—';
@@ -101,16 +122,15 @@
         marquer(idNum);
 
         const planifiee = Boolean(req.date_debut_planifiee && req.date_fin_planifiee);
-        $('#planning-volet-titre').text(req.reference_demande);
-        $('#planning-volet-sous-titre').text([req.nom_affaire || 'Sans affaire', req.urgent ? 'Urgente' : ''].filter(Boolean).join(' · '));
-        $('#planning-volet-etat')
-            .attr('class', 'pv-puce ' + (planifiee ? 'pv-puce-fait' : 'pv-puce-a_faire'))
-            .text(planifiee ? 'Planifiée' : 'À planifier');
+        ecrire('planning-volet-titre', req.reference_demande);
+        ecrire('planning-volet-sous-titre', [req.nom_affaire || 'Sans affaire', req.urgent ? 'Urgente' : ''].filter(Boolean).join(' · '));
+        const etat = ecrire('planning-volet-etat', planifiee ? 'Planifiée' : 'À planifier');
+        if (etat) etat.className = 'pv-puce ' + (planifiee ? 'pv-puce-fait' : 'pv-puce-a_faire');
 
         const hours = getHoursForRequest(req);
         const inches = parseInt(req.pouces_total_iso || 0, 10);
         const jours = Math.max(1, Math.ceil(hours / 24));
-        $('#planning-volet-charge').text(
+        ecrire('planning-volet-charge',
             (inches > 0 ? inches + ' pouce' + (inches > 1 ? 's' : '') + ' ISO · ' : '')
             + Math.round(hours).toLocaleString('fr-FR') + ' h · ' + jours + ' j');
 
@@ -128,39 +148,46 @@
             }
             form.elements.start.value = debut;
             form.elements.end.value = req.date_fin_planifiee || computeEndDate(debut, hours);
-            $('#planning-save-message').removeClass('error').text('');
+            messageEnregistrement('', false);
             document.getElementById('planning-remove').hidden = !planifiee;
             form.querySelector('.pv-enregistrer').textContent = planifiee ? 'Enregistrer' : 'Planifier';
             preview();
         } else {
-            $('#planning-volet-debut').text(planifiee ? displayDate(req.date_debut_planifiee) : '—');
-            $('#planning-volet-fin').text(planifiee ? displayDate(req.date_fin_planifiee) : '—');
+            ecrire('planning-volet-debut', planifiee ? displayDate(req.date_debut_planifiee) : '—');
+            ecrire('planning-volet-fin', planifiee ? displayDate(req.date_fin_planifiee) : '—');
         }
 
         // La demande.
-        const demandeur = $('#planning-volet-demandeur').empty();
-        $('<span class="prefa-personne">')
-            .append($('<span class="prefa-avatar" aria-hidden="true">').text(initiales(req.demandeur)))
-            .append(document.createTextNode(req.demandeur || '—'))
-            .appendTo(demandeur);
-        $('#planning-volet-personnel').text(req.personnel_atelier_nom || 'Non affecté');
-        $('#planning-volet-matiere').text(req.matiere_libelle || 'Non précisée');
-        $('#planning-volet-depart').text(displayDate(req.date_fin_prevue));
-        $('#planning-volet-reception').text(displayDate(req.date_livraison_prevue));
+        const demandeur = document.getElementById('planning-volet-demandeur');
+        if (demandeur) {
+            const personne = creer('span', 'prefa-personne');
+            const avatar = creer('span', 'prefa-avatar', initiales(req.demandeur));
+            avatar.setAttribute('aria-hidden', 'true');
+            personne.append(avatar, req.demandeur || '—');
+            demandeur.replaceChildren(personne);
+        }
+        ecrire('planning-volet-personnel', req.personnel_atelier_nom || 'Non affecté');
+        ecrire('planning-volet-matiere', req.matiere_libelle || 'Non précisée');
+        ecrire('planning-volet-depart', displayDate(req.date_fin_prevue));
+        ecrire('planning-volet-reception', displayDate(req.date_livraison_prevue));
 
-        const plan = $('#planning-volet-plan').empty();
-        if (req.plans && req.plans.length) {
+        const plan = document.getElementById('planning-volet-plan');
+        if (plan && req.plans && req.plans.length) {
             const premier = req.plans[0];
-            const lien = $('<a class="planning-lien">')
-                .attr('href', `actions/download_prefa_attachment.php?ref=${encodeURIComponent(req.reference_demande)}&file=${encodeURIComponent(premier.key)}`)
-                .attr('data-name', premier.name)
-                .text(premier.name)
-                .appendTo(plan);
-            if (/\.pdf$/i.test(premier.name)) lien.addClass('prefa-pdf-link').attr('aria-haspopup', 'dialog');
-            else lien.attr('target', '_blank').attr('rel', 'noopener');
-            if (req.plans.length > 1) $('<span class="planning-plus">').text(` +${req.plans.length - 1}`).appendTo(plan);
-        } else {
-            plan.text(req.plan_bpe_iso || 'Aucun plan');
+            const lien = creer('a', 'planning-lien', premier.name);
+            lien.href = `actions/download_prefa_attachment.php?ref=${encodeURIComponent(req.reference_demande)}&file=${encodeURIComponent(premier.key)}`;
+            lien.dataset.name = premier.name;
+            if (/\.pdf$/i.test(premier.name)) {
+                lien.classList.add('prefa-pdf-link');
+                lien.setAttribute('aria-haspopup', 'dialog');
+            } else {
+                lien.target = '_blank';
+                lien.rel = 'noopener';
+            }
+            plan.replaceChildren(lien);
+            if (req.plans.length > 1) plan.append(creer('span', 'planning-plus', ` +${req.plans.length - 1}`));
+        } else if (plan) {
+            plan.textContent = req.plan_bpe_iso || 'Aucun plan';
         }
 
         renderAvancementMatrix(req);
@@ -183,8 +210,8 @@
         const volet = root()?.querySelector('#planning-volet-affaire');
         if (!demandes.length || !volet) return;
         marquer(0);
-        $('.gantt-row-affaire').removeClass('is-selected');
-        $(`.gantt-row-affaire[data-affaire-cle="${cle}"]`).addClass('is-selected');
+        document.querySelectorAll('.gantt-row-affaire.is-selected').forEach(el => el.classList.remove('is-selected'));
+        document.querySelectorAll(`.gantt-row-affaire[data-affaire-cle="${cle}"]`).forEach(el => el.classList.add('is-selected'));
 
         const planifiees = demandes.filter(r => r.date_debut_planifiee && r.date_fin_planifiee);
         const debuts = planifiees.map(r => r.date_debut_planifiee).sort();
@@ -192,33 +219,37 @@
         const livraisons = demandes.map(r => r.date_livraison_prevue).filter(Boolean).sort();
         const heures = demandes.reduce((total, r) => total + getHoursForRequest(r), 0);
 
-        $('#planning-affaire-titre').text(demandes[0].affaire_libelle);
-        $('#planning-affaire-sous-titre').text(
+        ecrire('planning-affaire-titre', demandes[0].affaire_libelle);
+        ecrire('planning-affaire-sous-titre',
             demandes.length + ' demande' + (demandes.length > 1 ? 's' : '')
             + ' · ' + planifiees.length + ' planifiée' + (planifiees.length > 1 ? 's' : ''));
-        $('#planning-affaire-charge').text(demandes[0].charge_affaire_nom || 'Non désigné');
-        $('#planning-affaire-debut').text(debuts.length ? displayDate(debuts[0]) : '—');
-        $('#planning-affaire-fin').text(fins.length ? displayDate(fins[fins.length - 1]) : '—');
-        $('#planning-affaire-charge-totale').text(Math.round(heures).toLocaleString('fr-FR') + ' h · ' + Math.max(1, Math.ceil(heures / 24)) + ' j');
-        $('#planning-affaire-livraison').text(livraisons.length ? displayDate(livraisons[livraisons.length - 1]) : '—');
-        $('#planning-affaire-compte').text(demandes.length);
+        ecrire('planning-affaire-charge', demandes[0].charge_affaire_nom || 'Non désigné');
+        ecrire('planning-affaire-debut', debuts.length ? displayDate(debuts[0]) : '—');
+        ecrire('planning-affaire-fin', fins.length ? displayDate(fins[fins.length - 1]) : '—');
+        ecrire('planning-affaire-charge-totale', Math.round(heures).toLocaleString('fr-FR') + ' h · ' + Math.max(1, Math.ceil(heures / 24)) + ' j');
+        ecrire('planning-affaire-livraison', livraisons.length ? displayDate(livraisons[livraisons.length - 1]) : '—');
+        ecrire('planning-affaire-compte', demandes.length);
 
-        const liste = $('#planning-affaire-demandes').empty();
+        const liste = document.createDocumentFragment();
         demandes
             .slice()
             .sort((a, b) => (a.date_debut_planifiee || '9999') .localeCompare(b.date_debut_planifiee || '9999'))
             .forEach(r => {
                 const planifiee = Boolean(r.date_debut_planifiee && r.date_fin_planifiee);
-                const ligne = $('<button type="button" class="planning-affaire-demande">').attr('data-ouvrir', r.id);
-                $('<span class="gantt-ref">').text(r.reference_demande).appendTo(ligne);
-                $('<span class="planning-affaire-dates">')
-                    .text(planifiee ? displayDate(r.date_debut_planifiee) + ' → ' + displayDate(r.date_fin_planifiee) : 'Pas encore planifiée')
-                    .appendTo(ligne);
-                if (r.urgent) $('<span class="pv-puce pv-puce-a_faire">').text('Urgente').appendTo(ligne);
-                $('<span>').attr('class', 'pv-puce ' + (planifiee ? 'pv-puce-fait' : 'pv-puce-sans_objet'))
-                    .text(planifiee ? 'Planifiée' : 'À planifier').appendTo(ligne);
-                $('<li>').append(ligne).appendTo(liste);
+                const ligne = creer('button', 'planning-affaire-demande');
+                ligne.type = 'button';
+                ligne.dataset.ouvrir = r.id;
+                ligne.append(
+                    creer('span', 'gantt-ref', r.reference_demande),
+                    creer('span', 'planning-affaire-dates',
+                        planifiee ? displayDate(r.date_debut_planifiee) + ' → ' + displayDate(r.date_fin_planifiee) : 'Pas encore planifiée'));
+                if (r.urgent) ligne.append(creer('span', 'pv-puce pv-puce-a_faire', 'Urgente'));
+                ligne.append(creer('span', 'pv-puce ' + (planifiee ? 'pv-puce-fait' : 'pv-puce-sans_objet'), planifiee ? 'Planifiée' : 'À planifier'));
+                const item = creer('li');
+                item.append(ligne);
+                liste.append(item);
             });
+        document.getElementById('planning-affaire-demandes')?.replaceChildren(liste);
 
         const demande = root()?.querySelector('#planning-volet');
         if (demande) demande.hidden = true;
@@ -232,46 +263,55 @@
     }
 
     function renderAvancementMatrix(req) {
-        const headTr = $('#matrix-head tr').empty();
-        $('<th>').text('Étape').appendTo(headTr);
         const elements = req.elements || [];
-        elements.forEach(elem => {
-            $('<th>').text(elem.reference || elem.libelle || 'Repère').appendTo(headTr);
+        document.querySelectorAll('#matrix-head tr').forEach(headTr => {
+            headTr.replaceChildren(
+                creer('th', '', 'Étape'),
+                ...elements.map(elem => creer('th', '', elem.reference || elem.libelle || 'Repère')));
         });
-        const tbody = $('#matrix-body').empty();
+        const tbody = document.getElementById('matrix-body');
+        if (!tbody) return;
         if (!elements.length) {
-            $('<tr>').append($('<td class="planning-vide">').text('Aucun plan ISO sur cette demande.')).appendTo(tbody);
+            const tr = creer('tr');
+            tr.append(creer('td', 'planning-vide', 'Aucun plan ISO sur cette demande.'));
+            tbody.replaceChildren(tr);
             return;
         }
+        const corps = document.createDocumentFragment();
         standardSteps().forEach(([key, label]) => {
-            const tr = $('<tr>').appendTo(tbody);
-            $('<td class="step-label">').text(label).appendTo(tr);
+            const tr = creer('tr');
+            tr.append(creer('td', 'step-label', label));
             elements.forEach(elem => {
                 const status = stepStatus(elem, key);
                 const statusClass = { OK: 'status-ok', 'Non OK': 'status-non-ok', RAS: 'status-ras' }[status] || 'status-unset';
                 // « Non renseigné » sur chaque case noyait les trois états qui comptent.
-                $('<td>').addClass(statusClass).text(status === 'Non renseigné' ? '—' : status)
-                    .attr('title', `${label} - ${elem.reference || 'Repère'}`).appendTo(tr);
+                const td = creer('td', statusClass, status === 'Non renseigné' ? '—' : status);
+                td.title = `${label} - ${elem.reference || 'Repère'}`;
+                tr.append(td);
             });
+            corps.append(tr);
         });
+        tbody.replaceChildren(corps);
     }
     function renderCommentsList(req) {
-        const container = $('#comments-list').empty();
+        const container = document.getElementById('comments-list');
+        if (!container) return;
         const comments = req.commentaires || [];
 
         if (comments.length === 0) {
-            $('<p class="planning-vide">').text('Aucun commentaire.').appendTo(container);
+            container.replaceChildren(creer('p', 'planning-vide', 'Aucun commentaire.'));
             return;
         }
 
+        const liste = document.createDocumentFragment();
         comments.forEach(c => {
-            const item = $('<div class="planning-commentaire">').appendTo(container);
-            $('<div class="planning-commentaire-meta">')
-                .append($('<strong>').text(c.auteur))
-                .append(document.createTextNode(' · ' + c.date))
-                .appendTo(item);
-            $('<p>').text(c.texte).appendTo(item);
+            const item = creer('div', 'planning-commentaire');
+            const meta = creer('div', 'planning-commentaire-meta');
+            meta.append(creer('strong', '', c.auteur), ' · ' + c.date);
+            item.append(meta, creer('p', '', c.texte));
+            liste.append(item);
         });
+        container.replaceChildren(liste);
     }
 
     // =========================================================================
@@ -326,10 +366,18 @@
         if (!form) return;
         const params = new URLSearchParams(new FormData(form));
         if (loading) loading.abort();
+        const controleur = new AbortController();
+        loading = controleur;
         current.setAttribute('aria-busy', 'true');
-        loading = $.get('pages/planning.php?' + params.toString()).done(html => {
+        fetch('pages/planning.php?' + params.toString(), { credentials: 'same-origin', signal: controleur.signal })
+            .then(reponse => reponse.text().then(html => {
+                if (!reponse.ok) throw new Error('HTTP ' + reponse.status);
+                return html;
+            }))
+            .then(html => {
             if (root() !== current) return;
-            $('#content').html(html);
+            const contenu = document.getElementById('content');
+            if (contenu) contenu.innerHTML = html;
             const next = root();
             window.PlanningGantt?.recentrer();
             
@@ -343,13 +391,20 @@
             }
             if (message) {
                 if (window.toast) window.toast(message);
-                else $(next).find('#planning-page-message').text(message);
+                else {
+                    const zone = next?.querySelector('#planning-page-message');
+                    if (zone) zone.textContent = message;
+                }
             }
-        }).fail((xhr, status) => {
-            if (status !== 'abort' && root() === current) {
-                $(current).find('#planning-page-message').addClass('is-error').text('Impossible de charger le planning. Réessayez.');
+        }, () => {
+            if (!controleur.signal.aborted && root() === current) {
+                const zone = current.querySelector('#planning-page-message');
+                if (zone) {
+                    zone.classList.add('is-error');
+                    zone.textContent = 'Impossible de charger le planning. Réessayez.';
+                }
             }
-        }).always(() => current.removeAttribute('aria-busy'));
+        }).finally(() => current.removeAttribute('aria-busy'));
     }
 
     function preview() {
@@ -359,11 +414,13 @@
         const last = date(form.elements.end.value);
         form.elements.end.min = form.elements.start.value;
         form.elements.end.setCustomValidity(first && last && last < first ? 'La fin doit suivre le début du planning.' : '');
-        const box = $('#planning-preview').removeClass('est-erreur');
-        if (!first || !last) { box.text('—'); return; }
-        if (last < first) { box.addClass('est-erreur').text('La fin précède le début'); return; }
+        const box = document.getElementById('planning-preview');
+        if (!box) return;
+        box.classList.remove('est-erreur');
+        if (!first || !last) { box.textContent = '—'; return; }
+        if (last < first) { box.classList.add('est-erreur'); box.textContent = 'La fin précède le début'; return; }
         const n = countWorkingDays(first, last);
-        box.text(n + ' jour' + (n > 1 ? 's' : '') + ' ouvré' + (n > 1 ? 's' : ''));
+        box.textContent = n + ' jour' + (n > 1 ? 's' : '') + ' ouvré' + (n > 1 ? 's' : '');
     }
 
     // Initialiser au chargement la première affaire sélectionnée
@@ -374,17 +431,19 @@
     // timeline : Maj + molette au-dessus du Gantt le fait defiler horizontalement,
     // comme le faisait l'ancienne vue. Les fleches marchent deja, le conteneur
     // prenant le focus clavier.
-    $(document).on('wheel', '.gantt-scroll-wrapper', function (event) {
-        const brut = event.originalEvent;
+    document.addEventListener('wheel', event => {
+        const zone = event.target.closest('.gantt-scroll-wrapper');
+        if (!zone) return;
+        const brut = event;
         if (!brut.shiftKey && Math.abs(brut.deltaX) <= Math.abs(brut.deltaY)) return;
         const pas = brut.shiftKey ? brut.deltaY || brut.deltaX : brut.deltaX;
         if (!pas) return;
-        const avant = this.scrollLeft;
-        this.scrollLeft += pas;
+        const avant = zone.scrollLeft;
+        zone.scrollLeft += pas;
         // On ne confisque l'evenement que si le calendrier a reellement defile,
         // sinon la page ne peut plus defiler une fois le Gantt au bout.
-        if (this.scrollLeft !== avant) event.preventDefault();
-    });
+        if (zone.scrollLeft !== avant) event.preventDefault();
+    }, { passive: false });
 
     // Glisser-deplacer du calendrier. Le seuil separe un glissement voulu d'un clic :
     // une souris bouge de quelques pixels pendant un clic normal, 4 px classaient donc
@@ -476,18 +535,20 @@
         reload();
     }
 
-    $(document).on('pointerdown', '.gantt-scroll-wrapper', function (event) {
-        const brut = event.originalEvent;
+    document.addEventListener('pointerdown', event => {
+        const zone = event.target.closest('.gantt-scroll-wrapper');
+        if (!zone) return;
+        const brut = event;
         if (brut.button !== 0) { trace('appui ignore (bouton non principal)', { bouton: brut.button }); return; }
         finirPan('nouvel appui');  // un geste precedent mal termine ne doit rien bloquer
-        pan = { x: brut.clientX, depart: this.scrollLeft, glisse: false, pointer: brut.pointerId };
-        trace('appui sur le calendrier', { x: Math.round(brut.clientX), scrollLeft: this.scrollLeft, cible: nomCourt(brut.target) });
+        pan = { x: brut.clientX, depart: zone.scrollLeft, glisse: false, pointer: brut.pointerId };
+        trace('appui sur le calendrier', { x: Math.round(brut.clientX), scrollLeft: zone.scrollLeft, cible: nomCourt(brut.target) });
     });
 
     // Pendant le geste, rien d'autre que du defilement : c'est ce qui le rend fluide.
-    $(document).on('pointermove', function (event) {
+    document.addEventListener('pointermove', event => {
         if (!pan) return;
-        const brut = event.originalEvent;
+        const brut = event;
         // Le bouton a ete relache hors de la fenetre : on referme le geste.
         if (brut.buttons === 0) { finirPan('bouton relache hors de la page'); return; }
         const zone = zoneGantt();
@@ -506,43 +567,49 @@
         event.preventDefault();
     });
 
-    $(document).on('pointerup', () => finirPan('relachement'));
-    $(document).on('pointercancel', () => finirPan('pointeur annule'));
-    $(document).on('lostpointercapture', () => finirPan('capture perdue'));
-    $(window).on('blur', () => finirPan('fenetre sans focus'));
+    document.addEventListener('pointerup', () => finirPan('relachement'));
+    document.addEventListener('pointercancel', () => finirPan('pointeur annule'));
+    document.addEventListener('lostpointercapture', () => finirPan('capture perdue'));
+    window.addEventListener('blur', () => finirPan('fenetre sans focus'));
 
     // Les actions du planning passent par ces clics : on trace leur arrivee pour
     // savoir si un clic s'est perdu en route.
-    $(document).on('click', '[data-ouvrir]', function () {
-        trace('clic recu par une action du planning', { cible: nomCourt(this) });
+    document.addEventListener('click', evenement => {
+        const action = evenement.target.closest('[data-ouvrir]');
+        if (!action) return;
+        trace('clic recu par une action du planning', { cible: nomCourt(action) });
+        selectAffaire(action.dataset.ouvrir);
     });
-
-    $(document).on('click', '[data-ouvrir]', function () {
-        selectAffaire(this.dataset.ouvrir);
-    });
-    $(document).on('click', '[data-ouvrir-affaire]', function () {
-        ouvrirAffaire(this.dataset.ouvrirAffaire);
+    document.addEventListener('click', evenement => {
+        const affaire = evenement.target.closest('[data-ouvrir-affaire]');
+        if (affaire) ouvrirAffaire(affaire.dataset.ouvrirAffaire);
     });
     document.addEventListener('planning:select', event => selectAffaire(event.detail.id));
     document.addEventListener('planning:edit', event => selectAffaire(event.detail.id));
 
     // Boutons d'export
-    $(document).on('click', '#btn-export-avancement', exportAvancement);
-    $(document).on('click', '#btn-export-commentaires', exportCommentaires);
+    document.addEventListener('click', evenement => {
+        if (evenement.target.closest('#btn-export-avancement')) exportAvancement();
+        if (evenement.target.closest('#btn-export-commentaires')) exportCommentaires();
+    });
 
-    $(document).on('change input', '#planning-task-start', function () {
+    function debutModifie(champ) {
         const currentId = document.getElementById('planning-edit-form')?.elements.id?.value;
         const request = requests().find(item => Number(item.id) === Number(currentId));
-        if (request && this.value) {
+        if (request && champ.value) {
             const hours = getHoursForRequest(request);
-            const calculatedEnd = computeEndDate(this.value, hours);
+            const calculatedEnd = computeEndDate(champ.value, hours);
             if (calculatedEnd) {
                 document.getElementById('planning-task-end').value = calculatedEnd;
             }
         }
         preview();
-    });
-    $(document).on('change input', '#planning-task-end', preview);
+    }
+    ['change', 'input'].forEach(nom => document.addEventListener(nom, evenement => {
+        const debut = evenement.target.closest('#planning-task-start');
+        if (debut) debutModifie(debut);
+        if (evenement.target.closest('#planning-task-end')) preview();
+    }));
 
     function save(operation) {
         const form = document.getElementById('planning-edit-form');
@@ -550,10 +617,21 @@
         const current = root();
         const params = new URLSearchParams(new FormData(form));
         params.set('operation', operation);
-        const buttons = $(form).find('button');
-        buttons.prop('disabled', true);
-        $('#planning-save-message').removeClass('error').text('Enregistrement…');
-        $.ajax({ url: 'actions/save_planning.php', method: 'POST', data: params.toString(), dataType: 'json' }).done(result => {
+        const buttons = form.querySelectorAll('button');
+        buttons.forEach(bouton => { bouton.disabled = true; });
+        messageEnregistrement('Enregistrement…', false);
+        // Réussite : un statut 2xx et un JSON valide ; sinon le message du serveur s'il en donne un.
+        fetch('actions/save_planning.php', { method: 'POST', body: params, credentials: 'same-origin' })
+            .then(reponse => reponse.text().then(texte => {
+                let corps = null;
+                try { corps = JSON.parse(texte); } catch { /* corps illisible */ }
+                return { ok: reponse.ok && corps !== null, corps };
+            }), () => ({ ok: false, corps: null }))
+            .then(({ ok, corps: result }) => {
+            if (!ok) {
+                if (root() === current) messageEnregistrement(result?.message || 'Impossible d’enregistrer le planning.', true);
+                return;
+            }
             if (root() !== current) return;
             const volet = document.getElementById('planning-volet');
             if (volet) volet.hidden = true;
@@ -564,37 +642,49 @@
                 if (creatorFilter.value && Number(creatorFilter.value) !== Number(result.planning.creator)) creatorFilter.value = result.planning.creator;
             }
             reload(result.message, result.planning?.id, operation === 'remove');
-        }).fail(xhr => {
-            if (root() === current) $('#planning-save-message').addClass('error').text(xhr.responseJSON?.message || 'Impossible d’enregistrer le planning.');
-        }).always(() => buttons.prop('disabled', false));
+        }).finally(() => buttons.forEach(bouton => { bouton.disabled = false; }));
     }
 
-    $(document).on('submit', '#planning-edit-form', function (event) { event.preventDefault(); save('save'); });
-    $(document).on('click', '#planning-remove', async () => {
+    document.addEventListener('submit', evenement => {
+        if (evenement.target.closest('#planning-edit-form')) { evenement.preventDefault(); save('save'); }
+        if (evenement.target.closest('#planning-filters')) { evenement.preventDefault(); reload(); }
+    });
+    document.addEventListener('click', async evenement => {
+        if (!evenement.target.closest('#planning-remove')) return;
         if (await window.confirmer('Retirer cette demande du planning ?', {
             texte: 'Ses dates seront effacées.',
             action: 'Retirer',
             ton: 'danger',
         })) save('remove');
     });
-    $(document).on('submit', '#planning-filters', function (event) { event.preventDefault(); reload(); });
-    $(document).on('change', '#planning-filters input, #planning-filters select', () => reload());
-    $(document).on('click', '#planning-refresh', () => reload());
-    $(document).on('click', '[data-planning-go-to]', function () {
-        const first = date(this.dataset.planningGoTo);
+    document.addEventListener('change', evenement => {
+        if (evenement.target.closest('#planning-filters input, #planning-filters select')) reload();
+    });
+    document.addEventListener('click', evenement => {
+        if (evenement.target.closest('#planning-refresh')) reload();
+    });
+    document.addEventListener('click', evenement => {
+        const lien = evenement.target.closest('[data-planning-go-to]');
+        if (!lien) return;
+        const first = date(lien.dataset.planningGoTo);
         if (!first) return;
         document.getElementById('planning-start').value = iso(addDays(first, -((first.getUTCDay() + 6) % 7)));
-        reload('', Number(this.dataset.planningTarget));
+        reload('', Number(lien.dataset.planningTarget));
     });
-    $(document).on('click', '#planning-create-user', () => $('#btn-list-users').trigger('click'));
-    $(document).on('click', '[data-planning-shift]', function () {
+    document.addEventListener('click', evenement => {
+        if (evenement.target.closest('#planning-create-user')) document.getElementById('btn-list-users')?.click();
+    });
+    document.addEventListener('click', evenement => {
+        const decalage = evenement.target.closest('[data-planning-shift]');
+        if (!decalage) return;
         const field = document.getElementById('planning-start');
         const current = date(field.value);
         if (!current) return;
-        field.value = iso(addDays(current, Number(this.dataset.planningShift) * Number(document.getElementById('planning-period').value)));
+        field.value = iso(addDays(current, Number(decalage.dataset.planningShift) * Number(document.getElementById('planning-period').value)));
         reload();
     });
-    $(document).on('click', '[data-planning-today]', () => {
+    document.addEventListener('click', evenement => {
+        if (!evenement.target.closest('[data-planning-today]')) return;
         const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
         const values = Object.fromEntries(parts.map(item => [item.type, item.value]));
         const today = date(values.year + '-' + values.month + '-' + values.day);
