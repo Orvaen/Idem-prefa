@@ -8,6 +8,8 @@
  * être inventé par le logiciel.
  */
 
+require_once __DIR__ . '/signature.php';
+
 /**
  * Un contrôle se croise, comme sur le papier : le cordon l'a passé, on marque la case ;
  * sinon elle reste vide. La colonne du plan ne fait que deux pour cent de la feuille —
@@ -46,12 +48,15 @@ function soudureLignes(PDO $db, int $elementId, int $documentId, int $page = 1):
     // Par page de fichier ISO : chaque isométrique a sa liste soudure imprimée, avec ses
     // propres numéros de cordon. Un élément porte plusieurs fichiers, et un cahier déposé
     // d'un bloc porte plusieurs isométriques.
+    //
+    // La signature du visa vient avec : c'est elle que le plan dessine dans la case VISA.
+    [$colonneSignature, $jointureSignature] = signatureLectureCordons($db);
     $stmt = $db->prepare("SELECT s.*,
             TRIM(CONCAT(u.prenom, ' ', u.name)) AS soudeur_nom,
-            TRIM(CONCAT(v.prenom, ' ', v.name)) AS visa_nom
+            TRIM(CONCAT(v.prenom, ' ', v.name)) AS visa_nom" . $colonneSignature . "
         FROM plan_soudure s
         LEFT JOIN Utilisateur u ON u.id = s.id_soudeur
-        LEFT JOIN Utilisateur v ON v.id = s.vise_par
+        LEFT JOIN Utilisateur v ON v.id = s.vise_par" . $jointureSignature . "
         WHERE s.id_element = ? AND s.id_document = ? AND s.page = ?
         ORDER BY LENGTH(s.numero), s.numero");
     $stmt->execute([$elementId, $documentId, $page]);
@@ -97,7 +102,7 @@ function soudureLignes(PDO $db, int $elementId, int $documentId, int $page = 1):
             'date_soudure' => $pointage['date_travail'],
             'type_soudure' => $pointage['type_soudure'],
             'rt' => '', 'vi' => '', 'pt' => '',
-            'vise_par' => null, 'visa_nom' => null,
+            'vise_par' => null, 'visa_nom' => null, 'signature_dessin' => null,
         ];
     }
     return $lignes;
@@ -234,12 +239,15 @@ function soudureEnregistrer(PDO $db, int $elementId, int $documentId, int $page,
         $soudeursPermis[(int) $soudeur['id']] = true;
     }
 
-    // Les visas déjà posés, retrouvés par numéro de soudure après la réécriture.
+    // Les visas déjà posés, retrouvés par numéro de soudure après la réécriture — et la
+    // signature qui va avec, quand la base en connaît (signature.php).
     $visas = [];
+    $signatures = [];
     foreach (soudureLignes($db, $elementId, $documentId, $page) as $ancienne) {
         if ($ancienne['vise_par']) {
             $visas[$ancienne['numero']] = [$ancienne['vise_par'], $ancienne['date_visa']];
         }
+        if (!empty($ancienne['id_signature'])) $signatures[$ancienne['numero']] = (int) $ancienne['id_signature'];
     }
 
     $db->beginTransaction();
@@ -317,6 +325,16 @@ function soudureEnregistrer(PDO $db, int $elementId, int $documentId, int $page,
                 $type, $rt, $vi, $pt, $visePar, $dateVisa, $auteur,
             ]);
             $total++;
+        }
+
+        // La signature revient avec son visa. Elle se repose à part : sa colonne n'existe
+        // qu'une fois la migration passée, et seules des lignes visées en portent une.
+        if ($signatures) {
+            $resigner = $db->prepare('UPDATE plan_soudure SET id_signature = ?
+                WHERE id_element = ? AND id_document = ? AND page = ? AND numero = ?');
+            foreach ($signatures as $numero => $signature) {
+                $resigner->execute([$signature, $elementId, $documentId, $page, (string) $numero]);
+            }
         }
         $db->commit();
         return $total;
@@ -442,6 +460,11 @@ function soudureLigneRendu(array $ligne, array $soudeurs, bool $modifiable): str
             . prefaEscape((string) ($ligne['soudeur_nom'] ?? '—')) . '</span>'
         : null;
 
+    // La case VISA garde la signature sous le nom : le plan, qui suit la saisie, la
+    // redessine à chaque frappe (plan-viewer.js, valeursSaisies).
+    $signature = signatureDessin($ligne['signature_dessin'] ?? null);
+    $signatureVue = $signature ? ' data-signature="' . prefaEscape(json_encode(signatureVue($signature))) . '"' : '';
+
     return '<tr class="tableau-ligne' . ($venueDuPointage ? ' soudure-du-pointage' : '') . '">'
         . '<td><input type="text" name="numero" value="' . $valeur('numero') . '" maxlength="20" aria-label="Numéro de soudure"'
         . ($venueDuPointage ? ' title="Numéro proposé pour ce pointage. Corrigez-le si le cordon en porte un autre, puis enregistrez."' : '') . '>'
@@ -452,7 +475,7 @@ function soudureLigneRendu(array $ligne, array $soudeurs, bool $modifiable): str
         . '<td class="soudure-controle">' . $controle('rt', (string) ($ligne['rt'] ?? '')) . '</td>'
         . '<td class="soudure-controle">' . $controle('vi', (string) ($ligne['vi'] ?? '')) . '</td>'
         . '<td class="soudure-controle">' . $controle('pt', (string) ($ligne['pt'] ?? '')) . '</td>'
-        . '<td class="soudure-visa">' . prefaEscape($visa !== '' ? $visa : '—') . '</td>'
+        . '<td class="soudure-visa"' . $signatureVue . '>' . prefaEscape($visa !== '' ? $visa : '—') . '</td>'
         . '<td><button type="button" class="tableau-retirer" aria-label="Retirer la soudure ' . $valeur('numero') . '">✕</button></td>'
         . '</tr>';
 }
@@ -469,19 +492,19 @@ function soudureLigneRendu(array $ligne, array $soudeurs, bool $modifiable): str
  * rien. Les cases arrivent cochées si l'encadrement les avait déjà posées dans la fenêtre
  * du plan.
  *
- * Valider ces cordons, c'est aussi les viser : leur case VISA recevra le nom de
- * $signataire, écrit comme une signature. On le dit ici, avant le clic.
+ * Valider ces cordons, c'est aussi les viser : leur case VISA recevra la signature de celui
+ * qui valide, ou son nom s'il n'en a pas tracé. On le dit ici, avant le clic.
  *
  * @param list<array<string, mixed>> $cordons ce que rend avancementCordonsAValider()
+ * @param string $visa comment « Valider » visera, en HTML : signatureAnnonceVisa()
  */
-function soudureControlesRendu(array $cordons, string $signataire): string
+function soudureControlesRendu(array $cordons, string $visa): string
 {
     $html = '<input type="hidden" name="controles_vus" value="1">';
     if (!$cordons) return $html;
 
     $html .= '<div class="soudure-controles">'
-        . '<p class="soudure-controles-titre">Contrôles · une croix quand c’est OK — « Valider » les vise à votre nom, '
-        . prefaEscape($signataire) . '</p>'
+        . '<p class="soudure-controles-titre">Contrôles · une croix quand c’est OK — « Valider » ' . $visa . '</p>'
         . '<table class="atelier-soudures-table soudure-controles-table"><thead><tr>'
         . '<th scope="col">N°</th><th scope="col">Feuille</th><th scope="col">Date</th><th scope="col">Procédé</th>';
     foreach (SOUDURE_CONTROLES as $libelle) {

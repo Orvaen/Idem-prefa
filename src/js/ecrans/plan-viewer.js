@@ -13,6 +13,17 @@
 // Tout est stocké en fractions de l'image, jamais en pixels : une case posée à 400 %
 // retrouve exactement sa place à 50 %.
 (() => {
+
+    /**
+     * Délégation sur le document : les volets arrivent par AJAX, leurs boutons n'existent
+     * pas quand ce fichier se charge. Le gestionnaire reçoit l'élément trouvé en « this ».
+     */
+    function delegue(types, selecteur, gestionnaire) {
+        types.split(' ').forEach(type => document.addEventListener(type, function (evenement) {
+            const element = evenement.target.closest?.(selecteur);
+            if (element) gestionnaire.call(element, evenement);
+        }));
+    }
     const ZOOMS = [50, 75, 100, 150, 200, 300, 400];
     const ZOOM_MIN = 25;
     const ZOOM_MAX = 600;
@@ -108,14 +119,14 @@
         if (vide) vide.hidden = visibles > 0;
     }
 
-    $(document).on('input', '.plan-sommaire-recherche', function () {
+    delegue('input', '.plan-sommaire-recherche', function () {
         const nav = this.closest('.plan-dialog-sommaire');
         if (nav) filtrerSommaire(nav, this.value);
     });
 
     // Échap vide le champ plutôt que de fermer la fenêtre : on cherche une feuille, on se
     // trompe de numéro, on veut revoir la liste entière sans perdre le plan ouvert.
-    $(document).on('keydown', '.plan-sommaire-recherche', function (evenement) {
+    delegue('keydown', '.plan-sommaire-recherche', function (evenement) {
         if (evenement.key !== 'Escape' || this.value === '') return;
         evenement.stopPropagation();
         evenement.preventDefault();
@@ -188,7 +199,7 @@
             { x: evenement.clientX, y: evenement.clientY });
     }, { passive: false });
 
-    $(document).on('click', '.plan-zoom', function () {
+    delegue('click', '.plan-zoom', function () {
         const viewer = this.closest('.plan-viewer');
         const actuel = Number(viewer.dataset.zoom) || 100;
         const suivant = Number(this.dataset.zoom) > 0
@@ -199,7 +210,7 @@
 
     // ---------------------------------------------------------------- la fenêtre
 
-    $(document).on('click', '.plan-viewer-ouvrir', function () {
+    delegue('click', '.plan-viewer-ouvrir', function () {
         const viewer = this.closest('.plan-viewer');
         const image = viewer.querySelector('.plan-viewer-scene img');
         // L'image n'est demandée qu'ici : inutile de charger un plan qu'on n'ouvre pas.
@@ -299,7 +310,7 @@
                     repere.style.height = (c.h * 100).toFixed(4) + '%';
                     ajusterPolice(repere);
                 });
-                remplirSoudures(scene, corps.soudures, corps.valeurs || []);
+                remplirSoudures(scene, corps.soudures, corps.valeurs || [], corps.signatures || {});
                 completerListe(viewer, corps.soudures);
 
                 // On ne raconte pas ce que le plan montre déjà. Seul ce qui ne s'y voit
@@ -315,7 +326,7 @@
     // Sur « Mes soudures », chaque feuille du tableau porte son bouton, et l'en-tête de la
     // saisie porte celui de la feuille travaillée : le lecteur de l'élément vit plus bas,
     // masqué, et c'est sa fenêtre qu'on ouvre.
-    $(document).on('click', '.soudures-ouvrir-plan', function () {
+    delegue('click', '.soudures-ouvrir-plan', function () {
         // Le bouton dit l'élément, la feuille ET la page : la fenêtre s'ouvre donc sur
         // l'isométrique qu'on vient de désigner, pas sur la première page de son cahier.
         const [element, feuille, page] = String(this.dataset.repere || '').split(':');
@@ -328,7 +339,7 @@
         allerPage(lecteur, Number(page) || 1);
     });
 
-    $(document).on('click', '.plan-dialog-fermer', function () {
+    delegue('click', '.plan-dialog-fermer', function () {
         this.closest('dialog').close();
     });
 
@@ -339,11 +350,14 @@
      * l'écran — et non tel qu'il est en base. Même rangement que le serveur
      * (planLignesSoudures) : la soudure n° 3 va sur la troisième ligne du tableau
      * imprimé, et les numéros au-delà descendent sous le tableau.
+     *
+     * Les signatures des visas suivent leur ligne : la case VISA les porte (data-signature).
      */
     function valeursSaisies(bloc, tableau) {
         const imprimees = tableau.lignes.length;
         const capacite = imprimees + (tableau.libres || 0);
         const valeurs = {};
+        const signatures = {};
 
         bloc.querySelectorAll('tbody tr.tableau-ligne').forEach(tr => {
             const champ = nom => tr.querySelector('[name="' + nom + '"]');
@@ -377,8 +391,9 @@
                 lu('type'), lu('rt'), lu('vi'), lu('pt'),
                 vise === '—' ? '' : vise,
             ];
+            if (visa && visa.dataset.signature) signatures[rang] = JSON.parse(visa.dataset.signature);
         });
-        return valeurs;
+        return { valeurs, signatures };
     }
 
     /**
@@ -391,10 +406,11 @@
         const bloc = viewer.querySelector('.plan-dialog-liste:not([hidden]) .tableau-editable');
         const scene = viewer.querySelector('.plan-viewer-scene');
         if (!tableau || !bloc || !scene) return;
-        remplirSoudures(scene, tableau, valeursSaisies(bloc, tableau));
+        const { valeurs, signatures } = valeursSaisies(bloc, tableau);
+        remplirSoudures(scene, tableau, valeurs, signatures);
     }
 
-    $(document).on('input change', '.plan-dialog-liste .tableau-editable [name]', function () {
+    delegue('input change', '.plan-dialog-liste .tableau-editable [name]', function () {
         redessinerSoudures(this.closest('.plan-viewer'));
     });
 
@@ -404,7 +420,7 @@
     // On ne remonte pas depuis le bouton : retirer une ligne l'emporte avec elle, et il
     // n'est déjà plus dans la page quand on arrive ici. C'est la fenêtre ouverte qu'on
     // redessine — il n'y en a jamais deux.
-    $(document).on('click', '.plan-dialog-liste .tableau-ajouter, .plan-dialog-liste .tableau-retirer', function () {
+    delegue('click', '.plan-dialog-liste .tableau-ajouter, .plan-dialog-liste .tableau-retirer', function () {
         const dialogue = document.querySelector('.plan-dialog[open]');
         const viewer = dialogue && dialogue.closest('.plan-viewer');
         if (viewer) setTimeout(() => redessinerSoudures(viewer), 0);
@@ -416,7 +432,7 @@
      * Double-clic sur le numéro : on tape la page voulue. Avec quinze isométriques,
      * atteindre la douzième à coups de flèche est une corvée.
      */
-    $(document).on('dblclick', '.plan-page-valeur', function () {
+    delegue('dblclick', '.plan-page-valeur', function () {
         const valeur = this;
         const viewer = valeur.closest('.plan-viewer');
         const total = Math.max(1, Number(viewer.dataset.pages) || 1);
@@ -502,7 +518,7 @@
         image.src = image.dataset.src + '&page=' + demandee;
     }
 
-    $(document).on('click', '.plan-page', function () {
+    delegue('click', '.plan-page', function () {
         const viewer = this.closest('.plan-viewer');
         allerPage(viewer, pageVue(viewer) + Number(this.dataset.saut));
     });
@@ -522,19 +538,19 @@
         });
     }
 
-    $(document).on('click', '.plan-sommaire-page', function () {
+    delegue('click', '.plan-sommaire-page', function () {
         allerPage(this.closest('.plan-viewer'), Number(this.dataset.page));
     });
 
     // Le sommaire se range comme la liste des soudures : son propre bouton le replie, et
     // celui de la barre d'outils le rappelle.
-    $(document).on('click', '.plan-dialog-sommaire-replier', function () {
+    delegue('click', '.plan-dialog-sommaire-replier', function () {
         const dialogue = this.closest('.plan-dialog');
         dialogue.querySelector('.plan-dialog-sommaire').hidden = true;
         dialogue.querySelector('.plan-dialog-sommaire-ouvrir').hidden = false;
     });
 
-    $(document).on('click', '.plan-dialog-sommaire-ouvrir', function () {
+    delegue('click', '.plan-dialog-sommaire-ouvrir', function () {
         this.closest('.plan-dialog').querySelector('.plan-dialog-sommaire').hidden = false;
         this.hidden = true;
     });
@@ -543,7 +559,7 @@
 
     // Le dépôt vit hors des blocs de feuille : il en crée un. Rien à mettre à jour sur
     // place, donc — on recharge le volet, qui redessine la liste des ISO.
-    $(document).on('change', '.plan-viewer-deposer input[type="file"]', function () {
+    delegue('change', '.plan-viewer-deposer input[type="file"]', function () {
         const champ = this;
         const zone = champ.closest('.plan-viewer-deposer');
         const section = champ.closest('.plan-viewer-plans');
@@ -569,7 +585,7 @@
     // Remplacer une feuille : même point d'entrée que le dépôt, à qui l'on dit cette fois
     // quelle feuille céder la place. Elle emporte ce qui a été posé dessus, donc on le dit
     // avant d'envoyer quoi que ce soit.
-    $(document).on('change', '.plan-viewer-remplacer input[type="file"]', async function () {
+    delegue('change', '.plan-viewer-remplacer input[type="file"]', async function () {
         const champ = this;
         const viewer = champ.closest('.plan-viewer');
         const section = champ.closest('.plan-viewer-plans');
@@ -608,7 +624,7 @@
     // Retirer une feuille : ce qui a été relevé dessus s'en va avec elle, donc on le dit
     // avant d'envoyer quoi que ce soit. La liste des soudures n'est pas comptée ici — elle
     // vit dans le volet, pas dans la fenêtre — mais la réponse du serveur la nomme.
-    $(document).on('click', '.plan-viewer-supprimer', async function () {
+    delegue('click', '.plan-viewer-supprimer', async function () {
         const bouton = this;
         const viewer = bouton.closest('.plan-viewer');
         const section = bouton.closest('.plan-viewer-plans');
@@ -671,17 +687,17 @@
         tout.indeterminate = lot.length > 0 && lot.length < total;
     }
 
-    $(document).on('change', '.plan-viewer-choix', function () {
+    delegue('change', '.plan-viewer-choix', function () {
         majSelection(this.closest('.plan-viewer-plans'));
     });
 
-    $(document).on('change', '.plan-viewer-tout', function () {
+    delegue('change', '.plan-viewer-tout', function () {
         const section = this.closest('.plan-viewer-plans');
         section.querySelectorAll('.plan-viewer-choix').forEach(case_ => { case_.checked = this.checked; });
         majSelection(section);
     });
 
-    $(document).on('click', '.plan-viewer-supprimer-lot', async function () {
+    delegue('click', '.plan-viewer-supprimer-lot', async function () {
         const bouton = this;
         const barre = bouton.closest('.plan-viewer-selection');
         const section = bouton.closest('.plan-viewer-plans');
@@ -741,7 +757,7 @@
     function rechargerVolet() {
         const page = document.getElementById('soudures-page') ? 'pages/soudures.php'
             : (document.querySelector('.atelier-plan-list') ? 'pages/plans_iso.php' : null);
-        if (page) $('#content').load(page);
+        if (page) window.chargerDans('#content', page);
     }
 
     // ---------------------------------------------------------------- les cases
@@ -891,17 +907,17 @@
         repere.focus();
     }
 
-    $(document).on('dblclick', '.plan-coulee', function (evenement) {
+    delegue('dblclick', '.plan-coulee', function (evenement) {
         evenement.preventDefault();
         selectionner(this);
         entrerEnEdition(this);
     });
 
-    $(document).on('input', '.plan-coulee input[name="coulee"]', function () {
+    delegue('input', '.plan-coulee input[name="coulee"]', function () {
         afficherChoix(this.closest('.plan-coulee'), this.value);
     });
 
-    $(document).on('keydown', '.plan-coulee input[name="coulee"]', function (evenement) {
+    delegue('keydown', '.plan-coulee input[name="coulee"]', function (evenement) {
         const repere = this.closest('.plan-coulee');
         const options = Array.from(repere.querySelectorAll('.plan-coulee-choix li[role="option"]'));
         const active = repere.querySelector('.plan-coulee-choix li.est-active');
@@ -931,16 +947,16 @@
 
     // Le champ ne doit pas perdre la main quand on pointe la liste : la perdre vaut
     // validation de ce qui est tapé, et la liste se fermerait avant que le clic arrive.
-    $(document).on('mousedown', '.plan-coulee-choix', function (evenement) {
+    delegue('mousedown', '.plan-coulee-choix', function (evenement) {
         evenement.preventDefault();
     });
 
-    $(document).on('click', '.plan-coulee-choix li[role="option"]', function () {
+    delegue('click', '.plan-coulee-choix li[role="option"]', function () {
         choisir(this.closest('.plan-coulee'), this.dataset.numero);
     });
 
     // Cliquer ailleurs vaut validation de ce qui est tapé, comme dans un tableur.
-    $(document).on('blur', '.plan-coulee input[name="coulee"]', function () {
+    delegue('focusout', '.plan-coulee input[name="coulee"]', function () {
         const repere = this.closest('.plan-coulee');
         if (repere && repere.classList.contains('est-en-edition')) quitterEdition(repere);
     });
@@ -976,14 +992,14 @@
     });
 
     // Replier rend toute la fenêtre au dessin ; le bouton de la barre d'outils la rappelle.
-    $(document).on('click', '.plan-dialog-replier', function () {
+    delegue('click', '.plan-dialog-replier', function () {
         const dialogue = this.closest('.plan-dialog');
         dialogue.querySelector('.plan-dialog-listes').hidden = true;
         const rouvrir = dialogue.querySelector('.plan-dialog-liste-ouvrir');
         if (rouvrir) rouvrir.hidden = false;
     });
 
-    $(document).on('click', '.plan-dialog-liste-ouvrir', function () {
+    delegue('click', '.plan-dialog-liste-ouvrir', function () {
         const dialogue = this.closest('.plan-dialog');
         dialogue.querySelector('.plan-dialog-listes').hidden = false;
         this.hidden = true;
@@ -1168,13 +1184,47 @@
      */
     /**
      * La case VISA : la huitième colonne de la liste soudure (PLAN_LIGNES_VISA côté serveur).
-     * Le nom de celui qui a validé s'y écrit comme une signature, dans l'écriture que le
-     * plan final embarque (plan-viewer.css).
+     * Elle porte la signature de celui qui a validé, s'il l'a tracée dans ses paramètres ;
+     * sinon son nom, écrit comme une signature dans l'écriture que le plan final embarque
+     * (plan-viewer.css).
      */
     const VISA = 7;
-    /** La hauteur de l'encre du nom, en hauteurs de case : PLAN_FINAL_VISA côté serveur. */
+    /** La hauteur de l'encre du visa, en hauteurs de case : PLAN_FINAL_VISA côté serveur. */
     const VISA_ENCRE = 1.4;
+    /** L'épaisseur du trait d'une signature, en hauteurs d'encre : SIGNATURE_TRAIT côté serveur. */
+    const SIGNATURE_TRAIT = 0.055;
     let mesureVisa = null;
+
+    /**
+     * La signature dans sa case — même calcul que le plan final (planFinalSignature) : elle
+     * occupe la ligne à une fine marge près, centrée, et rétrécit pour tenir en largeur.
+     *
+     * Le serveur envoie son chemin dans la boîte de la signature (0 0 proportion 1) ; il est
+     * posé à l'échelle dans une boîte de vue en pixels de la case, que le zoom agrandit d'un
+     * bloc, trait compris.
+     */
+    function dessinerSignature(cellule, signature) {
+        const largeur = cellule.offsetWidth;
+        const hauteur = cellule.offsetHeight;
+        if (!largeur || !hauteur) return;
+        const encre = hauteur * VISA_ENCRE;
+        const epaisseur = encre * SIGNATURE_TRAIT;
+        const echelle = Math.min(encre - epaisseur, (largeur - epaisseur) / signature.proportion);
+        if (echelle <= 0) return;
+
+        const ns = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(ns, 'svg');
+        svg.setAttribute('viewBox', '0 0 ' + largeur + ' ' + hauteur);
+        svg.setAttribute('aria-hidden', 'true');
+        const trace = document.createElementNS(ns, 'path');
+        trace.setAttribute('d', signature.chemin);
+        trace.setAttribute('transform', 'translate(' + (largeur - signature.proportion * echelle) / 2 + ' '
+            + (hauteur - echelle) / 2 + ') scale(' + echelle + ')');
+        // L'épaisseur se donne dans la boîte de la signature : l'échelle s'y applique aussi.
+        trace.setAttribute('stroke-width', String(epaisseur / echelle));
+        svg.appendChild(trace);
+        cellule.replaceChildren(svg);
+    }
 
     /**
      * Le nom dans sa case, réglé sur sa propre encre — même calcul que le plan final
@@ -1211,7 +1261,7 @@
         cellule.replaceChildren(svg);
     }
 
-    function remplirSoudures(scene, tableau, valeurs) {
+    function remplirSoudures(scene, tableau, valeurs, signatures = {}) {
         scene.querySelectorAll('.plan-soudure, .plan-soudure-trait, .plan-soudure-bord')
             .forEach(element => element.remove());
         if (!tableau || !tableau.lignes || !tableau.colonnes) return;
@@ -1259,6 +1309,10 @@
                 scene.appendChild(cellule);
                 if (index !== VISA) {
                     ajusterPolice(cellule);
+                    return;
+                }
+                if (signatures[rang]) {
+                    dessinerSignature(cellule, signatures[rang]);
                     return;
                 }
                 // Le nom se mesure sur l'écriture elle-même : mesuré avant qu'elle arrive, il
@@ -1411,7 +1465,7 @@
         }
     }
 
-    $(document).on('click', '.plan-viewer-enregistrer', function () {
+    delegue('click', '.plan-viewer-enregistrer', function () {
         const bouton = this;
         const viewer = bouton.closest('.plan-viewer');
         if (bouton.disabled) return;

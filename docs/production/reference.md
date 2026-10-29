@@ -142,6 +142,7 @@ Pour ne pas le chercher :
 ## Ce dont les postes ont besoin
 
 Le serveur tourne sans internet une fois l'image construite. Les **navigateurs**, non : chaque
-page charge htmx (`cdn.jsdelivr.net`), jQuery (`code.jquery.com`) et, à la connexion, axios
-(`cdnjs.cloudflare.com`). Un poste qui n'atteint pas ces adresses affiche des écrans inertes.
+page charge htmx (`cdn.jsdelivr.net`) et, à la connexion, axios
+(`cdnjs.cloudflare.com`) ; le cadre où l'on trace sa signature charge signature_pad
+(`cdn.jsdelivr.net`). Un poste qui n'atteint pas ces adresses affiche des écrans inertes.
 Il faut aussi **Edge ou Chrome à jour** — voir [Prérequis](/guide/prerequis#le-navigateur).

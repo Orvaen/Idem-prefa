@@ -362,9 +362,9 @@ function avancementCordonsAValider(PDO $db, int $elementId, int $soudeurId): arr
  * yeux — un cordon saisi entre l'affichage et le clic passerait sur le plan sans qu'il
  * l'ait vu, avec des contrôles qu'il n'a pas choisis et sous son nom.
  *
- * Valider, c'est viser : le visa est le nom de celui qui valide, tiré de son compte, et la
- * date. Rien à dessiner — la case VISA du plan l'écrit comme une signature
- * (ecriture_visa.php).
+ * Valider, c'est viser : le visa est celui qui valide, tiré de son compte, et la date. La
+ * case VISA du plan porte sa signature, tracée une fois dans ses paramètres
+ * (signature.php) — ou son nom, écrit comme une signature, s'il n'en a pas tracé.
  *
  * Les lignes sont mises à jour sur place, sans être réécrites : leur date de saisie est ce
  * qui les range sous une validation, et la toucher les ferait retomber en attente.
@@ -401,6 +401,7 @@ function avancementViserCordons(PDO $db, int $elementId, int $soudeurId, int $ac
         $croix = static fn (string $cle): string => isset($coches[$cle][$id]) ? SOUDURE_CROIX : '';
         $poser->execute([$croix('rt'), $croix('vi'), $croix('pt'), $acteurId, $id, $elementId]);
     }
+    signatureViser($db, $attendus, $acteurId);
 }
 
 /**

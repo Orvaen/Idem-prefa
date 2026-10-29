@@ -493,6 +493,7 @@ CREATE TABLE `plan_soudure` (
   `pt` varchar(20) NOT NULL DEFAULT '',
   `vise_par` int DEFAULT NULL,
   `date_visa` datetime DEFAULT NULL,
+  `id_signature` int DEFAULT NULL COMMENT 'la signature posée avec le visa',
   `saisie_par` int DEFAULT NULL,
   `date_saisie` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -502,10 +503,12 @@ CREATE TABLE `plan_soudure` (
   KEY `fk_soudure_visa` (`vise_par`),
   KEY `fk_soudure_saisie` (`saisie_par`),
   KEY `fk_plan_soudure_document` (`id_document`),
+  KEY `fk_soudure_signature` (`id_signature`),
   CONSTRAINT `fk_plan_soudure_document` FOREIGN KEY (`id_document`) REFERENCES `element_atelier_document` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_soudure_element` FOREIGN KEY (`id_element`) REFERENCES `element_atelier` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_soudure_pointage` FOREIGN KEY (`id_pointage`) REFERENCES `pointage_atelier` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_soudure_saisie` FOREIGN KEY (`saisie_par`) REFERENCES `Utilisateur` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_soudure_signature` FOREIGN KEY (`id_signature`) REFERENCES `signature_utilisateur` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_soudure_soudeur` FOREIGN KEY (`id_soudeur`) REFERENCES `Utilisateur` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_soudure_visa` FOREIGN KEY (`vise_par`) REFERENCES `Utilisateur` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -604,6 +607,19 @@ CREATE TABLE `role` (
   `id` int NOT NULL AUTO_INCREMENT,
   `name` varchar(100) NOT NULL,
   PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `signature_utilisateur` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `id_utilisateur` int NOT NULL,
+  `dessin` json NOT NULL COMMENT 'les traits, en hauteurs de signature : {"proportion":3.2,"traits":[[[x,y],…],…]}',
+  `date_creation` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `date_retrait` datetime DEFAULT NULL COMMENT 'refaite ou supprimée ce jour-là ; NULL : la signature en cours',
+  PRIMARY KEY (`id`),
+  KEY `fk_signature_utilisateur` (`id_utilisateur`),
+  CONSTRAINT `fk_signature_utilisateur` FOREIGN KEY (`id_utilisateur`) REFERENCES `Utilisateur` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;

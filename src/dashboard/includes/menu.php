@@ -32,7 +32,7 @@ function dashboardMenu(): array
     $ressourcesIso = [
         // pv.css : le volet « Plans & affectations » reprend la grammaire des volets des PV.
         'styles' => ['dashboard/atelier.css', 'dashboard/plan-viewer.css', 'dashboard/pv.css'],
-        'scripts' => ['ecrans/atelier.js', 'plan-viewer.js', 'ecrans/tableaux-plan.js'],
+        'scripts' => ['ecrans/atelier.js', 'ecrans/plan-viewer.js', 'ecrans/tableaux-plan.js'],
     ];
 
     return [
@@ -377,7 +377,7 @@ function dashboardRessources(Utilisateur $utilisateur): array
         'js/composants/alerte.js',
         // Les paramètres : une fenêtre et non plus un écran, que chacun ouvre depuis le
         // pied de la barre, le menu du compte ou Ctrl+, (includes/vue/parametres.php).
-        'js/parametres.js',
+        'js/coquille/parametres.js',
         'js/coquille/dashboard-sidebar.js',
         'js/coquille/dashboard-accounts.js',
         // L'œil des mots de passe : la fenêtre d'ajout de compte en a un, l'écran de

@@ -81,12 +81,13 @@ Trois moments en ont besoin :
    | Bibliothèque | Version | Adresse |
    | --- | --- | --- |
    | htmx | 2.0.11 | `cdn.jsdelivr.net` |
-   | jQuery | 4.0.0 | `code.jquery.com` |
    | axios (écran de connexion) | 1.20.0 | `cdnjs.cloudflare.com` |
+   | signature_pad (cadre de signature) | 5.1.4 | `cdn.jsdelivr.net` |
+
 ::: danger Un poste sans internet ne peut pas afficher l'application
 Le serveur lui-même n'a pas besoin d'internet en fonctionnement, mais le **navigateur** de
-chaque poste, si : sans htmx ni jQuery, le tableau de bord ne s'anime pas. Sur un réseau
-d'atelier fermé, il faudrait servir ces trois fichiers depuis le serveur.
+chaque poste, si : sans htmx, le tableau de bord ne s'anime pas. Sur un réseau
+d'atelier fermé, il faudrait servir ces quatre fichiers depuis le serveur.
 :::
 
 ## Le terminal Orvaen (recommandé)

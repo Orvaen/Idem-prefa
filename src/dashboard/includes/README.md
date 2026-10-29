@@ -1,6 +1,6 @@
 # Les includes du tableau de bord
 
-Trente-six fichiers, rangés en cinq dossiers. Ils ont longtemps été à plat, et ce document
+Quarante-cinq fichiers, rangés en cinq dossiers. Ils ont longtemps été à plat, et ce document
 disait alors qu'il valait mieux les y laisser — « déplacer un fichier casse tous les
 `require_once` qui le désignent, pour un gain qui ne vaut pas ce risque ». Le risque s'est
 avéré mesurable : les chemins ont été repris par un balayage qui vérifie que chacun pointe
@@ -52,6 +52,7 @@ ISO** » dans `atelier/` ; « les bons de commande » dans `materiel/`.
 | `avancement.php` | L'avancement d'une affectation : déclaré par l'atelier, validé par le chef, et lui seul l'écrit. Le dénominateur vient des soudures imprimées sur le plan, pas de ce qui est saisi. |
 | `soudure.php` | La liste des soudures d'un plan ISO : lecture, écriture, rendu. |
 | `soudure_atelier.php` | La même liste vue par le soudeur : la feuille qu'il travaille, et ce qu'il y renseigne. |
+| `signature.php` | Le visa des cordons : la signature que chacun trace dans ses paramètres, rangée en traits, et posée sur les cordons qu'il valide. |
 | `nomenclature.php` | La nomenclature de matériel d'un plan, et le numéro de coulée qu'on y pose. |
 | `plan_document.php` | Les fichiers ISO d'un élément, et celui sur lequel on travaille. |
 | `planning.php` | D'une durée en heures à des bandes sur un calendrier. |
@@ -64,6 +65,7 @@ ISO** » dans `atelier/` ; « les bons de commande » dans `materiel/`.
 | `materiel_bon.php` | Les bons de commande déposés sur une demande, leur lecture, leur validation et le pointage des réceptions. |
 | `commandes.php` | Les commandes fournisseur du PV « Réception matériel ». |
 | `ccpu_demande.php` | Les certificats matière d'une demande : la jonction entre la lecture pure et la base. |
+| `unites.php` | Les unités proposées en signalant un manque, tenues dans les paramètres. |
 
 ## `lecture/` — lire un document
 
@@ -77,6 +79,7 @@ d'essayer une lecture en ligne de commande, sans base ni session — voir
 | `commandes_lignes.php` | Reconnaître les articles d'un bon de commande. |
 | `plan_table.php` · `plan_lignes.php` · `plan_numeros.php` | La lecture d'un plan : son tableau de nomenclature, ses lignes, ses numéros de feuille. |
 | `plan_final.php` · `plan_iso_pdf.php` · `pdf.php` | Le plan final et les feuilles à imprimer. `pdf.php` est l'écriture de PDF réduite au strict nécessaire. |
+| `ecriture_visa.php` | L'écriture manuscrite du visa au nom : ses chasses et son encre, lues dans la police. |
 
 ## `vue/` — mettre en forme pour l'écran
 

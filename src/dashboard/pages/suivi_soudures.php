@@ -222,7 +222,7 @@ $etatDuPlan = static function (array $ligne): array {
                                                     <input type="hidden" name="operation" value="valider">
                                                     <input type="hidden" name="affectation" value="<?= (int) $attente['affectation']['id'] ?>">
                                                     <input type="hidden" name="declaration" value="<?= (int) $attente['id'] ?>">
-                                                    <?= soudureControlesRendu(avancementCordonsAValider($db, $elementId, (int) $attente['affectation']['id_utilisateur']), $utilisateur->nomComplet()) ?>
+                                                    <?= soudureControlesRendu(avancementCordonsAValider($db, $elementId, (int) $attente['affectation']['id_utilisateur']), signatureAnnonceVisa($db, $utilisateur)) ?>
                                                     <button type="submit" name="decision" value="valider" title="L’avancement du plan prendra ce chiffre.">Valider</button>
                                                     <button type="submit" name="decision" value="refuser" class="bouton-discret" title="L’avancement ne change pas ; la personne affectée pourra déclarer autre chose.">Refuser</button>
                                                     <span class="atelier-message" role="status" aria-live="polite"></span>
@@ -259,7 +259,7 @@ $etatDuPlan = static function (array $ligne): array {
                                                         <input type="hidden" name="affectation" value="<?= (int) $ligne['soudage']['id'] ?>">
                                                         <input type="hidden" name="revision" value="<?= (int) $ligne['soudage']['revision'] ?>">
                                                         <input type="hidden" name="soudures" value="<?= $soudures ?>">
-                                                        <?= soudureControlesRendu(avancementCordonsAValider($db, $elementId, (int) $ligne['soudage']['id_utilisateur']), $utilisateur->nomComplet()) ?>
+                                                        <?= soudureControlesRendu(avancementCordonsAValider($db, $elementId, (int) $ligne['soudage']['id_utilisateur']), signatureAnnonceVisa($db, $utilisateur)) ?>
                                                         <button type="submit" title="L’avancement du suivi soudage prendra ce chiffre.">Valider</button>
                                                         <span class="atelier-message" role="status" aria-live="polite"></span>
                                                     </form>
@@ -273,7 +273,7 @@ $etatDuPlan = static function (array $ligne): array {
                                                         <input type="hidden" name="operation" value="cordons">
                                                         <input type="hidden" name="affectation" value="<?= (int) $soudeur['affectation'] ?>">
                                                         <input type="hidden" name="soudures" value="<?= $soudures ?>">
-                                                        <?= soudureControlesRendu(avancementCordonsAValider($db, $elementId, (int) $soudeur['soudeur']), $utilisateur->nomComplet()) ?>
+                                                        <?= soudureControlesRendu(avancementCordonsAValider($db, $elementId, (int) $soudeur['soudeur']), signatureAnnonceVisa($db, $utilisateur)) ?>
                                                         <button type="submit" title="Le suivi soudage du plan prendra ce chiffre.">Valider<?= count($soudeurs) > 1 ? ' · suivi par ' . prefaEscape($soudeur['nom']) : '' ?></button>
                                                         <span class="atelier-message" role="status" aria-live="polite"></span>
                                                     </form>

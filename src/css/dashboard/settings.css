@@ -367,7 +367,8 @@ dialog.fenetre.parametres .parametres-unite {
     color: var(--text-muted);
 }
 
-/* Encadré, jamais plein : rien ici n'est l'action unique d'une fenêtre. */
+/* Encadré, jamais plein : rien ici n'est l'action unique d'une fenêtre — sauf l'enregistrement
+   d'une signature en cours (.est-plein, plus bas). */
 dialog.fenetre.parametres .parametres-bouton {
     flex: none;
     display: inline-flex;
@@ -524,6 +525,268 @@ dialog.fenetre.parametres .parametres-liste .unite-libelle input:focus {
     outline: none;
 }
 
+/* ---------- La signature ----------
+
+   Un bloc de signature, comme au bas d'un document : la signature au-dessus d'un trait, le
+   nom et la date dessous, et dans le coin de quoi la refaire ou la supprimer. Le cadre où
+   l'on signe a exactement la même forme et prend sa place : on signe là où elle
+   s'affichera. Le trait a la couleur du texte — la signature est rangée sans couleur. */
+
+/* Une ligne de réglage comme les autres pour la recherche, mais en bloc : le cadre prend
+   toute la largeur de la section. */
+dialog.fenetre.parametres .parametre.signature-zone {
+    display: block;
+    min-height: 0;
+    padding: 8px 0 0;
+}
+
+dialog.fenetre.parametres .signature-cadre {
+    position: relative;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto auto;
+    box-sizing: border-box;
+    width: 100%;
+    height: 168px;
+    margin: 0;
+    padding: 16px 28px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    background: var(--carte);
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+}
+
+dialog.fenetre.parametres .signature-trace {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-height: 0;
+}
+
+/* Posé sur sa zone, et non dans le flux : un SVG se taille d'après sa largeur, et une
+   signature large débordait alors du bloc par le bas. Il s'y ajuste, assis sur le trait
+   (signatureApercu()). */
+dialog.fenetre.parametres .signature-trace svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+/* L'épaisseur d'une plume, quelle que soit la taille du dessin. */
+dialog.fenetre.parametres .signature-trace path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+}
+
+dialog.fenetre.parametres .signature-ligne {
+    margin: 6px 0 8px;
+    border-bottom: 1px solid var(--border-fort);
+}
+
+dialog.fenetre.parametres .signature-pied {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+dialog.fenetre.parametres .signature-outils {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    gap: 2px;
+}
+
+dialog.fenetre.parametres .signature-outil {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--h-md);
+    height: var(--h-md);
+    padding: 0;
+    border: 0;
+    border-radius: var(--r-md);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: opacity 0.12s ease, color 0.12s ease, background 0.12s ease;
+}
+
+dialog.fenetre.parametres .signature-outil .icon {
+    width: 16px;
+    height: 16px;
+}
+
+dialog.fenetre.parametres .signature-outil:hover:not(:disabled) {
+    background: var(--hover);
+    color: var(--text);
+}
+
+/* Supprimer ne prend sa teinte d'alerte qu'au survol, comme partout ailleurs. */
+dialog.fenetre.parametres .signature-outil.est-destructrice:hover {
+    background: var(--alerte-fond);
+    color: var(--danger-texte);
+}
+
+dialog.fenetre.parametres .signature-outil:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+dialog.fenetre.parametres .signature-outil:focus-visible,
+dialog.fenetre.parametres .signature-vide:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* Les outils de la signature affichée s'effacent au repos et reviennent au survol ou au
+   clavier. Pas sur une tablette : elle n'a pas de survol. Ceux du cadre où l'on signe
+   restent : on s'en sert en signant. */
+@media (hover: hover) {
+
+    dialog.fenetre.parametres figure.signature-cadre .signature-outils {
+        opacity: 0;
+        transition: opacity 0.12s ease;
+    }
+
+    dialog.fenetre.parametres figure.signature-cadre:hover .signature-outils,
+    dialog.fenetre.parametres figure.signature-cadre:focus-within .signature-outils {
+        opacity: 1;
+    }
+}
+
+/* Sans signature : une zone à pointillés qui invite à la tracer, d'un clic n'importe où. */
+dialog.fenetre.parametres .signature-vide {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    border-style: dashed;
+    border-color: var(--border-fort);
+    background: transparent;
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+dialog.fenetre.parametres .signature-vide:hover {
+    border-color: var(--text-muted);
+    background: var(--hover);
+}
+
+dialog.fenetre.parametres .signature-vide-icone {
+    display: grid;
+    place-items: center;
+    width: var(--h-2xl);
+    height: var(--h-2xl);
+    margin-bottom: 8px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--text-muted);
+}
+
+dialog.fenetre.parametres .signature-vide-icone .icon {
+    width: 18px;
+    height: 18px;
+}
+
+dialog.fenetre.parametres .signature-vide-titre {
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+dialog.fenetre.parametres .signature-vide-aide {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+/* Le cadre où l'on signe. Le canevas le couvre, et tout ce qui est posé dessus — l'invite,
+   le trait, le nom — laisse passer le stylet. touch-action : au doigt, signer ne fait pas
+   défiler la fenêtre. */
+dialog.fenetre.parametres .signature-cadre.est-a-signer {
+    border-style: dashed;
+    border-color: var(--border-fort);
+    touch-action: none;
+}
+
+dialog.fenetre.parametres .signature-cadre.est-a-signer canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    cursor: crosshair;
+    touch-action: none;
+}
+
+dialog.fenetre.parametres .signature-cadre.est-a-signer > :not(canvas, .signature-outils) {
+    position: relative;
+    pointer-events: none;
+}
+
+dialog.fenetre.parametres .signature-invite {
+    color: var(--placeholder);
+    font-size: 13px;
+}
+
+dialog.fenetre.parametres .signature-cadre:not(.est-vide) .signature-invite {
+    visibility: hidden;
+}
+
+dialog.fenetre.parametres .signature-pave {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+dialog.fenetre.parametres .signature-pave-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+/* « Enregistrer » est plein : c'est la seule action d'une saisie en cours, et il reste
+   éteint tant que le cadre est vide. */
+dialog.fenetre.parametres .parametres-bouton.est-plein {
+    border-color: transparent;
+    background: var(--bouton-plein);
+    color: var(--bouton-plein-texte);
+    font-weight: 500;
+}
+
+dialog.fenetre.parametres .parametres-bouton.est-plein:hover:not(:disabled) {
+    background: var(--bouton-plein-hover);
+}
+
+dialog.fenetre.parametres .parametres-bouton:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+dialog.fenetre.parametres .parametres-bouton:disabled:hover {
+    background: transparent;
+}
+
+dialog.fenetre.parametres .parametres-bouton.est-plein:disabled:hover {
+    background: var(--bouton-plein);
+}
+
+dialog.fenetre.parametres .signature-message {
+    margin-top: 6px;
+}
+
 dialog.fenetre.parametres .parametres-aucun {
     margin: 48px 0 0;
     color: var(--text-muted);
@@ -607,6 +870,11 @@ dialog.fenetre.parametres .parametres-aucun {
         flex-wrap: wrap;
         gap: 8px 16px;
     }
+
+    dialog.fenetre.parametres .signature-cadre {
+        height: 148px;
+        padding: 14px 16px 10px;
+    }
 }
 
 /* Sur une tablette d'atelier, la cible fait 44 px. */
@@ -619,7 +887,8 @@ dialog.fenetre.parametres .parametres-aucun {
         height: 44px;
     }
 
-    dialog.fenetre.parametres .parametres-segment {
+    dialog.fenetre.parametres .parametres-segment,
+    dialog.fenetre.parametres .signature-outil {
         width: 40px;
         height: 40px;
     }

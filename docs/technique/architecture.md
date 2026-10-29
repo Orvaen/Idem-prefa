@@ -129,8 +129,9 @@ Ils se chargent seuls (`src/modeles/autoload.php`).
 | Bibliothèque | Version | D'où | Pour |
 | --- | --- | --- | --- |
 | htmx | 2.0.11 | `cdn.jsdelivr.net`, avec SRI | Les fragments de l'écran Utilisateurs, `hx-confirm` |
-| jQuery | 4.0.0 | `code.jquery.com`, avec SRI | La délégation d'événements, `.load()`, `$.ajax` |
 | axios | 1.20.0 | `cdnjs.cloudflare.com`, avec SRI | L'écran de connexion seulement |
+| signature_pad | 5.1.4 | `cdn.jsdelivr.net`, avec SRI, chargé à l'ouverture du cadre | Le cadre où chacun trace sa signature (Paramètres → Compte) |
+
 Tout le reste est écrit à la main, sans bibliothèque. Les polices — Inter et Source Serif 4,
 sous licence OFL — sont servies localement, depuis `src/assets/fonts/`.
 

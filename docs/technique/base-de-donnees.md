@@ -1,6 +1,6 @@
 # Base de données
 
-MySQL 8.4, une base `myapp`, **36 tables** en InnoDB et `utf8mb4`. Le schéma complet d'une
+MySQL 8.4, une base `myapp`, **37 tables** en InnoDB et `utf8mb4`. Le schéma complet d'une
 installation neuve est dans `db/schema.sql`.
 
 ## Les tables, par domaine
@@ -11,6 +11,7 @@ installation neuve est dans `db/schema.sql`.
 | --- | --- |
 | `Utilisateur` | Un compte : `identifiant` (la connexion), `password` (bcrypt), `name` (le nom), `prenom`, `email`, `id_role`, `dernier_evenement_vu` |
 | `role` | Les quatre rôles — voir [Rôles et droits](/fonctionnalites/roles) |
+| `signature_utilisateur` | La signature de chacun, tracée dans les paramètres : ses traits (`dessin`, en JSON), rangés par versions. Celle en cours n'a pas de `date_retrait` ; une signature refaite ou supprimée reste tant qu'un cordon la porte |
 
 ### Affaires et demandes
 
@@ -41,7 +42,7 @@ installation neuve est dans `db/schema.sql`.
 | Table | Ce qu'elle porte |
 | --- | --- |
 | `plan_nomenclature` | Une case de coulée : la ligne, la page, la coulée, sa position en fractions de page |
-| `plan_soudure` | Un cordon : numéro, soudeur, date, type, RT / VI / PT — VI s'affiche « VT », le mot du plan —, visa (`vise_par`, `date_visa` : qui a validé, et quand) |
+| `plan_soudure` | Un cordon : numéro, soudeur, date, type, RT / VI / PT — VI s'affiche « VT », le mot du plan —, visa (`vise_par`, `date_visa` : qui a validé, et quand ; `id_signature` : sa signature ce jour-là) |
 | `demande_ccpu_documents` | Les certificats matière, **en BLOB**, et le résultat de leur lecture |
 | `demande_ccpu_coulees` | Les coulées lues : numéro, page, confiance, `confirmee` |
 

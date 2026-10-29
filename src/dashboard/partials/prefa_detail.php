@@ -190,7 +190,7 @@ $decisionComment = trim((string) ($row['commentaire_validation'] ?? ''));
                     <input type="hidden" name="operation" value="valider">
                     <input type="hidden" name="affectation" value="<?= (int) $declaration['id_affectation'] ?>">
                     <input type="hidden" name="declaration" value="<?= (int) $declaration['id'] ?>">
-                    <?= soudureControlesRendu(avancementCordonsAValider($db, (int) $declaration['id_element'], (int) $declaration['id_titulaire']), $utilisateur->nomComplet()) ?>
+                    <?= soudureControlesRendu(avancementCordonsAValider($db, (int) $declaration['id_element'], (int) $declaration['id_titulaire']), signatureAnnonceVisa($db, $utilisateur)) ?>
                     <button type="submit" name="decision" value="valider" title="L’avancement du plan prendra ce chiffre.">Valider</button>
                     <button type="submit" name="decision" value="refuser" class="bouton-discret" title="L’avancement ne change pas ; la personne affectée pourra déclarer autre chose.">Refuser</button>
                     <span class="atelier-message" role="status" aria-live="polite"></span>

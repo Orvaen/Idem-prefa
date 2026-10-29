@@ -16,6 +16,7 @@
 
 require_once __DIR__ . '/../demande/prefa_hours.php';
 require_once __DIR__ . '/../materiel/unites.php';
+require_once __DIR__ . '/../atelier/signature.php';
 require_once __DIR__ . '/passivation_row.php';
 require_once __DIR__ . '/user_display.php';
 
@@ -76,6 +77,8 @@ function parametresRendu(PDO $db, Utilisateur $utilisateur): void
     $types = $administre ? $db->query('SELECT id, libelle FROM type_passivation ORDER BY libelle')->fetchAll() : [];
     $unitesPretes = $administre && unitesEnBase($db);
     $unites = $unitesPretes ? unitesMateriel($db) : [];
+    $signaturesPretes = signaturesEnBase($db);
+    $signature = signatureEnCours($db, $utilisateur->id);
     $metier = roleComplement($utilisateur->idRole);
     $jeton = prefaEscape(Session::jeton());
     // data-static-fields : floating-fields.js laisse les étiquettes à leur place. Sans lui,
@@ -183,6 +186,39 @@ function parametresRendu(PDO $db, Utilisateur $utilisateur): void
                                 <div class="parametre" data-cherche="mail courriel">
                                     <div class="parametre-texte"><span class="parametre-titre">Adresse e-mail</span></div>
                                     <span class="parametre-valeur"><?= prefaEscape($utilisateur->email) ?></span>
+                                </div>
+                            <?php endif; ?>
+                        </section>
+
+                        <?php // Chacun a la sienne, quel que soit son rôle : elle vise les cordons
+                              // qu'on valide (includes/atelier/signature.php). Le bloc la montre
+                              // comme au bas d'un document ; le cadre où l'on signe a sa forme et
+                              // prend sa place (parametres.js). ?>
+                        <section class="parametres-section signature-section" data-cherche="signature visa cordon valider plan" data-csrf="<?= $jeton ?>">
+                            <h4>Signature</h4>
+                            <?php if (!$signaturesPretes): ?>
+                                <p class="parametres-section-aide">Les signatures arrivent avec la migration <code>2026-10-29_signatures</code>, pas encore passée sur ce serveur : vos visas portent votre nom.</p>
+                            <?php else: ?>
+                                <p class="parametres-section-aide">Elle vise les cordons que vous validez.</p>
+                                <div class="parametre signature-zone" data-cherche="tracer refaire supprimer">
+                                    <div id="signature-actuelle"><?= signatureParametreRendu($signature, $utilisateur->nomComplet()) ?></div>
+                                    <div class="signature-pave" hidden>
+                                        <div class="signature-cadre est-a-signer est-vide">
+                                            <canvas role="img" aria-label="Cadre de signature : signez à la souris, au doigt ou au stylet"></canvas>
+                                            <div class="signature-trace"><span class="signature-invite">Signez ici</span></div>
+                                            <div class="signature-ligne" aria-hidden="true"></div>
+                                            <div class="signature-pied" aria-hidden="true"><span><?= prefaEscape($utilisateur->nomComplet()) ?></span><span>Aujourd’hui</span></div>
+                                            <div class="signature-outils">
+                                                <button type="button" class="signature-outil" data-signature-defaire title="Annuler le dernier trait" aria-label="Annuler le dernier trait" disabled><?= signatureIcone('defaire') ?></button>
+                                                <button type="button" class="signature-outil" data-signature-effacer title="Tout effacer" aria-label="Tout effacer" disabled><?= signatureIcone('effacer') ?></button>
+                                            </div>
+                                        </div>
+                                        <div class="signature-pave-actions">
+                                            <button type="button" class="parametres-bouton" data-signature-annuler>Annuler</button>
+                                            <button type="button" class="parametres-bouton est-plein" data-signature-enregistrer disabled>Enregistrer</button>
+                                        </div>
+                                    </div>
+                                    <p class="prefa-message signature-message" role="status" aria-live="polite"></p>
                                 </div>
                             <?php endif; ?>
                         </section>

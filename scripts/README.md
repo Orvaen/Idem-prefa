@@ -34,7 +34,7 @@ La traduction des trois noms d'un rôle, elle, vit dans `Role::depuisLeTexte()`.
 ## `migrations/` — pour une base déjà remplie
 
 **Sur une base neuve, il n'y a rien à lancer ici.** `db/schema.sql` contient déjà le
-résultat de toutes ces migrations : 36 tables, 283 colonnes et 55 clés étrangères,
+résultat de toutes ces migrations : 37 tables, 289 colonnes et 57 clés étrangères,
 vérifiées identiques à la base en service. Installez le schéma, c'est tout.
 
 Ces scripts ne servent qu'à **rattraper une base créée avant un changement** — typiquement
@@ -72,7 +72,8 @@ savoir laquelle avant de la lancer sur une base en service.
 | `2026-10-28_affaires_vues` | Ajoute `Utilisateur.dernier_evenement_vu` et le cale sur le dernier événement du journal, pour qu'aucune ancienne affaire ne s'annonce comme nouvelle |
 | `2026-10-29_unites_materiel` | Crée la liste des unités du matériel et y pose six unités de départ (u, PCE, m, kg, barre, lot) — seulement si elle est vide. Les manques déjà signalés ne sont pas touchés |
 
-Les vingt et une autres ne font qu'ajouter des tables et des colonnes.
+Les vingt-deux autres ne font qu'ajouter des tables et des colonnes — dont `2026-10-29_signatures`,
+qui crée la table des signatures et la colonne du cordon qui en désigne une.
 
 Dans le doute, lancez-les tous dans l'ordre alphabétique : la date en tête les range
 chronologiquement, et quelques-uns dépendent d'un précédent — `materiel_lignes` suppose

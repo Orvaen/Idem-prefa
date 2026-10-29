@@ -68,5 +68,5 @@ echo json_encode([
     'success' => true,
     'html' => $fenetre,
     'styles' => ['../css/dashboard/plan-viewer.css?v=' . filemtime($racine . '/css/dashboard/plan-viewer.css')],
-    'scripts' => ['../js/plan-viewer.js?v=' . hash_file('sha256', $racine . '/js/plan-viewer.js')],
+    'scripts' => ['../js/ecrans/plan-viewer.js?v=' . hash_file('sha256', $racine . '/js/ecrans/plan-viewer.js')],
 ]);

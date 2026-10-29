@@ -96,6 +96,8 @@ echo json_encode([
     'cases' => $cases,
     'soudures' => $soudures,
     'valeurs' => $valeurs,
+    // Les cases VISA signées, par rang : la fenêtre y dessine la signature au lieu du nom.
+    'signatures' => array_map('signatureVue', $liste['signatures']),
     // La place de l'intitulé « Numéro de ligne » : le lecteur y montre le numéro de page
     // que le plan final écrira, pour que l'écran dise la même chose que le PDF.
     // Le volet s'en sert pour prévenir qu'on travaille sur la première page d'un cahier.

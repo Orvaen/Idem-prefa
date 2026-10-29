@@ -68,13 +68,15 @@ menu du compte ou par `Ctrl ,` :
 | Rubrique | Pour qui | Ce qu'on y règle |
 | --- | --- | --- |
 | **Général** | tout le monde | Le thème — système, clair ou sombre —, et la liste des raccourcis clavier |
-| **Compte** | tout le monde | Son profil, en lecture : nom, identifiant, rôle, courriel. La déconnexion. |
+| **Compte** | tout le monde | Son profil, en lecture : nom, identifiant, rôle, courriel. Sa **signature**, qui vise les cordons qu'on valide ([le visa](/fonctionnalites/soudures#visa)) : on la trace, on la refait, on la supprime. La déconnexion. |
 | **Fabrication** | chargé de production | Le **temps par pouce ISO**, qui sert à estimer le délai d'une demande |
 | **Passivation** | chargé de production | Les **types de passivation** proposés dans le formulaire de demande |
+| **Matériel** | chargé de production | Les **unités** proposées quand on signale un manque de matériel |
 
-Un réglage s'applique **dès qu'on le touche** : il n'y a pas de bouton « Enregistrer ». Le temps
-par pouce part quand on quitte le champ ; un refus du serveur s'écrit sous la ligne. La recherche,
-en haut de la colonne, traverse toutes les rubriques.
+Un réglage s'applique **dès qu'on le touche** : il n'y a pas de bouton « Enregistrer » — sauf
+sous le cadre de la signature, qu'on enregistre une fois tracée. Le temps par pouce part quand on
+quitte le champ ; un refus du serveur s'écrit sous la ligne. La recherche, en haut de la colonne,
+traverse toutes les rubriques.
 
 ## Les fenêtres
 

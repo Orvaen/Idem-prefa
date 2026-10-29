@@ -929,6 +929,15 @@
     text-anchor: middle;
 }
 
+/* La signature tracée par celui qui a validé (dessinerSignature) : un trait à bouts ronds,
+   comme une plume, dans l'encre du reste de la liste. Son épaisseur vient du script. */
+.plan-soudure-visa path {
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
 /* Les lignes ajoutées sous le tableau quand le bureau d'études n'en a pas prévu assez.
    Même encre et même épaisseur que les traits imprimés — mesurée sur l'image par le
    script — pour que le tableau prolongé ne se lise pas comme un rajout. */

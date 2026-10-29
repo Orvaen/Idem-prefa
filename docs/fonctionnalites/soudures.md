@@ -81,22 +81,38 @@ vide n'écrit rien.
 « VT » et non « VI » : c'est l'en-tête que le bureau d'études imprime sur ses listes soudure. La
 colonne garde son nom en base, `plan_soudure.vi`.
 
-### Le visa, posé en validant
+### Le visa, posé en validant {#visa}
 
-Valider des cordons, c'est les **viser**. La case **VISA** de chacun reçoit le **prénom et le nom
-de celui qui valide**, tirés de son compte, écrits comme une signature — dans une écriture
-manuscrite, sur le plan final comme dans la fenêtre du plan. Rien à dessiner, rien à taper : le
-bloc des contrôles le dit avant le clic (« Valider » les vise à votre nom, …).
+Valider des cordons, c'est les **viser**. La case **VISA** de chacun reçoit la **signature de
+celui qui valide** — tracée une fois dans ses paramètres (rubrique **Compte**, section
+**Signature**) —, sur le plan final comme dans la fenêtre du plan. Qui n'en a pas tracé vise de
+son **prénom et son nom**, tirés de son compte, écrits dans une écriture manuscrite — jusqu'à ce
+qu'il en trace une : elle remplace alors son nom sur ces cordons. Le bloc des contrôles le dit
+avant le clic : « Valider » les vise de votre signature, ou à votre nom — avec alors un lien pour
+tracer la sienne.
 
 | Règle | Détail |
 | --- | --- |
 | Qui vise | Celui qui valide : chef d'atelier ou chargé de production. |
-| Ce qui est rangé | `plan_soudure.vise_par` et `date_visa` : qui, et quand. Le nom s'écrit à l'affichage, depuis le compte. |
+| Ce qui est rangé | `plan_soudure.vise_par` et `date_visa` : qui, et quand ; `plan_soudure.id_signature` : la signature posée ce jour-là, s'il en avait une. Le nom s'écrit à l'affichage, depuis le compte. |
+| Les visas posés au nom | Ceux d'avant la signature — ou d'une période sans — prennent la première que la personne trace, puis la gardent. L'enregistrement dit combien de cordons elle vient de signer. |
+| Refaire sa signature | Les cordons déjà signés gardent celle du jour : comme sur le papier, changer la sienne ne retouche pas ce qui est signé. Seuls les visas suivants prennent la nouvelle. |
+| Supprimer sa signature | Les visas suivants reprennent le nom. Les cordons déjà visés gardent leur signature ; une signature qui ne vise aucun cordon est effacée. |
 | Refuser | Ne vise rien. |
 | Les cordons validés autrement | « Saisir l'avancement » et les étapes couvrent des cordons sans les viser : leur case VISA reste vide. |
-| Sur le plan final | Le nom est du **texte**, pas une image : net à tous les zooms, et retrouvé par une recherche dans le PDF. Il rétrécit pour tenir dans la case. |
+| Sur le plan final | La signature est faite de **traits** du PDF, le nom de **texte** : ni l'un ni l'autre n'est une image, tous deux restent nets à tous les zooms. Le visa occupe la ligne à une fine marge près, et rétrécit pour tenir dans la case. |
 
-L'écriture est **Great Vibes** (licence OFL, `src/assets/fonts/`), réduite aux caractères latins
+Dans les paramètres, la signature s'affiche comme au bas d'un document : au-dessus d'un trait,
+le nom et la date dessous ; « Refaire » et « Supprimer » paraissent au survol. Elle se trace à
+la souris, au doigt ou au stylet, dans un cadre de la même forme qui prend sa place — on signe
+là où elle s'affichera —, avec de quoi défaire le dernier trait ou tout effacer
+([signature_pad](https://github.com/szimek/signature_pad), chargé à l'ouverture du cadre).
+« Enregistrer » reste éteint tant que le cadre est vide, et Échap abandonne sans fermer la
+fenêtre. Elle est rangée en points, recadrée sur l'encre (`signature_utilisateur.dessin`), et
+se redessine lissée, dans la couleur du texte qui l'entoure. Avant la migration
+`2026-10-29_signatures`, la section le dit et les visas restent au nom.
+
+L'écriture du nom est **Great Vibes** (licence OFL, `src/assets/fonts/`), réduite aux caractères latins
 d'Europe de l'Ouest : 36 Ko en `.ttf`, que le plan final **embarque une fois** pour tout le
 document — il s'affiche et s'imprime pareil partout, sans dépendre des polices du poste —, et
 20 Ko en `.woff2` pour l'écran. Les deux sont produits par fontTools, sans crénage ni ligature :
@@ -164,6 +180,8 @@ condition dans `prefa_list_data.php`.
 | `src/dashboard/actions/download_plan_final.php` | Le plan final |
 | `planFinalParDemandes()` dans `src/dashboard/includes/atelier/plan_document.php`, `src/dashboard/partials/prefa_list_row.php` | Le sous-menu « Plan final » de la liste des demandes |
 | `src/dashboard/actions/plan_final_lecteur.php`, `ouvrirLecteurPlanFinal()` dans `src/js/ecrans/prefa-interactions.js` | La visionneuse en consultation, servie à la demande pour le sous-menu |
-| `src/js/plan-viewer.js` | La visionneuse et ses cases |
+| `src/js/ecrans/plan-viewer.js` | La visionneuse et ses cases |
 | `avancementViserCordons()` dans `src/dashboard/includes/atelier/avancement.php` | Les contrôles et le visa posés en validant |
+| `src/dashboard/includes/atelier/signature.php`, `src/dashboard/actions/ma_signature.php` | La signature de chacun : la vérifier, la ranger, la poser en visa, la tracer en SVG |
+| `planFinalSignature()` dans `plan_final.php`, `dessinerSignature()` dans `src/js/ecrans/plan-viewer.js` | La signature dans la case VISA, sur le plan final et dans la fenêtre du plan |
 | `src/dashboard/includes/lecture/ecriture_visa.php`, `planFinalEcritureVisa()` dans `plan_final.php` | L'écriture du visa : ses mesures, lues dans la police, et son embarquement dans le PDF |

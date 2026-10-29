@@ -261,8 +261,8 @@ format `AAAA-MM-JJ` que le serveur attend, son `required` que le validateur lit 
 ligne. Nous ne reprenons que la glyphe — masquée par
 `::-webkit-calendar-picker-indicator { display: none }` — et la fenêtre.
 
-Un champ caché doublé d'un champ texte aurait coûté les trois : jQuery ignore les champs
-cachés dans `:input[required]:visible`, et le serveur aurait reçu `26/10/2026`.
+Un champ caché doublé d'un champ texte aurait coûté les trois : le validateur ignore les champs
+qui ne s’affichent pas, et le serveur aurait reçu `26/10/2026`.
 
 **Le champ garde l'habillage de son écran.** `champ-date.css` ne pose ni fond ni bordure sur
 le champ : seulement la place du déclencheur. La nouvelle demande a ses fonds sépia, le
@@ -365,6 +365,10 @@ sépare deux lignes visibles. Sous 720 px, plein écran, la colonne en rangée d
 - *Un réglage s'applique dès qu'on le touche.* Pas de bouton « Enregistrer » : le thème
   bascule au clic, la cadence part quand on quitte le champ. Une confirmation s'écrit en
   gris sous la ligne ; seul un refus prend la couleur `--alerte-texte`.
+- *La signature fait exception* : on la trace, puis on l'enregistre — un trait à moitié fait
+  ne doit pas partir. Son « Enregistrer » est plein, seule action d'une saisie en cours, et
+  éteint tant que le cadre est vide. Elle s'affiche en carte (`--carte`, rayon 8), comme au
+  bas d'un document, et le cadre où l'on signe a la même forme et prend sa place.
 - *Rien d'inventé.* Une rubrique ne porte que ce que l'application sait régler. Le profil
   est en lecture : c'est le chargé de production qui le tient, dans Utilisateurs.
 - *La rubrique ouverte se marque d'un fond plein (`--active`), pas de l'azur* : on règle,

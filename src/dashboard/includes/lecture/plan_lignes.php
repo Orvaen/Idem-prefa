@@ -90,8 +90,11 @@ function planLignesNombreDePages(string $pdf): int
  * recevoir huit cordons. Les suivants vont sous le tableau, dans la place mesurée comme
  * libre — au-delà, on buterait sur le dessin ou le cartouche.
  *
- * @return array{valeurs: array<int, list<string>>, horsTableau: list<string>, proposees: int,
- *               imprimees: int, occupees: int}
+ * La case VISA porte le nom de celui qui a validé ; s'il a tracé sa signature, elle est
+ * rendue à part, au même rang (signatures), et c'est elle qui se dessine dans la case.
+ *
+ * @return array{valeurs: array<int, list<string>>, signatures: array<int, array>, horsTableau: list<string>,
+ *               proposees: int, imprimees: int, occupees: int}
  */
 function planLignesSoudures(PDO $db, int $elementId, int $documentId, ?array $soudures, int $page = 1): array
 {
@@ -99,6 +102,7 @@ function planLignesSoudures(PDO $db, int $elementId, int $documentId, ?array $so
     $capacite = $imprimees + (int) ($soudures['libres'] ?? 0);
 
     $valeurs = [];
+    $signatures = [];
     $horsTableau = [];
     $proposees = 0;
     // Les cases que le plan porte déjà et qu'on laisse donc tranquilles : l'atelier doit
@@ -138,14 +142,17 @@ function planLignesSoudures(PDO $db, int $elementId, int $documentId, ?array $so
             (string) $soudure['pt'],
             (string) ($soudure['visa_nom'] ?? ''),
         ];
+        $signature = signatureDessin($soudure['signature_dessin'] ?? null);
+        if ($signature) $signatures[$rang] = $signature;
     }
-    return ['valeurs' => $valeurs, 'horsTableau' => $horsTableau, 'proposees' => $proposees,
-        'imprimees' => $imprimees, 'occupees' => $occupees, 'enAttente' => $enAttente];
+    return ['valeurs' => $valeurs, 'signatures' => $signatures, 'horsTableau' => $horsTableau,
+        'proposees' => $proposees, 'imprimees' => $imprimees, 'occupees' => $occupees, 'enAttente' => $enAttente];
 }
 
 /**
- * La case VISA est la huitième de la liste soudure, après les trois contrôles. Le nom de
- * celui qui a validé s'y écrit comme une signature (ecriture_visa.php).
+ * La case VISA est la huitième de la liste soudure, après les trois contrôles. Elle porte
+ * la signature de celui qui a validé (signature.php), ou son nom écrit comme une signature
+ * (ecriture_visa.php).
  */
 const PLAN_LIGNES_VISA = 7;
 
@@ -154,13 +161,15 @@ const PLAN_LIGNES_VISA = 7;
  * quand il manque des lignes. Même calcul que le lecteur (remplirSoudures).
  *
  * Le nom de la case VISA est marqué « visa » : il s'écrit comme une signature, dans
- * l'écriture du visa, et non dans le gras du reste de la liste.
+ * l'écriture du visa, et non dans le gras du reste de la liste. Quand celui qui a validé a
+ * tracé la sienne, elle l'accompagne (« signature ») et se dessine à sa place.
  *
  * @param array<int, list<string>> $valeurs
- * @return array{textes: list<array{texte:string, x:float, y:float, w:float, h:float, visa?:bool}>,
+ * @param array<int, array> $signatures les signatures des cases VISA, par rang (planLignesSoudures())
+ * @return array{textes: list<array{texte:string, x:float, y:float, w:float, h:float, visa?:bool, signature?:array}>,
  *               traits: list<array{x1:float, y1:float, x2:float, y2:float}>}
  */
-function planLignesSoudureDessin(?array $soudures, array $valeurs): array
+function planLignesSoudureDessin(?array $soudures, array $valeurs, array $signatures = []): array
 {
     if (!$soudures || !$valeurs) return ['textes' => [], 'traits' => []];
 
@@ -200,7 +209,8 @@ function planLignesSoudureDessin(?array $soudures, array $valeurs): array
             if (!empty($ecrites[$index])) continue;
             $textes[] = ['texte' => $texte, 'x' => (float) $colonne['x'], 'y' => (float) $ligne['y'],
                 'w' => (float) $colonne['w'], 'h' => (float) $ligne['h']]
-                + ($index === PLAN_LIGNES_VISA ? ['visa' => true] : []);
+                + ($index === PLAN_LIGNES_VISA ? ['visa' => true] : [])
+                + ($index === PLAN_LIGNES_VISA && isset($signatures[$rang]) ? ['signature' => $signatures[$rang]] : []);
         }
     }
     return ['textes' => $textes, 'traits' => $traits];

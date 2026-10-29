@@ -87,13 +87,14 @@ try {
         $analyse = planLignesAnalyse($source, planLignesCache($requestId, $cle, $numero), $numero);
         $soudures = $analyse['soudures'] ?? null;
         $liste = planLignesSoudures($db, $elementId, $plan['id'], $soudures, $numero);
-        $dessin = planLignesSoudureDessin($soudures, $liste['valeurs']);
+        $dessin = planLignesSoudureDessin($soudures, $liste['valeurs'], $liste['signatures']);
 
         $textes = array_merge($couleesDeLaPage($db, $elementId, (int) $plan['id'], $numero), $dessin['textes']);
         if (!$textes && !$dessin['traits']) continue;
         $contenu++;
+        // Un visa signé se dessine en traits : seuls les visas au nom demandent l'écriture.
         $aEcrire[$numero] = ['textes' => $textes, 'traits' => $dessin['traits'], 'geometrie' => $geometrie,
-                             'visa' => (bool) array_filter($textes, static fn (array $t): bool => !empty($t['visa']))];
+                             'visa' => (bool) array_filter($textes, static fn (array $t): bool => !empty($t['visa']) && empty($t['signature']))];
     }
 
     // prefaError s'arrête ici même, avant d'avoir composé quoi que ce soit.

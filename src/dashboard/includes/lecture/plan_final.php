@@ -3,6 +3,7 @@
 require_once __DIR__ . '/pdf.php';
 require_once __DIR__ . '/plan_lignes.php';
 require_once __DIR__ . '/ecriture_visa.php';
+require_once __DIR__ . '/../atelier/signature.php';
 
 /**
  * Le plan final : le plan du bureau d'études, avec par-dessus ce que l'atelier y a porté.
@@ -63,9 +64,10 @@ function planFinalPoint(float $fx, float $fy, array $page): array
  * Le texte est tourné comme la page pour rester lisible une fois la page redressée.
  *
  * Un texte marqué « visa » s'écrit dans l'écriture du visa (ecriture_visa.php) : la police
- * doit alors avoir été ajoutée au PDF (planFinalEcritureVisa()).
+ * doit alors avoir été ajoutée au PDF (planFinalEcritureVisa()). S'il porte une signature,
+ * c'est elle qui se dessine, et la police n'est pas nécessaire.
  *
- * @param list<array{texte:string, x:float, y:float, w:float, h:float, police?:float, visa?:bool}> $textes positions en fractions
+ * @param list<array{texte:string, x:float, y:float, w:float, h:float, police?:float, visa?:bool, signature?:array}> $textes positions en fractions
  * @param list<array{x1:float, y1:float, x2:float, y2:float}> $traits
  */
 function planFinalFlux(array $textes, array $traits, array $page, float $epaisseurTrait): string
@@ -96,6 +98,10 @@ function planFinalFlux(array $textes, array $traits, array $page, float $epaisse
         $texte = trim($champ['texte']);
         if ($texte === '') continue;
 
+        if (!empty($champ['signature'])) {
+            $flux .= planFinalSignature($champ['signature'], $champ, $page, $cote);
+            continue;
+        }
         if (!empty($champ['visa'])) {
             $flux .= planFinalVisa($texte, $champ, $page, $cote, $matrice);
             continue;
@@ -159,6 +165,53 @@ function planFinalVisa(string $texte, array $champ, array $page, array $cote, ar
         PLAN_FINAL_VISA_NOM, $corps,
         $matrice[0], $matrice[1], $matrice[2], $matrice[3], $x, $y,
         PdfPlan::chaine($texte));
+}
+
+/**
+ * Le visa dans sa case quand celui qui a validé a tracé sa signature : ses traits, réglés
+ * comme l'encre du nom — la signature occupe la ligne à une fine marge près, centrée, et
+ * rétrécit pour tenir en largeur. Même calcul qu'à l'écran (plan-viewer.js,
+ * dessinerSignature).
+ *
+ * Des courbes du PDF, pas une image : nettes à tous les zooms, et rien à embarquer. Chaque
+ * point passe par planFinalPoint(), qui tourne avec la page ; une courbe reste une courbe
+ * sous cette transformation, ses points de contrôle suffisent.
+ *
+ * @param array{proportion: float, traits: list<list<array{0: float, 1: float}>>} $dessin
+ * @param array{x:float, y:float, w:float, h:float} $champ la case, en fractions de la page
+ * @param array{h:float, l:float} $cote les côtés de la page affichée, en points
+ */
+function planFinalSignature(array $dessin, array $champ, array $page, array $cote): string
+{
+    $hauteurMax = $champ['h'] * $cote['h'] * PLAN_FINAL_VISA;
+    $epaisseur = $hauteurMax * SIGNATURE_TRAIT;
+    // Points par hauteur de signature. Le trait déborde de sa demi-épaisseur tout autour.
+    $echelle = min($hauteurMax - $epaisseur, ($champ['w'] * $cote['l'] - $epaisseur) / $dessin['proportion']);
+    if ($echelle < 0.5) return '';
+
+    // Le coin haut gauche de la signature, centrée dans la case, en fractions de la page.
+    $gauche = $champ['x'] + ($champ['w'] - $dessin['proportion'] * $echelle / $cote['l']) / 2;
+    $haut = $champ['y'] + ($champ['h'] - $echelle / $cote['h']) / 2;
+    $point = static fn (float $x, float $y): string =>
+        vsprintf('%.2f %.2f', planFinalPoint($gauche + $x * $echelle / $cote['l'], $haut + $y * $echelle / $cote['h'], $page));
+
+    $trace = '';
+    $depuis = [0.0, 0.0];
+    foreach (signatureCommandes($dessin) as $commande) {
+        if ($commande[0] === 'Q') {
+            // Le PDF ne connaît que les courbes du troisième degré : la même courbe s'y écrit
+            // avec deux points de contrôle, aux deux tiers de chaque extrémité vers celui-ci.
+            [, $cx, $cy, $x, $y] = $commande;
+            $trace .= $point($depuis[0] + 2 / 3 * ($cx - $depuis[0]), $depuis[1] + 2 / 3 * ($cy - $depuis[1])) . ' '
+                . $point($x + 2 / 3 * ($cx - $x), $y + 2 / 3 * ($cy - $y)) . ' ' . $point($x, $y) . " c\n";
+        } else {
+            [, $x, $y] = $commande;
+            $trace .= $point($x, $y) . ($commande[0] === 'M' ? " m\n" : " l\n");
+        }
+        $depuis = [$x, $y];
+    }
+    // Extrémités et jonctions rondes, comme une plume : un point seul devient un rond.
+    return sprintf("q 1 J 1 j %.2f w\n%sS Q\n", $epaisseur, $trace);
 }
 
 /**

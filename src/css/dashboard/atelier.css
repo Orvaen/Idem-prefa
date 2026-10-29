@@ -1320,6 +1320,26 @@
     font-size: 12px;
 }
 
+/* « tracer votre signature » : un lien dans la phrase, qui ouvre les paramètres sur le
+   compte. Un bouton, puisqu'il ne mène à aucune adresse. */
+.soudure-controles-lien {
+    display: inline;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent-texte);
+    font: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+}
+
+.soudure-controles-lien:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
 /* « Tous les cordons » est une commande, pas un cordon : sourde, sans la graisse du numéro
    qui ouvre les autres lignes. */
 .soudure-controles-table .soudure-controles-tous td {
