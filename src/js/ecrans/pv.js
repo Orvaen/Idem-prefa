@@ -2,8 +2,10 @@
     // ===== Le volet d'une demande =====
     // Un volet par demande, ouvert par « Renseigner » ou « Voir ». Un seul ouvert à la fois,
     // comme sur les autres listes.
-    $(document).on('click', '.pv-ouvrir', function () {
-        const volet = document.getElementById(this.getAttribute('aria-controls'));
+    document.addEventListener('click', evenement => {
+        const bouton = evenement.target.closest('.pv-ouvrir');
+        if (!bouton) return;
+        const volet = document.getElementById(bouton.getAttribute('aria-controls'));
         if (!volet) return;
         const ouvrir = volet.hidden;
         if (ouvrir) {
@@ -16,11 +18,13 @@
             });
         }
         volet.hidden = !ouvrir;
-        this.setAttribute('aria-expanded', String(ouvrir));
+        bouton.setAttribute('aria-expanded', String(ouvrir));
     });
 
-    $(document).on('click', '#pv-page .prefa-detail-close', function () {
-        const cible = this.dataset.closeTarget;
+    document.addEventListener('click', evenement => {
+        const bouton = evenement.target.closest('#pv-page .prefa-detail-close');
+        if (!bouton) return;
+        const cible = bouton.dataset.closeTarget;
         document.querySelectorAll(`[aria-controls="${cible}"]`).forEach(b => b.setAttribute('aria-expanded', 'false'));
     });
 
@@ -29,9 +33,11 @@
     const ouverts = () => Array.from(document.querySelectorAll('#pv-page .prefa-detail-row:not([hidden])')).map(ligne => ligne.id);
 
     function recharger(deplies = [], ensuite = null) {
-        $('#content').load('pages/pv.php', function (_, statut) {
-            if (statut === 'error') {
-                $(this).text('Impossible de charger les PV. Actualisez.');
+        const contenu = document.getElementById('content');
+        if (!contenu) return;
+        window.chargerDans(contenu, 'pages/pv.php').then(({ ok }) => {
+            if (!ok) {
+                contenu.textContent = 'Impossible de charger les PV. Actualisez.';
                 return;
             }
             deplies.forEach(id => {
@@ -43,7 +49,9 @@
         });
     }
 
-    $(document).on('click', '.pv-refresh', () => recharger(ouverts()));
+    document.addEventListener('click', evenement => {
+        if (evenement.target.closest('.pv-refresh')) recharger(ouverts());
+    });
 
     // ===== Les onglets et la recherche =====
     // Toutes les demandes sont dans la page : on filtre sur place. Onglet et recherche se
@@ -84,18 +92,38 @@
         if (aucune) aucune.hidden = visibles > 0;
     }
 
-    $(document).on('input', '#pv-recherche', filtrer);
-    $(document).on('click', '.pv-onglet', function () {
-        document.querySelectorAll('.pv-onglet').forEach(o => o.setAttribute('aria-pressed', String(o === this)));
+    document.addEventListener('input', evenement => {
+        if (evenement.target.closest('#pv-recherche')) filtrer();
+    });
+    document.addEventListener('click', evenement => {
+        const bouton = evenement.target.closest('.pv-onglet');
+        if (!bouton) return;
+        document.querySelectorAll('.pv-onglet').forEach(o => o.setAttribute('aria-pressed', String(o === bouton)));
         filtrer();
     });
 
     // ===== L'enregistrement =====
-    function envoyer(donnees, message, boutons, deplies) {
-        boutons.prop('disabled', true);
-        message.removeClass('error').text('Enregistrement…');
-        $.ajax({ url: 'actions/pv.php', method: 'POST', data: donnees, processData: false, contentType: false, dataType: 'json' })
-            .done(reponse => {
+    /**
+     * Poste à actions/pv.php et rend sa réponse JSON. Un refus du serveur, une réponse qui
+     * n'est pas du JSON ou une panne du réseau rejettent avec le corps lu, ou null.
+     */
+    function poster(donnees) {
+        return fetch('actions/pv.php', { method: 'POST', body: donnees, credentials: 'same-origin' })
+            .then(async reponse => {
+                const corps = await reponse.json().catch(() => null);
+                if (!reponse.ok || corps === null) throw corps;
+                return corps;
+            }, () => { throw null; });
+    }
+
+    function envoyer(donnees, messages, boutons, deplies) {
+        boutons.forEach(bouton => { bouton.disabled = true; });
+        messages.forEach(message => {
+            message.classList.remove('error');
+            message.textContent = 'Enregistrement…';
+        });
+        poster(donnees)
+            .then(reponse => {
                 if (window.toast) window.toast(reponse.message || 'Enregistré.');
                 // Un bon déposé sur la réception matériel se lit tout de suite : commandes.js
                 // écoute cet événement et remplit la commande dans le volet rouvert.
@@ -103,66 +131,75 @@
                 const demande = donnees.get('demande');
                 recharger(deplies, bons.length ? () => document.dispatchEvent(
                     new CustomEvent('pv:bons-deposes', { detail: { demande, bons } })) : null);
-            })
-            .fail(xhr => {
-                message.addClass('error').text(xhr.responseJSON?.message || 'Enregistrement impossible. Réessayez.');
-                boutons.prop('disabled', false);
+            }, corps => {
+                messages.forEach(message => {
+                    message.classList.add('error');
+                    message.textContent = corps?.message || 'Enregistrement impossible. Réessayez.';
+                });
+                boutons.forEach(bouton => { bouton.disabled = false; });
             });
     }
 
-    $(document).on('submit', '.pv-form', function (event) {
-        event.preventDefault();
-        envoyer(new FormData(this), $(this).find('.pv-message'), $(this).find('.pv-enregistrer'), ouverts());
+    document.addEventListener('submit', evenement => {
+        const form = evenement.target.closest('.pv-form');
+        if (!form) return;
+        evenement.preventDefault();
+        envoyer(new FormData(form), form.querySelectorAll('.pv-message'), form.querySelectorAll('.pv-enregistrer'), ouverts());
     });
 
     // L'état choisi dans le menu de la cellule part tout seul : pas de formulaire à ouvrir.
-    $(document).on('click', '.pv-etat-choix', function () {
-        if (this.getAttribute('aria-checked') === 'true') return;
-        const declencheur = this.closest('.pv-cellule').querySelector('.pv-etat-declencheur');
+    document.addEventListener('click', evenement => {
+        const choix = evenement.target.closest('.pv-etat-choix');
+        if (!choix) return;
+        if (choix.getAttribute('aria-checked') === 'true') return;
+        const declencheur = choix.closest('.pv-cellule').querySelector('.pv-etat-declencheur');
         const donnees = new FormData();
-        donnees.set('csrf', this.dataset.csrf);
+        donnees.set('csrf', choix.dataset.csrf);
         donnees.set('operation', 'statut');
-        donnees.set('demande', this.dataset.demande);
-        donnees.set('type', this.dataset.type);
-        donnees.set('statut', this.dataset.statut);
-        donnees.set('revision', this.dataset.revision);
+        donnees.set('demande', choix.dataset.demande);
+        donnees.set('type', choix.dataset.type);
+        donnees.set('statut', choix.dataset.statut);
+        donnees.set('revision', choix.dataset.revision);
         declencheur.disabled = true;
-        $.ajax({ url: 'actions/pv.php', method: 'POST', data: donnees, processData: false, contentType: false, dataType: 'json' })
-            .done(reponse => {
+        poster(donnees)
+            .then(reponse => {
                 if (window.toast) window.toast(reponse.message || 'Enregistré.');
                 recharger(ouverts());
-            })
-            .fail(xhr => {
+            }, corps => {
                 declencheur.disabled = false;
-                if (window.toast) window.toast(xhr.responseJSON?.message || 'Changement impossible. Réessayez.', { erreur: true });
+                if (window.toast) window.toast(corps?.message || 'Changement impossible. Réessayez.', { erreur: true });
             });
     });
 
-    $(document).on('click', '.pv-retirer-document', async function () {
-        if (!await window.confirmer('Retirer « ' + this.dataset.nom + ' » ?', {
+    document.addEventListener('click', async evenement => {
+        const bouton = evenement.target.closest('.pv-retirer-document');
+        if (!bouton) return;
+        if (!await window.confirmer('Retirer « ' + bouton.dataset.nom + ' » ?', {
             texte: 'Le fichier sera supprimé.',
             action: 'Retirer',
             ton: 'danger',
         })) return;
-        const form = this.closest('.pv-form');
+        const form = bouton.closest('.pv-form');
         const donnees = new FormData();
         donnees.set('csrf', form.elements.csrf.value);
         donnees.set('operation', 'delete_document');
-        donnees.set('demande', this.dataset.demande);
-        donnees.set('type', this.dataset.type);
-        donnees.set('document', this.dataset.document);
-        envoyer(donnees, $(form).find('.pv-message'), $(this), ouverts());
+        donnees.set('demande', bouton.dataset.demande);
+        donnees.set('type', bouton.dataset.type);
+        donnees.set('document', bouton.dataset.document);
+        envoyer(donnees, form.querySelectorAll('.pv-message'), [bouton], ouverts());
     });
 
     // ===== Ce qu'on vient de choisir =====
     // Le bouton dit ce qui est sélectionné, et la liste des fichiers choisis s'affiche
     // dessous — avec une vignette pour les photos : rien ne confirme sinon qu'on a pris le
     // bon fichier avant d'avoir enregistré.
-    $(document).on('change', '.pv-ajout-input', function () {
-        const ajout = this.closest('.pv-ajout');
+    document.addEventListener('change', evenement => {
+        const champ = evenement.target.closest('.pv-ajout-input');
+        if (!champ) return;
+        const ajout = champ.closest('.pv-ajout');
         const texte = ajout.querySelector('.pv-ajout-texte');
-        const photos = this.name === 'photos[]';
-        const fichiers = Array.from(this.files || []);
+        const photos = champ.name === 'photos[]';
+        const fichiers = Array.from(champ.files || []);
         texte.textContent = !fichiers.length
             ? (photos ? 'Ajouter des photos' : 'Ajouter des documents')
             : (fichiers.length === 1 ? fichiers[0].name : fichiers.length + ' fichiers choisis');

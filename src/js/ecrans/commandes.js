@@ -17,8 +17,10 @@
         zone.querySelector('.commandes-scroll').hidden = lignes === 0;
     }
 
-    $(document).on('click', '.commandes-ajouter', function () {
-        const zone = bloc(this);
+    document.addEventListener('click', evenement => {
+        const cible = evenement.target.closest('.commandes-ajouter');
+        if (!cible) return;
+        const zone = bloc(cible);
         const gabarit = zone.querySelector('.commande-gabarit');
         // Le gabarit porte deux rangées — la commande et ses articles — et elles doivent
         // rester voisines : on clone le contenu entier, pas sa première ligne.
@@ -30,9 +32,11 @@
         ligne.querySelector('input').focus();
     });
 
-    $(document).on('click', '.commande-retirer', async function () {
-        const zone = bloc(this);
-        const ligne = this.closest('.commande-ligne');
+    document.addEventListener('click', async evenement => {
+        const cible = evenement.target.closest('.commande-retirer');
+        if (!cible) return;
+        const zone = bloc(cible);
+        const ligne = cible.closest('.commande-ligne');
         const numero = ligne.querySelector('[name="commande[numero][]"]').value.trim();
         // On ne demande confirmation que pour une ligne déjà remplie : retirer une ligne
         // qu'on vient d'ajouter par erreur ne mérite pas une question.
@@ -51,17 +55,21 @@
 
     // La seconde échéance se déplie à la demande : une commande arrive rarement en deux
     // fois, et le champ resterait vide sur toutes les lignes le reste du temps.
-    $(document).on('click', '.commande-plier-date', function () {
-        const cellule = this.closest('.commande-livraison');
+    document.addEventListener('click', evenement => {
+        const cible = evenement.target.closest('.commande-plier-date');
+        if (!cible) return;
+        const cellule = cible.closest('.commande-livraison');
         cellule.classList.add('est-depliee');
         cellule.querySelector('.commande-date-2e').focus();
     });
 
     // Une commande marquée reçue sans date de livraison laisse le suivi aveugle : on
     // propose celle du jour plutôt que de refuser l'enregistrement.
-    $(document).on('change', '[name="commande[statut][]"]', function () {
-        if (this.value !== 'complete') return;
-        const ligne = this.closest('.commande-ligne');
+    document.addEventListener('change', evenement => {
+        const cible = evenement.target.closest('[name="commande[statut][]"]');
+        if (!cible) return;
+        if (cible.value !== 'complete') return;
+        const ligne = cible.closest('.commande-ligne');
         const date = ligne.querySelector('[name="commande[date_bl][]"]');
         if (date && !date.value) date.value = new Date().toISOString().slice(0, 10);
     });
@@ -144,29 +152,35 @@
             .replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
-    $(document).on('click', '.commande-articles-bascule', function () {
-        const rang = this.closest('.commande-articles-rang');
+    document.addEventListener('click', evenement => {
+        const cible = evenement.target.closest('.commande-articles-bascule');
+        if (!cible) return;
+        const rang = cible.closest('.commande-articles-rang');
         const zone = rang.querySelector('.commande-articles');
-        const ouvert = this.getAttribute('aria-expanded') === 'true';
+        const ouvert = cible.getAttribute('aria-expanded') === 'true';
         if (!ouvert) rendre(rang);
         zone.hidden = ouvert;
-        this.setAttribute('aria-expanded', ouvert ? 'false' : 'true');
+        cible.setAttribute('aria-expanded', ouvert ? 'false' : 'true');
     });
 
-    $(document).on('input', '.commande-article-champ', function () {
-        const rang = this.closest('.commande-articles-rang');
-        const index = Number(this.closest('.commande-article').dataset.index);
+    document.addEventListener('input', evenement => {
+        const cible = evenement.target.closest('.commande-article-champ');
+        if (!cible) return;
+        const rang = cible.closest('.commande-articles-rang');
+        const index = Number(cible.closest('.commande-article').dataset.index);
         const liste = articles(rang);
         if (!liste[index]) return;
-        liste[index][this.dataset.champ] = this.classList.contains('commande-article-nombre')
-            ? nombre(this.value)
-            : this.value;
+        liste[index][cible.dataset.champ] = cible.classList.contains('commande-article-nombre')
+            ? nombre(cible.value)
+            : cible.value;
         // Sans redessiner : le curseur du champ en cours de frappe repartirait au début.
         champArticles(rang).value = JSON.stringify(liste);
     });
 
-    $(document).on('click', '.commande-article-ajouter', function () {
-        const rang = this.closest('.commande-articles-rang');
+    document.addEventListener('click', evenement => {
+        const cible = evenement.target.closest('.commande-article-ajouter');
+        if (!cible) return;
+        const rang = cible.closest('.commande-articles-rang');
         const liste = articles(rang);
         liste.push({reference_article: '', designation: '', unite: 'u', quantite_attendue: '', quantite_recue: ''});
         poser(rang, liste);
@@ -175,9 +189,11 @@
         champs[champs.length - 1].querySelector('input').focus();
     });
 
-    $(document).on('click', '.commande-article-retirer', function () {
-        const rang = this.closest('.commande-articles-rang');
-        const index = Number(this.closest('.commande-article').dataset.index);
+    document.addEventListener('click', evenement => {
+        const cible = evenement.target.closest('.commande-article-retirer');
+        if (!cible) return;
+        const rang = cible.closest('.commande-articles-rang');
+        const index = Number(cible.closest('.commande-article').dataset.index);
         const liste = articles(rang);
         liste.splice(index, 1);
         poser(rang, liste);
@@ -273,8 +289,10 @@
 
     // Le bouton de l'en-tête : il marche même quand aucune commande n'existe encore, ce
     // qui est le cas normal — on dépose le bon justement pour la créer.
-    $(document).on('click', '.commandes-lire-bons', async function () {
-        const zone = bloc(this);
+    document.addEventListener('click', async evenement => {
+        const cible = evenement.target.closest('.commandes-lire-bons');
+        if (!cible) return;
+        const zone = bloc(cible);
         const pdfs = documentsDuPv(zone);
         if (!pdfs.length) {
             zone.querySelector('.commandes-mot').textContent = 'Déposez d’abord le bon en PDF ci-dessous, puis enregistrez.';
@@ -289,7 +307,7 @@
             if (choix === null) return;
             if (choix !== 'tous') choisis = [pdfs[choix]];
         }
-        const bouton = this;
+        const bouton = cible;
         bouton.disabled = true;
         lireTous(zone, choisis).finally(() => { bouton.disabled = false; });
     });
@@ -306,8 +324,10 @@
     });
 
     // Le bouton sous une commande : relit un bon pour cette commande-là.
-    $(document).on('click', '.commande-lire-bon', async function () {
-        const rang = this.closest('.commande-articles-rang');
+    document.addEventListener('click', async evenement => {
+        const cible = evenement.target.closest('.commande-lire-bon');
+        if (!cible) return;
+        const rang = cible.closest('.commande-articles-rang');
         const mot = rang.querySelector('.commande-articles-mot');
         const pdfs = documentsDuPv(rang);
 
@@ -323,7 +343,7 @@
             choisi = pdfs[choix];
         }
 
-        const bouton = this;
+        const bouton = cible;
         bouton.disabled = true;
         mot.textContent = 'Lecture de ' + choisi.nom + '…';
 

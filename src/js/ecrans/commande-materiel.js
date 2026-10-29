@@ -23,6 +23,21 @@
         }
     }
 
+    /**
+     * Poste un formulaire encodé et rend la réponse JSON. Un refus du serveur, une réponse
+     * qui n'est pas du JSON ou une panne du réseau rejettent avec le corps lu, ou null.
+     */
+    function posterJson(url, donnees) {
+        const corps = new URLSearchParams();
+        Object.entries(donnees).forEach(([cle, valeur]) => corps.append(cle, valeur ?? ''));
+        return fetch(url, {method: 'POST', body: corps, credentials: 'same-origin'})
+            .then(async reponse => {
+                const lu = await reponse.json().catch(() => null);
+                if (!reponse.ok || lu === null) throw lu;
+                return lu;
+            }, () => { throw null; });
+    }
+
     // ------------------------------------------------------------- LES MANQUES SIGNALÉS
     //
     // L'atelier signale, l'encadrement fait avancer : vu, puis traité. Un manque traité
@@ -37,20 +52,16 @@
         pastille.hidden = nouveaux === 0;
     }
 
-    $(document).on('click', '.materiel-manque [data-traiter]', function () {
-        const bouton = this;
+    document.addEventListener('click', evenement => {
+        const bouton = evenement.target.closest('.materiel-manque [data-traiter]');
+        if (!bouton) return;
         const ligne = bouton.closest('.materiel-manque');
         const section = bouton.closest('.materiel-manques');
         const statut = bouton.dataset.traiter;
         ligne.querySelectorAll('button').forEach(b => { b.disabled = true; });
 
-        $.ajax({
-            url: 'actions/traiter_manque.php',
-            method: 'POST',
-            data: { csrf: section.dataset.csrf, manque: ligne.dataset.manque, statut },
-            dataType: 'json',
-        })
-            .done(reponse => {
+        posterJson('actions/traiter_manque.php', { csrf: section.dataset.csrf, manque: ligne.dataset.manque, statut })
+            .then(reponse => {
                 if (statut === 'traitee') {
                     ligne.remove();
                     const restants = section.querySelectorAll('.materiel-manque').length;
@@ -73,16 +84,16 @@
                     ligne.querySelectorAll('button').forEach(b => { b.disabled = false; });
                 }
                 majPastilleManques();
-            })
-            .fail(xhr => {
+            }, lu => {
                 ligne.querySelectorAll('button').forEach(b => { b.disabled = false; });
-                bouton.title = xhr.responseJSON?.message || 'Opération impossible. Réessayez.';
+                bouton.title = lu?.message || 'Opération impossible. Réessayez.';
                 window.alerte(bouton.title, { ton: 'danger' });
             });
     });
 
     // Le résumé des onglets annonce les manques ; ils vivent sous les bons, et le clic y mène.
-    $(document).on('click', PAGE + ' [data-manques-lien]', () => {
+    document.addEventListener('click', evenement => {
+        if (!evenement.target.closest(PAGE + ' [data-manques-lien]')) return;
         document.getElementById('materiel-manques')?.scrollIntoView({behavior: 'smooth', block: 'start'});
     });
 
@@ -133,20 +144,27 @@
         if (vide) vide.hidden = visibles > 0 || !zone.querySelector('.materiel-rang');
     }
 
-    $(document).on('input', '#materiel-filtre-recherche', filtrer);
-    $(document).on('click', '.materiel-onglet', function () {
-        document.querySelectorAll('.materiel-onglet').forEach(o => o.setAttribute('aria-pressed', String(o === this)));
+    document.addEventListener('input', evenement => {
+        if (evenement.target.closest('#materiel-filtre-recherche')) filtrer();
+    });
+    document.addEventListener('click', evenement => {
+        const bouton = evenement.target.closest('.materiel-onglet');
+        if (!bouton) return;
+        document.querySelectorAll('.materiel-onglet').forEach(o => o.setAttribute('aria-pressed', String(o === bouton)));
         filtrer();
     });
 
     // « Actualiser », comme sur les PV : l'écran se recharge, sa recherche et son onglet avec.
-    $(document).on('click', '.materiel-refresh', function () {
+    document.addEventListener('click', evenement => {
+        if (!evenement.target.closest('.materiel-refresh')) return;
         const zone = page();
         const recherche = zone?.querySelector('#materiel-filtre-recherche')?.value || '';
         const etat = zone?.querySelector('.materiel-onglet[aria-pressed="true"]')?.dataset.etat || '';
-        $('#content').load('pages/commande_materiel.php', function (_, statut) {
-            if (statut === 'error') {
-                $(this).text('Impossible de recharger cet écran. Actualisez la page.');
+        const contenu = document.getElementById('content');
+        if (!contenu) return;
+        window.chargerDans(contenu, 'pages/commande_materiel.php').then(({ ok }) => {
+            if (!ok) {
+                contenu.textContent = 'Impossible de recharger cet écran. Actualisez la page.';
                 return;
             }
             const champ = document.getElementById('materiel-filtre-recherche');
@@ -398,8 +416,12 @@
         zone.querySelector('.materiel-recevoir thead').hidden = visibles === 0;
     }
 
-    $(document).on('change', '.materiel-reception input[name="materiel-vue"]', filtrerReception);
-    $(document).on('input', '.materiel-reception-recherche input', filtrerReception);
+    document.addEventListener('change', evenement => {
+        if (evenement.target.closest('.materiel-reception input[name="materiel-vue"]')) filtrerReception();
+    });
+    document.addEventListener('input', evenement => {
+        if (evenement.target.closest('.materiel-reception-recherche input')) filtrerReception();
+    });
 
     // ----- Le pointage -----
     //
@@ -418,17 +440,12 @@
         if (!id || !Object.keys(lot).length) return;
 
         const mot = fenetre.querySelector('.materiel-message');
-        $.ajax({
-            url: 'actions/receptionner_bon_materiel.php',
-            method: 'POST',
-            data: {
-                csrf: fenetre.querySelector('[name="csrf"]').value,
-                document: id,
-                lignes: JSON.stringify(lot),
-            },
-            dataType: 'json',
+        posterJson('actions/receptionner_bon_materiel.php', {
+            csrf: fenetre.querySelector('[name="csrf"]').value,
+            document: id,
+            lignes: JSON.stringify(lot),
         })
-            .done(reponse => {
+            .then(reponse => {
                 rafraichirRang(reponse.document);
                 poserEntete(reponse.document);
                 // Ce que le serveur a retenu fait foi — qui a pointé, et quand. Les lignes
@@ -439,11 +456,10 @@
                     if (tr) dire(tr, !!ligne.recu, ligne.recu_court, ligne.recu_le);
                 });
                 majReception();
-            })
-            .fail(xhr => {
+            }, lu => {
                 // Le pointage n'est pas passé : on le dit, et l'écran revient à ce que le
                 // serveur sait — rouvrir le bon le relira.
-                mot.textContent = xhr.responseJSON?.message || 'Pointage impossible. Réessayez.';
+                mot.textContent = lu?.message || 'Pointage impossible. Réessayez.';
             });
     }
 
@@ -458,19 +474,24 @@
 
     // Toute la ligne coche — sauf quand on vient d'y sélectionner du texte, pour copier
     // une référence : ce glisser-là n'est pas un pointage.
-    $(document).on('click', '.materiel-article', function (event) {
-        if (!event.target.closest('.materiel-case') && String(window.getSelection() || '').trim()) return;
-        pointer(this, !this.classList.contains('est-recue'));
+    document.addEventListener('click', evenement => {
+        const tr = evenement.target.closest('.materiel-article');
+        if (!tr) return;
+        if (!evenement.target.closest('.materiel-case') && String(window.getSelection() || '').trim()) return;
+        pointer(tr, !tr.classList.contains('est-recue'));
         majReception();
     });
 
-    $(document).on('click', '.materiel-groupe-tout', function () {
-        this.closest('.materiel-groupe').querySelectorAll('.materiel-article:not(.est-recue)')
+    document.addEventListener('click', evenement => {
+        const bouton = evenement.target.closest('.materiel-groupe-tout');
+        if (!bouton) return;
+        bouton.closest('.materiel-groupe').querySelectorAll('.materiel-article:not(.est-recue)')
             .forEach(tr => pointer(tr, true));
         majReception();
     });
 
-    $(document).on('click', '.materiel-tout-recu', async function () {
+    document.addEventListener('click', async evenement => {
+        if (!evenement.target.closest('.materiel-tout-recu')) return;
         const lignes = [...dialogue().querySelectorAll('.materiel-article')];
         const recu = !lignes.every(tr => tr.classList.contains('est-recue'));
         // Tout décocher efface les dates de réception de toute la commande : on le
@@ -505,27 +526,33 @@
         });
     }
 
-    $(document).on('click', '.materiel-edition-ligne td', function (event) {
-        if (event.target.closest('button, label, a')) return;
-        if (event.target.closest('.materiel-champ:not([readonly])')) return;
+    document.addEventListener('click', evenement => {
+        const td = evenement.target.closest('.materiel-edition-ligne td');
+        if (!td) return;
+        if (evenement.target.closest('button, label, a')) return;
+        if (evenement.target.closest('.materiel-champ:not([readonly])')) return;
         fermerCases(null);
-        ouvrirCase(this);
+        ouvrirCase(td);
     });
 
     // Entrée ou Échap valent sortie : il n'y a rien à confirmer ligne par ligne, c'est
     // « Enregistrer » qui écrit.
-    $(document).on('blur', '.materiel-champ', function () {
-        this.readOnly = true;
+    document.addEventListener('focusout', evenement => {
+        const champ = evenement.target.closest('.materiel-champ');
+        if (champ) champ.readOnly = true;
     });
 
-    $(document).on('keydown', '.materiel-champ', function (event) {
-        if (event.key !== 'Enter' && event.key !== 'Escape') return;
-        event.preventDefault();
-        this.readOnly = true;
-        this.blur();
+    document.addEventListener('keydown', evenement => {
+        const champ = evenement.target.closest('.materiel-champ');
+        if (!champ) return;
+        if (evenement.key !== 'Enter' && evenement.key !== 'Escape') return;
+        evenement.preventDefault();
+        champ.readOnly = true;
+        champ.blur();
     });
 
-    $(document).on('click', '.materiel-ajouter', function () {
+    document.addEventListener('click', evenement => {
+        if (!evenement.target.closest('.materiel-ajouter')) return;
         const rangee = ajouterLigne(null, false);
         compterLignes();
         // Elle est vide : inutile de cliquer encore pour commencer à la remplir.
@@ -536,14 +563,18 @@
         }
     });
 
-    $(document).on('click', '.materiel-retirer', function () {
-        this.closest('.materiel-edition-ligne').remove();
+    document.addEventListener('click', evenement => {
+        const bouton = evenement.target.closest('.materiel-retirer');
+        if (!bouton) return;
+        bouton.closest('.materiel-edition-ligne').remove();
         compterLignes();
     });
 
     // Une ligne qu'on vient de corriger n'est plus celle dont la lecture doutait.
-    $(document).on('input', '.materiel-champ', function () {
-        this.closest('.materiel-edition-ligne').removeAttribute('title');
+    document.addEventListener('input', evenement => {
+        const champ = evenement.target.closest('.materiel-champ');
+        if (!champ) return;
+        champ.closest('.materiel-edition-ligne').removeAttribute('title');
     });
 
     // ----- L'en-tête et l'ouverture -----
@@ -653,15 +684,18 @@
         }
     }
 
-    $(document).on('click', '.materiel-ouvrir', function () {
-        ouvrir(this.dataset.document);
+    document.addEventListener('click', evenement => {
+        const bouton = evenement.target.closest('.materiel-ouvrir');
+        if (bouton) ouvrir(bouton.dataset.document);
     });
 
     // Depuis la fiche d'une demande : on bascule sur l'écran, puis on ouvre le bon. La
     // page arrive en AJAX, d'où l'attente — même geste que « Voir les affectations ».
-    $(document).on('click', '.btn-goto-commande-materiel', function () {
-        const id = this.dataset.document;
-        $('#btn-commande-materiel').trigger('click');
+    document.addEventListener('click', evenement => {
+        const bouton = evenement.target.closest('.btn-goto-commande-materiel');
+        if (!bouton) return;
+        const id = bouton.dataset.document;
+        document.getElementById('btn-commande-materiel')?.click();
         if (!id) return;
         const attente = setInterval(() => {
             if (!rang(id)) return;
@@ -719,22 +753,23 @@
         message.textContent = bouton.classList.contains('materiel-relire')
             ? 'Lecture du bon…' : 'Enregistrement…';
 
-        $.ajax({url: 'actions/' + url, method: 'POST', data: donnees, dataType: 'json'})
-            .done(reponse => {
+        posterJson('actions/' + url, donnees)
+            .then(reponse => {
                 message.textContent = reponse.message || '';
                 rafraichirRang(reponse.document);
                 apres(reponse);
+            }, lu => {
+                message.textContent = lu?.message || 'Opération impossible. Réessayez.';
             })
-            .fail(xhr => {
-                message.textContent = xhr.responseJSON?.message || 'Opération impossible. Réessayez.';
-            })
-            .always(() => {
+            .finally(() => {
                 bouton.disabled = false;
                 bouton.textContent = libelle;
             });
     }
 
-    $(document).on('click', '.materiel-relire', async function () {
+    document.addEventListener('click', async evenement => {
+        const bouton = evenement.target.closest('.materiel-relire');
+        if (!bouton) return;
         const fenetre = dialogue();
         const id = fenetre.querySelector('[name="document"]').value;
         if (!id) return;
@@ -749,16 +784,18 @@
         envoyer('lire_bon_materiel.php', {
             csrf: fenetre.querySelector('[name="csrf"]').value,
             document: id,
-        }, this, reponse => {
+        }, bouton, reponse => {
             poserEntete(reponse.document);
             remplirArticles(reponse.document);
         });
     });
 
-    $(document).on('submit', '#materiel-form', async function (event) {
-        event.preventDefault();
+    document.addEventListener('submit', async evenement => {
+        const form = evenement.target.closest('#materiel-form');
+        if (!form) return;
+        evenement.preventDefault();
         const fenetre = dialogue();
-        const bouton = event.originalEvent?.submitter || this.querySelector('.materiel-enregistrer');
+        const bouton = evenement.submitter || form.querySelector('.materiel-enregistrer');
         const valider = bouton.value === '1';
         // Valider engage la commande pour de bon : on le dit avant, pas après.
         if (valider && !await window.confirmer('Valider la commande ?', {
@@ -767,8 +804,8 @@
         })) return;
 
         envoyer('save_bon_materiel.php', {
-            csrf: this.elements.csrf.value,
-            document: this.elements.document.value,
+            csrf: form.elements.csrf.value,
+            document: form.elements.document.value,
             lignes: JSON.stringify(lignesSaisies()),
             valider: valider ? '1' : '0',
         }, bouton, reponse => {
