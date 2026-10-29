@@ -1206,28 +1206,6 @@ html body:has(.prefa-detail-row:not([hidden]) > td > .prefa-table-detail)::befor
     color: var(--text-muted);
 }
 
-/* Où en est la lecture : une puce et un mot. La couleur ne porte jamais l'information
-   seule — les quatre états se lisent en toutes lettres. */
-.materiel-etat {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    white-space: nowrap;
-}
-
-.materiel-etat::before {
-    content: '';
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: currentColor;
-}
-
-.materiel-etat-a_lire { color: var(--text-muted); }
-.materiel-etat-a_verifier { color: var(--attente-texte); }
-.materiel-etat-verifie { color: var(--succes-texte); }
-.materiel-etat-echec { color: var(--danger-texte); }
-
 .btn-goto-commande-materiel {
     height: var(--ctrl-sm);
     padding: 0 12px;

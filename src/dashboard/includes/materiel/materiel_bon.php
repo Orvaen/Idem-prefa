@@ -103,7 +103,7 @@ function materielTousLesBons(PDO $db): array
                                doc.date_lecture, doc.numero_commande, doc.date_commande,
                                doc.date_verification,
                                TRIM(CONCAT(v.prenom, ' ', v.name)) AS verificateur,
-                               d.nom_affaire, d.id_statut,
+                               d.nom_affaire, d.id_statut, d.urgent,
                                TRIM(CONCAT(u.prenom, ' ', u.name)) AS demandeur
         FROM demande_materiel_documents doc
         JOIN demande_prefabrication d ON d.id = doc.id_demande

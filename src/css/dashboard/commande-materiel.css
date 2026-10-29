@@ -20,35 +20,69 @@
     white-space: nowrap;
 }
 
+/* Le bon déposé : un lien à la couleur de sa colonne (« prefa-secondaire », comme le
+   demandeur sur les PV), à la taille du reste de la ligne. Il était en 12 px, blanc et
+   gras, et c'était la cellule la plus visible d'un tableau où elle compte le moins. */
 .materiel-liste .materiel-fichier {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
+    display: inline-block;
+    overflow: hidden;
     max-width: 260px;
-    padding: 4px 6px;
-    border-radius: var(--r-sm);
-    color: var(--text);
-    text-decoration: none;
+    color: inherit;
+    font-size: inherit;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 3px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    vertical-align: middle;
 }
 
 .materiel-liste .materiel-fichier:hover {
-    background: var(--hover);
+    color: var(--text);
+    text-decoration-color: currentColor;
 }
 
-.materiel-liste .materiel-fichier strong {
-    display: block;
-    overflow: hidden;
-    font-weight: 400;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+/* Le signe des groupes, par état : l'ambre de ce qui attend vient de pv.css ; le reste
+   prend la couleur de son sens. */
+.materiel-liste-groupe[data-etat="a_lire"] .pv-etat-icone {
+    color: var(--text-muted);
 }
 
-/* La pastille d'état, le numéro et la date sont habillés par prefa-list.css, que tous les
-   rôles reçoivent : la fiche d'une demande les montre aussi. */
+.materiel-liste-groupe[data-etat="verifie"] .pv-etat-icone {
+    color: var(--succes-texte);
+}
 
-.materiel-aucun-resultat {
+.materiel-liste-groupe[data-etat="echec"] .pv-etat-icone {
+    color: var(--danger-texte);
+}
+
+/* L'annonce des manques, dans le résumé des onglets : un bouton qui se lit comme le texte
+   à côté de lui, à la couleur d'alerte que prefa-list.css donne à « est-a-traiter ». */
+.materiel-vers-manques {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
     margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    cursor: pointer;
 }
+
+.materiel-vers-manques:hover span {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.materiel-vers-manques:focus-visible {
+    border-radius: var(--r-sm);
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* Le numéro et la date sont habillés par prefa-list.css, que tous les rôles reçoivent :
+   la fiche d'une demande les montre aussi. */
 
 /* ==========================================================================
    LE VOLET D'UN BON
@@ -571,11 +605,13 @@ html .materiel-volet-rang .materiel-article.est-recue td {
    LES MANQUES SIGNALÉS PAR L'ATELIER
    ==========================================================================
 
-   Au-dessus des bons : c'est ce qui attend une action. Un titre de section, puis un
+   Sous les bons : l'écran garde l'ordre des autres listes — titre, recherche, onglets,
+   tableau —, et le résumé des onglets annonce les manques. Un titre de section, puis un
    tableau à même la surface, comme « Matériel signalé » chez le soudeur. */
 
 #materiel-page .materiel-manques {
-    margin-bottom: 28px;
+    margin-top: 32px;
+    scroll-margin-top: 16px;
 }
 
 html #materiel-page .materiel-manques h2 {
@@ -601,6 +637,13 @@ html #materiel-page .materiel-manques-table td:not(:first-child) {
     white-space: nowrap;
 }
 
+/* L'en-tête de la première colonne réserve la place de l'urgence (prefa-list.css) ; un
+   manque n'en a pas, et « Article » tombait 22 px à droite de ses articles. L'en-tête
+   suit sa colonne. */
+html #materiel-page .materiel-manques-table thead th:first-child {
+    padding-left: 12px;
+}
+
 html #materiel-page .materiel-manques-table td.materiel-manque-article {
     min-width: 260px;
     max-width: none;
@@ -619,47 +662,24 @@ html #materiel-page .materiel-manque-date {
     font-size: 12px;
 }
 
-#materiel-page .materiel-manque-actions {
-    text-align: right;
+/* Les commandes de ligne sont celles de la liste des demandes (« prefa-decision ») : 24 px,
+   l'issue au plein comme « Valider », l'autre au contour. Elles avaient ici leur propre
+   bouton de 28 px, poussé à droite, loin de l'en-tête « Actions ». */
+#materiel-page .materiel-manque-actions .prefa-decision {
+    margin-right: 0;
 }
 
-/* Deux commandes de ligne, à la hauteur des contrôles de tableau (DA, § 4). « Traité »
-   est l'issue : il porte le plein. */
-html #materiel-page .materiel-manque-bouton {
-    display: inline-flex;
-    align-items: center;
-    height: var(--h-md);
-    margin: 0 0 0 6px;
-    padding: 0 10px;
-    border: 1px solid var(--border) !important;
-    border-radius: var(--r-md);
-    background: var(--surface) !important;
-    color: var(--text) !important;
-    font: inherit;
-    font-size: 12px;
-    cursor: pointer;
+/* L'état d'un manque, comme celui d'un PV : un signe et un mot. Les deux signes sont dans
+   la cellule ; data-statut, que « Marquer vu » change, choisit lequel se montre. */
+.materiel-manque[data-statut="nouvelle"] .materiel-manque-signe-vue,
+.materiel-manque[data-statut="vue"] .materiel-manque-signe-nouvelle {
+    display: none;
 }
 
-html #materiel-page .materiel-manque-bouton:hover:not(:disabled) {
-    background: var(--hover) !important;
+.materiel-manque[data-statut="nouvelle"] .pv-etat-icone {
+    color: var(--attente-texte);
 }
 
-html #materiel-page .materiel-manque-bouton.est-principal {
-    border-color: var(--bouton-plein) !important;
-    background: var(--bouton-plein) !important;
-    color: var(--bouton-plein-texte) !important;
-}
-
-html #materiel-page .materiel-manque-bouton.est-principal:hover:not(:disabled) {
-    background: var(--bouton-plein-hover) !important;
-}
-
-html #materiel-page .materiel-manque-bouton:disabled {
-    opacity: .55;
-    cursor: progress;
-}
-
-.pv-puce-vue {
-    background: var(--accent-fond, var(--selection-fond));
+.materiel-manque[data-statut="vue"] .pv-etat-icone {
     color: var(--accent-texte);
 }

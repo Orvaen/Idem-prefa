@@ -14,28 +14,247 @@ unset($bon);
 
 $etats = materielEtats();
 
+// Les bons rangés par état, dans l'ordre des onglets : un titre de groupe par état, comme
+// les PV et la liste des demandes. Tous les groupes sont écrits, même vides : valider un
+// bon le fait changer de groupe sans recharger l'écran, et il lui faut où aller.
+$parEtat = array_fill_keys(array_keys($etats), []);
+foreach ($bons as $bon) $parEtat[materielEtat($bon)][] = $bon;
+
+$aidesEtat = [
+    'a_lire' => 'lecture pas encore lancée',
+    'a_verifier' => 'lus, à relire avant de valider',
+    'verifie' => 'commandes engagées, réception à pointer',
+    'echec' => 'le bon n’a pas pu être lu',
+];
+
+/** Le signe d'un état, dans le vocabulaire des PV et des demandes : pointillé qui attend, coche, croix. */
+$iconeEtat = static function (string $etat): string {
+    return match ($etat) {
+        'verifie' => '<svg class="pv-etat-icone" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">'
+            . '<circle cx="8" cy="8" r="7" fill="currentColor" />'
+            . '<path d="m5 8.2 2 2 4-4.2" fill="none" stroke="var(--surface)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>',
+        'echec' => '<svg class="pv-etat-icone" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">'
+            . '<circle cx="8" cy="8" r="7" fill="currentColor" />'
+            . '<path d="m5.6 5.6 4.8 4.8M10.4 5.6l-4.8 4.8" stroke="var(--surface)" stroke-width="1.8" stroke-linecap="round" /></svg>',
+        default => '<svg class="pv-etat-icone" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">'
+            . '<circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-dasharray="2.6 2.1" /></svg>',
+    };
+};
+
 // Ce que l'atelier a signalé et que personne n'a encore traité.
 $manques = $canManageWorkshop ? manquesATraiter($db) : [];
 $motifs = manquesMotifs();
 $etatsManque = manquesEtats();
 
+// Les deux signes d'un manque : il attend, ou quelqu'un l'a vu. Les deux sont écrits, et
+// la feuille montre celui de l'état de la ligne — « Marquer vu » change l'état sans
+// redessiner la cellule.
+$iconesManque = '<svg class="pv-etat-icone materiel-manque-signe-nouvelle" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">'
+    . '<circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-dasharray="2.6 2.1" /></svg>'
+    . '<svg class="pv-etat-icone materiel-manque-signe-vue" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">'
+    . '<circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.6" />'
+    . '<path d="M8 4a4 4 0 0 1 0 8z" fill="currentColor" /></svg>';
+
 ?>
-<section class="page prefa-page prefa-list atelier-page" id="materiel-page" aria-labelledby="materiel-page-title">
+<section class="page prefa-page prefa-list atelier-page" id="materiel-page" aria-labelledby="materiel-page-title" data-densite="confortable">
     <div class="prefa-shell">
 
+        <?php // L'en-tête des listes : le titre à gauche, la densité et « Actualiser » à droite,
+              // comme les PV et les demandes. ?>
         <header class="prefa-heading prefa-list-heading">
             <div>
                 <h1 id="materiel-page-title">Commande matériel</h1>
                 <p>Les bons déposés sur les demandes, et les articles qu’ils commandent. La lecture propose, vous corrigez.</p>
             </div>
+            <div class="prefa-vue-outils">
+                <div class="prefa-densite" role="group" aria-label="Densité du tableau">
+                    <button type="button" class="prefa-densite-choix" data-densite="confortable"
+                            aria-pressed="true" aria-label="Lignes confortables" title="Lignes confortables">
+                        <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true">
+                            <rect x="2" y="3" width="12" height="2.6" rx="1" />
+                            <rect x="2" y="6.7" width="12" height="2.6" rx="1" />
+                            <rect x="2" y="10.4" width="12" height="2.6" rx="1" />
+                        </svg>
+                    </button>
+                    <button type="button" class="prefa-densite-choix" data-densite="compact"
+                            aria-pressed="false" aria-label="Lignes compactes" title="Lignes compactes">
+                        <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true">
+                            <rect x="2" y="2.6" width="12" height="1.6" rx=".8" />
+                            <rect x="2" y="5.6" width="12" height="1.6" rx=".8" />
+                            <rect x="2" y="8.6" width="12" height="1.6" rx=".8" />
+                            <rect x="2" y="11.6" width="12" height="1.6" rx=".8" />
+                        </svg>
+                    </button>
+                </div>
+                <button type="button" class="materiel-refresh pv-outil">
+                    <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-2l2 3M4 16l2 3a7 7 0 0 1 12-2" />
+                    </svg>
+                    Actualiser
+                </button>
+            </div>
         </header>
 
-        <?php // Les manques signalés par l'atelier, au-dessus des bons : c'est ce qui attend
-              // une action, et un soudeur arrêté faute d'une bride passe avant une relecture
-              // de bon. La section n'existe que s'il y a quelque chose à traiter. ?>
+        <?php // La barre de la maison, juste sous le titre : la recherche à loupe, puis un
+              // onglet par état avec son compte. ?>
+        <div class="prefa-filters" role="search">
+            <div class="filtres-recherche">
+                <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+                <input id="materiel-filtre-recherche" type="search" autocomplete="off" aria-label="Rechercher un bon"
+                       placeholder="Demande, affaire, commande…">
+            </div>
+        </div>
+
+        <div class="prefa-onglets-barre">
+            <div class="prefa-onglets" role="group" aria-label="État des bons">
+                <button type="button" class="prefa-onglet materiel-onglet" data-etat="" aria-pressed="true">
+                    Tous <span class="prefa-onglet-compte"><?= count($bons) ?></span>
+                </button>
+                <?php foreach ($etats as $valeur => $libelle): ?>
+                    <?php // Un état qu'aucun bon ne porte n'a rien à filtrer : « Lecture
+                          // impossible » ne s'affiche que s'il y en a une. ?>
+                    <?php if ($valeur === 'echec' && !$parEtat[$valeur]) continue; ?>
+                    <button type="button" class="prefa-onglet materiel-onglet" data-etat="<?= prefaEscape($valeur) ?>" aria-pressed="false">
+                        <?= prefaEscape($libelle) ?> <span class="prefa-onglet-compte"><?= count($parEtat[$valeur]) ?></span>
+                    </button>
+                <?php endforeach; ?>
+            </div>
+            <p class="prefa-list-summary">
+                <?php // Les manques vivent sous les bons, à leur place dans l'ordre des listes ;
+                      // ce qui les annonce est ici, à la couleur de ce qui attend, comme les
+                      // « PV à faire ». Un clic y descend. ?>
+                <?php if ($manques): ?>
+                    <button type="button" class="materiel-vers-manques est-a-traiter" data-manques-lien>
+                        <strong data-manques-compte><?= count($manques) ?></strong>
+                        <span data-manques-mot><?= count($manques) === 1 ? 'manque à traiter' : 'manques à traiter' ?></span>
+                    </button>
+                <?php endif; ?>
+                <span><strong id="materiel-compte"><?= count($bons) ?></strong>
+                <span id="materiel-compte-libelle"><?= count($bons) === 1 ? 'bon de commande' : 'bons de commande' ?></span></span>
+            </p>
+        </div>
+
+        <div class="prefa-table-scroll" role="region" aria-label="Bons de commande" tabindex="0">
+            <table class="prefa-table materiel-liste">
+                <thead>
+                    <tr>
+                        <th scope="col">Demande n°</th>
+                        <th scope="col" class="prefa-affaire">Affaire</th>
+                        <th scope="col">Bon déposé</th>
+                        <th scope="col">N° de commande</th>
+                        <th scope="col">Livraison</th>
+                        <th scope="col" class="prefa-nombre">Reçus</th>
+                        <th scope="col">Actions</th>
+                    </tr>
+                </thead>
+
+                <?php if (!$bons): ?>
+                    <tbody><tr><td colspan="7" class="prefa-table-empty">
+                        Aucun bon de commande déposé. Le bon se dépose sur la demande, dans ses documents.
+                    </td></tr></tbody>
+                <?php endif; ?>
+
+                <?php foreach ($parEtat as $cleEtat => $bonsDuGroupe): ?>
+                    <tbody class="prefa-groupe materiel-liste-groupe" data-etat="<?= prefaEscape($cleEtat) ?>"<?= $bonsDuGroupe ? '' : ' hidden' ?>>
+                        <tr>
+                            <th scope="colgroup" colspan="7">
+                                <span class="prefa-groupe-nom prefa-groupe-statut">
+                                    <?= $iconeEtat($cleEtat) ?>
+                                    <?= prefaEscape($etats[$cleEtat]) ?>
+                                </span>
+                                <span class="prefa-groupe-compte"><?= count($bonsDuGroupe) ?></span>
+                                <span class="prefa-groupe-aide"><?= prefaEscape($aidesEtat[$cleEtat]) ?></span>
+                            </th>
+                        </tr>
+                    </tbody>
+
+                    <?php foreach ($bonsDuGroupe as $bon):
+                        $id = (int) $bon['id'];
+                        $idDemande = (int) $bon['id_demande'];
+                        $recherche = mb_strtolower(prefaReferenceComplete($idDemande) . ' ' . $idDemande . ' '
+                            . ($bon['nom_affaire'] ?? '') . ' ' . ($bon['numero_commande'] ?? '') . ' ' . $bon['nom']);
+                        // La référence de la demande voyage dans l'adresse, pas son
+                        // identifiant technique : elle s'affiche au survol du lien et dans
+                        // l'onglet d'aperçu.
+                        $url = 'actions/download_materiel.php?ref=' . rawurlencode(prefaReference($idDemande))
+                            . '&file=' . rawurlencode((string) $id);
+                        ['recus' => $recus, 'total' => $total] = materielRecus($bon);
+                    ?>
+                        <tbody class="prefa-request materiel-rang<?= !empty($bon['urgent']) ? ' is-urgent-pending' : '' ?>"
+                            id="materiel-bon-<?= $id ?>"
+                            data-document="<?= $id ?>"
+                            data-recherche="<?= prefaEscape($recherche) ?>"
+                            data-etat="<?= prefaEscape($cleEtat) ?>"
+                            data-demande="<?= prefaEscape(prefaReferenceComplete($idDemande)) ?>"
+                            data-fichier="<?= prefaEscape($url) ?>"
+                            data-nom="<?= prefaEscape($bon['nom']) ?>"
+                            data-bon="<?= prefaEscape(json_encode(materielPayload($bon), JSON_UNESCAPED_UNICODE)) ?>">
+                            <tr>
+                                <?php // La place de l'urgence est réservée sur toutes les lignes :
+                                      // c'est elle qui aligne la référence sous son en-tête. ?>
+                                <td class="prefa-reference">
+                                    <span class="prefa-urgence">
+                                        <?php if (!empty($bon['urgent'])): ?>
+                                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                                                stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Urgente">
+                                                <title>Demande urgente</title>
+                                                <path d="M13 3 4.5 13.5H11l-1 7.5 8.5-10.5H12z" />
+                                            </svg>
+                                        <?php endif; ?>
+                                    </span><?= prefaEscape(prefaReference($idDemande)) ?>
+                                </td>
+                                <td class="prefa-affaire"><?= prefaEscape($bon['nom_affaire'] ?: '—') ?></td>
+                                <td class="prefa-secondaire">
+                                    <a class="prefa-pdf-link materiel-fichier"
+                                       href="<?= prefaEscape($url) ?>"
+                                       data-name="<?= prefaEscape($bon['nom']) ?>"
+                                       aria-haspopup="dialog"><?= prefaEscape($bon['nom']) ?></a>
+                                </td>
+                                <td class="materiel-cellule-numero">
+                                    <?php if ($bon['numero_commande']): ?>
+                                        <span class="materiel-numero"><?= prefaEscape($bon['numero_commande']) ?></span>
+                                    <?php else: ?>
+                                        <span class="materiel-vide">—</span>
+                                    <?php endif; ?>
+                                </td>
+                                <?php // L'échéance du bon, pas celle de chacune de ses lignes : seize fois
+                                      // la même date ne dit rien, deux dates distinctes disent que la
+                                      // commande arrive en deux fois. ?>
+                                <td class="materiel-cellule-livraison">
+                                    <?php $echeances = materielEcheancesTexte($bon); ?>
+                                    <?= $echeances !== '' ? prefaEscape($echeances) : '<span class="materiel-vide">—</span>' ?>
+                                </td>
+                                <?php // « 1/5 » dit à la fois combien d'articles et combien sont arrivés :
+                                      // la colonne « Articles » le répétait. ?>
+                                <td class="prefa-nombre materiel-cellule-recus">
+                                    <?= $total ? prefaEscape($recus . '/' . $total) : '<span class="materiel-vide">—</span>' ?>
+                                </td>
+                                <?php // L'état n'a plus sa colonne : le groupe le dit, comme sur la liste
+                                      // des demandes. Le bouton est celui des PV — au contour, à la
+                                      // hauteur d'un contrôle de ligne. ?>
+                                <td class="prefa-actions">
+                                    <span class="prefa-decision">
+                                        <button type="button" class="prefa-ligne-contour materiel-ouvrir" data-document="<?= $id ?>"
+                                                aria-haspopup="dialog" title="<?= prefaEscape(materielResume($bon)) ?>">Détails</button>
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    <?php endforeach; ?>
+                <?php endforeach; ?>
+
+                <tbody class="materiel-aucun-resultat" hidden>
+                    <tr><td colspan="7" class="prefa-table-empty">Aucun bon ne correspond à cette recherche.</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <?php // Les manques signalés par l'atelier : une seconde section de la liste, comme
+              // « Matériel signalé » chez le soudeur. Elle n'existe que s'il y a quelque chose
+              // à traiter ; le résumé des onglets l'annonce et y mène. ?>
         <?php if ($manques): ?>
-            <section class="materiel-manques" aria-labelledby="materiel-manques-titre" data-csrf="<?= prefaEscape(Session::jeton()) ?>">
-                <h2 id="materiel-manques-titre">Manques signalés par l’atelier
+            <section class="materiel-manques" id="materiel-manques" aria-labelledby="materiel-manques-titre" data-csrf="<?= prefaEscape(Session::jeton()) ?>">
+                <h2 class="prefa-section-titre" id="materiel-manques-titre">Manques signalés par l’atelier
                     <span class="prefa-onglet-compte" data-manques-compte><?= count($manques) ?></span></h2>
                 <div class="prefa-table-scroll" role="region" aria-label="Manques signalés" tabindex="0">
                     <table class="prefa-table materiel-manques-table">
@@ -46,7 +265,7 @@ $etatsManque = manquesEtats();
                             <th scope="col">Demande</th>
                             <th scope="col">Signalé par</th>
                             <th scope="col">État</th>
-                            <th scope="col"><span class="atelier-sr-only">Actions</span></th>
+                            <th scope="col">Actions</th>
                         </tr></thead>
                         <tbody>
                             <?php foreach ($manques as $manque):
@@ -59,13 +278,18 @@ $etatsManque = manquesEtats();
                                     <td class="prefa-nombre"><?= prefaEscape(manqueQuantite($manque['quantite']) . ' ' . $manque['unite']) ?></td>
                                     <td><?= prefaEscape($motifs[$manque['motif']] ?? $manque['motif']) ?></td>
                                     <td class="prefa-reference"><?= prefaEscape(prefaReference((int) $manque['id_demande'])) ?></td>
-                                    <td><?= prefaEscape($manque['auteur']) ?><span class="materiel-manque-date"><?= prefaEscape(prefaFormatDate($manque['date_creation'])) ?></span></td>
-                                    <td><span class="pv-puce <?= $etat['puce'] ?>" data-manque-etat><?= prefaEscape($etat['libelle']) ?></span></td>
-                                    <td class="materiel-manque-actions">
-                                        <?php if ($manque['statut'] === 'nouvelle'): ?>
-                                            <button type="button" class="materiel-manque-bouton" data-traiter="vue">Marquer vu</button>
-                                        <?php endif; ?>
-                                        <button type="button" class="materiel-manque-bouton est-principal" data-traiter="traitee">Traité</button>
+                                    <td class="prefa-secondaire"><?= prefaEscape($manque['auteur']) ?><span class="materiel-manque-date"><?= prefaEscape(prefaFormatDate($manque['date_creation'])) ?></span></td>
+                                    <?php // L'état comme celui d'un PV : un signe et un mot, sans pastille pleine. ?>
+                                    <td><span class="pv-etat materiel-manque-etat" data-manque-etat><?= $iconesManque ?><span data-manque-libelle><?= prefaEscape($etat['libelle']) ?></span></span></td>
+                                    <?php // Les commandes de ligne de la maison : l'issue au plein, comme
+                                          // « Valider » sur la liste des demandes, l'autre au contour. ?>
+                                    <td class="prefa-actions materiel-manque-actions">
+                                        <span class="prefa-decision">
+                                            <?php if ($manque['statut'] === 'nouvelle'): ?>
+                                                <button type="button" class="prefa-ligne-contour" data-traiter="vue">Marquer vu</button>
+                                            <?php endif; ?>
+                                            <button type="button" class="prefa-ligne-valider" data-traiter="traitee">Traité</button>
+                                        </span>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -75,129 +299,6 @@ $etatsManque = manquesEtats();
                 <p class="prefa-table-empty materiel-manques-vide" hidden>Tous les manques sont traités.</p>
             </section>
         <?php endif; ?>
-
-        <?php // La barre de la maison : la recherche à loupe, puis un onglet par état avec son
-              // compte. Trois étiquettes flottantes de 44 px faisaient un formulaire de
-              // recherche au-dessus d'une liste de deux bons ; l'affaire se cherche au champ. ?>
-        <div class="prefa-filters" role="search">
-            <div class="filtres-recherche">
-                <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
-                <input id="materiel-filtre-recherche" type="search" autocomplete="off" aria-label="Rechercher un bon"
-                       placeholder="Demande, affaire, commande…">
-            </div>
-        </div>
-
-        <?php $parEtat = array_fill_keys(array_keys($etats), 0);
-              foreach ($bons as $bon) $parEtat[materielEtat($bon)]++; ?>
-        <div class="prefa-onglets-barre">
-            <div class="prefa-onglets" role="group" aria-label="État des bons">
-                <button type="button" class="prefa-onglet materiel-onglet" data-etat="" aria-pressed="true">
-                    Tous <span class="prefa-onglet-compte"><?= count($bons) ?></span>
-                </button>
-                <?php foreach ($etats as $valeur => $libelle): ?>
-                    <?php // Un état qu'aucun bon ne porte n'a rien à filtrer : « Lecture
-                          // impossible » ne s'affiche que s'il y en a une. ?>
-                    <?php if ($valeur === 'echec' && !$parEtat[$valeur]) continue; ?>
-                    <button type="button" class="prefa-onglet materiel-onglet" data-etat="<?= prefaEscape($valeur) ?>" aria-pressed="false">
-                        <?= prefaEscape($libelle) ?> <span class="prefa-onglet-compte"><?= $parEtat[$valeur] ?></span>
-                    </button>
-                <?php endforeach; ?>
-            </div>
-            <p class="prefa-list-summary">
-                <span><strong id="materiel-compte"><?= count($bons) ?></strong>
-                <span id="materiel-compte-libelle"><?= count($bons) === 1 ? 'bon de commande' : 'bons de commande' ?></span></span>
-            </p>
-        </div>
-
-        <div class="prefa-table-scroll" role="region" aria-label="Bons de commande" tabindex="0">
-            <table class="prefa-table materiel-liste">
-                <thead>
-                    <tr>
-                        <th scope="col">Demande n°</th>
-                        <th scope="col">Affaire</th>
-                        <th scope="col">Bon déposé</th>
-                        <th scope="col">N° de commande</th>
-                        <th scope="col">Livraison</th>
-                        <th scope="col" class="prefa-nombre">Reçus</th>
-                        <th scope="col">État</th>
-                        <th scope="col"><span class="atelier-sr-only">Actions</span></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (!$bons): ?>
-                        <tr><td colspan="8" class="prefa-table-empty">
-                            Aucun bon de commande déposé. Le bon se dépose sur la demande, dans ses documents.
-                        </td></tr>
-                    <?php endif; ?>
-
-                    <?php foreach ($bons as $bon):
-                        $id = (int) $bon['id'];
-                        $idDemande = (int) $bon['id_demande'];
-                        $etat = materielEtat($bon);
-                        $recherche = mb_strtolower(prefaReferenceComplete($idDemande) . ' ' . $idDemande . ' '
-                            . ($bon['nom_affaire'] ?? '') . ' ' . ($bon['numero_commande'] ?? '') . ' ' . $bon['nom']);
-                        // La référence de la demande voyage dans l'adresse, pas son
-                        // identifiant technique : elle s'affiche au survol du lien et dans
-                        // l'onglet d'aperçu.
-                        $url = 'actions/download_materiel.php?ref=' . rawurlencode(prefaReference($idDemande))
-                            . '&file=' . rawurlencode((string) $id);
-                        ['recus' => $recus, 'total' => $total] = materielRecus($bon);
-                    ?>
-                        <tr class="materiel-rang"
-                            id="materiel-bon-<?= $id ?>"
-                            data-document="<?= $id ?>"
-                            data-recherche="<?= prefaEscape($recherche) ?>"
-                            data-etat="<?= prefaEscape($etat) ?>"
-                            data-demande="<?= prefaEscape(prefaReferenceComplete($idDemande)) ?>"
-                            data-fichier="<?= prefaEscape($url) ?>"
-                            data-nom="<?= prefaEscape($bon['nom']) ?>"
-                            data-bon="<?= prefaEscape(json_encode(materielPayload($bon), JSON_UNESCAPED_UNICODE)) ?>">
-
-                            <td class="prefa-reference"><?= prefaEscape(prefaReference($idDemande)) ?></td>
-                            <td class="prefa-affaire"><?= prefaEscape($bon['nom_affaire'] ?: '—') ?></td>
-                            <td>
-                                <a class="prefa-pdf-link materiel-fichier"
-                                   href="<?= prefaEscape($url) ?>"
-                                   data-name="<?= prefaEscape($bon['nom']) ?>"
-                                   aria-haspopup="dialog">
-                                    <span class="prefa-document-text"><strong><?= prefaEscape($bon['nom']) ?></strong></span>
-                                </a>
-                            </td>
-                            <td class="materiel-cellule-numero">
-                                <?php if ($bon['numero_commande']): ?>
-                                    <span class="materiel-numero"><?= prefaEscape($bon['numero_commande']) ?></span>
-                                <?php else: ?>
-                                    <span class="materiel-vide">—</span>
-                                <?php endif; ?>
-                            </td>
-                            <?php // L'échéance du bon, pas celle de chacune de ses lignes : seize fois
-                                  // la même date ne dit rien, deux dates distinctes disent que la
-                                  // commande arrive en deux fois. ?>
-                            <td class="materiel-cellule-livraison">
-                                <?php $echeances = materielEcheancesTexte($bon); ?>
-                                <?= $echeances !== '' ? prefaEscape($echeances) : '<span class="materiel-vide">—</span>' ?>
-                            </td>
-                            <?php // « 1/5 » dit à la fois combien d'articles et combien sont arrivés :
-                                  // la colonne « Articles » le répétait. ?>
-                            <td class="prefa-nombre materiel-cellule-recus">
-                                <?= $total ? prefaEscape($recus . '/' . $total) : '<span class="materiel-vide">—</span>' ?>
-                            </td>
-                            <td>
-                                <span class="materiel-etat materiel-etat-<?= prefaEscape($etat) ?>"
-                                      title="<?= prefaEscape(materielResume($bon)) ?>">
-                                    <?= prefaEscape($etats[$etat]) ?>
-                                </span>
-                            </td>
-                            <td class="materiel-actions">
-                                <button type="button" class="prefa-toggle materiel-ouvrir" data-document="<?= $id ?>">Ouvrir</button>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-
-        <p class="prefa-table-empty materiel-aucun-resultat" hidden>Aucun bon ne correspond à cette recherche.</p>
     </div>
 
     <?php // Le volet d'un bon : le même panneau flottant que les PV, le planning et la fiche

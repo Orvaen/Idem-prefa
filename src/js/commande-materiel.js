@@ -54,16 +54,21 @@
                 if (statut === 'traitee') {
                     ligne.remove();
                     const restants = section.querySelectorAll('.materiel-manque').length;
-                    section.querySelector('[data-manques-compte]').textContent = restants;
+                    // Deux comptes : le titre de la section, et le résumé des onglets qui y mène.
+                    document.querySelectorAll(PAGE + ' [data-manques-compte]').forEach(compte => { compte.textContent = restants; });
+                    const mot = document.querySelector(PAGE + ' [data-manques-mot]');
+                    if (mot) mot.textContent = restants === 1 ? 'manque à traiter' : 'manques à traiter';
                     if (!restants) {
                         section.querySelector('.prefa-table-scroll').hidden = true;
                         section.querySelector('.materiel-manques-vide').hidden = false;
+                        const lien = document.querySelector(PAGE + ' [data-manques-lien]');
+                        if (lien) lien.hidden = true;
                     }
                 } else {
+                    // Le signe suit data-statut dans la feuille : seul le mot est à réécrire.
                     ligne.dataset.statut = statut;
-                    const puce = ligne.querySelector('[data-manque-etat]');
-                    puce.className = 'pv-puce ' + reponse.etat.puce;
-                    puce.textContent = reponse.etat.libelle;
+                    const libelle = ligne.querySelector('[data-manque-libelle]');
+                    if (libelle) libelle.textContent = reponse.etat.libelle;
                     bouton.remove();
                     ligne.querySelectorAll('button').forEach(b => { b.disabled = false; });
                 }
@@ -76,8 +81,17 @@
             });
     });
 
+    // Le résumé des onglets annonce les manques ; ils vivent sous les bons, et le clic y mène.
+    $(document).on('click', PAGE + ' [data-manques-lien]', () => {
+        document.getElementById('materiel-manques')?.scrollIntoView({behavior: 'smooth', block: 'start'});
+    });
+
     // ------------------------------------------------------------------ LES FILTRES
 
+    /**
+     * Onglet et recherche se combinent, comme sur les PV : un titre de groupe disparaît avec
+     * sa dernière ligne, et chaque compte dit ce qui reste visible.
+     */
     function filtrer() {
         const zone = page();
         if (!zone) return;
@@ -85,14 +99,20 @@
         const recherche = (zone.querySelector('#materiel-filtre-recherche')?.value || '').trim().toLowerCase();
         const etat = zone.querySelector('.materiel-onglet[aria-pressed="true"]')?.dataset.etat || '';
 
-        let visibles = 0;
-        const comptes = {};
+        const parEtat = {};
         zone.querySelectorAll('.materiel-rang').forEach(ligne => {
-            comptes[ligne.dataset.etat] = (comptes[ligne.dataset.etat] || 0) + 1;
-            const montrer = (!etat || ligne.dataset.etat === etat)
-                && (!recherche || (ligne.dataset.recherche || '').includes(recherche));
-            ligne.hidden = !montrer;
-            if (montrer) visibles++;
+            const trouvee = !recherche || (ligne.dataset.recherche || '').includes(recherche);
+            if (trouvee) parEtat[ligne.dataset.etat] = (parEtat[ligne.dataset.etat] || 0) + 1;
+            ligne.hidden = !(trouvee && (!etat || ligne.dataset.etat === etat));
+        });
+
+        let visibles = 0;
+        zone.querySelectorAll('.materiel-liste-groupe').forEach(groupe => {
+            const nombre = parEtat[groupe.dataset.etat] || 0;
+            const affiche = nombre > 0 && (!etat || groupe.dataset.etat === etat);
+            groupe.hidden = !affiche;
+            groupe.querySelector('.prefa-groupe-compte').textContent = nombre;
+            if (affiche) visibles += nombre;
         });
 
         // Les comptes des onglets suivent les bons : valider une commande la fait passer
@@ -101,8 +121,8 @@
             const compte = onglet.querySelector('.prefa-onglet-compte');
             if (!compte) return;
             compte.textContent = onglet.dataset.etat
-                ? (comptes[onglet.dataset.etat] || 0)
-                : zone.querySelectorAll('.materiel-rang').length;
+                ? (parEtat[onglet.dataset.etat] || 0)
+                : Object.values(parEtat).reduce((a, b) => a + b, 0);
         });
 
         const compte = zone.querySelector('#materiel-compte');
@@ -117,6 +137,26 @@
     $(document).on('click', '.materiel-onglet', function () {
         document.querySelectorAll('.materiel-onglet').forEach(o => o.setAttribute('aria-pressed', String(o === this)));
         filtrer();
+    });
+
+    // « Actualiser », comme sur les PV : l'écran se recharge, sa recherche et son onglet avec.
+    $(document).on('click', '.materiel-refresh', function () {
+        const zone = page();
+        const recherche = zone?.querySelector('#materiel-filtre-recherche')?.value || '';
+        const etat = zone?.querySelector('.materiel-onglet[aria-pressed="true"]')?.dataset.etat || '';
+        $('#content').load('pages/commande_materiel.php', function (_, statut) {
+            if (statut === 'error') {
+                $(this).text('Impossible de recharger cet écran. Actualisez la page.');
+                return;
+            }
+            const champ = document.getElementById('materiel-filtre-recherche');
+            if (champ) champ.value = recherche;
+            document.querySelectorAll('.materiel-onglet').forEach(o => o.setAttribute('aria-pressed', String(o.dataset.etat === etat)));
+            if (!document.querySelector('.materiel-onglet[aria-pressed="true"]')) {
+                document.querySelector('.materiel-onglet[data-etat=""]')?.setAttribute('aria-pressed', 'true');
+            }
+            filtrer();
+        });
     });
 
     // ---------------------------------------------------------------- LE VOLET D'UN BON
@@ -646,10 +686,11 @@
             if (bon.articles) recus.textContent = (bon.recus || 0) + '/' + bon.articles;
             else recus.innerHTML = '<span class="materiel-vide">—</span>';
         }
-        const etat = ligne.querySelector('.materiel-etat');
-        etat.className = 'materiel-etat materiel-etat-' + bon.etat;
-        etat.textContent = bon.etat_libelle;
-        etat.title = bon.resume;
+        // L'état n'a pas de colonne : c'est le groupe qui le dit. Un bon qui change d'état
+        // passe en tête de son nouveau groupe — tous sont écrits dans la page, même vides.
+        const groupe = page()?.querySelector('.materiel-liste-groupe[data-etat="' + bon.etat + '"]');
+        if (groupe && ligne.previousElementSibling?.dataset.etat !== bon.etat) groupe.after(ligne);
+        ligne.querySelector('.materiel-ouvrir')?.setAttribute('title', bon.resume || '');
         filtrer();
     }
 
