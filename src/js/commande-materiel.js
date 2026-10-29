@@ -595,7 +595,7 @@
      * pourquoi la lecture a échoué.
      */
     function noteDeLecture(bon) {
-        if (bon.etat === 'a_lire') return 'Lisez le bon, ou saisissez ses articles à la main.';
+        if (bon.etat === 'a_lire') return 'Le bon n’a pas encore été lu : sa lecture se lance.';
         if (bon.etat === 'a_verifier') return 'Relisez les articles et corrigez-les si besoin, puis validez la commande. La réception se pointe une fois la commande validée.';
         if (bon.etat === 'echec') return bon.resume;
         // Validée : qui l'a validée et quand, c'est ce qui la rend intouchable.
@@ -634,6 +634,23 @@
         document.querySelectorAll('.prefa-detail-row:not([hidden])').forEach(v => { if (v !== fenetre) v.hidden = true; });
         fenetre.hidden = false;
         fenetre.scrollTop = 0;
+
+        // Un bon se lit de lui-même dès son dépôt, en tâche de fond. Celui qui ne l'a pas
+        // été — déposé avant, ou dont la lecture n'a pas pu tourner — se lit à l'ouverture :
+        // personne n'a plus à cliquer « Lire ». Si la tâche de fond est en cours, le serveur
+        // l'attend au lieu de relire (« si_besoin »).
+        if (bon.etat === 'a_lire' && !bon.fige) {
+            envoyer('lire_bon_materiel.php', {
+                csrf: fenetre.querySelector('[name="csrf"]').value,
+                document: id,
+                si_besoin: '1',
+            }, fenetre.querySelector('.materiel-relire'), reponse => {
+                // Un autre bon a pu être ouvert pendant la lecture : on ne remplit que le sien.
+                if (fenetre.querySelector('[name="document"]').value !== String(id)) return;
+                poserEntete(reponse.document);
+                remplirArticles(reponse.document);
+            });
+        }
     }
 
     $(document).on('click', '.materiel-ouvrir', function () {

@@ -350,7 +350,9 @@ $iconesManque = '<svg class="pv-etat-icone materiel-manque-signe-nouvelle" viewB
                 <div class="pv-volet-titre-rang">
                     <h3 class="pv-volet-titre">Articles <span class="materiel-volet-compte"></span></h3>
                     <div class="materiel-volet-outils">
-                        <button type="button" class="materiel-relire bouton-discret">Lire le bon</button>
+                        <?php // Le bon se lit de lui-même, au dépôt ou à l'ouverture : ce bouton
+                              // ne sert plus qu'à repartir de zéro. ?>
+                        <button type="button" class="materiel-relire bouton-discret">Relire le bon</button>
                         <button type="button" class="materiel-ajouter bouton-discret">Ajouter un article</button>
                         <button type="button" class="materiel-tout-recu bouton-discret">Tout marquer reçu</button>
                     </div>
@@ -373,7 +375,7 @@ $iconesManque = '<svg class="pv-etat-icone materiel-manque-signe-nouvelle" viewB
                             <tbody class="materiel-edition-lignes"></tbody>
                         </table>
                     </div>
-                    <p class="materiel-edition-vide" hidden>Aucun article. Lisez le bon déposé, ou ajoutez-les à la main.</p>
+                    <p class="materiel-edition-vide" hidden>Aucun article. Relisez le bon déposé, ou ajoutez-les à la main.</p>
                 </div>
 
                 <?php // ----- Recevoir : une liste à cocher, par livraison ----- ?>

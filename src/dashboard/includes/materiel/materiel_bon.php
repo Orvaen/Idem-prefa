@@ -325,6 +325,47 @@ function materielEtats(): array
 }
 
 /**
+ * Lance la lecture de bons tout juste déposés, sans attendre qu'elle finisse.
+ *
+ * Un bon scanné de quatre pages occupe le serveur plusieurs secondes : la lecture ne peut
+ * pas se faire pendant le dépôt, et elle se demandait à la main, bon par bon, depuis
+ * l'écran « Commande matériel ». Elle part maintenant en tâche de fond dès le dépôt
+ * (outils/lire_bons.php), comme celle des feuilles ISO : quand l'encadrement ouvre le bon,
+ * ses articles l'attendent.
+ *
+ * @param list<int> $idsDocuments
+ */
+function materielLireEnFond(array $idsDocuments): void
+{
+    $ids = array_values(array_filter(array_map('intval', $idsDocuments)));
+    if (!$ids) return;
+    $php = is_file('/usr/local/bin/php') ? '/usr/local/bin/php' : 'php';
+    $script = dirname(__DIR__, 2) . '/outils/lire_bons.php';
+    @exec(escapeshellarg($php) . ' ' . escapeshellarg($script) . ' ' . implode(' ', $ids) . ' > /dev/null 2>&1 &');
+}
+
+/**
+ * Le verrou d'un bon le temps de sa lecture : une seule à la fois.
+ *
+ * La lecture de fond et celle qu'on demande à l'écran peuvent se croiser : le bon s'ouvre
+ * pendant qu'il se lit encore. L'écran attend alors que la première finisse ($attendre),
+ * plutôt que de lire deux fois le même bon ; la tâche de fond, elle, passe son tour.
+ *
+ * @return resource|null le verrou tenu, à garder jusqu'à la fin de la lecture ; null quand
+ *         un autre le tient et qu'on n'attend pas, ou que le dossier de travail manque
+ */
+function materielVerrou(int $idDocument, bool $attendre)
+{
+    $verrou = @fopen(sys_get_temp_dir() . '/idem-lire-bon-' . $idDocument . '.lock', 'c');
+    if (!$verrou) return null;
+    if (!flock($verrou, LOCK_EX | ($attendre ? 0 : LOCK_NB))) {
+        fclose($verrou);
+        return null;
+    }
+    return $verrou;
+}
+
+/**
  * Lit un bon stocké et enregistre ses articles — ou la raison de l'échec, pour qu'un bon
  * illisible se dise en une phrase plutôt que de se faire relire indéfiniment.
  */

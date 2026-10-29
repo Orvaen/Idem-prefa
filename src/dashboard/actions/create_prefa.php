@@ -385,9 +385,15 @@ try {
         $file = $db->prepare('DELETE FROM demande_materiel_documents WHERE id_demande = ? AND id = ?');
         foreach ($removeMaterielIds as $id) $file->execute([$savedId, $id]);
     }
+    // Les bons déposés ici se lisent après l'enregistrement, en tâche de fond : on garde
+    // leurs identifiants pour lancer la lecture une fois la transaction validée.
+    $bonsDeposes = [];
     if ($materielPdfs) {
         $file = $db->prepare('INSERT INTO demande_materiel_documents (id_demande, nom, contenu, sha256) VALUES (?, ?, ?, UNHEX(?))');
-        foreach ($materielPdfs as $document) $file->execute([$savedId, $document['name'], $document['content'], $document['digest']]);
+        foreach ($materielPdfs as $document) {
+            $file->execute([$savedId, $document['name'], $document['content'], $document['digest']]);
+            $bonsDeposes[] = (int) $db->lastInsertId();
+        }
     }
     // Les coulées lues sur un certificat retiré partent avec lui, par cascade.
     if ($removeCcpuIds) {
@@ -402,6 +408,13 @@ try {
     }
 
     $db->commit();
+
+    // Après le commit, comme l'annonce : la tâche de fond relit le bon en base, il doit y
+    // être.
+    if ($bonsDeposes) {
+        require_once __DIR__ . '/../includes/materiel/materiel_bon.php';
+        materielLireEnFond($bonsDeposes);
+    }
 
     // Après le commit, jamais avant : une annonce pour une demande que la transaction
     // aurait annulée vaut moins que pas d'annonce du tout. Une modification n'en est pas

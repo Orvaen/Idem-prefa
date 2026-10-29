@@ -1,9 +1,10 @@
 <?php
 // Lit (ou relit) les articles d'un bon de commande déposé sur une demande.
 //
-// La lecture se demande : elle ne part pas d'elle-même comme celle des certificats. Un
-// bon scanné de quatre pages occupe le serveur plusieurs secondes, et chaque demande en
-// porte un.
+// Un bon se lit de lui-même, en tâche de fond, dès son dépôt (materielLireEnFond()). Cette
+// action sert deux fois : à l'ouverture d'un bon resté sans lecture — déposé avant, ou dont
+// la tâche n'a pas pu tourner —, avec « si_besoin », qui ne relit pas un bon déjà lu ; et au
+// bouton « Relire le bon », qui repart de zéro.
 //
 // Ce qui est lu ne vaut pas saisie : une relecture efface la vérification précédente, et
 // c'est l'encadrement qui corrige ensuite, dans l'écran « Commande matériel ».
@@ -26,19 +27,30 @@ $stmt = $db->prepare('SELECT doc.id FROM demande_materiel_documents doc
 $stmt->execute([$idDocument]);
 if (!$stmt->fetchColumn()) prefaError(404, 'Bon introuvable ou inaccessible.');
 
-// Outils absents : c'est le serveur qui n'est pas prêt, pas le bon qui est illisible. On
-// n'enregistre rien, pour que la lecture reste possible une fois le serveur mis à jour.
-if ($manquants = ccpuOutilsManquants()) {
-    prefaError(503, 'Lecture automatique indisponible sur ce serveur : ' . implode(', ', $manquants) . ' à installer.');
-}
+// La lecture de fond lancée au dépôt peut tourner encore : on l'attend, plutôt que de lire
+// deux fois le même bon. Le verrou se rend avec la fin du script.
+$verrou = materielVerrou($idDocument, true);
 
-try {
-    materielLireDocument($db, $idDocument);
-} catch (DomainException $exception) {
-    prefaError(409, $exception->getMessage());
-} catch (Throwable $exception) {
-    Journal::erreur('Lecture du bon ' . $idDocument, $exception);
-    prefaError(500, 'Lecture impossible. Réessayez.');
+// À l'ouverture, un bon que la tâche de fond vient de lire n'est pas relu : on rend sa
+// lecture telle quelle.
+$deja = materielDocument($db, $idDocument);
+$lire = ($_POST['si_besoin'] ?? '') !== '1' || empty($deja['date_lecture']);
+
+if ($lire) {
+    // Outils absents : c'est le serveur qui n'est pas prêt, pas le bon qui est illisible.
+    // On n'enregistre rien, pour que la lecture reste possible une fois le serveur mis à jour.
+    if ($manquants = ccpuOutilsManquants()) {
+        prefaError(503, 'Lecture automatique indisponible sur ce serveur : ' . implode(', ', $manquants) . ' à installer.');
+    }
+
+    try {
+        materielLireDocument($db, $idDocument);
+    } catch (DomainException $exception) {
+        prefaError(409, $exception->getMessage());
+    } catch (Throwable $exception) {
+        Journal::erreur('Lecture du bon ' . $idDocument, $exception);
+        prefaError(500, 'Lecture impossible. Réessayez.');
+    }
 }
 
 $document = materielDocument($db, $idDocument);

@@ -73,6 +73,13 @@ try {
     prefaError(500, 'Dépôt impossible. Réessayez.');
 }
 
+// Un bon de commande se lit tout seul, en tâche de fond : la réponse n'attend pas, et
+// l'encadrement trouve ses articles en ouvrant le bon.
+if ($type === 'materiel') {
+    require_once __DIR__ . '/../includes/materiel/materiel_bon.php';
+    materielLireEnFond(array_column($ajoutes, 'id'));
+}
+
 $html = '';
 foreach ($ajoutes as $document) {
     $html .= prefaDocumentLigne($idDemande, $famille, $document, $canViewAllPrefa);
