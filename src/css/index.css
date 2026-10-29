@@ -162,8 +162,8 @@ body {
     cursor: progress;
 }
 
-#login-form button[type="submit"]:focus-visible,
-.floating-field .floating-control:focus-visible {
+/* Le focus des champs est celui de floating-fields.css, comme partout ailleurs. */
+#login-form button[type="submit"]:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
 }

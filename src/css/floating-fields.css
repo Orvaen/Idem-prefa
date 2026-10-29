@@ -66,13 +66,23 @@ body .floating-field:focus-within > label {
     color: var(--field-focus) !important;
 }
 
+/* Le focus : le cadre passe à l'accent et double d'un trait vers l'intérieur — l'anneau de
+   2 px de la direction artistique. La règle avait disparu et le champ ne disait plus rien,
+   puisque « outline: none » plus haut retire celui du navigateur.
+ *
+ * Un contour décalé vers l'intérieur plutôt qu'une bordure de 2 px : la boîte ne bouge pas,
+ * donc aucune marge à rattraper d'un pixel sur chaque variante. Et pas d'ombre : le
+ * remplissage automatique s'en sert pour garder le fond du champ. */
+body .floating-field .floating-control:focus,
+body .floating-field .input-unit input.floating-control:focus {
+    border-color: var(--field-focus) !important;
+    outline: 1px solid var(--field-focus) !important;
+    outline-offset: -2px;
+}
+
 body .floating-field select.floating-control {
     appearance: none;
     padding-right: 40px !important;
-}
-
-body .floating-field select.floating-control:focus {
-    padding-right: 39px !important;
 }
 
 .floating-field:has(> select)::after {
@@ -102,10 +112,6 @@ body .floating-field input[role="combobox"].floating-control {
     padding-right: 40px !important;
     text-overflow: ellipsis;
 }
-
-body .floating-field input[role="combobox"].floating-control:focus {
-    padding-right: 39px !important;
-}
 body .floating-field textarea.floating-control { height: auto !important; min-height: 112px !important; resize: vertical; }
 .floating-field:has(textarea) > label { top: 27px; }
 .floating-field:has(textarea):focus-within > label,
@@ -131,10 +137,6 @@ body .floating-field .input-unit input.floating-control {
     border-radius: 6px !important;
     padding: 9px 36px 9px 12px !important;
     text-align: left !important;
-}
-body .floating-field .input-unit input.floating-control:focus {
-    border: 2px solid var(--field-focus) !important;
-    padding: 8px 35px 8px 11px !important;
 }
 body .floating-field .input-unit-suffix { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); }
 /* ---------- L'œil des mots de passe ----------
@@ -188,7 +190,6 @@ body .a-mdp-voir input[type="text"] {
 
 /* La croix d'effacement occupe la droite du champ : le texte s'arrête avant elle. */
 .liste-filtrable .floating-control { padding-right: 38px !important; }
-.liste-filtrable .floating-control:focus { padding-right: 37px !important; }
 .settings-inline-action > .floating-field { flex: 0 1 280px; width: 280px; max-width: 100%; }
 .settings-inline-action > .floating-field:has(.input-unit) { flex-basis: 230px; width: 230px; }
 
