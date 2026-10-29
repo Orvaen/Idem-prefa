@@ -54,7 +54,9 @@
         // dans une liste filtrée, et la voir repartir entière à chaque enregistrement
         // obligerait à retaper sa recherche entre deux corrections.
         const q = document.getElementById('affaires-search')?.value || '';
-        $('#content').load('pages/affaires.php', () => {
+        const contenu = document.getElementById('content');
+        if (!contenu) return;
+        window.chargerDans(contenu, 'pages/affaires.php').then(() => {
             const champ = document.getElementById('affaires-search');
             if (champ && q) {
                 champ.value = q;
@@ -105,11 +107,14 @@
         if (aucune) aucune.hidden = visibles > 0 || cartes.length === 0;
     }
 
-    $(document).on('input', '#affaires-search', filtrer);
+    document.addEventListener('input', evenement => {
+        if (evenement.target.closest('#affaires-search')) filtrer();
+    });
 
     // ---------- La fenêtre d'ouverture ----------
 
-    $(document).on('click', '#affaire-nouvelle', () => {
+    document.addEventListener('click', evenement => {
+        if (!evenement.target.closest('#affaire-nouvelle')) return;
         const boite = fenetre();
         if (!boite) return;
         // Une fenêtre s'ouvre vierge : la saisie abandonnée la fois d'avant n'a rien à
@@ -137,13 +142,15 @@
         boite.querySelector('#affaire-nom')?.focus();
     });
 
-    $(document).on('click', '.affaire-dialog-fermer', function () {
-        this.closest('dialog')?.close();
+    document.addEventListener('click', evenement => {
+        evenement.target.closest('.affaire-dialog-fermer')?.closest('dialog')?.close();
     });
 
-    $(document).on('submit', '#affaire-form', function (evenement) {
+    document.addEventListener('submit', evenement => {
+        const form = evenement.target.closest('#affaire-form');
+        if (!form) return;
         evenement.preventDefault();
-        const nom = this.querySelector('[name="nom"]');
+        const nom = form.querySelector('[name="nom"]');
         if (!nom.value.trim()) return dire('Donnez un nom à l’affaire.', true);
 
         const donnees = new URLSearchParams();
@@ -151,7 +158,7 @@
         donnees.set('nom', nom.value.trim());
         // Le champ filtrable dépose son choix dans un champ caché, id_charge ; la clé
         // envoyée reste « charge », c'est ce que l'action attend.
-        donnees.set('charge', this.querySelector('[name="id_charge"]')?.value || '');
+        donnees.set('charge', form.querySelector('[name="id_charge"]')?.value || '');
 
         envoyer(donnees).then(({ ok, corps }) => {
             // Un refus garde la fenêtre ouverte, avec la saisie : c'est le nom qu'on
@@ -182,19 +189,23 @@
         ouvrirVue(bouton, { page: page + (page.includes('?') ? '&' : '?') + 'q=' + encodeURIComponent(nom) });
     }
 
-    $(document).on('click', '.affaire-carte', function (evenement) {
+    document.addEventListener('click', evenement => {
+        const carte = evenement.target.closest('.affaire-carte');
+        if (!carte) return;
         // Les commandes de la carte gardent leur geste : on ne quitte pas l'écran en
         // cliquant dans le champ qu'on vient corriger, ni sur la corbeille.
         if (evenement.target.closest('input, button, a, .liste-filtrable')) return;
         // Une affaire sans demande ne mène nulle part : on n'ouvre pas une liste vide.
         // Le serveur ne pose le bouton que s'il y en a, c'est lui qui fait foi.
-        if (!this.querySelector('button.affaire-demandes')) return;
-        ouvrirLesDemandes(nomDeLaCarte(this));
+        if (!carte.querySelector('button.affaire-demandes')) return;
+        ouvrirLesDemandes(nomDeLaCarte(carte));
     });
 
     // Le compte des demandes est le chemin annoncé : c'est lui qu'on atteint au clavier.
-    $(document).on('click', 'button.affaire-demandes', function () {
-        ouvrirLesDemandes(nomDeLaCarte(this.closest('.affaire-carte')));
+    document.addEventListener('click', evenement => {
+        const bouton = evenement.target.closest('button.affaire-demandes');
+        if (!bouton) return;
+        ouvrirLesDemandes(nomDeLaCarte(bouton.closest('.affaire-carte')));
     });
 
     // Une demande déposée depuis une carte change son compte : l'écran se recharge derrière
@@ -213,15 +224,21 @@
     // Tant qu'on n'a rien changé, il n'y a rien à enregistrer : le bouton ne paraît qu'une
     // fois la ligne touchée. C'est aussi ce qui dit, d'un coup d'œil sur le tableau, quelles
     // lignes attendent encore d'être validées.
-    $(document).on('input change', '.affaire-nom, .liste-filtrable input[type="hidden"]', function () {
+    const surModification = evenement => {
+        const champ = evenement.target.closest('.affaire-nom, .liste-filtrable input[type="hidden"]');
+        if (!champ) return;
         // « [data-affaire] » et non « tr » : les affaires sont des cartes depuis qu'elles
         // ont quitté le tableau, et un closest('tr') n'y trouvait plus rien — le bouton
         // « Enregistrer » ne serait jamais apparu.
-        this.closest('[data-affaire]')?.classList.add('est-modifiee');
-    });
+        champ.closest('[data-affaire]')?.classList.add('est-modifiee');
+    };
+    document.addEventListener('input', surModification);
+    document.addEventListener('change', surModification);
 
-    $(document).on('click', '.affaire-enregistrer', function () {
-        const ligne = this.closest('[data-affaire]');
+    document.addEventListener('click', evenement => {
+        const bouton = evenement.target.closest('.affaire-enregistrer');
+        if (!bouton) return;
+        const ligne = bouton.closest('[data-affaire]');
         const donnees = new URLSearchParams();
         donnees.set('operation', 'modifier');
         donnees.set('id', ligne.dataset.affaire);
@@ -236,8 +253,10 @@
         }).catch(() => dire('Modification impossible. Réessayez.', true));
     });
 
-    $(document).on('click', '.affaire-supprimer', async function () {
-        const ligne = this.closest('[data-affaire]');
+    document.addEventListener('click', async evenement => {
+        const bouton = evenement.target.closest('.affaire-supprimer');
+        if (!bouton) return;
+        const ligne = bouton.closest('[data-affaire]');
         const nom = ligne.querySelector('.affaire-nom').value.trim();
         // Une affaire supprimée ne se retrouve pas : on demande avant.
         if (!await window.confirmer('Supprimer l’affaire « ' + nom + ' » ?', {
@@ -261,7 +280,8 @@
     // d'affaire » déjà choisi : sans cela, il fallait savoir quel rôle donner, et où.
     // L'écran arrive par AJAX : on guette sa fenêtre avant de l'ouvrir.
     const ROLE_CHARGE_AFFAIRE = '5';
-    $(document).on('click', '.affaires-creer-charge', function () {
+    document.addEventListener('click', evenement => {
+        if (!evenement.target.closest('.affaires-creer-charge')) return;
         fenetre()?.close();
         document.getElementById('btn-list-users')?.click();
         const debut = Date.now();

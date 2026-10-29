@@ -307,9 +307,11 @@
     // Cliquer la ligne choisit la feuille : c'est le geste qu'on a dans une liste. Les
     // commandes de la ligne gardent le leur — « Plan » ouvre le dessin sans changer de
     // feuille travaillée, et on y clique pour vérifier un repère, pas pour se déplacer.
-    $(document).on('click', '.soudures-feuille', function (evenement) {
+    document.addEventListener('click', evenement => {
+        const ligne = evenement.target.closest('.soudures-feuille');
+        if (!ligne) return;
         if (evenement.target.closest('button, a, input, label')) return;
-        choisir(this);
+        choisir(ligne);
     });
 
     /** Refermer la feuille travaillée : le volet se range, la ligne n'est plus choisie. */
@@ -398,22 +400,31 @@
         const c = choixPlan();
         c.mot.hidden = false;
         c.mot.textContent = 'Ouverture du plan…';
-        $('#content').load('pages/soudures.php?plan=' + encodeURIComponent(option.dataset.element), function (_, statut) {
-            if (statut === 'error') $(this).text('Impossible d’ouvrir ce plan. Actualisez la page.');
+        const contenu = document.getElementById('content');
+        if (!contenu) return;
+        window.chargerDans(contenu, 'pages/soudures.php?plan=' + encodeURIComponent(option.dataset.element)).then(({ ok }) => {
+            if (!ok) contenu.textContent = 'Impossible d’ouvrir ce plan. Actualisez la page.';
         });
     }
 
-    $(document).on('click', '.soudures-plan-declencheur', function () {
+    document.addEventListener('click', evenement => {
+        if (!evenement.target.closest('.soudures-plan-declencheur')) return;
         const c = choixPlan();
         if (c && !c.menu.hidden) fermerChoixPlan(true);
         else ouvrirChoixPlan();
     });
-    $(document).on('input', '.soudures-plan-recherche input', filtrerPlans);
-    $(document).on('click', '.soudures-plan-option', function () { choisirPlan(this); });
+    document.addEventListener('input', evenement => {
+        if (evenement.target.closest('.soudures-plan-recherche input')) filtrerPlans();
+    });
+    document.addEventListener('click', evenement => {
+        const option = evenement.target.closest('.soudures-plan-option');
+        if (option) choisirPlan(option);
+    });
 
     // Le clavier : la recherche garde le focus, les flèches promènent la surbrillance,
     // Entrée ouvre le plan surligné — ou le premier trouvé —, Échap referme.
-    $(document).on('keydown', '.soudures-plan-recherche input, .soudures-plan-option', function (evenement) {
+    document.addEventListener('keydown', evenement => {
+        if (!evenement.target.closest('.soudures-plan-recherche input, .soudures-plan-option')) return;
         const c = choixPlan();
         if (!c) return;
         const visibles = c.options.filter(option => !option.hidden);
@@ -435,7 +446,8 @@
             choisirPlan(actif && !actif.hidden ? actif : visibles[0]);
         }
     });
-    $(document).on('input', '.soudures-plan-recherche input', function () {
+    document.addEventListener('input', evenement => {
+        if (!evenement.target.closest('.soudures-plan-recherche input')) return;
         choixPlan()?.zone.querySelector('.soudures-plan-option.est-active')?.classList.remove('est-active');
     });
 
@@ -488,27 +500,40 @@
     // La barre de filtres de la maison prévient son formulaire quand on coche : c'est à
     // l'écran de savoir ce qu'il en fait. Ici, rien ne part au serveur — tout est déjà là.
     // Corriger une ligne rallume le bouton ; revenir à ce qui était enregistré l'éteint.
-    $(document).on('input change', '#soudures-corps .soudures-date, #soudures-corps .soudures-type', function () {
+    const surSaisieCordon = evenement => {
+        if (!evenement.target.closest('#soudures-corps .soudures-date, #soudures-corps .soudures-type')) return;
         const racine = page();
         if (racine) majEnregistrer(racine);
-    });
+    };
+    document.addEventListener('input', surSaisieCordon);
+    document.addEventListener('change', surSaisieCordon);
 
-    $(document).on('input', '#soudures-recherche', filtrer);
-    $(document).on('change', '.soudures-filtres', filtrer);
-    $(document).on('submit', '.soudures-filtres', event => event.preventDefault());
+    document.addEventListener('input', evenement => {
+        if (evenement.target.closest('#soudures-recherche')) filtrer();
+    });
+    document.addEventListener('change', evenement => {
+        if (evenement.target.closest('.soudures-filtres')) filtrer();
+    });
+    document.addEventListener('submit', evenement => {
+        if (evenement.target.closest('.soudures-filtres')) evenement.preventDefault();
+    });
 
     // Fermer la feuille : le volet se range et la ligne n'est plus choisie. Sans ce
     // geste, le seul moyen de quitter une feuille est d'en ouvrir une autre.
-    $(document).on('click', '[data-fermer-saisie]', fermerSaisie);
+    document.addEventListener('click', evenement => {
+        if (evenement.target.closest('[data-fermer-saisie]')) fermerSaisie();
+    });
 
-    $(document).on('click', '.soudures-renseigner', function () {
-        choisir(this.closest('.soudures-feuille'));
+    document.addEventListener('click', evenement => {
+        const bouton = evenement.target.closest('.soudures-renseigner');
+        if (bouton) choisir(bouton.closest('.soudures-feuille'));
     });
 
     // « Plan » et « Ouvrir la feuille » sont servis par plan-viewer.js : c'est lui qui sait
     // aller à la bonne page d'un cahier, et dupliquer ce savoir ici le ferait diverger.
 
-    $(document).on('submit', '#soudures-form', async function (event) {
+    document.addEventListener('submit', async event => {
+        if (!event.target.closest('#soudures-form')) return;
         event.preventDefault();
         const v = vues();
         if (!v) return;
@@ -613,7 +638,8 @@
         libre.hidden = !sansListe;
     }
 
-    $(document).on('click', '[data-signaler-manque]', function () {
+    document.addEventListener('click', evenement => {
+        if (!evenement.target.closest('[data-signaler-manque]')) return;
         const fenetre = fenetreManque();
         if (!fenetre) return;
         const form = fenetre.querySelector('form');
@@ -641,8 +667,8 @@
     });
 
     // Le composant prévient par un « change » sur son champ caché.
-    $(document).on('change', '#soudures-manque input[name="element"]', function () {
-        poserArticles(fenetreManque());
+    document.addEventListener('change', evenement => {
+        if (evenement.target.closest('#soudures-manque input[name="element"]')) poserArticles(fenetreManque());
     });
 
     // Un article du bon apporte son unité : « m » pour un tube, « u » pour une bride. On ne
@@ -651,11 +677,13 @@
     // Quand l'unité se choisit dans la liste des paramètres, celle du bon n'est reprise que
     // si la liste la connaît — sans égard aux majuscules : « pce » lu sur le bon retient
     // « PCE ». Une unité que la liste n'a pas reste à choisir.
-    $(document).on('change', '#soudures-manque input[name="designation"]', function () {
+    document.addEventListener('change', evenement => {
+        const champ = evenement.target.closest('#soudures-manque input[name="designation"]');
+        if (!champ) return;
         const fenetre = fenetreManque();
         const unite = fenetre.querySelector('[name="unite"]');
         const option = [...fenetre.querySelectorAll('[data-liste-filtrable="manque-article"] [role="option"]')]
-            .find(o => o.dataset.value === this.value);
+            .find(o => o.dataset.value === champ.value);
         const duBon = option?.dataset.unite || '';
         if (!duBon || unite.value) return;
         const liste = fenetre.querySelector('[data-liste-filtrable="manque-unite"]');
@@ -668,13 +696,14 @@
         if (connue) choisirDans(fenetre, 'manque-unite', connue.dataset.value);
     });
 
-    $(document).on('click', '[data-fermer-manque]', function () {
-        fenetreManque()?.close();
+    document.addEventListener('click', evenement => {
+        if (evenement.target.closest('[data-fermer-manque]')) fenetreManque()?.close();
     });
 
-    $(document).on('submit', '#soudures-manque-form', async function (event) {
+    document.addEventListener('submit', async event => {
+        const form = event.target.closest('#soudures-manque-form');
+        if (!form) return;
         event.preventDefault();
-        const form = this;
         const message = form.querySelector('.fenetre-message');
         const bouton = form.querySelector('.fenetre-valider');
         // Les listes de la maison écrivent dans des champs cachés, qu'aucun « required »

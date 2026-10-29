@@ -14,9 +14,11 @@
 
     function refreshStaff(expanded = []) {
         if (!Array.isArray(expanded)) expanded = [];
-        $('#content').load(pageOuverte(), function (_, status) {
-            if (status === 'error') {
-                $(this).text('Impossible de recharger cet écran. Actualisez la page.');
+        const contenu = document.getElementById('content');
+        if (!contenu) return;
+        window.chargerDans(contenu, pageOuverte()).then(({ ok }) => {
+            if (!ok) {
+                contenu.textContent = 'Impossible de recharger cet écran. Actualisez la page.';
                 return;
             }
             expanded.forEach(id => {
@@ -28,9 +30,13 @@
             });
         });
     }
-    $(document).on('click', '.atelier-refresh', refreshStaff);
-    $(document).on('click', '.atelier-open-plan-create', function () {
-        const dialog = document.getElementById(this.dataset.dialog);
+    document.addEventListener('click', evenement => {
+        if (evenement.target.closest('.atelier-refresh')) refreshStaff(evenement);
+    });
+    document.addEventListener('click', evenement => {
+        const bouton = evenement.target.closest('.atelier-open-plan-create');
+        if (!bouton) return;
+        const dialog = document.getElementById(bouton.dataset.dialog);
         if (!dialog) return;
         // Le dialogue est rendu dans le panneau « Plans & affectations », masqué tant qu'il est replié :
         // on le sort du panneau le temps de l'afficher, sinon il faudrait le déplier pour voir la fenêtre.
@@ -43,14 +49,16 @@
         dialog.showModal();
         form.elements.reference.focus();
     });
-    $(document).on('click', '.atelier-open-plan-edit', function () {
-        const dialog = document.getElementById(this.dataset.dialog);
+    document.addEventListener('click', evenement => {
+        const bouton = evenement.target.closest('.atelier-open-plan-edit');
+        if (!bouton) return;
+        const dialog = document.getElementById(bouton.dataset.dialog);
         if (!dialog) return;
         const form = dialog.querySelector('form');
         form.reset();
-        form.elements.element.value = this.dataset.element;
-        form.elements.reference.value = this.dataset.reference;
-        form.elements.libelle.value = this.dataset.description;
+        form.elements.element.value = bouton.dataset.element;
+        form.elements.reference.value = bouton.dataset.reference;
+        form.elements.libelle.value = bouton.dataset.description;
         form.querySelector('.atelier-message').textContent = '';
         dialog.showModal();
         form.elements.reference.focus();
@@ -64,24 +72,29 @@
         const sortie = champ.closest('div')?.querySelector('.atelier-quotient');
         if (sortie) sortie.textContent = total ? 'soit ' + Math.round(faites * 100 / total) + ' %' : '';
     }
-    $(document).on('input', 'input[name="soudures"]', function () { montrerQuotient(this); });
+    document.addEventListener('input', evenement => {
+        const champ = evenement.target.closest('input[name="soudures"]');
+        if (champ) montrerQuotient(champ);
+    });
 
-    $(document).on('click', '.atelier-edit-progress', function () {
-        const dialog = document.getElementById(this.dataset.dialog);
+    document.addEventListener('click', evenement => {
+        const bouton = evenement.target.closest('.atelier-edit-progress');
+        if (!bouton) return;
+        const dialog = document.getElementById(bouton.dataset.dialog);
         if (!dialog) return;
         const form = dialog.querySelector('form');
         form.reset();
-        form.elements.affectation.value = this.dataset.affectation;
-        form.elements.revision.value = this.dataset.revision;
-        form.elements.avancement.value = this.dataset.avancement;
-        form.elements.commentaire.value = this.dataset.commentaire;
-        dialog.querySelector('.atelier-progress-target').textContent = this.dataset.label;
+        form.elements.affectation.value = bouton.dataset.affectation;
+        form.elements.revision.value = bouton.dataset.revision;
+        form.elements.avancement.value = bouton.dataset.avancement;
+        form.elements.commentaire.value = bouton.dataset.commentaire;
+        dialog.querySelector('.atelier-progress-target').textContent = bouton.dataset.label;
         form.querySelector('.atelier-message').textContent = '';
 
         // Ce plan porte-t-il une liste de soudures ? Elle décide du champ présenté, et
         // désactive l’autre : laissé actif, il partirait aussi, et le serveur aurait deux
         // réponses à la même question.
-        const total = Number(this.dataset.soudures) || 0;
+        const total = Number(bouton.dataset.soudures) || 0;
         const soudures = form.elements.soudures;
         const pourcentage = form.elements.avancement;
         dialog.querySelector('.atelier-champ-soudures').hidden = !total;
@@ -92,10 +105,10 @@
         pourcentage.required = !total;
         if (total) {
             soudures.max = total;
-            soudures.value = Math.round(Number(this.dataset.avancement) * total / 100);
+            soudures.value = Math.round(Number(bouton.dataset.avancement) * total / 100);
             // La phrase est écrite côté PHP et voyage sur le bouton : le même texte sert
             // ici et sur l’écran de l’atelier, sans être composé deux fois.
-            dialog.querySelector('.atelier-soudures-origine').textContent = this.dataset.origine || '';
+            dialog.querySelector('.atelier-soudures-origine').textContent = bouton.dataset.origine || '';
             montrerQuotient(soudures);
         }
 
@@ -107,15 +120,15 @@
     //
     // Ils sont ici, et non dans soudures.js, parce que l'encadrement ne charge pas ce
     // fichier-là : il n'a pas « Mes soudures », il a « Soudures ».
-    $(document).on('click', '.atelier-vers-soudures', function () {
-        document.getElementById('btn-soudures')?.click();
+    document.addEventListener('click', evenement => {
+        if (evenement.target.closest('.atelier-vers-soudures')) document.getElementById('btn-soudures')?.click();
     });
-    $(document).on('click', '.atelier-vers-suivi-soudures', function () {
-        document.getElementById('btn-suivi-soudures')?.click();
+    document.addEventListener('click', evenement => {
+        if (evenement.target.closest('.atelier-vers-suivi-soudures')) document.getElementById('btn-suivi-soudures')?.click();
     });
 
-    $(document).on('click', '.atelier-close-plan-edit', function () {
-        this.closest('dialog')?.close();
+    document.addEventListener('click', evenement => {
+        evenement.target.closest('.atelier-close-plan-edit')?.closest('dialog')?.close();
     });
 
     // ===== « Mes plans » : la recherche et les onglets =====
@@ -153,27 +166,35 @@
         const aucun = page.querySelector('.mes-plans-aucun-resultat');
         if (aucun) aucun.hidden = visibles > 0;
     }
-    $(document).on('click', '.mes-plans-onglet', function () {
+    document.addEventListener('click', evenement => {
+        const bouton = evenement.target.closest('.mes-plans-onglet');
+        if (!bouton) return;
         document.querySelectorAll('.mes-plans-onglet').forEach(onglet => {
-            onglet.setAttribute('aria-pressed', String(onglet === this));
+            onglet.setAttribute('aria-pressed', String(onglet === bouton));
         });
         filtrerMesPlans();
     });
-    $(document).on('input', '#mes-plans-recherche', filtrerMesPlans);
-    $(document).on('click', '.atelier-tab', function () {
-        this.closest('.atelier-tablist').querySelectorAll('.atelier-tab').forEach(onglet => {
-            const actif = onglet === this;
+    document.addEventListener('input', evenement => {
+        if (evenement.target.closest('#mes-plans-recherche')) filtrerMesPlans();
+    });
+    document.addEventListener('click', evenement => {
+        const bouton = evenement.target.closest('.atelier-tab');
+        if (!bouton) return;
+        bouton.closest('.atelier-tablist').querySelectorAll('.atelier-tab').forEach(onglet => {
+            const actif = onglet === bouton;
             onglet.setAttribute('aria-selected', String(actif));
             onglet.tabIndex = actif ? 0 : -1;
             document.getElementById(onglet.getAttribute('aria-controls')).hidden = !actif;
         });
     });
-    $(document).on('keydown', '.atelier-tab', function (event) {
+    document.addEventListener('keydown', event => {
+        const bouton = event.target.closest('.atelier-tab');
+        if (!bouton) return;
         const pas = { ArrowLeft: -1, ArrowRight: 1 }[event.key];
         if (!pas) return;
         event.preventDefault();
-        const onglets = Array.from(this.closest('.atelier-tablist').querySelectorAll('.atelier-tab'));
-        const suivant = onglets[(onglets.indexOf(this) + pas + onglets.length) % onglets.length];
+        const onglets = Array.from(bouton.closest('.atelier-tablist').querySelectorAll('.atelier-tab'));
+        const suivant = onglets[(onglets.indexOf(bouton) + pas + onglets.length) % onglets.length];
         suivant.focus();
         suivant.click();
     });
@@ -318,13 +339,20 @@
         form.requestSubmit(envoi);
     }
 
-    $(document).on('click', '.atelier-edit-assignment', function () {
-        const memeBouton = menuOuvert?.bouton === this;
+    document.addEventListener('click', evenement => {
+        const bouton = evenement.target.closest('.atelier-edit-assignment');
+        if (!bouton) return;
+        const memeBouton = menuOuvert?.bouton === bouton;
         fermerMenuAffectation(false);
-        if (!memeBouton) ouvrirMenuAffectation(this);
+        if (!memeBouton) ouvrirMenuAffectation(bouton);
     });
-    $(document).on('click', '.atelier-affecter-choix', function () { envoyerAffectation(this.dataset.user); });
-    $(document).on('click', '.atelier-affecter-retirer', function () { envoyerAffectation(''); });
+    document.addEventListener('click', evenement => {
+        const choix = evenement.target.closest('.atelier-affecter-choix');
+        if (choix) envoyerAffectation(choix.dataset.user);
+    });
+    document.addEventListener('click', evenement => {
+        if (evenement.target.closest('.atelier-affecter-retirer')) envoyerAffectation('');
+    });
 
     // Le clavier : flèches pour parcourir, Échap pour refermer sans rien changer. Échap ne
     // remonte pas plus haut — sans cela, il refermait aussi le volet.
@@ -370,109 +398,151 @@
     // « :scope > tbody » et non « tbody » : la liste vit dans la ligne d'un autre tableau, et
     // le sélecteur seul trouvait aussi le tbody de celui-ci — la case « Tous » se comptait
     // alors parmi les cordons, et ne se recochait jamais.
-    $(document).on('change', '.soudure-controles .soudure-croix', function () {
-        const table = this.closest('table');
-        const controle = this.dataset.controle;
+    document.addEventListener('change', evenement => {
+        const croix = evenement.target.closest('.soudure-controles .soudure-croix');
+        if (!croix) return;
+        const table = croix.closest('table');
+        const controle = croix.dataset.controle;
         const cases = table.querySelectorAll(`:scope > tbody .soudure-croix[data-controle="${controle}"]`);
         const tout = table.querySelector(`.soudure-controles-tout[data-controle="${controle}"]`);
-        if (this === tout) cases.forEach(caseCordon => { caseCordon.checked = tout.checked; });
+        if (croix === tout) cases.forEach(caseCordon => { caseCordon.checked = tout.checked; });
         else if (tout) tout.checked = Array.from(cases).every(caseCordon => caseCordon.checked);
     });
 
-    $(document).on('submit', '.atelier-action', async function (event) {
+    // Les rechargements après un enregistrement rouvrent les lignes dépliées avant.
+    function redeplier(expanded) {
+        expanded.forEach(id => {
+            const row = document.getElementById(id);
+            if (row) row.hidden = false;
+            document.querySelectorAll('.prefa-toggle').forEach(button => {
+                if (button.getAttribute('aria-controls') === id) button.setAttribute('aria-expanded', 'true');
+            });
+        });
+    }
+
+    document.addEventListener('submit', async event => {
+        const form = event.target.closest('.atelier-action');
+        if (!form) return;
         event.preventDefault();
-        const form = $(this);
-        const endpoint = this.dataset.endpoint;
+        const endpoint = form.dataset.endpoint;
         if (!['save_atelier.php', 'update_atelier.php'].includes(endpoint)) return;
-        if (this.classList.contains('atelier-delete-plan') && !await window.confirmer(
-            'Supprimer le plan « ' + this.dataset.planName + ' » ?', {
+        if (form.classList.contains('atelier-delete-plan') && !await window.confirmer(
+            'Supprimer le plan « ' + form.dataset.planName + ' » ?', {
                 texte: 'Ses affectations et leur suivi seront supprimés. Les fichiers joints à la demande seront conservés.',
                 action: 'Supprimer',
                 ton: 'danger',
             })) return;
-        const data = new URLSearchParams(form.serialize());
-        // serialize() ignore le bouton qui a envoyé le formulaire : deux boutons dans un
-        // même formulaire ont donc besoin qu’on les relise ici.
-        const submitter = event.originalEvent?.submitter;
+        // Les champs texte seuls, comme un formulaire sérialisé : un fichier ne part pas.
+        const data = new URLSearchParams();
+        new FormData(form).forEach((valeur, nom) => {
+            if (typeof valeur === 'string') data.append(nom, valeur);
+        });
+        // Le FormData est pris sans le bouton qui a envoyé le formulaire : deux boutons dans
+        // un même formulaire ont donc besoin qu’on les relise ici.
+        const submitter = event.submitter;
         if (submitter?.value === 'revoke') data.set('operation', 'revoke');
         if (submitter?.name === 'decision') data.set('decision', submitter.value);
-        const message = form.find('.atelier-message');
-        const buttons = form.find('button');
-        buttons.prop('disabled', true);
-        message.text('Enregistrement…');
+        const messages = form.querySelectorAll('.atelier-message');
+        const ecrireMessage = texte => messages.forEach(message => { message.textContent = texte; });
+        const buttons = form.querySelectorAll('button');
+        buttons.forEach(bouton => { bouton.disabled = true; });
+        ecrireMessage('Enregistrement…');
         const expanded = Array.from(document.querySelectorAll('.prefa-toggle[aria-expanded="true"]')).map(button => button.getAttribute('aria-controls'));
-        $.ajax({ url: 'actions/' + endpoint, method: 'POST', data: data.toString(), dataType: 'json' })
-            .done(function () {
-                form[0].closest('dialog')?.close();
-                if (menuOuvert && menuOuvert.form === form[0]) fermerMenuAffectation(false);
-                // « Mes plans » et « Mes soudures » se rechargent elles-mêmes. Les
-                // écrans de l'encadrement, non : la page Plans / ISO et la liste des demandes
-                // ont chacune leur façon de se remettre à jour, plus bas. Sans cette
-                // exception, valider un avancement depuis la fiche d'une demande emmenait le
-                // chef sur « Mes soudures », qu'il n'a même pas.
-                if (endpoint === 'update_atelier.php'
-                    && !document.getElementById('plans-iso-page')
-                    && !document.getElementById('prefa-filters')) { refreshStaff(expanded); return; }
-                // Les deux écrans ci-dessus ont leur propre façon de se remettre à jour,
-                // juste en dessous.
-                const prefaFilters = document.getElementById('prefa-filters');
-                if (prefaFilters) {
-                    const params = new URLSearchParams(new FormData(prefaFilters));
-                    params.set('results', '1');
-                    $.get('pages/lists_prefa.php?' + params.toString()).done(function (html) {
-                        $('#prefa-results').replaceWith(html);
-                        expanded.forEach(id => {
-                            const row = document.getElementById(id);
-                            if (row) row.hidden = false;
-                            document.querySelectorAll('.prefa-toggle').forEach(button => {
-                                if (button.getAttribute('aria-controls') === id) button.setAttribute('aria-expanded', 'true');
-                            });
-                        });
-                    }).fail(function () { message.text('Enregistrement effectué. Actualisez pour voir le résultat.'); });
-                } else if (document.getElementById('plans-iso-page')) {
-                    const openCardIds = Array.from(document.querySelectorAll('.plans-iso-detail:not([hidden])')).map(c => c.id);
-                    // Enregistrement fait depuis une fenêtre : déplier le panneau pour montrer le résultat.
-                    const detailId = 'plans-iso-detail-' + form[0].elements.id.value;
-                    if (!openCardIds.includes(detailId)) openCardIds.push(detailId);
-                    // Le volet revient sur le plan où l'on était, à la même hauteur : il
-                    // rouvrait sur le premier plan, en haut, après chaque affectation faite
-                    // sur le deuxième.
-                    const ongletsActifs = Array.from(document.querySelectorAll('.plans-iso-detail:not([hidden]) .atelier-tab[aria-selected="true"]')).map(onglet => onglet.id);
-                    const defilements = Object.fromEntries(openCardIds.map(id => [id, document.getElementById(id)?.scrollTop || 0]));
-                    $('#content').load('pages/plans_iso.php', function () {
-                        openCardIds.forEach(id => {
-                            const card = document.getElementById(id);
-                            if (card) {
-                                card.hidden = false;
-                                document.querySelectorAll('.plans-iso-toggle').forEach(button => {
-                                    if (button.getAttribute('aria-controls') === id) button.setAttribute('aria-expanded', 'true');
-                                });
-                            }
-                        });
-                        ongletsActifs.forEach(id => {
-                            const onglet = document.getElementById(id);
-                            if (onglet && onglet.getAttribute('aria-selected') !== 'true') onglet.click();
-                        });
-                        Object.entries(defilements).forEach(([id, haut]) => {
-                            const card = document.getElementById(id);
-                            if (card) card.scrollTop = haut;
-                        });
-                    });
-                }
+
+        // Réussi : une réponse 2xx, et du JSON lisible.
+        let reussi = false;
+        let corps = null;
+        try {
+            const reponse = await fetch('actions/' + endpoint, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: data.toString(),
+            });
+            corps = await reponse.json().catch(() => null);
+            reussi = reponse.ok && corps !== null;
+        } catch {
+            reussi = false;
+        }
+        buttons.forEach(bouton => { bouton.disabled = false; });
+
+        if (!reussi) {
+            const texte = corps?.message || 'Enregistrement impossible. Réessayez.';
+            ecrireMessage(texte);
+            // Le formulaire d'affectation est caché : son message se dit dans le menu
+            // resté ouvert, dont les choix redeviennent cliquables.
+            if (menuOuvert && menuOuvert.form === form) {
+                const mot = menuOuvert.menu.querySelector('.atelier-affecter-mot');
+                mot.hidden = false;
+                mot.textContent = texte;
+                mot.classList.add('est-erreur');
+                menuOuvert.menu.querySelectorAll('button, input').forEach(b => { b.disabled = false; });
+            }
+            return;
+        }
+
+        form.closest('dialog')?.close();
+        if (menuOuvert && menuOuvert.form === form) fermerMenuAffectation(false);
+        // « Mes plans » et « Mes soudures » se rechargent elles-mêmes. Les
+        // écrans de l'encadrement, non : la page Plans / ISO et la liste des demandes
+        // ont chacune leur façon de se remettre à jour, plus bas. Sans cette
+        // exception, valider un avancement depuis la fiche d'une demande emmenait le
+        // chef sur « Mes soudures », qu'il n'a même pas.
+        if (endpoint === 'update_atelier.php'
+            && !document.getElementById('plans-iso-page')
+            && !document.getElementById('prefa-filters')) { refreshStaff(expanded); return; }
+        // Les deux écrans ci-dessus ont leur propre façon de se remettre à jour,
+        // juste en dessous.
+        const prefaFilters = document.getElementById('prefa-filters');
+        if (prefaFilters) {
+            const params = new URLSearchParams(new FormData(prefaFilters));
+            params.set('results', '1');
+            fetch('pages/lists_prefa.php?' + params.toString(), {
+                credentials: 'same-origin',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
             })
-            .fail(xhr => {
-                const texte = xhr.responseJSON?.message || 'Enregistrement impossible. Réessayez.';
-                message.text(texte);
-                // Le formulaire d'affectation est caché : son message se dit dans le menu
-                // resté ouvert, dont les choix redeviennent cliquables.
-                if (menuOuvert && menuOuvert.form === form[0]) {
-                    const mot = menuOuvert.menu.querySelector('.atelier-affecter-mot');
-                    mot.hidden = false;
-                    mot.textContent = texte;
-                    mot.classList.add('est-erreur');
-                    menuOuvert.menu.querySelectorAll('button, input').forEach(b => { b.disabled = false; });
-                }
-            })
-            .always(() => buttons.prop('disabled', false));
+                .then(async reponse => {
+                    if (!reponse.ok) throw new Error(String(reponse.status));
+                    const modele = document.createElement('template');
+                    modele.innerHTML = await reponse.text();
+                    document.getElementById('prefa-results')?.replaceWith(modele.content);
+                    redeplier(expanded);
+                })
+                .catch(() => ecrireMessage('Enregistrement effectué. Actualisez pour voir le résultat.'));
+        } else if (document.getElementById('plans-iso-page')) {
+            const openCardIds = Array.from(document.querySelectorAll('.plans-iso-detail:not([hidden])')).map(c => c.id);
+            // Enregistrement fait depuis une fenêtre : déplier le panneau pour montrer le résultat.
+            const detailId = 'plans-iso-detail-' + form.elements.id.value;
+            if (!openCardIds.includes(detailId)) openCardIds.push(detailId);
+            // Le volet revient sur le plan où l'on était, à la même hauteur : il
+            // rouvrait sur le premier plan, en haut, après chaque affectation faite
+            // sur le deuxième.
+            const ongletsActifs = Array.from(document.querySelectorAll('.plans-iso-detail:not([hidden]) .atelier-tab[aria-selected="true"]')).map(onglet => onglet.id);
+            const defilements = Object.fromEntries(openCardIds.map(id => [id, document.getElementById(id)?.scrollTop || 0]));
+            const contenu = document.getElementById('content');
+            if (!contenu) return;
+            window.chargerDans(contenu, 'pages/plans_iso.php').then(() => {
+                openCardIds.forEach(id => {
+                    const card = document.getElementById(id);
+                    if (card) {
+                        card.hidden = false;
+                        document.querySelectorAll('.plans-iso-toggle').forEach(button => {
+                            if (button.getAttribute('aria-controls') === id) button.setAttribute('aria-expanded', 'true');
+                        });
+                    }
+                });
+                ongletsActifs.forEach(id => {
+                    const onglet = document.getElementById(id);
+                    if (onglet && onglet.getAttribute('aria-selected') !== 'true') onglet.click();
+                });
+                Object.entries(defilements).forEach(([id, haut]) => {
+                    const card = document.getElementById(id);
+                    if (card) card.scrollTop = haut;
+                });
+            });
+        }
     });
 })();
