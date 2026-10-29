@@ -352,6 +352,8 @@ function dashboardRessources(Utilisateur $utilisateur): array
         'css/dashboard/barre-laterale.css',
     ];
     $scripts = [
+        // Le chargement d'un écran dans #content : la navigation et les écrans s'en servent.
+        'js/composants/charger.js',
         'js/composants/suggestions.js',
         'js/coquille/dashboard-navigation.js',
         'js/coquille/dashboard-forms.js',

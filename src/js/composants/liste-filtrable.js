@@ -161,81 +161,104 @@
         if (identifiant) identifiant.dispatchEvent(new Event('change', { bubbles: true }));
     }
 
-    $(document)
-        .on('focus click', '.liste-filtrable-champ', function () {
-            ouvrir(champFiltrable(this));
-        })
-        .on('input', '.liste-filtrable-champ', function () {
-            const filtrable = champFiltrable(this);
-            const { prefixe, identifiant, blocPrecision, precision } = morceaux(filtrable);
-            const tape = this.value.trim();
-            if (tape && tape.toLowerCase() !== 'autre') this.dataset.lastQuery = tape;
+    document.addEventListener('focusin', evenement => {
+        const champ = evenement.target.closest?.('.liste-filtrable-champ');
+        if (champ) ouvrir(champFiltrable(champ));
+    });
 
-            // Retaper annule le choix : l'identifiant ne doit pas survivre au texte qui le
-            // désignait, sinon on enverrait une valeur que personne ne lit plus.
-            if (!identifiant || identifiant.value !== 'autre' || tape.toLowerCase() !== 'autre') {
-                if (identifiant) identifiant.value = '';
-                montrer(blocPrecision, false);
-                if (precision) precision.required = false;
-                prevenir(prefixe, null);
-            }
-            ouvrir(filtrable);
-        })
-        .on('click', '.liste-filtrable-options [role="option"]', function (evenement) {
+    document.addEventListener('input', evenement => {
+        const champ = evenement.target.closest?.('.liste-filtrable-champ');
+        if (!champ) return;
+        const filtrable = champFiltrable(champ);
+        const { prefixe, identifiant, blocPrecision, precision } = morceaux(filtrable);
+        const tape = champ.value.trim();
+        if (tape && tape.toLowerCase() !== 'autre') champ.dataset.lastQuery = tape;
+
+        // Retaper annule le choix : l'identifiant ne doit pas survivre au texte qui le
+        // désignait, sinon on enverrait une valeur que personne ne lit plus.
+        if (!identifiant || identifiant.value !== 'autre' || tape.toLowerCase() !== 'autre') {
+            if (identifiant) identifiant.value = '';
+            montrer(blocPrecision, false);
+            if (precision) precision.required = false;
+            prevenir(prefixe, null);
+        }
+        ouvrir(filtrable);
+    });
+
+    // Un seul écouteur de clic, dans cet ordre : une option ou la croix agissent et s'arrêtent
+    // là — sans quoi le « clic ailleurs » qui suit refermerait la liste qu'on vient de toucher.
+    document.addEventListener('click', evenement => {
+        const cible = evenement.target;
+
+        const option = cible.closest('.liste-filtrable-options [role="option"]');
+        if (option) {
             evenement.stopPropagation();
-            choisir(champFiltrable(this), this.dataset.value, $(this).text().trim());
-        })
-        .on('click', '.liste-filtrable-effacer', function (evenement) {
+            choisir(champFiltrable(option), option.dataset.value, option.textContent.trim());
+            return;
+        }
+
+        const effacer = cible.closest('.liste-filtrable-effacer');
+        if (effacer) {
             evenement.stopPropagation();
-            const filtrable = champFiltrable(this);
+            const filtrable = champFiltrable(effacer);
             choisir(filtrable, '', '');
             const { saisie } = morceaux(filtrable);
             if (saisie) {
                 delete saisie.dataset.lastQuery;
                 saisie.focus();
             }
-        })
-        .on('keydown', '.liste-filtrable-champ', function (evenement) {
-            const filtrable = champFiltrable(this);
-            const { liste, autre } = morceaux(filtrable);
-            const options = $(liste).find('[role="option"]:visible');
-            const active = options.filter('[aria-selected="true"]');
+            return;
+        }
 
-            if (evenement.key === 'Escape' || evenement.key === 'Tab') {
-                // Une liste ouverte se ferme seule sur Échap : la fenêtre qui la porte ne
-                // doit pas se refermer avec elle.
-                if (evenement.key === 'Escape' && this.getAttribute('aria-expanded') === 'true') evenement.preventDefault();
-                fermer(filtrable);
-                return;
-            }
-            if (evenement.key === 'Enter') {
-                evenement.preventDefault();
-                // Rien de surligné et une seule option : c'est forcément celle-là. Rien de
-                // surligné et plusieurs : on ne devine pas, on propose « Autre » s'il existe.
-                if (active.length) active.trigger('click');
-                else if (options.length === 1) options.trigger('click');
-                else if (autre) $(autre).trigger('click');
-            }
-            if (evenement.key === 'ArrowDown' || evenement.key === 'ArrowUp') {
-                evenement.preventDefault();
-                ouvrir(filtrable);
-                if (!options.length) return;
-                let rang = options.index(active);
-                rang = evenement.key === 'ArrowDown'
-                    ? (rang + 1) % options.length
-                    : (rang <= 0 ? options.length - 1 : rang - 1);
-                options.attr('aria-selected', 'false');
-                const option = options.eq(rang).attr('aria-selected', 'true');
-                if (option[0]) option[0].scrollIntoView({ block: 'nearest' });
-            }
-        })
+        const champ = cible.closest('.liste-filtrable-champ');
+        if (champ) ouvrir(champFiltrable(champ));
+
         // Un clic ailleurs referme les champs ouverts — mais pas celui qu'on vient de toucher.
-        .on('click', function (evenement) {
-            const touche = champFiltrable(evenement.target);
-            document.querySelectorAll('[data-liste-filtrable]').forEach(filtrable => {
-                if (filtrable !== touche) fermer(filtrable);
-            });
+        const touche = champFiltrable(cible);
+        document.querySelectorAll('[data-liste-filtrable]').forEach(filtrable => {
+            if (filtrable !== touche) fermer(filtrable);
         });
+    });
+
+    /** Une option affichée : la même règle que l'ancien « :visible » — elle occupe une place. */
+    const affichee = option => option.getClientRects().length > 0;
+
+    document.addEventListener('keydown', evenement => {
+        const champ = evenement.target.closest?.('.liste-filtrable-champ');
+        if (!champ) return;
+        const filtrable = champFiltrable(champ);
+        const { liste, autre } = morceaux(filtrable);
+        const options = liste ? [...liste.querySelectorAll('[role="option"]')].filter(affichee) : [];
+        const active = options.find(option => option.getAttribute('aria-selected') === 'true');
+
+        if (evenement.key === 'Escape' || evenement.key === 'Tab') {
+            // Une liste ouverte se ferme seule sur Échap : la fenêtre qui la porte ne
+            // doit pas se refermer avec elle.
+            if (evenement.key === 'Escape' && champ.getAttribute('aria-expanded') === 'true') evenement.preventDefault();
+            fermer(filtrable);
+            return;
+        }
+        if (evenement.key === 'Enter') {
+            evenement.preventDefault();
+            // Rien de surligné et une seule option : c'est forcément celle-là. Rien de
+            // surligné et plusieurs : on ne devine pas, on propose « Autre » s'il existe.
+            if (active) active.click();
+            else if (options.length === 1) options[0].click();
+            else if (autre) autre.click();
+        }
+        if (evenement.key === 'ArrowDown' || evenement.key === 'ArrowUp') {
+            evenement.preventDefault();
+            ouvrir(filtrable);
+            if (!options.length) return;
+            let rang = options.indexOf(active);
+            rang = evenement.key === 'ArrowDown'
+                ? (rang + 1) % options.length
+                : (rang <= 0 ? options.length - 1 : rang - 1);
+            options.forEach(option => option.setAttribute('aria-selected', 'false'));
+            options[rang].setAttribute('aria-selected', 'true');
+            options[rang].scrollIntoView({ block: 'nearest' });
+        }
+    });
 
     /**
      * Demander une matière, c'est devoir dire pour quand on la veut : le champ de
@@ -258,7 +281,8 @@
 
     // Le choix « Autre » ne donne pas encore de matière : rien à demander tant que sa
     // précision n'est pas saisie.
-    $(document).on('change', '#matiere-autre', function () {
-        if (this.value.trim()) disponibiliteMatiere(true);
+    document.addEventListener('change', evenement => {
+        const champ = evenement.target;
+        if (champ.id === 'matiere-autre' && champ.value.trim()) disponibiliteMatiere(true);
     });
 })();

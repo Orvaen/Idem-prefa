@@ -48,7 +48,7 @@
     } else {
         enhanceFields();
     }
-    // Les volets arrivent par jQuery et HTMX ; et data-theme change sur <html> quand on
+    // Les volets arrivent par AJAX et HTMX ; et data-theme change sur <html> quand on
     // bascule de thème.
     //
     // Ce second cas comptait : la couleur de fond est relevée sur l'ancêtre et écrite en dur

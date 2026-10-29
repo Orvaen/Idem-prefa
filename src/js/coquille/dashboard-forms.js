@@ -1,232 +1,278 @@
-$(document).on('submit', '#passivation-form', function (event) {
-    event.preventDefault();
-    const form = $(this);
-    if (form.data('submitting')) return;
-    const message = form.find('.prefa-message');
-    message.removeClass('success error').text('Enregistrement…');
-    form.data('submitting', true).find('button').prop('disabled', true);
-    $.ajax({
-        url: 'actions/create_passivation.php', method: 'POST', data: form.serialize(), dataType: 'json',
-        success: function (response) {
-            $('#passivation-rows .passivation-empty').remove();
-            const row = $('#passivation-rows tr').filter(function () { return $(this).attr('data-id') === String(response.id); });
-            if (row.length) {
-                row.find('.passivation-name').text(response.libelle);
-            } else {
-                $('<tr>').attr('data-id', response.id).append(
-                    $('<td>').text(response.id),
-                    $('<td>').addClass('passivation-name').text(response.libelle),
-                    $('<td>').append($('<button>').attr('type', 'button').addClass('edit-passivation').attr({'hx-get': 'actions/edit_passivation.php?id=' + response.id, 'hx-target': 'closest tr', 'hx-swap': 'outerHTML'}).text('Modifier'))
-                ).appendTo('#passivation-rows');
-            }
-            form[0].reset();
-            htmx.process(document.getElementById('passivation-rows'));
-            message.addClass('success').text(response.message);
-        },
-        error: function (xhr) { message.addClass('error').text(xhr.responseJSON?.message || 'Enregistrement impossible. Réessayez.'); },
-        complete: function () { form.data('submitting', false).find('button').prop('disabled', false); }
-    });
+// L'état d'un formulaire en cours d'envoi ou de vérification : hors du DOM, il disparaît avec
+// le formulaire quand l'écran est remplacé.
+const etatsFormulaires = new WeakMap();
+
+function etatFormulaire(form) {
+    let etat = etatsFormulaires.get(form);
+    if (!etat) etatsFormulaires.set(form, etat = { envoi: false, revision: 0, disponible: null, minuterie: null });
+    return etat;
+}
+
+/**
+ * Un POST dont on attend du JSON. « corps » vaut null si la réponse n'en est pas : la
+ * réussite exige les deux, un statut 2xx et un JSON lisible.
+ */
+async function envoyerFormulaire(adresse, donnees) {
+    try {
+        const reponse = await fetch(adresse, { method: 'POST', credentials: 'same-origin', body: new URLSearchParams(donnees) });
+        const corps = await reponse.json().catch(() => null);
+        return { ok: reponse.ok && corps !== null, statut: reponse.status, corps };
+    } catch (erreur) {
+        return { ok: false, statut: 0, corps: null };
+    }
+}
+
+function ecrireMessage(message, texte, classe) {
+    if (!message) return;
+    message.classList.remove('success', 'error');
+    if (classe) message.classList.add(classe);
+    message.textContent = texte;
+}
+
+function boutonsActifs(form, actifs, selecteur = 'button') {
+    form.querySelectorAll(selecteur).forEach(bouton => { bouton.disabled = !actifs; });
+}
+
+document.addEventListener('submit', async evenement => {
+    const form = evenement.target;
+    if (form.id !== 'passivation-form') return;
+    evenement.preventDefault();
+    const etat = etatFormulaire(form);
+    if (etat.envoi) return;
+    const message = form.querySelector('.prefa-message');
+    ecrireMessage(message, 'Enregistrement…');
+    etat.envoi = true;
+    boutonsActifs(form, false);
+
+    const { ok, corps } = await envoyerFormulaire('actions/create_passivation.php', new FormData(form));
+    if (ok) {
+        const lignes = document.getElementById('passivation-rows');
+        lignes?.querySelectorAll('.passivation-empty').forEach(vide => vide.remove());
+        const ligne = lignes && [...lignes.querySelectorAll('tr')].find(tr => tr.getAttribute('data-id') === String(corps.id));
+        if (ligne) {
+            ligne.querySelectorAll('.passivation-name').forEach(nom => { nom.textContent = corps.libelle; });
+        } else if (lignes) {
+            const tr = document.createElement('tr');
+            tr.setAttribute('data-id', corps.id);
+            const numero = document.createElement('td');
+            numero.textContent = corps.id;
+            const nom = document.createElement('td');
+            nom.className = 'passivation-name';
+            nom.textContent = corps.libelle;
+            const action = document.createElement('td');
+            const bouton = document.createElement('button');
+            bouton.type = 'button';
+            bouton.className = 'edit-passivation';
+            bouton.setAttribute('hx-get', 'actions/edit_passivation.php?id=' + corps.id);
+            bouton.setAttribute('hx-target', 'closest tr');
+            bouton.setAttribute('hx-swap', 'outerHTML');
+            bouton.textContent = 'Modifier';
+            action.append(bouton);
+            tr.append(numero, nom, action);
+            lignes.append(tr);
+        }
+        form.reset();
+        htmx.process(lignes);
+        ecrireMessage(message, corps.message, 'success');
+    } else {
+        ecrireMessage(message, corps?.message || 'Enregistrement impossible. Réessayez.', 'error');
+    }
+    etat.envoi = false;
+    boutonsActifs(form, true);
 });
 
 // Seules les pastilles qui comptent des demandes urgentes. Le sélecteur prenait toutes
 // les pastilles de la barre, celle des PV comprise.
 function updateUrgentBadge(count) {
-    $('.nav-urgent-badge[data-compteur="urgentes"]').text(count).prop('hidden', count === 0)
-        .attr('aria-label', count + ' demandes urgentes en attente');
+    document.querySelectorAll('.nav-urgent-badge[data-compteur="urgentes"]').forEach(pastille => {
+        pastille.textContent = count;
+        pastille.hidden = count === 0;
+        pastille.setAttribute('aria-label', count + ' demandes urgentes en attente');
+    });
 }
+
+const valeurChamp = (form, nom) => (form.querySelector('[name="' + nom + '"]')?.value || '').trim();
 
 function identityKey(form) {
-    return JSON.stringify([
-        form.find('[name="name"]').val().trim(),
-        form.find('[name="prenom"]').val().trim()
-    ]);
+    return JSON.stringify([valeurChamp(form, 'name'), valeurChamp(form, 'prenom')]);
 }
 
-$(document).on('input change', '#create-user-form [name="name"], #create-user-form [name="prenom"]', function () {
-    const form = $(this).closest('form');
-    const message = form.find('#identifiant-message');
+function verifierIdentite(evenement) {
+    const champ = evenement.target.closest?.('#create-user-form [name="name"], #create-user-form [name="prenom"]');
+    if (!champ) return;
+    const form = champ.closest('form');
+    const etat = etatFormulaire(form);
+    const message = form.querySelector('#identifiant-message');
     const key = identityKey(form);
-    const revision = (form.data('identity-revision') || 0) + 1;
-    form.data('identity-revision', revision).removeData('available-identity');
-    clearTimeout(form.data('identity-timer'));
-    form.find('[type="submit"]').prop('disabled', true);
-    message.removeClass('success error');
+    const revision = ++etat.revision;
+    etat.disponible = null;
+    clearTimeout(etat.minuterie);
+    boutonsActifs(form, false, '[type="submit"]');
+    message?.classList.remove('success', 'error');
 
-    if (!form.find('[name="name"]').val().trim() || !form.find('[name="prenom"]').val().trim()) {
-        message.text('Saisissez le nom et le prénom.');
+    if (!valeurChamp(form, 'name') || !valeurChamp(form, 'prenom')) {
+        if (message) message.textContent = 'Saisissez le nom et le prénom.';
         return;
     }
 
-    message.text('Vérification…');
-    form.data('identity-timer', setTimeout(function () {
-        $.ajax({
-            url: 'actions/check_identifiant.php',
-            method: 'POST',
-            dataType: 'json',
-            data: {
-                name: form.find('[name="name"]').val().trim(),
-                prenom: form.find('[name="prenom"]').val().trim()
-            },
-            success: function (response) {
-                if (form.data('identity-revision') !== revision || identityKey(form) !== key) return;
-                const available = response.available === true;
-                message.addClass(available ? 'success' : 'error').text(response.message);
-                if (available) form.data('available-identity', key);
-                form.find('[type="submit"]').prop('disabled', !available || !!form.data('submitting'));
-            },
-            error: function (xhr) {
-                if (form.data('identity-revision') !== revision || identityKey(form) !== key) return;
-                message.addClass('error').text(xhr.responseJSON?.message || 'Vérification impossible. Modifiez le nom ou le prénom pour réessayer.');
-            }
+    if (message) message.textContent = 'Vérification…';
+    etat.minuterie = setTimeout(async () => {
+        const { ok, corps } = await envoyerFormulaire('actions/check_identifiant.php', {
+            name: valeurChamp(form, 'name'),
+            prenom: valeurChamp(form, 'prenom'),
         });
-    }, 300));
-});
+        if (etat.revision !== revision || identityKey(form) !== key) return;
+        if (!ok) {
+            ecrireMessage(message, corps?.message || 'Vérification impossible. Modifiez le nom ou le prénom pour réessayer.', 'error');
+            return;
+        }
+        const available = corps.available === true;
+        message?.classList.add(available ? 'success' : 'error');
+        if (message) message.textContent = corps.message;
+        if (available) etat.disponible = key;
+        boutonsActifs(form, available && !etat.envoi, '[type="submit"]');
+    }, 300);
+}
 
-$(document).on('submit', '#create-user-form', function (e) {
-    e.preventDefault();
+document.addEventListener('input', verifierIdentite);
+document.addEventListener('change', verifierIdentite);
 
-    const form = $(this);
-    const message = $('#form-message');
+document.addEventListener('submit', async evenement => {
+    const form = evenement.target;
+    if (form.id !== 'create-user-form') return;
+    evenement.preventDefault();
 
-    if (form.data('submitting')) return;
-    if (form.data('available-identity') !== identityKey(form)) {
-        form.find('[name="name"]').trigger('input');
+    const etat = etatFormulaire(form);
+    const message = document.getElementById('form-message');
+
+    if (etat.envoi) return;
+    if (etat.disponible !== identityKey(form)) {
+        form.querySelector('[name="name"]')?.dispatchEvent(new Event('input', { bubbles: true }));
         return;
     }
-    form.data('submitting', true);
-    form.find('[type="submit"]').prop('disabled', true);
+    etat.envoi = true;
+    boutonsActifs(form, false, '[type="submit"]');
 
     // Nettoyage de l'ancien message
-    message
-        .removeClass('success error')
-        .text('');
+    ecrireMessage(message, '');
 
-    $.ajax({
-        url: 'actions/create_users.php',
-        method: 'POST',
-        data: form.serialize(),
-        dataType: 'json',
+    const { ok, statut, corps } = await envoyerFormulaire('actions/create_users.php', new FormData(form));
+    if (ok) {
+        ecrireMessage(message, corps.message, 'success');
 
-        success: function (response) {
+        // Vider le formulaire
+        form.reset();
+        etat.disponible = null;
+        etat.revision++;
+        clearTimeout(etat.minuterie);
+        ecrireMessage(form.querySelector('#identifiant-message'), 'Saisissez le nom et le prénom.');
 
-            message
-                .addClass('success')
-                .text(response.message);
+        // Ton select custom
+        const role = document.getElementById('role');
+        if (role) role.value = '';
 
-            // Vider le formulaire
-            form[0].reset();
-            form.removeData('available-identity');
-            form.data('identity-revision', (form.data('identity-revision') || 0) + 1);
-            clearTimeout(form.data('identity-timer'));
-            form.find('#identifiant-message').removeClass('success error').text('Saisissez le nom et le prénom.');
-
-            // Ton select custom
-            $('#role').val('');
-
-            // Créé depuis la fenêtre de la liste : on la referme, on le dit, et la liste
-            // se recharge pour montrer le nouveau compte.
-            const dialogue = form.closest('dialog')[0];
-            if (dialogue) {
-                message.removeClass('success').text('');
-                dialogue.close();
-                if (window.toast) window.toast(response.message);
-                if (window.htmx) htmx.trigger(document.body, 'usersChanged');
-            }
-        },
-
-        error: function (xhr) {
-            if (xhr.status === 409) form.removeData('available-identity');
-
-            let errorMessage = 'Une erreur est survenue.';
-
-            if (xhr.responseJSON?.message) {
-                errorMessage = xhr.responseJSON.message;
-            }
-
-            message
-                .addClass('error')
-                .text(errorMessage);
-        },
-        complete: function () {
-            form.data('submitting', false);
-            form.find('[type="submit"]').prop('disabled', form.data('available-identity') !== identityKey(form));
+        // Créé depuis la fenêtre de la liste : on la referme, on le dit, et la liste
+        // se recharge pour montrer le nouveau compte.
+        const dialogue = form.closest('dialog');
+        if (dialogue) {
+            ecrireMessage(message, '');
+            dialogue.close();
+            if (window.toast) window.toast(corps.message);
+            if (window.htmx) htmx.trigger(document.body, 'usersChanged');
         }
-    });
+    } else {
+        if (statut === 409) etat.disponible = null;
+        ecrireMessage(message, corps?.message || 'Une erreur est survenue.', 'error');
+    }
+    etat.envoi = false;
+    boutonsActifs(form, etat.disponible === identityKey(form), '[type="submit"]');
 });
 
+function heuresChiffrees(evenement) {
+    const champ = evenement.target.closest?.('#prefa-form [name="pouces_total_iso"]');
+    if (!champ) return;
+    const form = champ.closest('form');
+    const rate = Number(form.getAttribute('data-hours-per-inch'));
+    const inches = Number(champ.value);
+    const heures = form.querySelector('[name="heures_chiffrees"]');
+    if (heures) heures.value = champ.value !== '' && champ.validity.valid ? (Math.round(inches * rate / 24 * 100) / 100).toFixed(2) : '';
+}
 
-$(document).on('input change', '#prefa-form [name="pouces_total_iso"]', function () {
-    const form = $(this).closest('form');
-    const rate = Number(form.attr('data-hours-per-inch'));
-    const inches = Number(this.value);
-    form.find('[name="heures_chiffrees"]').val(this.value !== '' && this.validity.valid ? (Math.round(inches * rate / 24 * 100) / 100).toFixed(2) : '');
-});
+document.addEventListener('input', heuresChiffrees);
+document.addEventListener('change', heuresChiffrees);
 
-$(document).on('submit', '#prefa-settings-form', function (event) {
-    event.preventDefault();
-    const form = $(this);
-    if (form.data('submitting')) return;
+document.addEventListener('submit', async evenement => {
+    const form = evenement.target;
+    if (form.id !== 'prefa-settings-form') return;
+    evenement.preventDefault();
+    const etat = etatFormulaire(form);
+    if (etat.envoi) return;
 
-    const message = form.find('.prefa-message').removeClass('success error');
-    const hoursInput = form.find('[name="duree_heures"]');
-    const minutesInput = form.find('[name="duree_minutes"]');
+    const message = form.querySelector('.prefa-message');
+    message?.classList.remove('success', 'error');
+    const hoursInput = form.querySelector('[name="duree_heures"]');
+    const minutesInput = form.querySelector('[name="duree_minutes"]');
 
-    if (hoursInput.length && minutesInput.length) {
-        const h = parseInt(hoursInput.val(), 10) || 0;
-        const m = parseInt(minutesInput.val(), 10) || 0;
+    if (hoursInput && minutesInput) {
+        const h = parseInt(hoursInput.value, 10) || 0;
+        const m = parseInt(minutesInput.value, 10) || 0;
         if (h === 0 && m === 0) {
-            message.addClass('error').text('La durée doit être d’au moins 1 minute.');
+            ecrireMessage(message, 'La durée doit être d’au moins 1 minute.', 'error');
             return;
         }
     }
 
-    message.text('Enregistrement…');
-    form.data('submitting', true).find('button').prop('disabled', true);
-    $.ajax({
-        url: 'actions/save_prefa_settings.php', method: 'POST', data: form.serialize(), dataType: 'json',
-        success: function (response) {
-            message.addClass('success').text(response.message);
-            if (response.formatted) {
-                form.find('.settings-preview-text').text(response.formatted);
-            }
-        },
-        error: function (xhr) { message.addClass('error').text(xhr.responseJSON?.message || 'Enregistrement impossible. Réessayez.'); },
-        complete: function () { form.data('submitting', false).find('button').prop('disabled', false); }
-    });
+    if (message) message.textContent = 'Enregistrement…';
+    etat.envoi = true;
+    boutonsActifs(form, false);
+    const { ok, corps } = await envoyerFormulaire('actions/save_prefa_settings.php', new FormData(form));
+    if (ok) {
+        ecrireMessage(message, corps.message, 'success');
+        if (corps.formatted) {
+            form.querySelectorAll('.settings-preview-text').forEach(apercu => { apercu.textContent = corps.formatted; });
+        }
+    } else {
+        ecrireMessage(message, corps?.message || 'Enregistrement impossible. Réessayez.', 'error');
+    }
+    etat.envoi = false;
+    boutonsActifs(form, true);
 });
 
 
 
 // ===== Utilisateurs : les onglets de rôle et la fenêtre « Nouvel utilisateur » =====
 
-// L'onglet remplit le champ « role » du formulaire de recherche, et htmx fait le reste.
-$(document).on('click', '.utilisateurs-onglet', function () {
-    const form = document.getElementById('users-filters');
-    if (!form) return;
-    form.querySelector('[name="role"]').value = this.dataset.role;
-    document.querySelectorAll('.utilisateurs-onglet').forEach(onglet => {
-        onglet.setAttribute('aria-pressed', String(onglet === this));
-    });
-    htmx.trigger(form, 'submit');
-});
+document.addEventListener('click', evenement => {
+    // L'onglet remplit le champ « role » du formulaire de recherche, et htmx fait le reste.
+    const onglet = evenement.target.closest('.utilisateurs-onglet');
+    if (onglet) {
+        const form = document.getElementById('users-filters');
+        if (!form) return;
+        form.querySelector('[name="role"]').value = onglet.dataset.role;
+        document.querySelectorAll('.utilisateurs-onglet').forEach(autre => {
+            autre.setAttribute('aria-pressed', String(autre === onglet));
+        });
+        htmx.trigger(form, 'submit');
+        return;
+    }
 
-$(document).on('click', '.utilisateurs-nouveau', function () {
-    const dialogue = document.getElementById(this.dataset.dialog);
-    if (!dialogue) return;
-    const form = dialogue.querySelector('form');
-    form.reset();
-    $('#role').val('');
-    $(form).find('#form-message').removeClass('success error').text('');
-    $(form).find('[name="name"]').trigger('input');
-    dialogue.showModal();
-    form.querySelector('[name="prenom"]').focus();
-});
+    const nouveau = evenement.target.closest('.utilisateurs-nouveau');
+    if (nouveau) {
+        const dialogue = document.getElementById(nouveau.dataset.dialog);
+        if (!dialogue) return;
+        const form = dialogue.querySelector('form');
+        form.reset();
+        const role = document.getElementById('role');
+        if (role) role.value = '';
+        ecrireMessage(form.querySelector('#form-message'), '');
+        form.querySelector('[name="name"]')?.dispatchEvent(new Event('input', { bubbles: true }));
+        dialogue.showModal();
+        form.querySelector('[name="prenom"]').focus();
+        return;
+    }
 
-$(document).on('click', '.utilisateur-dialogue-fermer', function () {
-    this.closest('dialog')?.close();
-});
+    evenement.target.closest('.utilisateur-dialogue-fermer')?.closest('dialog')?.close();
 
-// Un clic sur le voile, à côté de la fenêtre, la referme : le geste des fenêtres modales.
-$(document).on('click', '.utilisateur-dialogue', function (event) {
-    if (event.target === this) this.close();
+    // Un clic sur le voile, à côté de la fenêtre, la referme : le geste des fenêtres modales.
+    if (evenement.target.matches('.utilisateur-dialogue')) evenement.target.close();
 });

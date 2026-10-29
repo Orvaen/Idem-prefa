@@ -1,3 +1,9 @@
+/** Au DOM prêt — ou tout de suite, s'il l'est déjà. */
+function quandPret(fonction) {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fonction);
+    else fonction();
+}
+
 // La poignée entre le menu et la carte : on tire, le menu suit.
 //
 // La largeur part de celle qu'avait le menu quand on a pris la poignée, plus le chemin
@@ -8,7 +14,7 @@
 // Le pointeur est capturé : le geste suit jusqu'au relâchement, même au-dessus d'un
 // document intégré. Écoutés sur le document, les mouvements s'y perdaient — et le
 // relâchement avec eux, si bien que la poignée restait accrochée au pointeur, bouton levé.
-$(function () {
+quandPret(function () {
     const menu = document.getElementById('left-panel');
     const poignee = document.getElementById('drag');
     if (!menu || !poignee) return;
@@ -49,8 +55,9 @@ $(function () {
 // Les tuiles de l'accueil ouvrent l'écran où l'on agit sur le chiffre qu'elles montrent.
 // Elles passent par le bouton du menu plutôt que de charger la page elles-mêmes : la
 // rubrique se marque ainsi comme active, exactement comme si on l'avait cliquée.
-$(document).on('click', '.accueil-tuile[data-ouvre], .accueil-affaire-action[data-ouvre]', function () {
-    document.getElementById(this.dataset.ouvre)?.click();
+document.addEventListener('click', evenement => {
+    const tuile = evenement.target.closest('.accueil-tuile[data-ouvre], .accueil-affaire-action[data-ouvre]');
+    if (tuile) document.getElementById(tuile.dataset.ouvre)?.click();
 });
 
 // L'écran ouvert est inscrit dans l'adresse, sous ?vue=<identifiant de l'entrée>.
@@ -77,22 +84,26 @@ function vueDeLAdresse() {
 function ouvrirVue(bouton, { historique = 'pousser', page = bouton.dataset.page } = {}) {
     if (!page) return;
 
-    $('#content').load(page, function (response, status, xhr) {
-        if (status === 'error') {
-            const message = xhr?.status === 401
+    const contenu = document.getElementById('content');
+    window.chargerDans(contenu, page).then(({ ok, statut }) => {
+        if (!ok) {
+            contenu.textContent = statut === 401
                 ? 'Votre session a expiré. Reconnectez-vous puis réessayez.'
                 : 'Impossible de charger la page. Rechargez le tableau de bord puis réessayez.';
-            $('#content').text(message);
             return;
         }
 
-        $('.nav-header .nav-btn').removeClass('is-active').removeAttr('aria-current');
-        $(bouton).addClass('is-active').attr('aria-current', 'page');
+        document.querySelectorAll('.nav-header .nav-btn').forEach(autre => {
+            autre.classList.remove('is-active');
+            autre.removeAttribute('aria-current');
+        });
+        bouton.classList.add('is-active');
+        bouton.setAttribute('aria-current', 'page');
 
         // #content porte le nom de ce qu'il montre, posé par le serveur au premier
         // affichage. On le tient à jour, sinon il désignerait l'écran d'avant.
         const vue = bouton.id.replace(/^btn-/, '');
-        $('#content').attr('data-vue', vue);
+        contenu.dataset.vue = vue;
 
         if (historique !== 'aucun') {
             const adresse = window.location.pathname + '?vue=' + encodeURIComponent(vue);
@@ -106,13 +117,14 @@ function ouvrirVue(bouton, { historique = 'pousser', page = bouton.dataset.page 
         if (window.matchMedia('(max-width: 900px)').matches) {
             setSidebar(false);
         }
-        htmx.process(document.getElementById('content'));
-        $('#create-user-form [name="name"]').trigger('input');
+        htmx.process(contenu);
+        document.querySelector('#create-user-form [name="name"]')?.dispatchEvent(new Event('input', { bubbles: true }));
     });
 }
 
-$(document).on('click', '.nav-header .nav-btn[data-page]', function () {
-    ouvrirVue(this);
+document.addEventListener('click', evenement => {
+    const bouton = evenement.target.closest('.nav-header .nav-btn[data-page]');
+    if (bouton) ouvrirVue(bouton);
 });
 
 // Précédent et Suivant rejouent la vue inscrite dans l'adresse, sans rien y réécrire.
@@ -128,11 +140,9 @@ window.addEventListener('popstate', function () {
 //
 // Ce bloc rechargeait l'écran par-dessus l'accueil : on voyait l'accueil, puis l'écran,
 // et la page était construite deux fois pour une seule ouverture.
-$(function () {
+quandPret(function () {
     const vue = vueDeLAdresse();
     if (!vue || vue === document.getElementById('content')?.dataset.vue) return;
     const bouton = document.getElementById('btn-' + vue);
     if (bouton) ouvrirVue(bouton, { historique: 'remplacer' });
 });
-
-

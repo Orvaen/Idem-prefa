@@ -6,8 +6,8 @@
 // Le champ natif reste le porteur de la valeur : son nom, son « required » que le
 // validateur lit avec checkValidity(), son format AAAA-MM-JJ que le serveur attend, et ses
 // segments jj/mm/aaaa qu'on remplit au clavier. On ne remplace que la glyphe et la fenêtre.
-// Un champ caché doublé d'un champ texte aurait coûté les trois : jQuery ignore les champs
-// cachés dans « :input[required]:visible », et le serveur aurait reçu « 26/10/2026 ».
+// Un champ caché doublé d'un champ texte aurait coûté les trois : le validateur ignore les
+// champs qui ne s'affichent pas, et le serveur aurait reçu « 26/10/2026 ».
 //
 // Les écrans arrivent par AJAX dans #content, et des lignes s'ajoutent en cours de route —
 // un bon de livraison, une soudure. L'habillage passe donc par un observateur, pas par un
