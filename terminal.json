@@ -4,7 +4,7 @@
       "run": [
         "docker.exe compose up -d",
         "run wait",
-        "echo \"Prêt : http://localhost:8080 — phpMyAdmin : http://localhost:8081\""
+        "echo \"Prêt : http://localhost:8080 — phpMyAdmin : http://localhost:8081 — documentation : http://localhost:8082\""
       ],
       "description": "Monte la stack et attend que la base réponde"
     },
@@ -141,6 +141,19 @@
         "echo \"Journal complet : les fichiers statiques et le flux sont notés eux aussi. run up pour revenir.\""
       ],
       "description": "Remonte le conteneur web en notant tout, le temps de comprendre quelque chose de précis"
+    },
+
+    "docs": {
+      "run": [
+        "docker.exe compose up -d docs",
+        "echo \"Documentation : http://localhost:8082 — elle se recharge à chaque fichier enregistré dans docs/\""
+      ],
+      "description": "Lance la documentation (VitePress, mode développement) sur le port 8082"
+    },
+
+    "docs-verifier": {
+      "run": "docker.exe compose exec -T docs npm run build",
+      "description": "Construit la documentation comme pour la publier : échoue sur un lien mort ou une page cassée"
     }
   }
 }

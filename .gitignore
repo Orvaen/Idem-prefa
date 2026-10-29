@@ -6,6 +6,11 @@ uploads
 # Le bocal a cookies des essais d'API : il porte une session ouverte.
 .cookies
 
+# La documentation : ses dependances et ce que VitePress fabrique.
+docs/node_modules/
+docs/.vitepress/cache/
+docs/.vitepress/dist/
+
 # Sauvegardes completes de la base : elles contiennent les mots de passe haches des
 # comptes et les documents deposes. Le depot ne garde que db/schema.sql, qui cree
 # les tables sans aucune donnee metier.

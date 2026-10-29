@@ -1,0 +1,14 @@
+{
+  "name": "idem-prefa-docs",
+  "private": true,
+  "type": "module",
+  "description": "La documentation d'IDEM Préfabrication, servie par VitePress",
+  "scripts": {
+    "dev": "vitepress dev . --host 0.0.0.0 --port 8082 --strictPort",
+    "build": "vitepress build .",
+    "preview": "vitepress preview . --host 0.0.0.0 --port 8082"
+  },
+  "devDependencies": {
+    "vitepress": "1.6.4"
+  }
+}

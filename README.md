@@ -2,6 +2,10 @@
 
 Ce site web gére les demandes de préfabrication, réaliser en php et docker.
 
+**La documentation complète** — prérequis, installation, fonctionnalités par rôle,
+architecture, base de données, essais — est dans `docs/`, servie par VitePress sur
+**http://localhost:8082** dès que la stack tourne (`run up`, ou `run docs` pour elle seule).
+
 ## Installation
 
 Tout se lance depuis le **terminal Orvaen**, à la racine du projet. Il lit `terminal.json`,

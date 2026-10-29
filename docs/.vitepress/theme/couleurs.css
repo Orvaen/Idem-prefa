@@ -1,0 +1,54 @@
+/* Les couleurs de l'application, reprises de dashboard-base.css et light-theme.css :
+   l'azur IDEM pour les liens et les états actifs, le bouton plein noir en clair et presque
+   blanc en sombre. La documentation ne doit pas avoir l'air d'un autre produit. */
+
+:root {
+    --vp-c-brand-1: #006399;
+    --vp-c-brand-2: #005685;
+    --vp-c-brand-3: #006399;
+    --vp-c-brand-soft: rgb(0 99 153 / 10%);
+
+    --vp-button-brand-bg: #000000;
+    --vp-button-brand-hover-bg: #1f1f1f;
+    --vp-button-brand-active-bg: #1f1f1f;
+    --vp-button-brand-text: #ffffff;
+    --vp-button-brand-hover-text: #ffffff;
+    --vp-button-brand-active-text: #ffffff;
+
+    --vp-home-hero-name-color: transparent;
+    --vp-home-hero-name-background: linear-gradient(120deg, #006399 20%, #4ca9dc);
+}
+
+.dark {
+    --vp-c-brand-1: #4ca9dc;
+    --vp-c-brand-2: #6eb9e3;
+    --vp-c-brand-3: #2893cc;
+    --vp-c-brand-soft: rgb(76 169 220 / 14%);
+
+    --vp-button-brand-bg: #e4e6e6;
+    --vp-button-brand-hover-bg: #f5f5f5;
+    --vp-button-brand-active-bg: #f5f5f5;
+    --vp-button-brand-text: #0f0f10;
+    --vp-button-brand-hover-text: #0f0f10;
+    --vp-button-brand-active-text: #0f0f10;
+
+    --vp-c-bg: #141415;
+    --vp-c-bg-alt: #0f0f10;
+    --vp-c-bg-soft: #181a1b;
+}
+
+/* Le logo IDEM est un verrou large : sur la barre du haut, il ne garde que sa hauteur. */
+.VPNavBarTitle .logo {
+    height: 28px;
+    width: auto;
+}
+
+/* Les tableaux de référence se lisent ligne à ligne : une ligne sur deux légèrement teintée. */
+.vp-doc table {
+    display: table;
+    width: 100%;
+}
+
+.vp-doc tr:nth-child(2n) {
+    background-color: var(--vp-c-bg-soft);
+}

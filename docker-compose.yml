@@ -46,5 +46,27 @@ services:
     depends_on:
       - db
 
+  # La documentation (VitePress), en mode développement : http://localhost:8082. Elle se
+  # recharge à chaque fichier enregistré dans docs/. Rien à installer sur le poste : npm
+  # tourne ici, et node_modules vit dans un volume à lui — les binaires compilés pour Linux
+  # n'ont rien à faire dans la copie de travail Windows.
+  #
+  # Profil « docs » : elle ne démarre pas sur le serveur de l'atelier, qui n'a pas de .env.
+  # Un serveur de développement n'a rien à faire en production. Sur un poste de développement,
+  # COMPOSE_PROFILES=docs dans le .env la lance avec le reste ; « run docs » la lance seule.
+  docs:
+    profiles: ["docs"]
+    image: node:22-alpine
+    working_dir: /docs
+    command: sh -c "npm install --no-audit --no-fund && npm run dev"
+    environment:
+      NPM_CONFIG_UPDATE_NOTIFIER: "false"
+    ports:
+      - "8082:8082"
+    volumes:
+      - ./docs:/docs
+      - docs_node_modules:/docs/node_modules
+
 volumes:
   mysql_data:
+  docs_node_modules:
