@@ -186,8 +186,19 @@
     text-overflow: ellipsis;
 }
 
-.affaire-carte:hover .affaire-nom {
+/* Le cadre au survol promet une saisie : le champ seul le prend. */
+.affaire-carte:hover input.affaire-nom {
     border-color: var(--border);
+}
+
+/* En lecture — « Mes affaires » —, le nom n'est qu'un titre : la même place et la même
+   graisse que le champ, sans rien qui invite à écrire. Le sélecteur porte la carte : le
+   « font: inherit » de la règle du champ remettrait sinon la hauteur de ligne à « normal »,
+   et le nom monterait au-dessus du monogramme. */
+.affaire-carte h2.affaire-nom {
+    overflow: hidden;
+    line-height: 28px;
+    white-space: nowrap;
 }
 
 /* ---------- Les propriétés ---------- */
@@ -404,6 +415,50 @@
     background: var(--bouton-plein-hover);
 }
 
+/* ---------- En lecture : déposer sur ce chantier ----------
+   Le pied du chargé d'affaire, toujours là : c'est ce qu'il vient faire sur la carte. Le
+   bouton est encadré et non plein, pour la même raison que « Nouvelle affaire » : un plein
+   par carte, c'est vingt taches claires dans la grille pour une action qu'on fait une fois. */
+.affaire-carte-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-faint);
+}
+
+.affaire-deposer {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: var(--h-md);
+    padding: 0 10px;
+    border: 1px solid var(--border-fort);
+    border-radius: var(--r-md);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.12s ease;
+}
+
+.affaire-deposer:hover {
+    background: var(--hover);
+}
+
+.affaire-deposer:active {
+    background: var(--active);
+}
+
+.affaire-deposer .icon {
+    width: 13px;
+    height: 13px;
+    color: var(--text-muted);
+}
+
 /* La corbeille ne paraît qu'au survol ; sous un doigt, toujours (pas de survol). */
 .affaire-supprimer {
     flex: none;
@@ -444,7 +499,8 @@
 }
 
 .affaire-supprimer:focus-visible,
-.affaire-enregistrer:focus-visible {
+.affaire-enregistrer:focus-visible,
+.affaire-deposer:focus-visible {
     opacity: 1;
     outline: 2px solid var(--accent);
     outline-offset: 2px;

@@ -22,24 +22,40 @@ final class Affaire
         public readonly ?int $idChargeAffaire,
         /** Le nom du chargé d'affaire, vide quand l'affaire n'est confiée à personne. */
         public readonly string $chargeAffaire,
-        /** Combien de demandes y sont rattachées : une affaire qui en porte ne se supprime pas. */
+        /**
+         * Combien de demandes y sont rattachées : une affaire qui en porte ne se supprime pas.
+         * Lue par pour() pour un chargé d'affaire, seulement les siennes — voir lecture().
+         */
         public readonly int $demandes,
     ) {}
 
-    private const LECTURE = 'SELECT a.id, a.nom, a.id_charge_affaire,
-            TRIM(CONCAT(COALESCE(u.prenom, \'\'), \' \', COALESCE(u.name, \'\'))) AS charge,
-            (SELECT COUNT(*) FROM demande_prefabrication d WHERE d.id_affaire = a.id) AS demandes
-        FROM affaire a
-        LEFT JOIN Utilisateur u ON u.id = a.id_charge_affaire';
+    /**
+     * La requête de lecture.
+     *
+     * $siennes restreint le compte des demandes à celles du chargé d'affaire. Il ne voit que
+     * les demandes qu'il a déposées, et une affaire reprise d'un collègue garde celles du
+     * collègue : sa carte annoncerait « 3 demandes » et la liste qu'elle ouvre en montrerait
+     * une.
+     */
+    private static function lecture(bool $siennes = false): string
+    {
+        return 'SELECT a.id, a.nom, a.id_charge_affaire,
+                TRIM(CONCAT(COALESCE(u.prenom, \'\'), \' \', COALESCE(u.name, \'\'))) AS charge,
+                (SELECT COUNT(*) FROM demande_prefabrication d WHERE d.id_affaire = a.id'
+            . ($siennes ? ' AND d.idUsers = a.id_charge_affaire' : '') . ') AS demandes
+            FROM affaire a
+            LEFT JOIN Utilisateur u ON u.id = a.id_charge_affaire';
+    }
 
     /** Toutes les affaires, pour l'écran du chargé de production. */
     public static function toutes(PDO $db): array
     {
-        return array_map(self::depuisLaBase(...), $db->query(self::LECTURE . ' ORDER BY a.nom')->fetchAll(PDO::FETCH_ASSOC));
+        return array_map(self::depuisLaBase(...), $db->query(self::lecture() . ' ORDER BY a.nom')->fetchAll(PDO::FETCH_ASSOC));
     }
 
     /**
-     * Les affaires sur lesquelles cette personne peut déposer une demande.
+     * Les affaires sur lesquelles cette personne peut déposer une demande — et, pour le
+     * chargé d'affaire, celles que montre « Mes affaires ».
      *
      * Le chargé d'affaire ne voit que les siennes. Le chargé de production les voit toutes :
      * il n'en dépose pas, mais il corrige les demandes des autres, et il doit pouvoir les
@@ -49,7 +65,7 @@ final class Affaire
     {
         if (!$utilisateur->est(Role::ChargeDAffaire)) return self::toutes($db);
 
-        $lecture = $db->prepare(self::LECTURE . ' WHERE a.id_charge_affaire = ? ORDER BY a.nom');
+        $lecture = $db->prepare(self::lecture(siennes: true) . ' WHERE a.id_charge_affaire = ? ORDER BY a.nom');
         $lecture->execute([$utilisateur->id]);
         return array_map(self::depuisLaBase(...), $lecture->fetchAll(PDO::FETCH_ASSOC));
     }
@@ -65,7 +81,7 @@ final class Affaire
 
     public static function parId(PDO $db, int $id): ?self
     {
-        $lecture = $db->prepare(self::LECTURE . ' WHERE a.id = ?');
+        $lecture = $db->prepare(self::lecture() . ' WHERE a.id = ?');
         $lecture->execute([$id]);
         $ligne = $lecture->fetch(PDO::FETCH_ASSOC);
         return $ligne ? self::depuisLaBase($ligne) : null;

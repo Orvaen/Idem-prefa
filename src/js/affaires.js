@@ -1,5 +1,7 @@
 // L'écran des affaires : ouvrir un chantier, le renommer, changer son chargé d'affaire,
-// le supprimer tant qu'aucune demande n'y est rattachée.
+// le supprimer tant qu'aucune demande n'y est rattachée. Le chargé d'affaire y voit les
+// siennes en lecture — « Mes affaires » : seules la recherche et l'ouverture des demandes
+// le concernent, le dépôt passe par prefa-interactions.js.
 //
 // Délégation : la page arrive par AJAX dans #content.
 (() => {
@@ -68,6 +70,15 @@
     const aplatir = (texte) => texte.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
     /**
+     * Le nom d'une carte : la valeur du champ pour le chargé de production, qui le corrige
+     * sur place ; le texte du titre pour le chargé d'affaire, qui ne fait que le lire.
+     */
+    const nomDeLaCarte = (carte) => {
+        const nom = carte?.querySelector('.affaire-nom');
+        return (nom ? nom.value ?? nom.textContent : '').trim();
+    };
+
+    /**
      * Filtre les cartes sur le nom de l'affaire et sur son chargé d'affaire.
      *
      * Les deux se lisent dans la valeur d'un champ et non dans le texte de la page : ils
@@ -83,7 +94,7 @@
         let visibles = 0;
 
         cartes.forEach(carte => {
-            const nom = carte.querySelector('.affaire-nom')?.value || '';
+            const nom = nomDeLaCarte(carte);
             const charge = carte.querySelector('.liste-filtrable-champ')?.value || '';
             const retenue = !q || aplatir(nom + ' ' + charge).includes(q);
             carte.classList.toggle('est-masquee', !retenue);
@@ -171,8 +182,6 @@
         ouvrirVue(bouton, { page: page + (page.includes('?') ? '&' : '?') + 'q=' + encodeURIComponent(nom) });
     }
 
-    const nomDeLaCarte = (carte) => (carte?.querySelector('.affaire-nom')?.value || '').trim();
-
     $(document).on('click', '.affaire-carte', function (evenement) {
         // Les commandes de la carte gardent leur geste : on ne quitte pas l'écran en
         // cliquant dans le champ qu'on vient corriger, ni sur la corbeille.
@@ -186,6 +195,17 @@
     // Le compte des demandes est le chemin annoncé : c'est lui qu'on atteint au clavier.
     $(document).on('click', 'button.affaire-demandes', function () {
         ouvrirLesDemandes(nomDeLaCarte(this.closest('.affaire-carte')));
+    });
+
+    // Une demande déposée depuis une carte change son compte : l'écran se recharge derrière
+    // la fenêtre qui vient de se refermer. Le focus était sur « Déposer une demande », et
+    // il y retourne — sur la carte redessinée, l'ancien bouton n'existe plus.
+    document.addEventListener('demande:enregistree', (evenement) => {
+        if (!page()) return;
+        const affaire = evenement.detail?.declencheur?.dataset?.affaire;
+        recharger(() => {
+            if (affaire) document.querySelector('.affaire-deposer[data-affaire="' + affaire + '"]')?.focus();
+        });
     });
 
     // ---------- Le tableau ----------

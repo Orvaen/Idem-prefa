@@ -62,12 +62,15 @@ function dashboardMenu(): array
             'scripts' => [],
         ],
         [
-            // C'est le chargé de production qui ouvre un chantier et désigne qui le suit.
+            // C'est le chargé de production qui ouvre un chantier et désigne qui le suit. Le
+            // chargé d'affaire y voit les siens, sans rien y modifier : sans cet écran, il ne
+            // les retrouvait que dans la liste déroulante du formulaire de dépôt.
             'id' => 'affaires',
             'rayon' => 'affaires',
-            'libelle' => 'Affaires',
+            'libelle' => static fn (Utilisateur $utilisateur): string =>
+                $utilisateur->est(Role::ChargeDAffaire) ? 'Mes affaires' : 'Affaires',
             'page' => 'pages/affaires.php',
-            'pour' => [Role::ChargeDeProduction],
+            'pour' => [Role::ChargeDeProduction, Role::ChargeDAffaire],
             'icone' => '<path d="M3.5 7A1.5 1.5 0 0 1 5 5.5h4l2 2.5h8A1.5 1.5 0 0 1 20.5 9.5V18a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 18z"/><path d="M3.5 11h17"/>',
             'styles' => ['dashboard/affaires.css'],
             'scripts' => ['affaires.js'],

@@ -16,6 +16,12 @@ if ($editing) {
     if (!$request) prefaError(404, 'Demande introuvable ou inaccessible.');
 } elseif ($isAdmin) {
     prefaError(403, 'Un administrateur ne peut pas créer de demande de préfabrication.');
+} elseif (isset($_GET['affaire'])) {
+    // Ouvert depuis une carte de « Mes affaires » : l'affaire est celle de la carte. Une
+    // affaire qui n'est pas à son nom n'est pas retenue, sans un mot — le formulaire s'ouvre
+    // alors sans choix, comme depuis « Mes demandes », et l'envoi la refuserait de toute façon.
+    $idAffaire = filter_var($_GET['affaire'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+    if ($idAffaire && Affaire::accessible($db, $utilisateur, $idAffaire)) $request['id_affaire'] = $idAffaire;
 }
 $field = static fn(string $key) => prefaEscape($request[$key] ?? '');
 $hoursSettings = prefaHoursSettings($db);

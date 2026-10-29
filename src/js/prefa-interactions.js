@@ -280,6 +280,9 @@ function fenetreEdition() {
 // « Nouvelle demande » : la même fenêtre, le formulaire vide. Le bouton vit dans l'en-tête
 // de « Mes demandes » (et sur l'accueil, sous une affaire qu'on vient de recevoir) ;
 // enregistrer referme la fenêtre et rafraîchit la liste derrière, comme pour « Modifier ».
+//
+// Sur une carte de « Mes affaires », il porte data-affaire : le formulaire s'ouvre sur ce
+// chantier-là.
 $(document).on('click', '[data-nouvelle-demande]', function () {
     const fenetre = fenetreEdition();
     const contenu = fenetre.querySelector('.prefa-edition-contenu');
@@ -287,7 +290,8 @@ $(document).on('click', '[data-nouvelle-demande]', function () {
     fenetre.setAttribute('aria-label', 'Nouvelle demande');
     contenu.innerHTML = '<p class="prefa-edition-attente">Chargement du formulaire…</p>';
     if (!fenetre.open) fenetre.showModal();
-    $(contenu).load('pages/create_prefa.php', function (response, status) {
+    const affaire = this.dataset.affaire;
+    $(contenu).load('pages/create_prefa.php' + (affaire ? '?affaire=' + encodeURIComponent(affaire) : ''), function (response, status) {
         if (status === 'error') {
             $(this).html('<p class="prefa-edition-attente">Impossible de charger le formulaire. Fermez la fenêtre puis réessayez.</p>');
         }
@@ -852,9 +856,14 @@ $(document).on('submit', '#prefa-form, .prefa-review', function (event) {
                 // derrière. La marque de saisie tombe d'abord, sinon la fermeture
                 // demanderait de confirmer l'abandon de ce qu'on vient d'enregistrer.
                 delete form[0].dataset.modifie;
-                document.getElementById('prefa-edition').close();
+                const fenetre = document.getElementById('prefa-edition');
+                fenetre.close();
                 if (window.toast) window.toast(response.message);
                 refreshPrefaList();
+                // Les autres écrans qui comptent des demandes l'apprennent ici : « Mes
+                // affaires » remet sa carte à jour. Le déclencheur dit d'où l'on venait.
+                document.dispatchEvent(new CustomEvent('demande:enregistree',
+                    { detail: { declencheur: fenetre.declencheur } }));
             } else if (form.find('[name="id"]').length) {
                 // Garder les valeurs enregistrées et actualiser le compteur administrateur.
                 $.get('pages/lists_prefa.php', function (html) {

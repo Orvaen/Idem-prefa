@@ -2,21 +2,28 @@
 
 // Les affaires, vues par le chargé de production : il ouvre le chantier, désigne qui en a
 // la charge, et voit combien de demandes y sont déposées.
+//
+// Le chargé d'affaire y voit les siennes — « Mes affaires » —, en lecture : la carte ouvre
+// ses demandes sur ce chantier, ou en dépose une. Il n'ouvre, ne renomme ni ne confie
+// rien, et actions/affaires.php le lui refuse de toute façon.
 require_once __DIR__ . '/../includes/prefa_context.php';
 require_once __DIR__ . '/../includes/vue/liste_filtrable.php';
-if (!$isAdmin) prefaError(403, 'Seul le chargé de production gère les affaires.');
+$enLecture = $utilisateur->est(Role::ChargeDAffaire);
+if (!$isAdmin && !$enLecture) prefaError(403, 'Seul le chargé de production gère les affaires.');
 
-$affaires = Affaire::toutes($db);
-$chargesDAffaire = $db->prepare('SELECT id, TRIM(CONCAT(prenom, \' \', name)) AS nom
-    FROM Utilisateur WHERE id_role = ? ORDER BY prenom, name');
-$chargesDAffaire->execute([Role::ChargeDAffaire->value]);
-$chargesDAffaire = $chargesDAffaire->fetchAll(PDO::FETCH_ASSOC);
+$affaires = Affaire::pour($db, $utilisateur);
+$optionsCharge = [];
+if (!$enLecture) {
+    $chargesDAffaire = $db->prepare('SELECT id, TRIM(CONCAT(prenom, \' \', name)) AS nom
+        FROM Utilisateur WHERE id_role = ? ORDER BY prenom, name');
+    $chargesDAffaire->execute([Role::ChargeDAffaire->value]);
 
-// Le composant attend des options { id, libelle } ; la requête nomme la colonne « nom ».
-$optionsCharge = array_map(
-    static fn (array $compte): array => ['id' => (int) $compte['id'], 'libelle' => $compte['nom']],
-    $chargesDAffaire
-);
+    // Le composant attend des options { id, libelle } ; la requête nomme la colonne « nom ».
+    $optionsCharge = array_map(
+        static fn (array $compte): array => ['id' => (int) $compte['id'], 'libelle' => $compte['nom']],
+        $chargesDAffaire->fetchAll(PDO::FETCH_ASSOC)
+    );
+}
 
 /**
  * Le choix du chargé d'affaire sur une carte : le même champ filtrable que dans la fenêtre
@@ -49,18 +56,20 @@ $sansCharge = static fn (): string => '<span class="affaire-sans-charge" title="
 <section class="users-page affaires-page" data-csrf="<?= prefaEscape(Session::jeton()) ?>">
     <div class="header-list affaires-entete">
         <div class="affaires-titre">
-            <h1 class="list-h1">Affaires</h1>
+            <h1 class="list-h1"><?= $enLecture ? 'Mes affaires' : 'Affaires' ?></h1>
         </div>
-        <!-- Ouvrir une affaire est l'action de l'écran, pas une ligne de plus dans la page.
-             Le formulaire tenait le haut de l'écran en permanence pour un geste qu'on fait
-             une fois par chantier ; il tient maintenant dans un bouton, et la saisie dans
-             la fenêtre qu'il ouvre. -->
-        <button type="button" id="affaire-nouvelle" class="affaire-nouvelle">
-            <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 5v14M5 12h14" />
-            </svg>
-            Nouvelle affaire
-        </button>
+        <?php if (!$enLecture): ?>
+            <!-- Ouvrir une affaire est l'action de l'écran, pas une ligne de plus dans la page.
+                 Le formulaire tenait le haut de l'écran en permanence pour un geste qu'on fait
+                 une fois par chantier ; il tient maintenant dans un bouton, et la saisie dans
+                 la fenêtre qu'il ouvre. -->
+            <button type="button" id="affaire-nouvelle" class="affaire-nouvelle">
+                <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 5v14M5 12h14" />
+                </svg>
+                Nouvelle affaire
+            </button>
+        <?php endif; ?>
     </div>
 
     <!-- La recherche de l'écran. C'est le composant partagé des filtres — même loupe, même
@@ -78,7 +87,7 @@ $sansCharge = static fn (): string => '<span class="affaire-sans-charge" title="
             </svg>
             <input id="affaires-search" type="search" autocomplete="off"
                 aria-label="Rechercher une affaire"
-                placeholder="Nom d’affaire ou chargé d’affaire…">
+                placeholder="<?= $enLecture ? 'Nom d’affaire…' : 'Nom d’affaire ou chargé d’affaire…' ?>">
         </div>
     </div>
 
@@ -105,22 +114,34 @@ $sansCharge = static fn (): string => '<span class="affaire-sans-charge" title="
                      qui ne paraît qu'au survol. -->
                 <div class="affaire-carte-haut">
                     <span class="affaire-monogramme" aria-hidden="true"><?= prefaEscape($monogramme) ?></span>
-                    <input class="affaire-nom" value="<?= prefaEscape($affaire->nom) ?>" maxlength="255" aria-label="Nom de l’affaire">
-                    <!-- Éteinte quand des demandes sont rattachées : son infobulle dit pourquoi. -->
-                    <button type="button" class="affaire-supprimer" aria-label="Supprimer l’affaire <?= prefaEscape($affaire->nom) ?>"<?= $affaire->demandes > 0 ? ' disabled title="Des demandes y sont rattachées."' : ' title="Supprimer l’affaire"' ?>>
-                        <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" />
-                        </svg>
-                    </button>
+                    <?php if ($enLecture): ?>
+                        <!-- En lecture, le nom n'est qu'un titre. Il garde la classe du champ :
+                             c'est par elle que la recherche et le lien vers les demandes le
+                             lisent. -->
+                        <h2 class="affaire-nom" title="<?= prefaEscape($affaire->nom) ?>"><?= prefaEscape($affaire->nom) ?></h2>
+                    <?php else: ?>
+                        <input class="affaire-nom" value="<?= prefaEscape($affaire->nom) ?>" maxlength="255" aria-label="Nom de l’affaire">
+                        <!-- Éteinte quand des demandes sont rattachées : son infobulle dit pourquoi. -->
+                        <button type="button" class="affaire-supprimer" aria-label="Supprimer l’affaire <?= prefaEscape($affaire->nom) ?>"<?= $affaire->demandes > 0 ? ' disabled title="Des demandes y sont rattachées."' : ' title="Supprimer l’affaire"' ?>>
+                            <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" />
+                            </svg>
+                        </button>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Les propriétés, comme dans les volets : icône et libellé à gauche, valeur
-                     à droite. La carte se lit d'un coup d'œil sans être un formulaire. -->
+                     à droite. La carte se lit d'un coup d'œil sans être un formulaire.
+
+                     Le chargé d'affaire n'a pas la ligne qui le nomme : sur toutes ses
+                     cartes, ce serait lui. -->
                 <dl class="affaire-proprietes">
-                    <div>
-                        <dt><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.7-3.6 3.5-5.5 7-5.5s6.3 1.9 7 5.5" /></svg>Chargé d’affaire</dt>
-                        <dd><?= $optionsCharge ? $choixCharge($optionsCharge, $affaire->id, $affaire->idChargeAffaire) : $sansCharge() ?></dd>
-                    </div>
+                    <?php if (!$enLecture): ?>
+                        <div>
+                            <dt><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.7-3.6 3.5-5.5 7-5.5s6.3 1.9 7 5.5" /></svg>Chargé d’affaire</dt>
+                            <dd><?= $optionsCharge ? $choixCharge($optionsCharge, $affaire->id, $affaire->idChargeAffaire) : $sansCharge() ?></dd>
+                        </div>
+                    <?php endif; ?>
                     <div>
                         <dt><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z" /><path d="M14 3v5h5" /></svg>Demandes</dt>
                         <dd>
@@ -141,15 +162,30 @@ $sansCharge = static fn (): string => '<span class="affaire-sans-charge" title="
                     </div>
                 </dl>
 
-                <!-- Le pied n'existe que s'il y a quelque chose à enregistrer. -->
-                <footer class="affaire-carte-pied">
-                    <span class="affaire-pied-texte">Modifications non enregistrées</span>
-                    <button type="button" class="affaire-enregistrer">Enregistrer</button>
-                </footer>
+                <?php if ($enLecture): ?>
+                    <!-- Déposer sur ce chantier : le formulaire s'ouvre l'affaire déjà choisie.
+                         Ce n'est pas un choix fait à sa place — c'est sur cette carte qu'on
+                         vient de cliquer. -->
+                    <footer class="affaire-carte-actions">
+                        <button type="button" class="affaire-deposer" data-nouvelle-demande data-affaire="<?= $affaire->id ?>">
+                            <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
+                            Déposer une demande
+                        </button>
+                    </footer>
+                <?php else: ?>
+                    <!-- Le pied n'existe que s'il y a quelque chose à enregistrer. -->
+                    <footer class="affaire-carte-pied">
+                        <span class="affaire-pied-texte">Modifications non enregistrées</span>
+                        <button type="button" class="affaire-enregistrer">Enregistrer</button>
+                    </footer>
+                <?php endif; ?>
             </article>
         <?php endforeach; ?>
 
-        <?php if (!$affaires): ?>
+        <?php if (!$affaires && $enLecture): ?>
+            <p class="affaires-vide">Aucune affaire ne vous est confiée pour l’instant. Demandez au chargé
+                de production d’en ouvrir une à votre nom.</p>
+        <?php elseif (!$affaires): ?>
             <p class="affaires-vide">Aucune affaire ouverte. « Nouvelle affaire » ouvre la première.</p>
         <?php endif; ?>
 
@@ -165,8 +201,10 @@ $sansCharge = static fn (): string => '<span class="affaire-sans-charge" title="
 
         Elle vit dans la page et non dans dashboard.php : l'écran arrive par AJAX dans
         #content et repart entier à chaque rechargement — la fenêtre suit, avec la liste des
-        chargés d'affaire que le PHP vient d'écrire.
+        chargés d'affaire que le PHP vient d'écrire. Le chargé d'affaire n'ouvre pas
+        d'affaire : il ne la reçoit pas.
     -->
+    <?php if (!$enLecture): ?>
     <dialog id="affaire-dialog" class="affaire-dialog fenetre" aria-labelledby="affaire-dialog-titre">
         <form id="affaire-form" class="affaire-form" method="post">
             <div class="affaire-dialog-entete fenetre-entete">
@@ -218,4 +256,5 @@ $sansCharge = static fn (): string => '<span class="affaire-sans-charge" title="
             </div>
         </form>
     </dialog>
+    <?php endif; ?>
 </section>
