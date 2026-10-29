@@ -54,7 +54,7 @@ production :
 | Fichier | Rôle |
 | --- | --- |
 | `src/dashboard/includes/vue/parametres.php` | La fenêtre, rendue avec le tableau de bord |
-| `src/js/parametres.js`, `src/css/dashboard/settings.css` | Son comportement, son dessin |
+| `src/js/coquille/parametres.js`, `src/css/dashboard/settings.css` | Son comportement, son dessin |
 | `src/dashboard/includes/materiel/unites.php`, `src/dashboard/actions/unite_materiel.php` | La liste des unités, et ses trois opérations |
 | `src/dashboard/actions/save_prefa_settings.php` | Le temps par pouce ISO |
 | `src/dashboard/actions/create_passivation.php`, `edit_passivation.php` | Les types de passivation |

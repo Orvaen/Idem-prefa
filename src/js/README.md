@@ -1,6 +1,6 @@
 # Le JavaScript du site
 
-Trente et un fichiers, rangés en quatre dossiers. Ils étaient à plat, et le nom ne disait pas
+Trente et un fichiers, sans jQuery, rangés en quatre dossiers. Ils étaient à plat, et le nom ne disait pas
 toujours à quoi un fichier servait : `palette.js` habille toute la barre, `pv.js` un seul
 écran, `toast.js` n'appartient à aucun. Le dossier le dit maintenant.
 
@@ -59,6 +59,7 @@ poser le thème avant le premier rendu, et `composants/floating-fields.js`.
 | `dashboard-forms.js` | Les formulaires de comptes et de passivations. |
 | `palette.js` | La palette Ctrl+K. |
 | `flux.js` | Ce que le serveur annonce en direct. |
+| `parametres.js` | La fenêtre des paramètres, que chacun ouvre depuis la barre ou Ctrl+,. |
 
 ## `ecrans/`
 
@@ -67,12 +68,10 @@ poser le thème avant le premier rendu, et `composants/floating-fields.js`.
 | `prefa-interactions.js` | Les demandes : la liste, la fiche, le formulaire. Dans le socle, puisque tout le monde l'ouvre. |
 | `affaires.js` | Les affaires. |
 | `atelier.js` | Le volet d'atelier d'une demande, partagé par les écrans du plan ISO. |
+| `plan-viewer.js` | La visionneuse d'un plan ISO et ses cases ; servie aussi à la demande, pour le plan final. |
 | `tableaux-plan.js` | Les tableaux de saisie d'un plan : nomenclature et soudures. |
 | `iso.js` | Plans / ISO & affectations. |
 | `soudures.js`, `suivi-soudures.js` | Mes soudures ; le suivi de l'encadrement. |
 | `planning.js` | Le planning. |
 | `commande-materiel.js` | La commande de matériel. |
 | `pv.js`, `commandes.js` | Les PV, et le tableau des commandes fournisseur. |
-
-`parametres.js` (coquille) et `plan-viewer.js` (écrans) sont encore à la racine : un travail
-en cours les touche, ils rejoindront leur dossier ensuite.

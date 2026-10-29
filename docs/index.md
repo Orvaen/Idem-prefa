@@ -39,7 +39,7 @@ features:
     linkText: Comment ça lit
   - icon: 🧩
     title: Sous le capot
-    details: PHP 8.3, MySQL 8.4, htmx et jQuery, sans étape de compilation. Les couches, la base, l'API, le flux en temps réel.
+    details: PHP 8.3, MySQL 8.4, htmx et JavaScript natif, sans étape de compilation. Les couches, la base, l'API, le flux en temps réel.
     link: /technique/architecture
     linkText: L'architecture
   - icon: 🎨

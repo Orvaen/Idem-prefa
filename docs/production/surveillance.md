@@ -138,9 +138,9 @@ Le niveau d'autorisation de chaque action est celui des [règles](/production/#a
 
 ### Un poste affiche des écrans inertes, les autres non
 
-Les pages chargent htmx et jQuery depuis des CDN ; ce poste ne les atteint pas — un proxy, un
-filtrage. La console du navigateur (F12) le confirme par une erreur de chargement de `htmx.js`
-ou `jquery`. Rien à faire sur le serveur : rendre compte.
+Les pages chargent htmx depuis un CDN ; ce poste ne l’atteint pas — un proxy, un
+filtrage. La console du navigateur (F12) le confirme par une erreur de chargement de `htmx.js`.
+Rien à faire sur le serveur : rendre compte.
 
 ### Une action répond 500
 

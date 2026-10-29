@@ -65,6 +65,9 @@ relançable sans dégât, et de la mise à jour de `db/schema.sql`. Voir
 
 ## JavaScript
 
+- **Pas de jQuery** : le DOM natif (`closest`, `classList`, `textContent`) et `fetch`. Un
+  écran se charge dans `#content` par `window.chargerDans(cible, adresse)`
+  (`src/js/composants/charger.js`). Les dossiers de `src/js/` : voir son `README.md`.
 - **Un fichier par écran**, déclaré avec son entrée de menu dans `includes/menu.php`, plus un
   **socle** chargé pour tout le monde (navigation, palette, toasts, alertes, paramètres,
   listes filtrables, champ date…).
@@ -72,7 +75,11 @@ relançable sans dégât, et de la mise à jour de `db/schema.sql`. Voir
   navigation, un écouteur posé sur un bouton disparaîtrait avec lui.
 
   ```js
-  $(document).on('click', '.affaire-supprimer', async function () { … });
+  document.addEventListener('click', async evenement => {
+      const bouton = evenement.target.closest('.affaire-supprimer');
+      if (!bouton) return;
+      …
+  });
   ```
 
 - Un module s'enferme dans une fonction immédiate, en mode strict, et ne publie sur `window`

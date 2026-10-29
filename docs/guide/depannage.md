@@ -38,9 +38,9 @@ réutilisent le cache.
 
 ### L'écran reste blanc, ou rien ne réagit
 
-Les pages chargent htmx et jQuery depuis un CDN : sans internet sur le **poste**, le tableau de
+Les pages chargent htmx depuis un CDN : sans internet sur le **poste**, le tableau de
 bord ne s'anime pas. Ouvrir les outils de développement du navigateur (F12), onglet Console :
-une erreur de chargement de `htmx.js` ou `jquery` le confirme.
+une erreur de chargement de `htmx.js` le confirme.
 
 ### On revient sans cesse à l'écran de connexion
 

@@ -80,7 +80,7 @@ Le détail, écran par écran, est dans [Rôles et droits](/fonctionnalites/role
 | PHP + Apache | 8.3 | L'application, servie par l'image `php:8.3-apache` |
 | MySQL | 8.4 | La base de données |
 | phpMyAdmin | dernière | L'administration de la base, sur le port 8081 |
-| htmx, jQuery | 2.0.11, 4.0.0 | L'interface, chargées depuis un CDN — pas d'étape de compilation |
+| htmx | 2.0.11 | L’interface, chargée depuis un CDN — pas d'étape de compilation |
 | Poppler, Tesseract | 25.03, 5.5 | La lecture automatique des PDF et des scans, sur le serveur |
 | Docker Compose | v2 et plus | Le lancement de tout l'ensemble |
 | VitePress | 1.6.4 | Cette documentation, sur le port 8082 |
