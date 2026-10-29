@@ -44,12 +44,14 @@ try {
     // Le chiffre va au suivi soudage du plan, et à lui seul : c'est le travail que les
     // cordons mesurent (avancementSource()). Il partait sur l'affectation de celui qui
     // enregistrait, quelle qu'elle soit — un montage pouvait recevoir le compte des
-    // cordons. Sans suivi soudage affecté, il n'y a personne à qui l'annoncer.
+    // cordons. Quand le plan n'a pas encore de suivi soudage, il s'ouvre au nom du soudeur,
+    // déjà affecté au plan : le chef n'a plus qu'à valider (avancementSuiviSoudage()).
     $prevues = avancementSouduresPrevues($db, $elementId)['prevues'];
-    // Verrouillée : avancementDeclarer() l'exige, et deux pages enregistrées en même temps
+    $aDeclarer = $prevues > 0 && ($bilan['ecrites'] || $bilan['retirees']);
+    // Verrouillé : avancementDeclarer() l'exige, et deux pages enregistrées en même temps
     // écriraient deux déclarations concurrentes.
-    $soudage = $prevues > 0 ? avancementAffectationCordons($db, $elementId, true) : null;
-    $declaree = $soudage !== null && ($bilan['ecrites'] || $bilan['retirees']);
+    $soudage = $aDeclarer ? avancementSuiviSoudage($db, $elementId, (int) $actor['id']) : null;
+    $declaree = $soudage !== null;
     if ($declaree) {
         $faites = avancementSouduresFaites($db, $elementId);
         avancementDeclarer($db, $soudage['id'], (int) $actor['id'],

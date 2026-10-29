@@ -6,7 +6,7 @@ prefaPost();
 if (!$isWorkshopPersonnel && !$canManageWorkshop) prefaError(403, 'Action réservée au personnel atelier et au chef d’atelier.');
 $id = filter_var($_POST['affectation'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 $operation = $_POST['operation'] ?? '';
-if (!$id || !in_array($operation, ['progress', 'steps', 'valider'], true)) prefaError(400, 'Action invalide.');
+if (!$id || !in_array($operation, ['progress', 'steps', 'valider', 'cordons'], true)) prefaError(400, 'Action invalide.');
 // Trancher une déclaration engage celui qui le fait : le chiffre devient celui de
 // l’affectation, et son nom reste dessus. La personne affectée déclare, elle ne valide pas.
 if ($operation === 'valider' && !$canManageWorkshop) prefaError(403, 'Seul le chef d’atelier valide un avancement déclaré.');
@@ -69,6 +69,25 @@ try {
         $reponse = $decision === 'valider'
             ? 'Avancement validé : ' . avancementPhrase($tranchee) . '.'
             : 'Déclaration refusée. L’avancement n’a pas changé.';
+    } elseif ($operation === 'cordons') {
+        // Des cordons relevés sur un plan qui n'a pas encore de suivi soudage : le soudeur
+        // y est affecté à un autre travail, et ils ne sont partis chez personne. Le chef les
+        // valide d'un clic ; le suivi s'ouvre au nom du soudeur — l'affectation reçue est la
+        // sienne — et reçoit le chiffre. Voir avancementSuiviSoudage().
+        if (!$canManageWorkshop) { $db->rollBack(); prefaError(403, 'Seul le chef d’atelier valide des cordons.'); }
+        $elementId = (int) $assignment['id_element'];
+        // Ouvert entre l'affichage et le clic : c'est alors son « Valider » à lui qu'il faut,
+        // avec sa révision.
+        if (avancementAffectationCordons($db, $elementId, true)) {
+            $db->rollBack();
+            prefaError(409, 'Un suivi soudage vient d’être ouvert sur ce plan. Actualisez avant de réessayer.');
+        }
+        $total = avancementSouduresPrevues($db, $elementId)['prevues'];
+        $soudures = filter_var($_POST['soudures'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 0, 'max_range' => max(0, $total)]]);
+        if ($total < 1 || $soudures === false) { $db->rollBack(); prefaError(409, 'La liste des soudures de ce plan a changé. Actualisez avant de réessayer.'); }
+        $suivi = avancementSuiviSoudage($db, $elementId, (int) $assignment['id_utilisateur']);
+        avancementPoser($db, $suivi['id'], $actor['id'], avancementPourcentage($soudures, $total), $soudures, $total, null);
+        $reponse = 'Cordons validés : ' . $soudures . ' sur ' . $total . '.';
     } elseif ($operation === 'progress') {
         // L'atelier ne tape plus de pourcentage : il se calcule sur les étapes et les
         // cordons (avancement.php). Seul le chef garde la main, comme autorité.

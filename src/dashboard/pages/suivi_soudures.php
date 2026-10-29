@@ -10,6 +10,20 @@ if (!$canManageWorkshop) prefaError(403, 'Cet écran est réservé au chargé de
 
 $plans = soudureSuiviPlans($db);
 
+// Qui a relevé des cordons sur un plan et y est affecté, à n'importe quel travail : quand
+// le plan n'a pas encore de suivi soudage, « Valider » l'ouvre à son nom. Une affectation
+// par soudeur suffit — c'est elle qui dit que l'encadrement l'a mis sur ce plan. « Fait » se
+// lit comme partout : un procédé ou une date.
+$soudeursAffectes = $db->prepare("SELECT MIN(a.id) AS affectation, TRIM(CONCAT(u.prenom, ' ', u.name)) AS nom
+    FROM affectation_atelier a
+    JOIN Utilisateur u ON u.id = a.id_utilisateur
+    WHERE a.id_element = ? AND a.actif = 1 AND u.id_role = ?
+      AND EXISTS (SELECT 1 FROM plan_soudure s
+          WHERE s.id_element = a.id_element AND s.id_soudeur = a.id_utilisateur
+            AND (TRIM(s.type_soudure) <> '' OR s.date_soudure IS NOT NULL))
+    GROUP BY a.id_utilisateur, u.prenom, u.name
+    ORDER BY nom");
+
 // Les déclarations en attente, toutes affectations confondues : une seule lecture.
 $idsAffectations = [];
 foreach ($plans as $plan) foreach ($plan['affectations'] as $affectation) $idsAffectations[] = (int) $affectation['id'];
@@ -216,31 +230,57 @@ $etatDuPlan = static function (array $ligne): array {
                                         <?php endforeach; ?>
 
                                         <?php // Des cordons relevés que rien ne propose de valider : le soudeur a
-                                              // enregistré avant que le suivi soudage lui soit affecté, ou avant
-                                              // que la liste du plan soit lue. Le chef n'avait alors qu'une liste
+                                              // enregistré avant que la liste du plan soit lue, ou avant que le
+                                              // suivi soudage s'ouvre tout seul. Le chef n'avait alors qu'une liste
                                               // sous les yeux, et aucun moyen de reconnaître ce qu'il voyait. Il
-                                              // pose le chiffre lui-même : il est l'autorité. Sans suivi soudage
-                                              // affecté, le chiffre n'a nulle part où aller — on le dit.
+                                              // pose le chiffre lui-même : il est l'autorité.
+                                              //
+                                              // Sans suivi soudage, il n'a rien à affecter avant : le soudeur l'est
+                                              // déjà, et son « Valider » ouvre le suivi à son nom (opération
+                                              // « cordons »). Il lui fallait affecter « Suivi soudage » ailleurs, et
+                                              // il ne comprenait pas pourquoi.
                                         $calcule = $ligne['prevues'] > 0 ? avancementPourcentage(min($ligne['faites'], $ligne['prevues']), $ligne['prevues']) : null;
-                                        if (!$ligne['attentes'] && $calcule !== null && $ligne['faites'] > 0 && $calcule !== $ligne['avancement']): ?>
-                                            <?php if ($ligne['soudage']): ?>
-                                                <div class="atelier-declaration">
-                                                    <p class="atelier-declaration-titre">Cordons relevés, pas encore validés</p>
-                                                    <p class="atelier-declaration-chiffre"><?= min($ligne['faites'], $ligne['prevues']) ?> soudure<?= $ligne['faites'] > 1 ? 's' : '' ?> sur <?= $ligne['prevues'] ?> — <?= $calcule ?> %</p>
+                                        if (!$ligne['attentes'] && $calcule !== null && $ligne['faites'] > 0 && $calcule !== $ligne['avancement']):
+                                            $soudures = min($ligne['faites'], $ligne['prevues']);
+                                            $soudeurs = [];
+                                            if (!$ligne['soudage']) {
+                                                $soudeursAffectes->execute([$elementId, Role::PersonnelAtelier->value]);
+                                                $soudeurs = $soudeursAffectes->fetchAll(PDO::FETCH_ASSOC);
+                                            } ?>
+                                            <div class="atelier-declaration">
+                                                <p class="atelier-declaration-titre">Cordons relevés, pas encore validés</p>
+                                                <p class="atelier-declaration-chiffre"><?= $soudures ?> soudure<?= $soudures > 1 ? 's' : '' ?> sur <?= $ligne['prevues'] ?> — <?= $calcule ?> %</p>
+                                                <?php if ($ligne['soudage']): ?>
                                                     <form class="atelier-action atelier-declaration-actions" data-endpoint="update_atelier.php">
                                                         <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
                                                         <input type="hidden" name="id" value="<?= (int) $ligne['id_demande'] ?>">
                                                         <input type="hidden" name="operation" value="progress">
                                                         <input type="hidden" name="affectation" value="<?= (int) $ligne['soudage']['id'] ?>">
                                                         <input type="hidden" name="revision" value="<?= (int) $ligne['soudage']['revision'] ?>">
-                                                        <input type="hidden" name="soudures" value="<?= min($ligne['faites'], $ligne['prevues']) ?>">
+                                                        <input type="hidden" name="soudures" value="<?= $soudures ?>">
                                                         <button type="submit" title="L’avancement du suivi soudage prendra ce chiffre.">Valider</button>
                                                         <span class="atelier-message" role="status" aria-live="polite"></span>
                                                     </form>
-                                                </div>
-                                            <?php else: ?>
-                                                <p class="atelier-note">Aucun suivi soudage n’est affecté sur ce plan : les cordons relevés ne font avancer aucun travail. Affectez « Suivi soudage » dans Plans / ISO &amp; Affectations pour pouvoir les valider.</p>
-                                            <?php endif; ?>
+                                                <?php endif; ?>
+                                                <?php foreach ($soudeurs as $soudeur): ?>
+                                                    <?php // Un bouton par soudeur affecté, nommé seulement s'ils sont
+                                                          // plusieurs : c'est à son nom que le suivi s'ouvre. ?>
+                                                    <form class="atelier-action atelier-declaration-actions" data-endpoint="update_atelier.php">
+                                                        <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
+                                                        <input type="hidden" name="id" value="<?= (int) $ligne['id_demande'] ?>">
+                                                        <input type="hidden" name="operation" value="cordons">
+                                                        <input type="hidden" name="affectation" value="<?= (int) $soudeur['affectation'] ?>">
+                                                        <input type="hidden" name="soudures" value="<?= $soudures ?>">
+                                                        <button type="submit" title="Le suivi soudage du plan prendra ce chiffre.">Valider<?= count($soudeurs) > 1 ? ' · suivi par ' . prefaEscape($soudeur['nom']) : '' ?></button>
+                                                        <span class="atelier-message" role="status" aria-live="polite"></span>
+                                                    </form>
+                                                <?php endforeach; ?>
+                                                <?php if (!$ligne['soudage'] && !$soudeurs): ?>
+                                                    <?php // Le soudeur n'est plus affecté au plan, ou les cordons viennent de
+                                                          // l'encadrement : personne au nom de qui ouvrir le suivi. ?>
+                                                    <p class="atelier-note">Personne de l’atelier n’est affecté à ce plan : affectez « Suivi soudage » dans Plans / ISO &amp; Affectations pour pouvoir valider.</p>
+                                                <?php endif; ?>
+                                            </div>
                                         <?php endif; ?>
                                     </section>
 

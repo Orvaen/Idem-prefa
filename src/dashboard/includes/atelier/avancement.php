@@ -198,6 +198,45 @@ function avancementAffectationCordons(PDO $db, int $elementId, bool $verrouiller
 }
 
 /**
+ * Le suivi soudage du plan — ouvert au nom du soudeur s'il n'existe pas encore.
+ *
+ * Le soudeur relève ses cordons sur un plan qui lui est confié, quel que soit le travail :
+ * un Plan / ISO, un montage. Le chiffre des cordons, lui, n'a qu'une place, le suivi
+ * soudage — l'écrire sur le Plan / ISO effacerait le compte de ses étapes. Exiger que le
+ * chef affecte en plus un suivi soudage avant de pouvoir valider était un geste de trop :
+ * le soudeur est déjà affecté (décidé le 29/10/2026). Le suivi naît donc au premier besoin,
+ * au nom du soudeur, « affecté par » celui qui lui avait confié le plan.
+ *
+ * Null quand le soudeur n'a aucune affectation active sur ce plan : on n'ouvre rien au nom
+ * de quelqu'un que personne n'y a mis.
+ *
+ * L'appelant tient la transaction. Le suivi rendu est verrouillé.
+ *
+ * @return array{id:int, avancement:int}|null
+ */
+function avancementSuiviSoudage(PDO $db, int $elementId, int $soudeurId): ?array
+{
+    $suivi = avancementAffectationCordons($db, $elementId, true);
+    if ($suivi) return $suivi;
+
+    $stmt = $db->prepare('SELECT affecte_par FROM affectation_atelier
+        WHERE id_element = ? AND id_utilisateur = ? AND actif = 1 ORDER BY id LIMIT 1');
+    $stmt->execute([$elementId, $soudeurId]);
+    $parQui = $stmt->fetchColumn();
+    if ($parQui === false) return null;
+
+    try {
+        $db->prepare("INSERT INTO affectation_atelier (id_element, id_utilisateur, type_affectation, affecte_par)
+            VALUES (?, ?, 'soudage', ?)")->execute([$elementId, $soudeurId, (int) $parQui]);
+    } catch (PDOException $erreur) {
+        // Deux enregistrements au même instant : l'autre l'a ouvert le premier, la clé
+        // uq_atelier_active refuse le second. On prend le sien.
+        if ($erreur->getCode() !== '23000') throw $erreur;
+    }
+    return avancementAffectationCordons($db, $elementId, true);
+}
+
+/**
  * Les étapes du plan viennent de changer : chaque travail qui s'y mesure reçoit le nouveau
  * chiffre.
  *
