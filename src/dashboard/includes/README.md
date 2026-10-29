@@ -77,6 +77,7 @@ d'essayer une lecture en ligne de commande, sans base ni session — voir
 |---|---|
 | `ccpu.php` | Reconnaître des numéros de coulée, des dimensions et des nuances dans un certificat. |
 | `commandes_lignes.php` | Reconnaître les articles d'un bon de commande. |
+| `pdf_pages.php` | Les pages d'un PDF en images, pour le lecteur de l'application : le nombre de pages, une page, sa vignette. Une action de téléchargement s'en sert après avoir vérifié le droit de lire le document. |
 | `plan_table.php` · `plan_lignes.php` · `plan_numeros.php` | La lecture d'un plan : son tableau de nomenclature, ses lignes, ses numéros de feuille. |
 | `plan_final.php` · `plan_iso_pdf.php` · `pdf.php` | Le plan final et les feuilles à imprimer. `pdf.php` est l'écriture de PDF réduite au strict nécessaire. |
 | `ecriture_visa.php` | L'écriture manuscrite du visa au nom : ses chasses et son encre, lues dans la police. |

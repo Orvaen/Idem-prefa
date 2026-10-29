@@ -208,6 +208,7 @@ $iconesManque = '<svg class="pv-etat-icone materiel-manque-signe-nouvelle" viewB
                                     <a class="prefa-pdf-link materiel-fichier"
                                        href="<?= prefaEscape($url) ?>"
                                        data-name="<?= prefaEscape($bon['nom']) ?>"
+                                       data-lecteur="pages"
                                        aria-haspopup="dialog"><?= prefaEscape($bon['nom']) ?></a>
                                 </td>
                                 <td class="materiel-cellule-numero">
@@ -330,7 +331,7 @@ $iconesManque = '<svg class="pv-etat-icone materiel-manque-signe-nouvelle" viewB
                 </div>
                 <dl class="pv-proprietes">
                     <div><dt>Demande</dt><dd class="materiel-volet-demande"></dd></div>
-                    <div><dt>Bon déposé</dt><dd><a class="prefa-pdf-link materiel-volet-fichier" href="#" aria-haspopup="dialog"></a></dd></div>
+                    <div><dt>Bon déposé</dt><dd><a class="prefa-pdf-link materiel-volet-fichier" href="#" data-lecteur="pages" aria-haspopup="dialog"></a></dd></div>
                     <div><dt>Date de commande</dt><dd class="materiel-volet-date"></dd></div>
                     <div><dt>Livraison</dt><dd class="materiel-volet-livraison"></dd></div>
                     <div><dt>Réception</dt><dd class="materiel-volet-reception"></dd></div>

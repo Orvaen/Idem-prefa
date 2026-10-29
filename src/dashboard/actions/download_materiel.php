@@ -25,6 +25,11 @@ $document = $stmt->fetch();
 if (!$document) prefaError(404, 'Document introuvable ou inaccessible.');
 $pdf = $document['contenu'];
 
+// Le lecteur de l'application demande les pages en images, à cette même adresse : le droit
+// de les voir est celui du document, vérifié juste au-dessus.
+require_once __DIR__ . '/../includes/lecture/pdf_pages.php';
+if (pdfPagesDemandees($_GET)) pdfPagesRepondre(pdfPagesDepuisContenu($pdf), $_GET);
+
 header('Content-Type: application/pdf');
 header('X-Content-Type-Options: nosniff');
 header('Content-Disposition: ' . (($_GET['preview'] ?? '') === '1' ? 'inline' : 'attachment') . '; filename="Materiel-' . $document['id'] . '.pdf"');

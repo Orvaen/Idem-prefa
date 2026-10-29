@@ -16,6 +16,11 @@ chacun sous son signe. Une ligne dit la demande, l'affaire, le bon déposé, le 
 commande, la ou les livraisons et les articles reçus « x / y » ; « Détails » ouvre le volet du
 bon.
 
+Le bon déposé s'ouvre **dans le lecteur de l'application**, pas dans celui du navigateur : le
+serveur rend chaque page en image, et la fenêtre les empile, avec son zoom (−, +, « Ajuster »,
+Ctrl + molette) et, au-delà d'une page, son sommaire. « Télécharger » reste dans sa barre. Il
+en va de même depuis le volet et depuis la fiche de la demande.
+
 ### Le cycle d'un bon
 
 ```
@@ -79,4 +84,5 @@ circuit, enregistré dans `bon_livraison`. Voir [PV de préfabrication](/fonctio
 | `src/dashboard/actions/receptionner_bon_materiel.php` | Les pointages de réception |
 | `src/dashboard/actions/signaler_manque.php`, `traiter_manque.php` | Les manques |
 | `src/dashboard/includes/lecture/commandes_lignes.php` | L'interprétation des lignes lues, et le contrôle arithmétique |
+| `src/dashboard/actions/download_materiel.php`, `src/dashboard/includes/lecture/pdf_pages.php` | Le bon, et ses pages en images pour le lecteur (`?pages`, `?page=N`, `?vignette=N`) |
 | `src/dashboard/includes/materiel/` | Les bons, les manques |

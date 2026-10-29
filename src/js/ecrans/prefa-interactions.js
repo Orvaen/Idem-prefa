@@ -526,12 +526,39 @@ document.addEventListener('click', async evenement => {
 // Plein écran : le document à gauche, son sommaire à droite — une vignette par page,
 // qu'on clique pour s'y rendre. Le sommaire n'existe que pour les documents dont
 // l'adresse sait rendre ses pages (data-sommaire) ; les autres s'ouvrent sans.
+//
+// Deux façons de montrer le document. Un lien data-lecteur="pages" s'ouvre dans le lecteur
+// de l'application : le serveur rend chaque page en image (lecture/pdf_pages.php), et la
+// fenêtre les empile, avec son zoom. Les autres passent encore par une iframe, donc par le
+// lecteur du navigateur — sa barre, ses outils « Dessiner », étrangers à l'application.
 const PDF_ICONES = {
     fichier: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"/><path d="M14 3v5h5"/>',
     telecharger: '<path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/>',
     sommaire: '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M15 4v16"/>',
     fermer: '<path d="m6 6 12 12M18 6 6 18"/>',
 };
+
+// « 100 % », c'est la taille du papier : un A4, 210 mm, fait 794 pixels à 96 dpi. Les
+// paliers sont ceux des boutons ; Ctrl + molette passe entre eux.
+const PDF_LARGEUR_A4 = 794;
+const PDF_ZOOMS = [50, 75, 100, 125, 150, 200, 300];
+const PDF_ZOOM_MIN = 25;
+const PDF_ZOOM_MAX = 300;
+
+/** L'adresse du document, avec une question de plus : ?pages, ?page=N, ?vignette=N. */
+function pdfAdresse(adresse, cle, valeur) {
+    const url = new URL(adresse, window.location.href);
+    url.searchParams.set(cle, String(valeur));
+    return url.href;
+}
+
+/** Le nombre de pages que l'adresse annonce ; 0 si elle ne sait pas le dire. */
+function pdfNombreDePages(adresse) {
+    return fetch(pdfAdresse(adresse, 'pages', 1), { credentials: 'same-origin' })
+        .then(reponse => reponse.ok ? reponse.json() : null)
+        .then(corps => Number(corps?.pages) || 0)
+        .catch(() => 0);
+}
 const pdfIcone = nom => `<svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">${PDF_ICONES[nom]}</svg>`;
 
 function pdfViewer() {
@@ -545,11 +572,18 @@ function pdfViewer() {
         <header class="prefa-pdf-toolbar">
             <span class="prefa-pdf-icone">${pdfIcone('fichier')}</span>
             <div class="prefa-pdf-titre"><h2 id="prefa-pdf-title"></h2><span class="prefa-pdf-pages"></span></div>
+            <span class="prefa-pdf-zoom" hidden>
+                <button type="button" class="prefa-pdf-bouton prefa-pdf-bouton-carre" data-zoom="-1" aria-label="Réduire" title="Réduire (Ctrl + molette)">−</button>
+                <output class="prefa-pdf-zoom-valeur" aria-live="polite">100&nbsp;%</output>
+                <button type="button" class="prefa-pdf-bouton prefa-pdf-bouton-carre" data-zoom="1" aria-label="Agrandir" title="Agrandir (Ctrl + molette)">+</button>
+                <button type="button" class="prefa-pdf-bouton" data-zoom="0" title="La page à la largeur de la fenêtre">Ajuster</button>
+            </span>
             <button type="button" class="prefa-pdf-bouton prefa-pdf-bouton-sommaire" aria-pressed="true" title="Afficher ou masquer le sommaire">${pdfIcone('sommaire')}Sommaire</button>
             <a class="prefa-pdf-bouton prefa-pdf-download" download>${pdfIcone('telecharger')}Télécharger</a>
             <button type="button" class="prefa-pdf-bouton prefa-pdf-close" aria-label="Fermer" title="Fermer (Échap)" autofocus>${pdfIcone('fermer')}</button>
         </header>
         <div class="prefa-pdf-corps">
+            <div class="prefa-pdf-feuilles" tabindex="0" aria-label="Pages du document" hidden></div>
             <iframe title="Aperçu PDF"></iframe>
             <aside class="prefa-pdf-sommaire" aria-label="Sommaire du document">
                 <h3 class="prefa-pdf-sommaire-titre">Pages</h3>
@@ -561,8 +595,31 @@ function pdfViewer() {
     viewer.querySelector('.prefa-pdf-close').addEventListener('click', () => viewer.close());
     viewer.addEventListener('close', () => {
         viewer.querySelector('iframe').src = 'about:blank';
+        // Les pages partent avec la fenêtre : une douzaine d'images de 300 ko n'ont rien à
+        // faire en mémoire une fois le document refermé.
+        pdfObservateur?.disconnect();
+        viewer.querySelector('.prefa-pdf-feuilles').replaceChildren();
         document.body.classList.remove('prefa-viewer-open');
     });
+
+    viewer.querySelector('.prefa-pdf-zoom').addEventListener('click', event => {
+        const bouton = event.target.closest('[data-zoom]');
+        if (!bouton) return;
+        const sens = Number(bouton.dataset.zoom);
+        const actuel = Number(viewer.dataset.zoom) || 100;
+        if (sens === 0) pdfZoom(viewer, pdfZoomAjuste(viewer));
+        else if (sens > 0) pdfZoom(viewer, PDF_ZOOMS.find(z => z > actuel) ?? PDF_ZOOM_MAX);
+        else pdfZoom(viewer, [...PDF_ZOOMS].reverse().find(z => z < actuel) ?? PDF_ZOOM_MIN);
+    });
+
+    // Ctrl + molette zoome le document, pas la page. Écouteur non passif : un écouteur
+    // passif ne peut pas retenir le zoom du navigateur.
+    viewer.querySelector('.prefa-pdf-feuilles').addEventListener('wheel', event => {
+        if (!event.ctrlKey) return;
+        event.preventDefault();
+        const actuel = Number(viewer.dataset.zoom) || 100;
+        pdfZoom(viewer, actuel * (event.deltaY < 0 ? 1.12 : 1 / 1.12));
+    }, { passive: false });
     // Le sommaire se replie pour rendre la largeur au document ; le choix tient d'un
     // document à l'autre, le temps de la page.
     viewer.querySelector('.prefa-pdf-bouton-sommaire').addEventListener('click', function () {
@@ -574,6 +631,11 @@ function pdfViewer() {
     viewer.querySelector('.prefa-pdf-sommaire-corps').addEventListener('click', event => {
         const page = event.target.closest('.prefa-pdf-page');
         if (!page) return;
+        if (viewer.dataset.mode === 'pages') {
+            // Le défilement fait le reste : l'observateur marque la page quand elle arrive.
+            viewer.querySelector(`.prefa-pdf-feuille[data-page="${page.dataset.page}"]`)?.scrollIntoView({ block: 'start' });
+            return;
+        }
         // Le lecteur PDF du navigateur suit l'ancre #page= : on ne recharge rien.
         const iframe = viewer.querySelector('iframe');
         iframe.src = viewer.dataset.apercu + '#page=' + page.dataset.page;
@@ -582,37 +644,140 @@ function pdfViewer() {
     return viewer;
 }
 
-function pdfSommaire(viewer, adresse) {
-    const corps = viewer.querySelector('.prefa-pdf-sommaire-corps');
-    const sommaire = viewer.querySelector('.prefa-pdf-sommaire');
-    const compte = viewer.querySelector('.prefa-pdf-pages');
-    const bascule = viewer.querySelector('.prefa-pdf-bouton-sommaire');
-    corps.innerHTML = '';
-    compte.textContent = '';
+/** Le compte en tête, et le sommaire : une vignette par page, la première marquée vue. */
+function pdfRemplirSommaire(viewer, adresse, pages) {
+    viewer.dataset.pages = String(pages);
+    viewer.querySelector('.prefa-pdf-pages').textContent = pages + (pages > 1 ? ' pages' : ' page');
+    viewer.querySelector('.prefa-pdf-sommaire-corps').innerHTML = Array.from({length: Math.min(pages, 500)}, (_, i) =>
+        `<li><button type="button" class="prefa-pdf-page${i === 0 ? ' est-vue' : ''}" data-page="${i + 1}" aria-label="Aller à la page ${i + 1}">
+            <img loading="lazy" alt="" src="${pdfAdresse(adresse, 'vignette', i + 1)}"><span>${i + 1}</span></button></li>`
+    ).join('');
+    viewer.querySelector('.prefa-pdf-sommaire').hidden = viewer.dataset.sommaireMasque === '1';
+}
+
+/** Repart d'une fenêtre vide : rien de l'ouverture précédente ne doit survivre. */
+function pdfVider(viewer) {
+    viewer.querySelector('.prefa-pdf-sommaire-corps').innerHTML = '';
+    viewer.querySelector('.prefa-pdf-pages').textContent = '';
+    viewer.querySelector('.prefa-pdf-sommaire').hidden = true;
     viewer.dataset.pages = '';
-    sommaire.hidden = true;
+    pdfObservateur?.disconnect();
+    viewer.querySelector('.prefa-pdf-feuilles').replaceChildren();
+    // Un autre document peut s'ouvrir avant que celui-ci ait répondu : chaque réponse
+    // vérifie qu'elle est encore attendue.
+    return viewer.dataset.ouverture = String(Date.now());
+}
+
+function pdfSommaire(viewer, adresse) {
+    const bascule = viewer.querySelector('.prefa-pdf-bouton-sommaire');
+    const demande = pdfVider(viewer);
     bascule.hidden = !adresse;
     if (!adresse) return;
 
-    const url = new URL(adresse, window.location.href);
-    url.searchParams.set('pages', '1');
-    const demande = viewer.dataset.ouverture = String(Date.now());
-    fetch(url.href)
-        .then(reponse => reponse.ok ? reponse.json() : Promise.reject())
-        .then(({pages}) => {
-            // Un autre document a été ouvert entre-temps : ce sommaire n'est plus le sien.
-            if (viewer.dataset.ouverture !== demande || !pages) return;
-            viewer.dataset.pages = String(pages);
-            compte.textContent = pages + (pages > 1 ? ' pages' : ' page');
-            const vignette = new URL(adresse, window.location.href);
-            corps.innerHTML = Array.from({length: Math.min(pages, 500)}, (_, i) => {
-                vignette.searchParams.set('vignette', String(i + 1));
-                return `<li><button type="button" class="prefa-pdf-page${i === 0 ? ' est-vue' : ''}" data-page="${i + 1}" aria-label="Aller à la page ${i + 1}">
-                    <img loading="lazy" alt="" src="${vignette.href}"><span>${i + 1}</span></button></li>`;
-            }).join('');
-            sommaire.hidden = viewer.dataset.sommaireMasque === '1';
-        })
-        .catch(() => { bascule.hidden = true; });
+    pdfNombreDePages(adresse).then(pages => {
+        // Un autre document a été ouvert entre-temps : ce sommaire n'est plus le sien.
+        if (viewer.dataset.ouverture !== demande) return;
+        if (!pages) {
+            bascule.hidden = true;
+            return;
+        }
+        pdfRemplirSommaire(viewer, adresse, pages);
+    });
+}
+
+// ----- Le lecteur de l'application : les pages en images -----
+
+/** La page qui passe au milieu de la fenêtre est celle qu'on lit : le sommaire la suit. */
+let pdfObservateur = null;
+
+/** Le zoom, borné, écrit sur la fenêtre : la feuille en tire la largeur des pages. */
+function pdfZoom(viewer, zoom) {
+    const feuilles = viewer.querySelector('.prefa-pdf-feuilles');
+    const borne = Math.round(Math.min(PDF_ZOOM_MAX, Math.max(PDF_ZOOM_MIN, zoom)));
+    // On garde l'endroit qu'on lisait : sans cela, agrandir renvoie trois pages plus bas.
+    const repere = feuilles.scrollHeight ? feuilles.scrollTop / feuilles.scrollHeight : 0;
+    viewer.dataset.zoom = String(borne);
+    feuilles.style.setProperty('--largeur-page', Math.round(PDF_LARGEUR_A4 * borne / 100) + 'px');
+    viewer.querySelector('.prefa-pdf-zoom-valeur').textContent = borne + ' %';
+    feuilles.scrollTop = repere * feuilles.scrollHeight;
+}
+
+/**
+ * Le zoom où la page prend toute la largeur, marges comprises. Arrondi vers le bas : à
+ * l'entier le plus proche, la page dépassait d'un pixel et une barre de défilement
+ * horizontale apparaissait pour rien.
+ */
+function pdfZoomAjuste(viewer) {
+    const feuilles = viewer.querySelector('.prefa-pdf-feuilles');
+    const marges = parseFloat(getComputedStyle(feuilles).paddingLeft) * 2;
+    return Math.floor((feuilles.clientWidth - marges) / PDF_LARGEUR_A4 * 100);
+}
+
+function pdfPages(viewer, adresse, demande) {
+    const feuilles = viewer.querySelector('.prefa-pdf-feuilles');
+    const bascule = viewer.querySelector('.prefa-pdf-bouton-sommaire');
+
+    pdfNombreDePages(adresse).then(pages => {
+        if (viewer.dataset.ouverture !== demande) return;
+        // Le serveur ne sait pas rendre ce document : il reste lisible, dans l'iframe.
+        if (!pages) {
+            pdfIframe(viewer, adresse);
+            return;
+        }
+
+        // La taille du papier, ou la largeur de la fenêtre si elle est plus étroite.
+        pdfZoom(viewer, Math.min(100, pdfZoomAjuste(viewer)));
+
+        const fragment = document.createDocumentFragment();
+        for (let page = 1; page <= Math.min(pages, 500); page++) {
+            const feuille = document.createElement('figure');
+            feuille.className = 'prefa-pdf-feuille';
+            feuille.dataset.page = page;
+            const image = document.createElement('img');
+            image.alt = 'Page ' + page + ' sur ' + pages;
+            image.decoding = 'async';
+            // Les premières pages tout de suite ; les suivantes à l'approche, une par une.
+            if (page > 2) image.loading = 'lazy';
+            image.src = pdfAdresse(adresse, 'page', page);
+            feuille.append(image);
+            fragment.append(feuille);
+        }
+        feuilles.replaceChildren(fragment);
+        feuilles.scrollTop = 0;
+
+        // Une seule page : le sommaire ne mènerait nulle part, la largeur va au document.
+        bascule.hidden = pages < 2;
+        if (pages < 2) {
+            viewer.dataset.pages = '1';
+            viewer.querySelector('.prefa-pdf-pages').textContent = '1 page';
+            return;
+        }
+        pdfRemplirSommaire(viewer, adresse, pages);
+
+        pdfObservateur = new IntersectionObserver(entrees => {
+            const vue = entrees.find(entree => entree.isIntersecting);
+            if (!vue) return;
+            const numero = vue.target.dataset.page;
+            viewer.querySelectorAll('.prefa-pdf-page').forEach(vignette => {
+                const est = vignette.dataset.page === numero;
+                vignette.classList.toggle('est-vue', est);
+                if (est) vignette.scrollIntoView({ block: 'nearest' });
+            });
+        }, { root: feuilles, rootMargin: '-50% 0px -50% 0px' });
+        feuilles.querySelectorAll('.prefa-pdf-feuille').forEach(feuille => pdfObservateur.observe(feuille));
+    });
+}
+
+/** Le document dans le lecteur du navigateur : l'iframe, et le sommaire si l'adresse en a un. */
+function pdfIframe(viewer, adresse, sommaire = false) {
+    viewer.dataset.mode = 'iframe';
+    viewer.querySelector('.prefa-pdf-feuilles').hidden = true;
+    viewer.querySelector('.prefa-pdf-zoom').hidden = true;
+    const iframe = viewer.querySelector('iframe');
+    iframe.hidden = false;
+    viewer.dataset.apercu = pdfAdresse(adresse, 'preview', 1);
+    iframe.src = viewer.dataset.apercu;
+    pdfSommaire(viewer, sommaire ? adresse : '');
 }
 
 document.addEventListener('click', event => {
@@ -623,12 +788,25 @@ document.addEventListener('click', event => {
     const viewer = pdfViewer();
     viewer.querySelector('h2').textContent = lien.dataset.name;
     viewer.querySelector('.prefa-pdf-download').href = lien.href;
-    const preview = new URL(lien.href, window.location.href);
-    preview.searchParams.set('preview', '1');
-    viewer.dataset.apercu = preview.href;
-    viewer.querySelector('iframe').src = preview.href;
-    pdfSommaire(viewer, lien.dataset.sommaire ? lien.href : '');
-    viewer.showModal();
+    const demande = pdfVider(viewer);
+
+    if (lien.dataset.lecteur === 'pages') {
+        viewer.dataset.mode = 'pages';
+        const iframe = viewer.querySelector('iframe');
+        iframe.hidden = true;
+        iframe.src = 'about:blank';
+        viewer.querySelector('.prefa-pdf-feuilles').hidden = false;
+        viewer.querySelector('.prefa-pdf-zoom').hidden = false;
+        viewer.querySelector('.prefa-pdf-bouton-sommaire').hidden = true;
+        viewer.showModal();
+        // Le défilement au clavier — flèches, Page suivante — vise les pages, pas la croix.
+        viewer.querySelector('.prefa-pdf-feuilles').focus({ preventScroll: true });
+        // Après l'ouverture : « Ajuster » mesure une fenêtre qui doit déjà être posée.
+        pdfPages(viewer, lien.href, demande);
+    } else {
+        pdfIframe(viewer, lien.href, Boolean(lien.dataset.sommaire));
+        viewer.showModal();
+    }
     document.body.classList.add('prefa-viewer-open');
 });
 

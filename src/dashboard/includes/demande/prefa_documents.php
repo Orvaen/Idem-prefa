@@ -22,7 +22,10 @@ const FICHE_DOCUMENTS_DEPLIES = 4;
 /**
  * Les familles de documents, dans l'ordre où la fiche les présente.
  *
- * @return array<string, array{titre: string, action: string, table: ?string}>
+ * « pages » dit que l'action sait rendre ses pages en images (lecture/pdf_pages.php) : le
+ * PDF s'ouvre alors dans le lecteur de l'application, et non dans celui du navigateur.
+ *
+ * @return array<string, array{titre: string, action: string, table: ?string, pages?: bool}>
  *         table vaut null pour les plans : eux seuls vivent sur le disque.
  */
 function prefaDocumentFamilles(): array
@@ -31,7 +34,7 @@ function prefaDocumentFamilles(): array
         'plan' => ['titre' => 'Plans BPE / ISO', 'action' => 'download_prefa_attachment.php', 'table' => null],
         'qmos' => ['titre' => 'QMOS', 'action' => 'download_qmos.php', 'table' => 'demande_qmos_documents'],
         'dmos' => ['titre' => 'DMOS', 'action' => 'download_dmos.php', 'table' => 'demande_dmos_documents'],
-        'materiel' => ['titre' => 'Commande matériel', 'action' => 'download_materiel.php', 'table' => 'demande_materiel_documents'],
+        'materiel' => ['titre' => 'Commande matériel', 'action' => 'download_materiel.php', 'table' => 'demande_materiel_documents', 'pages' => true],
         'ccpu' => ['titre' => 'CCPU', 'action' => 'download_ccpu.php', 'table' => 'demande_ccpu_documents'],
     ];
 }
@@ -62,6 +65,7 @@ function prefaDocumentLigne(int $idDemande, array $groupe, array $document, bool
         . '<a class="prefa-document-link' . ($estPdf ? ' prefa-pdf-link' : '') . '"'
         . ' href="' . prefaEscape($url) . '"'
         . ' data-name="' . prefaEscape($nom) . '"'
+        . ($estPdf && !empty($groupe['pages']) ? ' data-lecteur="pages"' : '')
         . ($estPdf ? ' aria-haspopup="dialog"' : '') . '>'
         . '<span class="prefa-document-text"><strong>' . prefaEscape($nom) . '</strong>'
         . '<small>' . ($estPdf ? 'Ouvrir l’aperçu' : 'Télécharger le document') . '</small></span>'
