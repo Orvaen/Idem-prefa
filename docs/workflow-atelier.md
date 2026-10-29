@@ -4,7 +4,7 @@ Les tables concernées — `element_atelier` et `affectation_atelier` — sont d
 
 ## Rôles
 
-Le créateur reste `demande_prefabrication.idUsers`. Les demandeurs et le chef d’atelier peuvent créer leurs demandes. L’administrateur valide, refuse, modifie et planifie. Le chef prend en charge une demande validée puis affecte des éléments. Le rôle Utilisateur / Personnel atelier consulte ses éléments attribués et met à jour leur exécution.
+Le créateur reste `demande_prefabrication.idUsers`. Seul le chargé d’affaire (Demandeur) dépose une demande ; l’administrateur — le chargé de production — valide, refuse, modifie et planifie. Une demande validée est ouverte à l’atelier : le chef y crée les éléments et les affecte, sans étape de prise en charge. Le rôle Utilisateur / Personnel atelier consulte ses éléments attribués et met à jour leur exécution.
 
 ## Modèle
 
@@ -18,7 +18,7 @@ Une contrainte unique autorise une seule affectation active pour chaque couple �
 
 Plusieurs éléments d’une demande peuvent être distribués à différentes personnes. Des travaux différents sur le même élément peuvent aussi être confiés à des personnes différentes. Le changement d’affectation doit conserver l’historique du travail effectué par chaque utilisateur.
 
-La prise en charge reste distincte de l’affectation : `pris_en_charge_par` et `date_prise_en_charge` décrivent le chef ayant pris en charge la demande, et ne changent pas lors d’une réaffectation.
+La prise en charge n’existe plus : l’opération `take` de `save_atelier.php` répond `410`. Les colonnes `pris_en_charge_par` et `date_prise_en_charge` restent en base, sans usage.
 
 ## Visibilité
 
@@ -45,12 +45,14 @@ La mise en service couvre la migration, l’UI du chef, la liste du personnel et
 
 ## Vérifications automatisées
 
-`tests/atelier_elements.php` vérifie les points ci-dessous. `tests/workshop_assignment.php` reste un point d’entrée compatible vers cette suite. `tests/planning.php` vérifie la validation et la planification existantes.
+Deux essais couvrent ce modèle :
+
+- `tests/atelier_plans.php` — la création et la modification d’un élément, l’unicité de sa référence dans la demande, les suppressions en cascade ;
+- `tests/avancement_etapes.php` — le calcul de l’avancement par étapes et par cordons, la déclaration et sa validation par le chef.
+
+Les points ci-dessous ne sont **pas** couverts par un essai automatique, et se vérifient à la main avec les comptes d’essai (`run demo`) :
 
 - Deux utilisateurs affectés à deux plans différents d’une même demande ne voient que leurs éléments et documents respectifs.
 - Une affectation de soudage ne permet pas de modifier un montage confié à quelqu’un d’autre.
 - Une réaffectation retire l’accès à l’ancien utilisateur et conserve son historique.
 - Le personnel ne crée, ne valide et ne planifie aucune demande.
-- Le chef peut créer ses demandes et affecter les éléments des demandes validées.
-- Le créateur, le valideur et le chef ayant pris en charge restent distincts des exécutants.
-- Les anciennes données restent intactes jusqu’à leur répartition explicite.
