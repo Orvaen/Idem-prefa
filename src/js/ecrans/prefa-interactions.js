@@ -8,24 +8,69 @@
 // cassait la flèche du haut. Elles sont remplacées par liste-filtrable.js, monté une
 // fois sur chaque préfixe.
 
-$(document).on('change', '#prefa-form [name="CDN"]', function () {
-    const form = $(this).closest('form');
-    form.find('#cdn-details').prop('hidden', !this.checked);
-    form.find('[name="controles_cdn"], #controles-value').prop('disabled', !this.checked).prop('required', this.checked);
+// Ce que l'écran retient d'un formulaire — vérifié, en cours d'envoi, examiné —, hors du
+// DOM : un formulaire rechargé repart de zéro.
+const prefaEtatFormulaire = new WeakMap();
+function prefaEtat(form) {
+    let etat = prefaEtatFormulaire.get(form);
+    if (!etat) prefaEtatFormulaire.set(form, etat = {});
+    return etat;
+}
+
+// Du HTML reçu du serveur, en nœuds prêts à poser.
+function prefaFragment(html) {
+    const modele = document.createElement('template');
+    modele.innerHTML = html;
+    return modele.content;
+}
+
+// Une requête qui attend du JSON : réussie si le serveur répond 2xx et que le corps se lit.
+// « corps » est lu dans les deux cas — un refus porte son motif.
+function prefaRequeteJson(adresse, options) {
+    return fetch(adresse, { credentials: 'same-origin', ...options })
+        .then(async reponse => {
+            const corps = await reponse.json().catch(() => null);
+            return { reussie: reponse.ok && corps !== null, statut: reponse.status, corps };
+        })
+        .catch(() => ({ reussie: false, statut: 0, corps: null }));
+}
+
+// Une page HTML ; null si le serveur la refuse ou que le réseau manque.
+function prefaPageHtml(adresse, signal) {
+    return fetch(adresse, { credentials: 'same-origin', signal })
+        .then(reponse => reponse.ok ? reponse.text() : null)
+        .catch(() => null);
+}
+
+const prefaVisible = el => !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+
+document.addEventListener('change', evenement => {
+    const champ = evenement.target.closest('#prefa-form [name="CDN"]');
+    if (!champ) return;
+    const form = champ.closest('form');
+    if (!form) return;
+    form.querySelectorAll('#cdn-details').forEach(el => { el.hidden = !champ.checked; });
+    form.querySelectorAll('[name="controles_cdn"], #controles-value').forEach(el => {
+        el.disabled = !champ.checked;
+        el.required = champ.checked;
+    });
 });
 
 // Un revêtement demande lequel. Le formulaire appelait en plus une fonction globale
 // définie dans sa propre page, qui faisait la même chose à un détail près — porter le
 // curseur dans le champ de précision. Elle est reprise ici, et la page n'a plus de JS.
-$(document).on('change', '#prefa-form #revetement-type', function () {
-    const revetu = this.value !== 'aucun';
-    const details = $('#revetement-details');
-    details.prop('hidden', !revetu);
-    const precision = details.find('#revetement-precision');
-    if (!revetu) precision.val('');
+document.addEventListener('change', evenement => {
+    const choix = evenement.target.closest('#prefa-form #revetement-type');
+    if (!choix) return;
+    const revetu = choix.value !== 'aucun';
+    const details = document.getElementById('revetement-details');
+    if (details) details.hidden = !revetu;
+    const precision = details?.querySelector('#revetement-precision');
+    if (!precision) return;
+    if (!revetu) precision.value = '';
     // Le champ vient d'apparaître : on y porte le curseur, après que le navigateur l'a
     // réellement affiché — on ne peut pas donner le focus à ce qui est encore caché.
-    else setTimeout(() => precision.trigger('focus'), 50);
+    else setTimeout(() => precision.focus(), 50);
 });
 
 let prefaFilterTimer;
@@ -36,13 +81,19 @@ function refreshPrefaList() {
     const params = new URLSearchParams(new FormData(form));
     params.set('results', '1');
     if (prefaListRequest) prefaListRequest.abort();
-    const request = $.get('pages/lists_prefa.php?' + params.toString(), function (html) {
-        $('#prefa-results').replaceWith(html);
-        const total = document.getElementById('prefa-urgent-total');
-        if (total) updateUrgentBadge(Number(total.dataset.count));
-    });
+    const request = new AbortController();
     prefaListRequest = request;
-    request.always(function () { if (prefaListRequest === request) prefaListRequest = null; });
+    prefaPageHtml('pages/lists_prefa.php?' + params.toString(), request.signal)
+        .then(html => {
+            if (html === null || request.signal.aborted) return;
+            document.getElementById('prefa-results')?.replaceWith(prefaFragment(html));
+            const total = document.getElementById('prefa-urgent-total');
+            if (total) updateUrgentBadge(Number(total.dataset.count));
+        })
+        .finally(() => {
+            if (prefaListRequest === request) prefaListRequest = null;
+            lireCcpuVisibles();
+        });
 }
 // Le même délai pour la frappe et pour les filtres : cocher trois cases d'affilée ne doit
 // pas partir en trois allers-retours, pas plus que taper trois lettres. « Tout
@@ -55,24 +106,32 @@ function differerRafraichissement() {
     prefaFilterTimer = setTimeout(refreshPrefaList, PREFA_DELAI_FILTRE);
 }
 
-$(document).on('input', '#prefa-search', differerRafraichissement);
+document.addEventListener('input', evenement => {
+    if (evenement.target.closest('#prefa-search')) differerRafraichissement();
+});
 // Le formulaire émet « change » quand la barre de filtres bouge — c'est elle qui prévient,
 // elle n'appelle pas le rechargement : c'est l'écran qui sait comment se recharger.
-$(document).on('change', '#prefa-filters', differerRafraichissement);
-$(document).on('click', '#refresh-prefa', refreshPrefaList);
+document.addEventListener('change', evenement => {
+    if (evenement.target.closest('#prefa-filters')) differerRafraichissement();
+});
+document.addEventListener('click', evenement => {
+    if (evenement.target.closest('#refresh-prefa')) refreshPrefaList();
+});
 
 // ===== Les onglets de statut =====
 // L'onglet n'est qu'une autre manière de remplir le champ « status » du formulaire : le
 // rafraîchissement sérialise le formulaire, il n'a rien d'autre à savoir. Un ancien lien
 // pouvait retenir plusieurs statuts ; choisir un onglet n'en garde qu'un.
-$(document).on('click', '.prefa-onglet', function () {
+document.addEventListener('click', evenement => {
+    const choisi = evenement.target.closest('.prefa-onglet');
+    if (!choisi) return;
     const form = document.getElementById('prefa-filters');
     if (!form) return;
     const champs = form.querySelectorAll('.prefa-statut-choisi');
     champs.forEach((champ, rang) => { if (rang > 0) champ.remove(); });
-    if (champs[0]) champs[0].value = this.dataset.statut;
+    if (champs[0]) champs[0].value = choisi.dataset.statut;
     document.querySelectorAll('.prefa-onglet').forEach(onglet => {
-        onglet.setAttribute('aria-pressed', String(onglet === this));
+        onglet.setAttribute('aria-pressed', String(onglet === choisi));
     });
     clearTimeout(prefaFilterTimer);
     refreshPrefaList();
@@ -88,17 +147,21 @@ function formulaireExamen(bouton) {
 
 // Valider n'a besoin de rien d'autre : le formulaire part tel quel, comme si l'on avait
 // cliqué son propre bouton — « submitter » porte la valeur 2 jusqu'au gestionnaire.
-$(document).on('click', '.prefa-ligne-valider', function () {
-    const form = formulaireExamen(this);
+document.addEventListener('click', evenement => {
+    const bouton = evenement.target.closest('.prefa-ligne-valider');
+    if (!bouton) return;
+    const form = formulaireExamen(bouton);
     const valider = form?.querySelector('button[value="2"]');
     if (!valider) return;
-    this.closest('.prefa-decision').querySelectorAll('button').forEach(b => { b.disabled = true; });
+    bouton.closest('.prefa-decision').querySelectorAll('button').forEach(b => { b.disabled = true; });
     form.requestSubmit(valider);
 });
 
 // Refuser demande un motif : on ouvre le volet sur son champ plutôt que de refuser à l'aveugle.
-$(document).on('click', '.prefa-ligne-refuser', function () {
-    const form = formulaireExamen(this);
+document.addEventListener('click', evenement => {
+    const bouton = evenement.target.closest('.prefa-ligne-refuser');
+    if (!bouton) return;
+    const form = formulaireExamen(bouton);
     if (!form) return;
     const volet = form.closest('.prefa-detail-row');
     if (volet.hidden) {
@@ -109,120 +172,173 @@ $(document).on('click', '.prefa-ligne-refuser', function () {
     motif.focus();
     motif.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 });
-$(document).on('input', '#controles', function () {
-    $('#controles-value').val(this.value).prop('required', true).get(0).setCustomValidity('');
+// Le nombre de contrôles se règle par un curseur et par un champ, qui se recopient l'un
+// l'autre. Le même couple sert aux contrôles CDN, RT et PT.
+function prefaLierControles(idCurseur, idValeur) {
+    document.addEventListener('input', evenement => {
+        if (!evenement.target.closest('#' + idCurseur)) return;
+        const valeur = document.getElementById(idValeur);
+        if (!valeur) return;
+        valeur.value = evenement.target.closest('#' + idCurseur).value;
+        valeur.required = true;
+        valeur.setCustomValidity('');
+    });
+    const verifier = evenement => {
+        const champ = evenement.target.closest('#' + idValeur);
+        if (!champ) return;
+        const rawValue = champ.value.trim();
+        const normalizedValue = rawValue.replace(',', '.');
+        const validFormat = /^\d*(?:\.\d*)?$/.test(normalizedValue);
+        const value = Number(normalizedValue);
+        const validValue = validFormat && normalizedValue !== '' && Number.isFinite(value) && value >= 1 && value <= 100;
+        if (evenement.type === 'change' && rawValue !== normalizedValue) champ.value = normalizedValue;
+        champ.setCustomValidity(validValue || rawValue === '' ? '' : 'Saisissez une valeur entre 1 et 100.');
+        const curseur = document.getElementById(idCurseur);
+        if (validValue && curseur) curseur.value = normalizedValue;
+    };
+    document.addEventListener('input', verifier);
+    document.addEventListener('change', verifier);
+}
+prefaLierControles('controles', 'controles-value');
+
+// Une ligne par fichier choisi, avec de quoi le retirer.
+function prefaLigneFichier(nom, bouton) {
+    const ligne = document.createElement('div');
+    ligne.className = 'prefa-file-row';
+    const intitule = document.createElement('span');
+    intitule.textContent = nom;
+    bouton.type = 'button';
+    bouton.textContent = 'Retirer';
+    ligne.append(intitule, bouton);
+    return ligne;
+}
+
+document.addEventListener('change', evenement => {
+    const champ = evenement.target.closest('#plan-documents');
+    if (!champ) return;
+    const files = Array.from(champ.files);
+    const summary = files.length ? files.length + ' document(s) à envoyer.' : 'Nombre de documents illimité · 50 Mo maximum par fichier.';
+    const resume = document.getElementById('plan-documents-selected');
+    if (resume) resume.textContent = summary;
+    const list = document.getElementById('plan-selected-files');
+    if (!list) return;
+    const lignes = document.createDocumentFragment();
+    files.forEach((file, index) => {
+        const bouton = document.createElement('button');
+        bouton.className = 'prefa-remove-selected';
+        bouton.dataset.index = index;
+        lignes.append(prefaLigneFichier(file.name, bouton));
+    });
+    list.replaceChildren(lignes);
 });
-$(document).on('input change', '#controles-value', function (event) {
-    const rawValue = this.value.trim();
-    const normalizedValue = rawValue.replace(',', '.');
-    const validFormat = /^\d*(?:\.\d*)?$/.test(normalizedValue);
-    const value = Number(normalizedValue);
-    const validValue = validFormat && normalizedValue !== '' && Number.isFinite(value) && value >= 1 && value <= 100;
-    if (event.type === 'change' && rawValue !== normalizedValue) this.value = normalizedValue;
-    this.setCustomValidity(validValue || rawValue === '' ? '' : 'Saisissez une valeur entre 1 et 100.');
-    if (validValue) $('#controles').val(normalizedValue);
+document.addEventListener('change', evenement => {
+    const champ = evenement.target.closest('#qmos, #dmos, #materiel, #ccpu');
+    if (!champ) return;
+    const kind = champ.id;
+    const files = Array.from(champ.files);
+    let summary;
+    if (kind === 'qmos') {
+        const saved = document.querySelectorAll('#qmos-saved-files .prefa-file-row:not(.is-removed)').length;
+        const total = saved + files.length;
+        summary = total ? total + ' PDF QMOS à envoyer.' : 'Aucun QMOS sélectionné.';
+    } else if (kind === 'dmos') {
+        summary = files.length ? files.length + ' PDF DMOS à envoyer.' : 'Aucun nouveau fichier sélectionné.';
+    } else if (kind === 'materiel') {
+        summary = files.length ? files.length + ' fiche(s) matériel à envoyer.' : 'Aucun nouveau fichier sélectionné.';
+    } else {
+        summary = files.length ? files.length + ' certificat(s) à envoyer.' : 'Aucun nouveau fichier sélectionné.';
+    }
+    const aide = document.getElementById(kind + '-help');
+    if (aide) aide.textContent = summary;
+    const list = document.getElementById(kind + '-selected-files');
+    if (!list) return;
+    const lignes = document.createDocumentFragment();
+    files.forEach((file, index) => {
+        const bouton = document.createElement('button');
+        bouton.className = 'prefa-remove-pdf-selected';
+        bouton.dataset.index = index;
+        bouton.dataset.input = kind;
+        lignes.append(prefaLigneFichier(file.name, bouton));
+    });
+    list.replaceChildren(lignes);
 });
 
-$(document).on('change', '#plan-documents', function () {
-    const files = Array.from(this.files);
-    const summary = files.length ? files.length + ' document(s) à envoyer.' : 'Nombre de documents illimité · 50 Mo maximum par fichier.';
-    $('#plan-documents-selected').text(summary);
-    const list = $('#plan-selected-files').empty();
-    files.forEach((file, index) => {
-        const row = $('<div class="prefa-file-row">');
-        row.append($('<span>').text(file.name));
-        row.append($('<button type="button" class="prefa-remove-selected">').attr('data-index', index).text('Retirer'));
-        list.append(row);
-    });
-});
-$(document).on('change', '#qmos, #dmos, #materiel, #ccpu', function () {
-    const kind = this.id;
-    const files = Array.from(this.files);
-    if (kind === 'qmos') {
-        const saved = $('#qmos-saved-files .prefa-file-row:not(.is-removed)').length;
-        const total = saved + files.length;
-        const summary = total ? total + ' PDF QMOS à envoyer.' : 'Aucun QMOS sélectionné.';
-        $('#qmos-help').text(summary);
-    } else if (kind === 'dmos') {
-        $('#dmos-help').text(files.length ? files.length + ' PDF DMOS à envoyer.' : 'Aucun nouveau fichier sélectionné.');
-    } else if (kind === 'materiel') {
-        $('#materiel-help').text(files.length ? files.length + ' fiche(s) matériel à envoyer.' : 'Aucun nouveau fichier sélectionné.');
-    } else {
-        $('#ccpu-help').text(files.length ? files.length + ' certificat(s) à envoyer.' : 'Aucun nouveau fichier sélectionné.');
-    }
-    const list = $('#' + kind + '-selected-files').empty();
-    files.forEach((file, index) => {
-        const row = $('<div class="prefa-file-row">');
-        row.append($('<span>').text(file.name));
-        row.append($('<button type="button" class="prefa-remove-pdf-selected">').attr({'data-index': index, 'data-input': kind}).text('Retirer'));
-        list.append(row);
-    });
-});
-$(document).on('click', '.prefa-remove-pdf-selected', function () {
-    const input = document.getElementById(this.dataset.input);
+// Retire un fichier choisi : le champ fichier ne se modifie pas, on lui en rend un autre.
+function prefaRetirerFichier(input, rang) {
     const remaining = new DataTransfer();
     Array.from(input.files).forEach((file, index) => {
-        if (index !== Number(this.dataset.index)) remaining.items.add(file);
+        if (index !== rang) remaining.items.add(file);
     });
     input.files = remaining.files;
-    $(input).trigger('change');
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+}
+document.addEventListener('click', evenement => {
+    const bouton = evenement.target.closest('.prefa-remove-pdf-selected');
+    if (bouton) prefaRetirerFichier(document.getElementById(bouton.dataset.input), Number(bouton.dataset.index));
 });
-$(document).on('click', '.prefa-remove-selected', function () {
-    const input = document.getElementById('plan-documents');
-    const remaining = new DataTransfer();
-    Array.from(input.files).forEach((file, index) => {
-        if (index !== Number(this.dataset.index)) remaining.items.add(file);
-    });
-    input.files = remaining.files;
-    $(input).trigger('change');
+document.addEventListener('click', evenement => {
+    const bouton = evenement.target.closest('.prefa-remove-selected');
+    if (bouton) prefaRetirerFichier(document.getElementById('plan-documents'), Number(bouton.dataset.index));
 });
-$(document).on('click', '.prefa-remove-saved', function () {
-    const row = $(this).closest('.prefa-file-row');
-    const form = $(this).closest('form');
-    if (row.hasClass('is-removed')) {
-        row.removeClass('is-removed');
-        form.find('input[name="remove_documents[]"]').filter((_, input) => input.value === this.dataset.key).remove();
-        $(this).text('Retirer');
+
+// Un document déjà enregistré se barre, ou revient : c'est le champ caché qui dit s'il part.
+function prefaBasculerRetrait(bouton, name, valeur) {
+    const row = bouton.closest('.prefa-file-row');
+    const form = bouton.closest('form');
+    if (row?.classList.contains('is-removed')) {
+        row.classList.remove('is-removed');
+        form?.querySelectorAll('input').forEach(input => {
+            if (input.name === name && input.value === valeur) input.remove();
+        });
+        bouton.textContent = 'Retirer';
     } else {
-        row.addClass('is-removed');
-        form.append($('<input type="hidden" name="remove_documents[]">').val(this.dataset.key));
-        $(this).text('Annuler');
+        row?.classList.add('is-removed');
+        if (form) {
+            const cache = document.createElement('input');
+            cache.type = 'hidden';
+            cache.name = name;
+            cache.value = valeur ?? '';
+            form.append(cache);
+        }
+        bouton.textContent = 'Annuler';
     }
+}
+document.addEventListener('click', evenement => {
+    const bouton = evenement.target.closest('.prefa-remove-saved');
+    if (bouton) prefaBasculerRetrait(bouton, 'remove_documents[]', bouton.dataset.key);
 });
-$(document).on('click', '.prefa-remove-qmos-saved, .prefa-remove-dmos-saved, .prefa-remove-materiel-saved, .prefa-remove-ccpu-saved', function () {
-    const row = $(this).closest('.prefa-file-row');
-    const form = $(this).closest('form');
-    const name = $(this).hasClass('prefa-remove-qmos-saved') ? 'remove_qmos[]'
-        : $(this).hasClass('prefa-remove-dmos-saved') ? 'remove_dmos[]'
-        : $(this).hasClass('prefa-remove-materiel-saved') ? 'remove_materiel[]'
+document.addEventListener('click', evenement => {
+    const bouton = evenement.target.closest('.prefa-remove-qmos-saved, .prefa-remove-dmos-saved, .prefa-remove-materiel-saved, .prefa-remove-ccpu-saved');
+    if (!bouton) return;
+    const name = bouton.classList.contains('prefa-remove-qmos-saved') ? 'remove_qmos[]'
+        : bouton.classList.contains('prefa-remove-dmos-saved') ? 'remove_dmos[]'
+        : bouton.classList.contains('prefa-remove-materiel-saved') ? 'remove_materiel[]'
         : 'remove_ccpu[]';
-    if (row.hasClass('is-removed')) {
-        row.removeClass('is-removed');
-        form.find('input[name="' + name + '"]').filter((_, input) => input.value === this.dataset.id).remove();
-        $(this).text('Retirer');
-    } else {
-        row.addClass('is-removed');
-        form.append($('<input type="hidden">').attr('name', name).val(this.dataset.id));
-        $(this).text('Annuler');
-    }
-    if (name === 'remove_qmos[]') $('#qmos').trigger('change');
+    prefaBasculerRetrait(bouton, name, bouton.dataset.id);
+    if (name === 'remove_qmos[]') document.getElementById('qmos')?.dispatchEvent(new Event('change', { bubbles: true }));
 });
-$(document).on('keydown', '.prefa-dropzone', function (event) {
-    if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        document.getElementById(this.htmlFor).click();
+document.addEventListener('keydown', evenement => {
+    const zone = evenement.target.closest?.('.prefa-dropzone');
+    if (!zone) return;
+    if (evenement.key === 'Enter' || evenement.key === ' ') {
+        evenement.preventDefault();
+        document.getElementById(zone.htmlFor).click();
     }
 });
-$(document).on('dragover', '.prefa-dropzone', function (event) {
-    event.preventDefault();
-    $(this).addClass('is-dragging');
+document.addEventListener('dragover', evenement => {
+    const zone = evenement.target.closest?.('.prefa-dropzone');
+    if (!zone) return;
+    evenement.preventDefault();
+    zone.classList.add('is-dragging');
 });
-$(document).on('dragleave drop', '.prefa-dropzone', function (event) {
-    event.preventDefault();
-    $(this).removeClass('is-dragging');
-    if (event.type === 'drop') {
-        const input = document.getElementById(this.htmlFor);
-        const dropped = event.originalEvent.dataTransfer.files;
+const prefaQuitterDepot = evenement => {
+    const zone = evenement.target.closest?.('.prefa-dropzone');
+    if (!zone) return;
+    evenement.preventDefault();
+    zone.classList.remove('is-dragging');
+    if (evenement.type === 'drop') {
+        const input = document.getElementById(zone.htmlFor);
+        const dropped = evenement.dataTransfer.files;
         if (input.multiple) {
             const combined = new DataTransfer();
             Array.from(input.files).concat(Array.from(dropped)).forEach(file => combined.items.add(file));
@@ -230,9 +346,11 @@ $(document).on('dragleave drop', '.prefa-dropzone', function (event) {
         } else {
             input.files = dropped;
         }
-        $(input).trigger('change');
+        input.dispatchEvent(new Event('change', { bubbles: true }));
     }
-});
+};
+document.addEventListener('dragleave', prefaQuitterDepot);
+document.addEventListener('drop', prefaQuitterDepot);
 
 document.addEventListener('htmx:afterSwap', function () {
     const total = document.getElementById('prefa-urgent-total');
@@ -283,37 +401,45 @@ function fenetreEdition() {
 //
 // Sur une carte de « Mes affaires », il porte data-affaire : le formulaire s'ouvre sur ce
 // chantier-là.
-$(document).on('click', '[data-nouvelle-demande]', function () {
+document.addEventListener('click', evenement => {
+    const bouton = evenement.target.closest('[data-nouvelle-demande]');
+    if (!bouton) return;
     const fenetre = fenetreEdition();
     const contenu = fenetre.querySelector('.prefa-edition-contenu');
-    fenetre.declencheur = this;
+    fenetre.declencheur = bouton;
     fenetre.setAttribute('aria-label', 'Nouvelle demande');
     contenu.innerHTML = '<p class="prefa-edition-attente">Chargement du formulaire…</p>';
     if (!fenetre.open) fenetre.showModal();
-    const affaire = this.dataset.affaire;
-    $(contenu).load('pages/create_prefa.php' + (affaire ? '?affaire=' + encodeURIComponent(affaire) : ''), function (response, status) {
-        if (status === 'error') {
-            $(this).html('<p class="prefa-edition-attente">Impossible de charger le formulaire. Fermez la fenêtre puis réessayez.</p>');
-        }
-    });
+    const affaire = bouton.dataset.affaire;
+    window.chargerDans(contenu, 'pages/create_prefa.php' + (affaire ? '?affaire=' + encodeURIComponent(affaire) : ''))
+        .then(({ ok }) => {
+            if (!ok) {
+                contenu.innerHTML = '<p class="prefa-edition-attente">Impossible de charger le formulaire. Fermez la fenêtre puis réessayez.</p>';
+            }
+            lireCcpuVisibles();
+        });
 });
 
-$(document).on('click', '.edit-prefa', function () {
+document.addEventListener('click', evenement => {
+    const bouton = evenement.target.closest('.edit-prefa');
+    if (!bouton) return;
     const fenetre = fenetreEdition();
     fenetre.setAttribute('aria-label', 'Modifier la demande');
     const contenu = fenetre.querySelector('.prefa-edition-contenu');
     // Le focus revient à la ligne d'où l'on est parti ; le menu qui portait « Modifier »
     // se referme, son déclencheur reste.
-    fenetre.declencheur = this.closest('.prefa-actions')?.querySelector('.prefa-actions-declencheur') || this;
+    fenetre.declencheur = bouton.closest('.prefa-actions')?.querySelector('.prefa-actions-declencheur') || bouton;
     contenu.innerHTML = '<p class="prefa-edition-attente">Chargement de la demande…</p>';
     if (!fenetre.open) fenetre.showModal();
-    $(contenu).load('pages/create_prefa.php?id=' + encodeURIComponent(this.dataset.id), function (response, status) {
-        if (status === 'error') {
-            $(this).html('<p class="prefa-edition-attente">Impossible de charger cette demande. Fermez la fenêtre puis réessayez.</p>');
-        }
-        // Pas de focus sur le premier champ : c'est la liste des affaires, qui s'ouvre au
-        // focus. Il reste sur la croix, où showModal() l'a posé.
-    });
+    window.chargerDans(contenu, 'pages/create_prefa.php?id=' + encodeURIComponent(bouton.dataset.id))
+        .then(({ ok }) => {
+            if (!ok) {
+                contenu.innerHTML = '<p class="prefa-edition-attente">Impossible de charger cette demande. Fermez la fenêtre puis réessayez.</p>';
+            }
+            // Pas de focus sur le premier champ : c'est la liste des affaires, qui s'ouvre au
+            // focus. Il reste sur la croix, où showModal() l'a posé.
+            lireCcpuVisibles();
+        });
 });
 
 /**
@@ -344,11 +470,18 @@ async function quitterFormulairePrefa() {
         fenetre.close();
         return;
     }
-    $('#btn-list-prefa').trigger('click');
+    document.getElementById('btn-list-prefa')?.click();
 }
 
-$(document).on('click', '.cancel-prefa-edit, .prefa-retour', quitterFormulairePrefa);
-$(document).on('input change', '#prefa-form', function () { this.dataset.modifie = '1'; });
+document.addEventListener('click', evenement => {
+    if (evenement.target.closest('.cancel-prefa-edit, .prefa-retour')) quitterFormulairePrefa();
+});
+const prefaMarquerModifie = evenement => {
+    const form = evenement.target.closest?.('#prefa-form');
+    if (form) form.dataset.modifie = '1';
+};
+document.addEventListener('input', prefaMarquerModifie);
+document.addEventListener('change', prefaMarquerModifie);
 
 // Échap quitte le formulaire — mais seulement s'il n'y a rien d'autre à refermer d'abord.
 // Les fenêtres, les volets de filtres et les listes déroulantes se ferment eux aussi sur
@@ -366,23 +499,27 @@ document.addEventListener('keydown', function (event) {
     quitterFormulairePrefa();
 });
 
-$(document).on('click', '.delete-prefa', async function () {
-    const id = this.dataset.id;
+document.addEventListener('click', async evenement => {
+    const button = evenement.target.closest('.delete-prefa');
+    if (!button) return;
+    const id = button.dataset.id;
     if (!await window.confirmer('Supprimer cette demande ?', {
         texte: 'Cette action est irréversible.',
         action: 'Supprimer',
         ton: 'danger',
     })) return;
-    const button = $(this).prop('disabled', true);
-    $.ajax({
-        url: 'actions/delete_prefa.php', method: 'POST', dataType: 'json',
-        data: {id: id, csrf: this.dataset.csrf},
-        success: function (response) { refreshPrefaList(); },
-        error: function (xhr) {
-            window.alerte(xhr.responseJSON?.message || 'Suppression impossible. Réessayez.', { ton: 'danger' });
-            button.prop('disabled', false);
-        }
+    button.disabled = true;
+    const { reussie, corps } = await prefaRequeteJson('actions/delete_prefa.php', {
+        method: 'POST',
+        body: new URLSearchParams({ id: id ?? '', csrf: button.dataset.csrf ?? '' }),
     });
+    if (reussie) {
+        refreshPrefaList();
+    } else {
+        window.alerte(corps?.message || 'Suppression impossible. Réessayez.', { ton: 'danger' });
+        button.disabled = false;
+    }
+    lireCcpuVisibles();
 });
 
 // ===== Le visualiseur PDF =====
@@ -478,17 +615,19 @@ function pdfSommaire(viewer, adresse) {
         .catch(() => { bascule.hidden = true; });
 }
 
-$(document).on('click', '.prefa-pdf-link', function (event) {
+document.addEventListener('click', event => {
+    const lien = event.target.closest('.prefa-pdf-link');
+    if (!lien) return;
     if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
     const viewer = pdfViewer();
-    viewer.querySelector('h2').textContent = this.dataset.name;
-    viewer.querySelector('.prefa-pdf-download').href = this.href;
-    const preview = new URL(this.href, window.location.href);
+    viewer.querySelector('h2').textContent = lien.dataset.name;
+    viewer.querySelector('.prefa-pdf-download').href = lien.href;
+    const preview = new URL(lien.href, window.location.href);
     preview.searchParams.set('preview', '1');
     viewer.dataset.apercu = preview.href;
     viewer.querySelector('iframe').src = preview.href;
-    pdfSommaire(viewer, this.dataset.sommaire ? this.href : '');
+    pdfSommaire(viewer, lien.dataset.sommaire ? lien.href : '');
     viewer.showModal();
     document.body.classList.add('prefa-viewer-open');
 });
@@ -530,10 +669,12 @@ async function telechargerPlanFinal(adresse) {
 }
 
 // Le lien garde son adresse : Ctrl + clic, ou le clic du milieu, l'ouvrent encore à part.
-$(document).on('click', '.plan-dialog-telecharger', function (event) {
+document.addEventListener('click', event => {
+    const lien = event.target.closest('.plan-dialog-telecharger');
+    if (!lien) return;
     if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0) return;
     event.preventDefault();
-    telechargerPlanFinal(this.href);
+    telechargerPlanFinal(lien.href);
 });
 
 /**
@@ -599,10 +740,12 @@ async function ouvrirLecteurPlanFinal(element, documentId) {
     }
 }
 
-$(document).on('click', '.prefa-toggle[aria-controls]:not(.plans-iso-toggle)', function () {
-    const details = document.getElementById(this.getAttribute('aria-controls'));
+document.addEventListener('click', evenement => {
+    const bascule = evenement.target.closest('.prefa-toggle[aria-controls]:not(.plans-iso-toggle)');
+    if (!bascule) return;
+    const details = document.getElementById(bascule.getAttribute('aria-controls'));
     if (!details) return;
-    const expanded = this.getAttribute('aria-expanded') === 'true';
+    const expanded = bascule.getAttribute('aria-expanded') === 'true';
 
     // Fermer les autres panneaux de détails ouverts pour n'en afficher qu'un à droite
     if (!expanded) {
@@ -614,13 +757,15 @@ $(document).on('click', '.prefa-toggle[aria-controls]:not(.plans-iso-toggle)', f
         });
     }
 
-    this.setAttribute('aria-expanded', String(!expanded));
+    bascule.setAttribute('aria-expanded', String(!expanded));
     details.hidden = expanded;
 });
 
-$(document).on('click', '.prefa-detail-close', function () {
-    const targetId = this.dataset.closeTarget;
-    const details = targetId ? document.getElementById(targetId) : this.closest('.prefa-detail-row');
+document.addEventListener('click', evenement => {
+    const bouton = evenement.target.closest('.prefa-detail-close');
+    if (!bouton) return;
+    const targetId = bouton.dataset.closeTarget;
+    const details = targetId ? document.getElementById(targetId) : bouton.closest('.prefa-detail-row');
     if (details) {
         details.hidden = true;
         const toggleBtn = document.querySelector(`.prefa-toggle[aria-controls="${details.id}"]`);
@@ -632,8 +777,9 @@ $(document).on('click', '.prefa-detail-close', function () {
 // Déposer par « Modifier » renvoie la demande en attente de validation : c'est voulu pour
 // une date ou un métrage, pas pour un certificat qui arrive après coup. Le dépôt a donc
 // son action à lui, et il se fait sans quitter la fiche.
-$(document).on('change', '.prefa-depot-champ', function () {
-    const champ = this;
+document.addEventListener('change', evenement => {
+    const champ = evenement.target.closest('.prefa-depot-champ');
+    if (!champ) return;
     const fichiers = [...champ.files];
     if (!fichiers.length) return;
 
@@ -686,31 +832,50 @@ function lireCcpu(bloc, csrf) {
     if (bloc.dataset.ccpuEnCours) return;
     bloc.dataset.ccpuEnCours = '1';
     const donnees = new URLSearchParams({ csrf: csrf, document: bloc.dataset.ccpuLire });
-    $.ajax({ url: 'actions/lire_ccpu.php', method: 'POST', data: donnees.toString(), dataType: 'json' })
-        .done(reponse => $(bloc).replaceWith(reponse.html))
-        .fail(xhr => {
-            // Le bloc reste en place avec le motif et de quoi relancer : une lecture
-            // ratée ne doit pas tourner en boucle à chaque rafraîchissement de la liste.
-            const relance = $('<button type="button" class="ccpu-relire">').text('Réessayer')
-                .attr({ 'data-ccpu-document': bloc.dataset.ccpuLire, 'data-csrf': csrf });
-            $(bloc).removeClass('is-en-attente').addClass('is-echec').removeAttr('data-ccpu-lire')
-                .empty().append($('<p>').text(xhr.responseJSON?.message || 'Lecture impossible. Réessayez.'), relance);
+    prefaRequeteJson('actions/lire_ccpu.php', { method: 'POST', body: donnees })
+        .then(({ reussie, corps }) => {
+            if (reussie) {
+                if (corps.html) bloc.replaceWith(prefaFragment(corps.html));
+            } else {
+                // Le bloc reste en place avec le motif et de quoi relancer : une lecture
+                // ratée ne doit pas tourner en boucle à chaque rafraîchissement de la liste.
+                const relance = document.createElement('button');
+                relance.type = 'button';
+                relance.className = 'ccpu-relire';
+                relance.textContent = 'Réessayer';
+                if (bloc.dataset.ccpuLire !== undefined) relance.dataset.ccpuDocument = bloc.dataset.ccpuLire;
+                if (csrf !== undefined) relance.dataset.csrf = csrf;
+                const motif = document.createElement('p');
+                motif.textContent = corps?.message || 'Lecture impossible. Réessayez.';
+                bloc.classList.remove('is-en-attente');
+                bloc.classList.add('is-echec');
+                bloc.removeAttribute('data-ccpu-lire');
+                bloc.replaceChildren(motif, relance);
+            }
+            lireCcpuVisibles();
         });
 }
 
 // Les fiches s'ouvrent par clic, mais sont aussi rouvertes après un rechargement de la
-// liste : on regarde donc dans les deux cas quels certificats visibles restent à lire.
+// liste : on regarde donc dans les deux cas quels certificats visibles restent à lire —
+// après chaque requête de cet écran, qui l'appelle en fin de course.
 function lireCcpuVisibles() {
     document.querySelectorAll('.prefa-detail-row:not([hidden]) [data-ccpu-lire]').forEach(bloc => lireCcpu(bloc, bloc.dataset.csrf));
 }
-$(document).on('click', '.prefa-toggle[aria-controls]', () => setTimeout(lireCcpuVisibles, 0));
-$(document).on('ajaxComplete', lireCcpuVisibles);
+document.addEventListener('click', evenement => {
+    if (evenement.target.closest('.prefa-toggle[aria-controls]')) setTimeout(lireCcpuVisibles, 0);
+});
 
-$(document).on('click', '.ccpu-relire', function () {
-    const bloc = $('<div class="ccpu-lecture is-en-attente" role="status">').text('Lecture des coulées…')
-        .attr('data-ccpu-lire', this.dataset.ccpuDocument)[0];
-    $(this).closest('.ccpu-lecture').replaceWith(bloc);
-    lireCcpu(bloc, this.dataset.csrf);
+document.addEventListener('click', evenement => {
+    const bouton = evenement.target.closest('.ccpu-relire');
+    if (!bouton) return;
+    const bloc = document.createElement('div');
+    bloc.className = 'ccpu-lecture is-en-attente';
+    bloc.setAttribute('role', 'status');
+    bloc.textContent = 'Lecture des coulées…';
+    if (bouton.dataset.ccpuDocument !== undefined) bloc.dataset.ccpuLire = bouton.dataset.ccpuDocument;
+    bouton.closest('.ccpu-lecture')?.replaceWith(bloc);
+    lireCcpu(bloc, bouton.dataset.csrf);
 });
 
 // Referme le volet ouvert et rend son bouton à l'état replié. Renvoie false s'il n'y
@@ -724,7 +889,7 @@ function fermerVoletOuvert() {
     return true;
 }
 
-$(document).on('keydown', function (event) {
+document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') {
         // Échap ferme d'abord la fenêtre posée par-dessus le volet. Sans ce garde-fou,
         // la même touche refermait la fenêtre ET le volet qui l'a ouverte.
@@ -736,13 +901,17 @@ $(document).on('keydown', function (event) {
 // Le voile est dessiné par body::before : un clic dessus a donc body pour cible.
 // Comme il couvre toute la page quand un volet est ouvert, c'est le geste « cliquer
 // à côté pour fermer » des fenêtres modales.
-$(document).on('click', function (event) {
+document.addEventListener('click', function (event) {
     if (event.target === document.body) fermerVoletOuvert();
 });
 
-$(document).on('click', '.btn-goto-plans-iso', function () {
-    const reqId = $(this).data('request-id');
-    $('#btn-plans-iso').trigger('click');
+document.addEventListener('click', evenement => {
+    const bouton = evenement.target.closest('.btn-goto-plans-iso');
+    if (!bouton) return;
+    // Un identifiant numérique se lit en nombre : « 0 » ne désigne aucune demande.
+    const brut = bouton.dataset.requestId;
+    const reqId = brut !== undefined && String(Number(brut)) === brut ? Number(brut) : brut;
+    document.getElementById('btn-plans-iso')?.click();
     if (!reqId) return;
     const checkCard = setInterval(function () {
         const card = document.getElementById('plans-iso-card-' + reqId);
@@ -766,6 +935,9 @@ $(document).on('click', '.btn-goto-plans-iso', function () {
 // La couleur n'apparaît qu'après un premier envoi refusé. Avant, un formulaire vierge
 // s'allumerait en rouge avant qu'on ait tapé quoi que ce soit, et un formulaire modifié
 // virerait au vert partout : dans les deux cas la couleur ne dirait plus rien.
+
+// Les champs de saisie obligatoires — boutons compris, comme le faisait « :input ».
+const PREFA_CHAMPS_OBLIGATOIRES = 'input[required], select[required], textarea[required], button[required]';
 
 /** Le nom du champ tel que son intitulé l'écrit, sans l'astérisque. */
 function nomDuChamp(champ) {
@@ -801,11 +973,12 @@ function colorerChamp(champ) {
  * @return {HTMLElement[]}
  */
 function marquerChampsObligatoires(form) {
-    form.data('verifie', true);
+    prefaEtat(form).verifie = true;
     const manquants = [];
-    form.find(':input[required]:visible').each(function () {
-        colorerChamp(this);
-        if (!this.checkValidity()) manquants.push(this);
+    form.querySelectorAll(PREFA_CHAMPS_OBLIGATOIRES).forEach(champ => {
+        if (!prefaVisible(champ)) return;
+        colorerChamp(champ);
+        if (!champ.checkValidity()) manquants.push(champ);
     });
     return manquants;
 }
@@ -820,9 +993,9 @@ function marquerChampsObligatoires(form) {
  */
 function marquerListesObligatoires(form) {
     const manquantes = [];
-    form.find('.liste-filtrable[data-obligatoire="1"]').each(function () {
-        const cache = this.querySelector('input[type="hidden"]');
-        const saisie = this.querySelector('.liste-filtrable-champ');
+    form.querySelectorAll('.liste-filtrable[data-obligatoire="1"]').forEach(liste => {
+        const cache = liste.querySelector('input[type="hidden"]');
+        const saisie = liste.querySelector('.liste-filtrable-champ');
         if (!saisie) return;
         const vide = !cache || cache.value.trim() === '';
         saisie.classList.toggle('champ-invalide', vide);
@@ -854,42 +1027,60 @@ function amenerAuChamp(champ) {
 
 // Une fois le formulaire refusé, chaque frappe remet le champ à jour : c'est ce qui fait
 // passer au vert sans attendre un second envoi.
-$(document).on('input change blur', '#prefa-form :input[required]', function () {
-    const form = $(this).closest('form');
-    if (!form.data('verifie')) return;
-    colorerChamp(this);
-});
+const prefaRecolorer = evenement => {
+    const champ = evenement.target.closest?.('#prefa-form input[required], #prefa-form select[required], '
+        + '#prefa-form textarea[required], #prefa-form button[required]');
+    if (!champ) return;
+    const form = champ.closest('form');
+    if (!form || !prefaEtat(form).verifie) return;
+    colorerChamp(champ);
+};
+document.addEventListener('input', prefaRecolorer);
+document.addEventListener('change', prefaRecolorer);
+document.addEventListener('focusout', prefaRecolorer);
 
 // Choisir dans une liste filtrable la fait changer d'avis : c'est son champ caché qui
 // annonce le choix, pas celui où l'on tape.
-$(document).on('change', '#prefa-form .liste-filtrable[data-obligatoire="1"] input[type="hidden"]', function () {
-    const form = $(this).closest('form');
-    if (!form.data('verifie')) return;
+document.addEventListener('change', evenement => {
+    const cache = evenement.target.closest('#prefa-form .liste-filtrable[data-obligatoire="1"] input[type="hidden"]');
+    if (!cache) return;
+    const form = cache.closest('form');
+    if (!form || !prefaEtat(form).verifie) return;
     marquerListesObligatoires(form);
 });
 
 // Un dépôt efface son propre reproche.
-$(document).on('change', '#prefa-form #plan-documents, #prefa-form #qmos, #prefa-form #dmos', function () {
-    if (this.files && this.files.length) {
-        $(this).closest('form').find('label.prefa-dropzone[for="' + this.id + '"]').removeClass('champ-invalide');
+document.addEventListener('change', evenement => {
+    const champ = evenement.target.closest('#prefa-form #plan-documents, #prefa-form #qmos, #prefa-form #dmos');
+    if (!champ) return;
+    if (champ.files && champ.files.length) {
+        champ.closest('form')?.querySelectorAll('label.prefa-dropzone[for="' + champ.id + '"]')
+            .forEach(zone => zone.classList.remove('champ-invalide'));
     }
 });
 
-$(document).on('submit', '#prefa-form, .prefa-review', function (event) {
+document.addEventListener('submit', event => {
+    const form = event.target.closest('#prefa-form, .prefa-review');
+    if (!form) return;
     event.preventDefault();
-    const form = $(this);
-    if (form.data('submitting')) return;
-    const review = form.hasClass('prefa-review');
-    const status = event.originalEvent?.submitter?.value;
-    const message = form.find('.prefa-message');
-    message.removeClass('success error');
+    const etat = prefaEtat(form);
+    if (etat.submitting) return;
+    const review = form.classList.contains('prefa-review');
+    const status = event.submitter?.value;
+    const messages = form.querySelectorAll('.prefa-message');
+    const annoncer = (classe, texte) => messages.forEach(message => {
+        if (classe) message.classList.add(classe);
+        message.textContent = texte;
+    });
+    messages.forEach(message => message.classList.remove('success', 'error'));
     if (review && !['2', '3'].includes(status)) {
-        message.addClass('error').text('Choisissez Valider ou Refuser.');
+        annoncer('error', 'Choisissez Valider ou Refuser.');
         return;
     }
-    if (review && status === '3' && !form.find('[name="commentaire"]').val().trim()) {
-        message.addClass('error').text('Indiquez le motif du refus.');
-        form.find('[name="commentaire"]').trigger('focus');
+    const commentaire = form.querySelector('[name="commentaire"]');
+    if (review && status === '3' && !commentaire.value.trim()) {
+        annoncer('error', 'Indiquez le motif du refus.');
+        commentaire.focus();
         return;
     }
     if (!review) {
@@ -905,19 +1096,19 @@ $(document).on('submit', '#prefa-form, .prefa-review', function (event) {
         //
         // Un document retiré ne compte plus : sa ligne reste à l'écran, barrée, le temps
         // qu'on se ravise, et c'est la croix qui dit s'il part ou non.
-        const creation = !form.find('[name="id"]').length;
+        const creation = !form.querySelector('[name="id"]');
         [
             { champ: 'plan-documents', gardes: '#plan-saved-files', aLaCreation: true },
             { champ: 'qmos', gardes: '#qmos-saved-files' },
             { champ: 'dmos', gardes: '#dmos-saved-files' },
         ].forEach(depot => {
             if (depot.aLaCreation && !creation) return;
-            const deposes = form.find('#' + depot.champ)[0]?.files?.length || 0;
-            const restants = form.find(depot.gardes + ' .prefa-file-row').not('.is-removed').length;
-            const zone = form.find('label.prefa-dropzone[for="' + depot.champ + '"]');
+            const deposes = form.querySelector('#' + depot.champ)?.files?.length || 0;
+            const restants = form.querySelectorAll(depot.gardes + ' .prefa-file-row:not(.is-removed)').length;
+            const zones = form.querySelectorAll('label.prefa-dropzone[for="' + depot.champ + '"]');
             const manque = deposes === 0 && restants === 0;
-            zone.toggleClass('champ-invalide', manque);
-            if (manque && zone.length) manquants.push(zone[0]);
+            zones.forEach(zone => zone.classList.toggle('champ-invalide', manque));
+            if (manque && zones.length) manquants.push(zones[0]);
         });
         marquerChampsObligatoires(form).forEach(champ => manquants.push(champ));
         marquerListesObligatoires(form).forEach(champ => manquants.push(champ));
@@ -925,43 +1116,54 @@ $(document).on('submit', '#prefa-form, .prefa-review', function (event) {
         if (manquants.length) {
             manquants.sort(ordreDePage);
             const nom = nomDuChamp(manquants[0]);
-            message.addClass('error').text(manquants.length === 1
+            annoncer('error', manquants.length === 1
                 ? 'Il manque : ' + nom + '.'
                 : 'Il manque ' + manquants.length + ' éléments, à commencer par : ' + nom + '.');
             amenerAuChamp(manquants[0]);
             return;
         }
     }
-    const data = new FormData(form[0]);
+    const data = new FormData(form);
     if (review) data.append('statut', status);
-    form.data('submitting', true).find('button').prop('disabled', true);
-    message.text('Enregistrement…');
-    $.ajax({
-        url: review ? 'actions/review_prefa.php' : 'actions/create_prefa.php',
-        method: 'POST', data: data, dataType: 'json', processData: false, contentType: false,
-        success: function (response) {
-            message.addClass('success').text(response.message);
+    etat.submitting = true;
+    form.querySelectorAll('button').forEach(b => { b.disabled = true; });
+    annoncer(null, 'Enregistrement…');
+    const voletFerme = () => !!form.closest('.prefa-detail-row')?.hidden;
+    prefaRequeteJson(review ? 'actions/review_prefa.php' : 'actions/create_prefa.php', { method: 'POST', body: data })
+        .then(({ reussie, corps: response }) => {
+            if (!reussie) {
+                const texte = response?.message || 'Enregistrement impossible. Réessayez.';
+                annoncer('error', texte);
+                if (review && voletFerme() && window.toast) {
+                    window.toast(texte, { erreur: true });
+                }
+                return;
+            }
+            annoncer('success', response.message);
             // Validée depuis la ligne, le volet est resté fermé : sa réponse ne se verrait pas.
-            if (review && form.closest('.prefa-detail-row').prop('hidden') && window.toast) {
+            if (review && voletFerme() && window.toast) {
                 window.toast(response.message);
             }
             if (review) {
                 const request = form.closest('.prefa-request');
-                if (request.hasClass('is-urgent-pending')) {
-                    request.removeClass('is-urgent-pending');
-                    const counter = $('#urgent-pending-count');
-                    updateUrgentBadge(Math.max(0, Number(counter.text()) - 1));
+                if (request?.classList.contains('is-urgent-pending')) {
+                    request.classList.remove('is-urgent-pending');
+                    const counter = document.getElementById('urgent-pending-count');
+                    updateUrgentBadge(Math.max(0, Number(counter ? counter.textContent : '') - 1));
                 }
-                form.closest('.prefa-request').find('.prefa-status')
-                    .removeClass('status-1').addClass('status-' + status)
-                    .text(status === '2' ? 'Validée' : 'Refusée');
-                form.data('reviewed', true).find('textarea').prop('disabled', true);
+                request?.querySelectorAll('.prefa-status').forEach(statut => {
+                    statut.classList.remove('status-1');
+                    statut.classList.add('status-' + status);
+                    statut.textContent = status === '2' ? 'Validée' : 'Refusée';
+                });
+                etat.reviewed = true;
+                form.querySelectorAll('textarea').forEach(zone => { zone.disabled = true; });
                 setTimeout(refreshPrefaList, 700);
-            } else if (form.closest('#prefa-edition').length) {
+            } else if (form.closest('#prefa-edition')) {
                 // Enregistrée depuis la fenêtre : on la referme et la liste se met à jour
                 // derrière. La marque de saisie tombe d'abord, sinon la fermeture
                 // demanderait de confirmer l'abandon de ce qu'on vient d'enregistrer.
-                delete form[0].dataset.modifie;
+                delete form.dataset.modifie;
                 const fenetre = document.getElementById('prefa-edition');
                 fenetre.close();
                 if (window.toast) window.toast(response.message);
@@ -970,98 +1172,89 @@ $(document).on('submit', '#prefa-form, .prefa-review', function (event) {
                 // affaires » remet sa carte à jour. Le déclencheur dit d'où l'on venait.
                 document.dispatchEvent(new CustomEvent('demande:enregistree',
                     { detail: { declencheur: fenetre.declencheur } }));
-            } else if (form.find('[name="id"]').length) {
+            } else if (form.querySelector('[name="id"]')) {
                 // Garder les valeurs enregistrées et actualiser le compteur administrateur.
-                $.get('pages/lists_prefa.php', function (html) {
-                    const total = $('<div>').html($.parseHTML(html)).find('#prefa-urgent-total');
-                    if (total.length) updateUrgentBadge(Number(total.attr('data-count')));
-                });
-                const id = form.find('[name="id"]').val();
-                $.get('pages/create_prefa.php?id=' + encodeURIComponent(id), function (html) {
-                    if (!document.contains(form[0])) return;
-                    const refreshed = $('<div>').html($.parseHTML(html)).find('#prefa-form');
-                    if (refreshed.length) {
-                        form.replaceWith(refreshed);
-                        refreshed.find('.prefa-message').addClass('success').text(response.message);
+                prefaPageHtml('pages/lists_prefa.php').then(html => {
+                    if (html !== null) {
+                        const total = prefaFragment(html).querySelector('#prefa-urgent-total');
+                        if (total) updateUrgentBadge(Number(total.getAttribute('data-count')));
                     }
+                    lireCcpuVisibles();
+                });
+                const id = form.querySelector('[name="id"]').value;
+                prefaPageHtml('pages/create_prefa.php?id=' + encodeURIComponent(id)).then(html => {
+                    if (html !== null && document.contains(form)) {
+                        const refreshed = prefaFragment(html).querySelector('#prefa-form');
+                        if (refreshed) {
+                            form.replaceWith(refreshed);
+                            refreshed.querySelectorAll('.prefa-message').forEach(message => {
+                                message.classList.add('success');
+                                message.textContent = response.message;
+                            });
+                        }
+                    }
+                    lireCcpuVisibles();
                 });
             } else {
-                form[0].reset();
-                form.find('.prefa-file-list').empty();
-                form.find('[name="CDN"], [name="RT"], [name="PT"]').trigger('change');
-                form.find('#revetement-type').trigger('change');
-                form.find('#controles, #controles-rt, #controles-pt').trigger('input');
-                form.find('#plan-documents').trigger('change');
-                form.find('#qmos').trigger('change');
-                form.find('#dmos').trigger('change');
-                form.find('#materiel').trigger('change');
-                form.find('#ccpu').trigger('change');
+                form.reset();
+                form.querySelectorAll('.prefa-file-list').forEach(liste => liste.replaceChildren());
+                const emettre = (selecteur, nom) => form.querySelectorAll(selecteur)
+                    .forEach(champ => champ.dispatchEvent(new Event(nom, { bubbles: true })));
+                emettre('[name="CDN"], [name="RT"], [name="PT"]', 'change');
+                emettre('#revetement-type', 'change');
+                emettre('#controles, #controles-rt, #controles-pt', 'input');
+                emettre('#plan-documents', 'change');
+                emettre('#qmos', 'change');
+                emettre('#dmos', 'change');
+                emettre('#materiel', 'change');
+                emettre('#ccpu', 'change');
                 if (typeof selectPassivation === 'function') {
                     selectPassivation('', '');
                 }
                 setTimeout(function () {
-                    if ($('#btn-list-prefa').length) {
-                        $('#btn-list-prefa').trigger('click');
-                    }
+                    document.getElementById('btn-list-prefa')?.click();
                 }, 1200);
             }
-        },
-        error: function (xhr) {
-            const texte = xhr.responseJSON?.message || 'Enregistrement impossible. Réessayez.';
-            message.addClass('error').text(texte);
-            if (review && form.closest('.prefa-detail-row').prop('hidden') && window.toast) {
-                window.toast(texte, { erreur: true });
+        })
+        .finally(() => {
+            etat.submitting = false;
+            form.querySelectorAll('button').forEach(b => { b.disabled = !!etat.reviewed; });
+            if (review && !etat.reviewed) {
+                form.closest('.prefa-request')?.querySelectorAll('.prefa-decision button')
+                    .forEach(b => { b.disabled = false; });
             }
-        },
-        complete: function () {
-            form.data('submitting', false).find('button').prop('disabled', !!form.data('reviewed'));
-            if (review && !form.data('reviewed')) {
-                form.closest('.prefa-request').find('.prefa-decision button').prop('disabled', false);
-            }
-        }
+            lireCcpuVisibles();
+        });
+});
+
+
+document.addEventListener('change', evenement => {
+    const champ = evenement.target.closest('#prefa-form [name="RT"]');
+    if (!champ) return;
+    const form = champ.closest('form');
+    if (!form) return;
+    form.querySelectorAll('#rt-details').forEach(el => { el.hidden = !champ.checked; });
+    form.querySelectorAll('[name="controles_rt"], #controles-rt-value').forEach(el => {
+        el.disabled = !champ.checked;
+        el.required = champ.checked;
     });
 });
 
+prefaLierControles('controles-rt', 'controles-rt-value');
 
-$(document).on('change', '#prefa-form [name="RT"]', function () {
-    const form = $(this).closest('form');
-    form.find('#rt-details').prop('hidden', !this.checked);
-    form.find('[name="controles_rt"], #controles-rt-value').prop('disabled', !this.checked).prop('required', this.checked);
-});
-
-$(document).on('input', '#controles-rt', function () {
-    $('#controles-rt-value').val(this.value).prop('required', true).get(0).setCustomValidity('');
-});
-$(document).on('input change', '#controles-rt-value', function (event) {
-    const rawValue = this.value.trim();
-    const normalizedValue = rawValue.replace(',', '.');
-    const validFormat = /^\d*(?:\.\d*)?$/.test(normalizedValue);
-    const value = Number(normalizedValue);
-    const validValue = validFormat && normalizedValue !== '' && Number.isFinite(value) && value >= 1 && value <= 100;
-    if (event.type === 'change' && rawValue !== normalizedValue) this.value = normalizedValue;
-    this.setCustomValidity(validValue || rawValue === '' ? '' : 'Saisissez une valeur entre 1 et 100.');
-    if (validValue) $('#controles-rt').val(normalizedValue);
+document.addEventListener('change', evenement => {
+    const champ = evenement.target.closest('#prefa-form [name="PT"]');
+    if (!champ) return;
+    const form = champ.closest('form');
+    if (!form) return;
+    form.querySelectorAll('#pt-details').forEach(el => { el.hidden = !champ.checked; });
+    form.querySelectorAll('[name="controles_pt"], #controles-pt-value').forEach(el => {
+        el.disabled = !champ.checked;
+        el.required = champ.checked;
+    });
 });
 
-$(document).on('change', '#prefa-form [name="PT"]', function () {
-    const form = $(this).closest('form');
-    form.find('#pt-details').prop('hidden', !this.checked);
-    form.find('[name="controles_pt"], #controles-pt-value').prop('disabled', !this.checked).prop('required', this.checked);
-});
-
-$(document).on('input', '#controles-pt', function () {
-    $('#controles-pt-value').val(this.value).prop('required', true).get(0).setCustomValidity('');
-});
-$(document).on('input change', '#controles-pt-value', function (event) {
-    const rawValue = this.value.trim();
-    const normalizedValue = rawValue.replace(',', '.');
-    const validFormat = /^\d*(?:\.\d*)?$/.test(normalizedValue);
-    const value = Number(normalizedValue);
-    const validValue = validFormat && normalizedValue !== '' && Number.isFinite(value) && value >= 1 && value <= 100;
-    if (event.type === 'change' && rawValue !== normalizedValue) this.value = normalizedValue;
-    this.setCustomValidity(validValue || rawValue === '' ? '' : 'Saisissez une valeur entre 1 et 100.');
-    if (validValue) $('#controles-pt').val(normalizedValue);
-});
+prefaLierControles('controles-pt', 'controles-pt-value');
 
 
 
@@ -1150,24 +1343,28 @@ $(document).on('input change', '#controles-pt-value', function (event) {
         return sousMenu;
     }
 
-    $(document).on('click', '.prefa-actions-declencheur', function (evenement) {
+    document.addEventListener('click', function (evenement) {
+        const declencheur = evenement.target.closest('.prefa-actions-declencheur');
+        if (!declencheur) return;
         evenement.preventDefault();
         evenement.stopPropagation();
-        const menu = this.nextElementSibling;
+        const menu = declencheur.nextElementSibling;
         if (!menu) return;
         const ouvrir = menu.hidden;
         fermerTout(menu);
         menu.hidden = !ouvrir;
-        this.setAttribute('aria-expanded', String(ouvrir));
-        if (ouvrir) placer(this, menu);
+        declencheur.setAttribute('aria-expanded', String(ouvrir));
+        if (ouvrir) placer(declencheur, menu);
     });
 
     // Une commande choisie referme son menu. Le gestionnaire de l'action, délégué lui aussi,
     // s'exécute dans le même événement : masquer le bouton ne l'empêche pas de répondre.
     //
     // Sauf l'entrée d'un sous-menu, qui ouvre plutôt qu'elle n'agit.
-    $(document).on('click', '.prefa-actions-menu button:not(.prefa-sous-menu-declencheur)', function () {
-        const menu = this.closest('.prefa-actions-menu');
+    document.addEventListener('click', function (evenement) {
+        const commande = evenement.target.closest('.prefa-actions-menu button:not(.prefa-sous-menu-declencheur)');
+        if (!commande) return;
+        const menu = commande.closest('.prefa-actions-menu');
         fermerSousMenus(menu);
         menu.hidden = true;
         menu.previousElementSibling?.setAttribute('aria-expanded', 'false');
@@ -1176,17 +1373,21 @@ $(document).on('input change', '#controles-pt-value', function (event) {
     // L'entrée d'un sous-menu l'ouvre, et ne le referme pas : le survol l'a souvent ouvert
     // juste avant le clic, qui le fermerait sous la souris. Ouvert au clavier — Entrée ou
     // Espace, qui produisent un clic sans position —, il donne le focus à sa première entrée.
-    $(document).on('click', '.prefa-sous-menu-declencheur', function (evenement) {
-        const sousMenu = this.nextElementSibling.hidden ? ouvrirSousMenu(this) : this.nextElementSibling;
+    document.addEventListener('click', function (evenement) {
+        const entree = evenement.target.closest('.prefa-sous-menu-declencheur');
+        if (!entree) return;
+        const sousMenu = entree.nextElementSibling.hidden ? ouvrirSousMenu(entree) : entree.nextElementSibling;
         if (evenement.detail === 0) entrees(sousMenu)[0]?.focus();
     });
 
     // À la souris, il s'ouvre au survol de son entrée et se referme au survol d'une autre.
-    $(document).on('mouseover', '.prefa-actions-menu > button', function () {
-        if (this.classList.contains('prefa-sous-menu-declencheur')) {
-            if (this.nextElementSibling.hidden) ouvrirSousMenu(this);
+    document.addEventListener('mouseover', function (evenement) {
+        const entree = evenement.target.closest?.('.prefa-actions-menu > button');
+        if (!entree) return;
+        if (entree.classList.contains('prefa-sous-menu-declencheur')) {
+            if (entree.nextElementSibling.hidden) ouvrirSousMenu(entree);
         } else {
-            fermerSousMenus(this.closest('.prefa-actions-menu'));
+            fermerSousMenus(entree.closest('.prefa-actions-menu'));
         }
     });
 
@@ -1278,8 +1479,9 @@ $(document).on('input change', '#controles-pt-value', function (event) {
  *
  * Une feuille choisie s'ouvre dans la fenêtre du plan (ouvrirLecteurPlanFinal).
  */
-$(document).on('click', '.prefa-plan-final', function () {
-    ouvrirLecteurPlanFinal(this.dataset.plan, this.dataset.document);
+document.addEventListener('click', evenement => {
+    const entree = evenement.target.closest('.prefa-plan-final');
+    if (entree) ouvrirLecteurPlanFinal(entree.dataset.plan, entree.dataset.document);
 });
 
 
@@ -1293,12 +1495,12 @@ $(document).on('click', '.prefa-plan-final', function () {
  * C'est le champ caché qui annonce le choix, pas celui où l'on tape : on peut écrire trois
  * lettres d'un nom d'affaire sans en avoir retenu aucune.
  */
-$(document).on('change', '#prefa-form [data-liste-filtrable="affaire"] input[type="hidden"]',
-    function () {
-        const form = $(this).closest('#prefa-form');
-        const choisie = String(this.value || '').trim() !== '';
-        form.toggleClass('nd-attend-affaire', !choisie);
-    });
+document.addEventListener('change', evenement => {
+    const cache = evenement.target.closest('#prefa-form [data-liste-filtrable="affaire"] input[type="hidden"]');
+    if (!cache) return;
+    const choisie = String(cache.value || '').trim() !== '';
+    cache.closest('#prefa-form')?.classList.toggle('nd-attend-affaire', !choisie);
+});
 
 // « Haut de page » : une fois en bas du formulaire, rien ne ramenait à l'affaire ni aux
 // plans. La zone qui défile est « .page » — elle porte l'overflow — et non la fenêtre :
@@ -1318,8 +1520,10 @@ document.addEventListener('scroll', function (evenement) {
     if (bouton) bouton.hidden = page.scrollTop < 80;
 }, true);
 
-$(document).on('click', '.nd-haut', function () {
-    const page = this.closest('.page');
+document.addEventListener('click', evenement => {
+    const bouton = evenement.target.closest('.nd-haut');
+    if (!bouton) return;
+    const page = bouton.closest('.page');
     if (page) page.scrollTo({top: 0, behavior: 'smooth'});
 });
 
@@ -1356,8 +1560,10 @@ function prefaAppliquerDensite(racine) {
     racine.querySelectorAll('.prefa-list').forEach(s => prefaPoserDensite(s, densite));
 }
 
-$(document).on('click', '.prefa-densite-choix', function () {
-    const densite = this.dataset.densite;
+document.addEventListener('click', evenement => {
+    const choix = evenement.target.closest('.prefa-densite-choix');
+    if (!choix) return;
+    const densite = choix.dataset.densite;
     if (!PREFA_DENSITES.includes(densite)) return;
     try {
         localStorage.setItem('prefa-densite', densite);
