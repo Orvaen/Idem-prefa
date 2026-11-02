@@ -89,12 +89,16 @@ Supprimer une demande efface ses fichiers, et les lignes liées suivent en casca
 
 - **Recherche** dans la référence, l'affaire, le statut, la passivation, les dates et le
   demandeur.
-- **Onglets** Toutes, En attente, Validées, Refusées, avec leur compte.
+- **Onglets** Toutes, En attente, Validées, Refusées, avec leur compte. Chacun porte le point
+  de couleur de son statut : ce sont eux, la légende. Leur infobulle dit ce que le statut
+  attend (« Ouvertes à l'atelier »).
 - **Filtres** par demandeur (chargé de production, chef d'atelier) et par priorité.
 - **En retard** : une demande dont la fin prévue est passée, qui n'est pas refusée, et dont le
   PV « Fin de fabrication » n'est pas encore fait. L'échéance s'y lit en rouge.
 - **Rangement** : par statut pour l'encadrement (référence, affaire, fin prévue, pouces, temps
-  atelier, demandeur) ; par affaire pour le chargé d'affaire.
+  atelier, demandeur), sans titre de groupe — chaque ligne s'ouvre sur le point de couleur de
+  son statut, son nom au survol ; par affaire pour le chargé d'affaire, avec une colonne
+  « Statut » en toutes lettres.
 
 ## La fiche
 

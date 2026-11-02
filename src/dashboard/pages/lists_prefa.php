@@ -51,11 +51,22 @@ $enRetardTotal = $enRetardTotal ?? 0;
 */
 
 $libelleOnglet = [1 => 'En attente', 2 => 'Validées', 3 => 'Refusées'];
+
+// Ce que chaque statut attend, ou ce qu'il est devenu : une phrase pour qui découvre
+// l'écran. Elle s'écrivait sous chaque titre de groupe ; elle passe en infobulle de
+// l'onglet, qui sert aussi de légende aux points de couleur des lignes.
+$aideStatut = [
+    1 => $isAdmin ? 'À examiner, puis valider ou refuser' : 'En attente de validation',
+    2 => 'Ouvertes à l’atelier',
+    3 => 'Non retenues',
+];
+
 $ongletsStatut = [[
     'valeur' => '',
     'libelle' => 'Toutes',
     'compte' => array_sum($comptesParStatut),
     'actif' => !$status,
+    'aide' => '',
 ]];
 foreach ($statuses as $s) {
     $id = (int) $s['id'];
@@ -64,23 +75,9 @@ foreach ($statuses as $s) {
         'libelle' => $libelleOnglet[$id] ?? (string) $s['libelle'],
         'compte' => $comptesParStatut[$id] ?? 0,
         'actif' => $status === [(string) $id],
+        'aide' => $aideStatut[$id] ?? '',
     ];
 }
-
-/** Le signe d'un statut, façon Linear : un cercle pointillé qui attend, plein quand c'est tranché. */
-$iconeStatut = static function (int $statut): string {
-    return match ($statut) {
-        1 => '<svg class="prefa-statut-icone status-1" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">'
-            . '<circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-dasharray="2.6 2.1" /></svg>',
-        2 => '<svg class="prefa-statut-icone status-2" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">'
-            . '<circle cx="8" cy="8" r="7" fill="currentColor" />'
-            . '<path d="m5 8.2 2 2 4-4.2" fill="none" stroke="var(--surface)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>',
-        3 => '<svg class="prefa-statut-icone status-3" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">'
-            . '<circle cx="8" cy="8" r="7" fill="currentColor" />'
-            . '<path d="m5.6 5.6 4.8 4.8M10.4 5.6l-4.8 4.8" stroke="var(--surface)" stroke-width="1.8" stroke-linecap="round" /></svg>',
-        default => '',
-    };
-};
 
 /*
 |--------------------------------------------------------------------------
@@ -264,7 +261,13 @@ if ($isWorkshopPersonnel) {
                         <button type="button"
                                 class="prefa-onglet"
                                 data-statut="<?= prefaEscape($onglet['valeur']) ?>"
+                                <?= $onglet['aide'] !== '' ? 'title="' . prefaEscape($onglet['aide']) . '"' : '' ?>
                                 aria-pressed="<?= $onglet['actif'] ? 'true' : 'false' ?>">
+                            <?php // Le point du statut : les onglets sont la légende de ceux qui
+                                  // ouvrent les lignes. Muet ici, le mot est juste à côté. ?>
+                            <?php if ($onglet['valeur'] !== ''): ?>
+                                <span class="prefa-point status-<?= (int) $onglet['valeur'] ?>" aria-hidden="true"></span>
+                            <?php endif; ?>
                             <?= prefaEscape($onglet['libelle']) ?>
                             <span class="prefa-onglet-compte"><?= (int) $onglet['compte'] ?></span>
                         </button>
@@ -296,7 +299,9 @@ if ($isWorkshopPersonnel) {
                 aria-label="Liste des demandes"
                 tabindex="0">
 
-                <table class="prefa-table">
+                <?php // « prefa-table-points » : chaque ligne s'ouvre sur le point de son
+                      // statut, et l'en-tête de la première colonne prend le même retrait. ?>
+                <table class="prefa-table<?= $vueParAffaire ? '' : ' prefa-table-points' ?>">
 
                     <thead>
 
@@ -342,8 +347,9 @@ if ($isWorkshopPersonnel) {
                             <?php endif; ?>
 
                             <?php if ($vueParAffaire): ?>
-                                <!-- Rangée par statut, la liste l'annonce dans le titre de
-                                     chaque groupe : la colonne ne servirait qu'à le redire. -->
+                                <!-- Rangée par statut, la liste le dit par le point de couleur
+                                     qui ouvre chaque ligne : la colonne ne servirait qu'à le
+                                     redire. -->
                                 <th scope="col">
                                     Statut
                                 </th>
@@ -370,44 +376,34 @@ if ($isWorkshopPersonnel) {
                     <?php if (!empty($requests)): ?>
 
                         <?php
-                        // Les demandes arrivent rangées — par affaire chez le demandeur, par
-                        // statut ailleurs — et chaque groupe s'annonce une fois, avec son
-                        // compte. Sans ce titre, on lirait une liste à plat où rien ne dit où
-                        // commence le groupe suivant.
-                        $cleGroupe = static fn (array $ligne): string => $vueParAffaire
-                            ? trim((string) ($ligne['nom_affaire'] ?? ''))
-                            : (string) (int) $ligne['id_statut'];
-                        $parGroupe = [];
-                        foreach ($requests as $ligne) {
-                            $cle = $cleGroupe($ligne);
-                            $parGroupe[$cle] = ($parGroupe[$cle] ?? 0) + 1;
+                        // Chez le demandeur, les demandes arrivent rangées par affaire, et
+                        // chaque affaire s'annonce une fois, avec son compte : les lignes ne
+                        // répètent pas son nom.
+                        //
+                        // Ailleurs, elles sont rangées par statut, sans titre de groupe. Les
+                        // titres — « Validées 1 ouvertes à l'atelier » — coupaient la liste en
+                        // tranches pour redire ce que les onglets comptent déjà : le statut se
+                        // lit au point de couleur qui ouvre la ligne, et les onglets en sont
+                        // la légende.
+                        $parAffaire = [];
+                        if ($vueParAffaire) {
+                            foreach ($requests as $ligne) {
+                                $cle = trim((string) ($ligne['nom_affaire'] ?? ''));
+                                $parAffaire[$cle] = ($parAffaire[$cle] ?? 0) + 1;
+                            }
                         }
-                        // Une phrase sous chaque statut, pour qui découvre l'écran : ce que
-                        // le groupe attend, ou ce qu'il est devenu.
-                        $aideStatut = [
-                            1 => $isAdmin ? 'à examiner, puis valider ou refuser' : 'en attente de validation',
-                            2 => 'ouvertes à l’atelier',
-                            3 => 'non retenues',
-                        ];
                         $groupeCourant = null;
                         ?>
 
                         <?php foreach ($requests as $row): ?>
-                            <?php $groupe = $cleGroupe($row); ?>
-                            <?php if ($groupe !== $groupeCourant): ?>
+                            <?php $groupe = trim((string) ($row['nom_affaire'] ?? '')); ?>
+                            <?php if ($vueParAffaire && $groupe !== $groupeCourant): ?>
                                 <?php $groupeCourant = $groupe; ?>
                                 <tbody class="prefa-groupe">
                                     <tr>
                                         <th scope="colgroup" colspan="<?= $colonnes ?>">
-                                            <?php if ($vueParAffaire): ?>
-                                                <span class="prefa-groupe-nom"><?= prefaEscape($groupe !== '' ? $groupe : 'Sans affaire') ?></span>
-                                            <?php else: ?>
-                                                <span class="prefa-groupe-nom prefa-groupe-statut status-<?= (int) $row['id_statut'] ?>"><?= $iconeStatut((int) $row['id_statut']) ?><?= prefaEscape($libelleOnglet[(int) $row['id_statut']] ?? $row['libelle']) ?></span>
-                                            <?php endif; ?>
-                                            <span class="prefa-groupe-compte"><?= (int) $parGroupe[$groupe] ?></span>
-                                            <?php if (!$vueParAffaire && isset($aideStatut[(int) $row['id_statut']])): ?>
-                                                <span class="prefa-groupe-aide"><?= prefaEscape($aideStatut[(int) $row['id_statut']]) ?></span>
-                                            <?php endif; ?>
+                                            <span class="prefa-groupe-nom"><?= prefaEscape($groupe !== '' ? $groupe : 'Sans affaire') ?></span>
+                                            <span class="prefa-groupe-compte"><?= (int) $parAffaire[$groupe] ?></span>
                                         </th>
                                     </tr>
                                 </tbody>

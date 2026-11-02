@@ -3110,6 +3110,35 @@ summary {
 .prefa-statut-icone.status-2 { color: var(--succes-texte); }
 .prefa-statut-icone.status-3 { color: var(--alerte-texte); }
 
+/* Le point du statut, sur la liste des demandes. La couleur dit où en est la demande, et
+   les onglets, juste au-dessus, en sont la légende. Il remplace les titres de groupe
+   (« Validées 1 ouvertes à l'atelier »), qui coupaient la liste en tranches pour redire ce
+   que les onglets comptent déjà.
+
+   Le dessin est celui du point de la pastille « Statut » de « Mes demandes »
+   (.prefa-status::before), un cran plus grand : ici, aucun mot ne l'accompagne. Sa couleur
+   vient de .status-1/2/3 (prefa-form.css). */
+.prefa-point {
+    display: inline-block;
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+/* En tête de ligne, avant la place de l'urgence. */
+.prefa-reference .prefa-point {
+    margin-right: 8px;
+    vertical-align: 1px;
+}
+
+/* L'en-tête de la première colonne suit les références : les 34 px de l'urgence (plus
+   haut), et 16 de plus pour le point. */
+.prefa-table-points thead th:first-child {
+    padding-left: 50px;
+}
+
 /* ---------- 3. L'échéance ---------- */
 
 .prefa-list .prefa-table td.prefa-echeance {

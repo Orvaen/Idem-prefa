@@ -22,18 +22,25 @@ $decisionEnLigne = $isAdmin && $isPending;
 // Les plans de la demande et leurs feuilles ISO : un plan final par feuille. Vide tant que
 // le chef n'a rien rattaché, et pour qui n'a pas encore l'entrée (prefa_list_data.php).
 $plansFinaux = $plansFinauxByRequest[$requestId] ?? [];
+
+// Le statut ouvre la ligne, par un point de couleur dont les onglets sont la légende. Son
+// nom reste au survol, et pour les lecteurs d'écran. Rangée par affaire, la liste a une
+// colonne « Statut » qui le dit en toutes lettres : pas de point.
+$pointStatut = $vueParAffaire ? '' : '<span class="prefa-point status-' . (int) $row['id_statut'] . '" role="img"'
+    . ' aria-label="' . prefaEscape($row['libelle']) . '" title="' . prefaEscape($row['libelle']) . '"></span>';
 ?>
 <tbody class="prefa-request<?= $isUrgentPending ? ' is-urgent-pending' : '' ?>">
     <tr>
         <?php // Le numéro seul : le chantier est dans la colonne d'à côté quand la liste n'est
               // pas groupée, et dans le titre du groupe quand elle l'est. Le répéter ici
               // allongeait la colonne de deux cents pixels pour redire la voisine. ?>
-        <?php // L'urgence ouvre la ligne, par un signe et non par un mot. La place lui est
-              // réservée sur toutes les lignes : sans ça, les références des demandes
-              // urgentes se décaleraient de seize pixels et la colonne cesserait d'être
-              // une colonne. ?>
+        <?php // L'urgence suit le point du statut, par un signe et non par un mot. La place
+              // lui est réservée sur toutes les lignes : sans ça, les références des
+              // demandes urgentes se décaleraient de seize pixels et la colonne cesserait
+              // d'être une colonne. Pas d'espace entre le point et elle : il compterait
+              // dans l'alignement. ?>
         <td class="prefa-reference">
-            <span class="prefa-urgence">
+            <?= $pointStatut ?><span class="prefa-urgence">
                 <?php if (!empty($row['urgent'])): ?>
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
                         stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Urgente">
@@ -83,8 +90,8 @@ $plansFinaux = $plansFinauxByRequest[$requestId] ?? [];
                 </span>
             </td>
         <?php endif; ?>
-        <?php // Rangée par statut, la liste annonce le statut dans le titre du groupe : la
-              // colonne ne le répète que là où la liste est rangée par affaire. ?>
+        <?php // Rangée par statut, la liste le dit par le point qui ouvre la ligne : la
+              // colonne ne l'écrit que là où la liste est rangée par affaire. ?>
         <?php if ($vueParAffaire): ?>
             <td><span class="prefa-status status-<?= (int) $row['id_statut'] ?>"><?= prefaEscape($row['libelle']) ?></span></td>
         <?php endif; ?>

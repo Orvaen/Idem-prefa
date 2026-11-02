@@ -1329,10 +1329,18 @@ document.addEventListener('submit', event => {
                     const counter = document.getElementById('urgent-pending-count');
                     updateUrgentBadge(Math.max(0, Number(counter ? counter.textContent : '') - 1));
                 }
+                const libelle = status === '2' ? 'Validée' : 'Refusée';
                 request?.querySelectorAll('.prefa-status').forEach(statut => {
                     statut.classList.remove('status-1');
                     statut.classList.add('status-' + status);
-                    statut.textContent = status === '2' ? 'Validée' : 'Refusée';
+                    statut.textContent = libelle;
+                });
+                // Le point qui ouvre la ligne change de couleur tout de suite : la liste ne
+                // se recharge que dans un instant.
+                request?.querySelectorAll('.prefa-point').forEach(point => {
+                    point.classList.replace('status-1', 'status-' + status);
+                    point.setAttribute('aria-label', libelle);
+                    point.title = libelle;
                 });
                 etat.reviewed = true;
                 form.querySelectorAll('textarea').forEach(zone => { zone.disabled = true; });
