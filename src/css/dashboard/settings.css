@@ -787,6 +787,10 @@ dialog.fenetre.parametres .signature-message {
     margin-top: 6px;
 }
 
+dialog.fenetre.parametres .mot-de-passe-message:empty {
+    display: none;
+}
+
 dialog.fenetre.parametres .parametres-aucun {
     margin: 48px 0 0;
     color: var(--text-muted);

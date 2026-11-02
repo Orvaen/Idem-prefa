@@ -3,319 +3,184 @@
    ==========================================================================
 
    L'écran du soudeur suit la grammaire des autres listes (docs/direction-artistique.md) :
-   l'en-tête et son action, une barre d'outils, un tableau à même la surface, et la feuille
-   travaillée dans le volet flottant de la maison — celui des PV, du planning, d'un bon de
-   commande.
+   l'en-tête et ses outils de vue, la barre de recherche, les onglets d'état avec leur
+   point, un tableau à même la surface et l'action au contour au bout de la ligne. La
+   feuille se renseigne sur son dessin, dans la fenêtre du plan.
 
-   Il avait ses deux colonnes à lui, posées dès l'arrivée : une carte fixe à droite qui
-   coupait la liste en deux pour une feuille que personne n'avait encore ouverte, et dix-sept
-   cents lignes de règles qui se reprenaient l'une l'autre pour la faire tenir. Elles sont
-   remplacées ; ne reste ici que ce qui est propre à l'écran. */
+   Ne reste ici que ce qui est propre à l'écran : le compte du plan en tête de ses feuilles,
+   les colonnes des feuilles, les couleurs de leurs états, et ce qu'on pose sur le dessin. */
 
-/* ----- La barre : le plan, la recherche, l'état ; le dessin à droite ----- */
+/* ----- Le plan, en tête de ses feuilles ----- */
 
-#soudures-page .soudures-filtres {
-    display: flex;
+/* La ligne de groupe des autres listes (prefa-list.css, « La liste rangée par groupes ») : le
+   nom du plan, ses feuilles, sa demande et son affaire. Dans la colonne des soudures, le
+   compte du plan entier, à l'aplomb de ceux des feuilles qu'il additionne.
+
+   Le plan se choisissait dans une pastille de la barre, à côté de la recherche, et ses
+   feuilles venaient dessous sans rappeler de quel plan elles étaient. */
+html #soudures-page .soudures-plan .soudures-plan-cordons {
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* Le plan se déroule et se replie : toute sa ligne répond au clic, et la flèche devant son
+   nom — un bouton, pour le clavier — garde l'allure du titre de groupe.
+
+   C'est une ligne qu'on clique, plus un titre posé au-dessus des autres : elle prend leur
+   hauteur, son texte au milieu, et perd l'air que le titre de groupe prend au-dessus de lui.
+   Le survol l'éclaire comme une ligne de données, le clavier aussi. */
+#soudures-page .soudures-plan > tr {
+    cursor: pointer;
+}
+
+html #soudures-page .soudures-plan > tr > th {
+    height: var(--ligne-td);
+    padding-top: 0;
+    padding-bottom: 0;
+    vertical-align: middle;
+    transition: background-color .12s ease;
+}
+
+html #soudures-page .soudures-plan:hover > tr > th,
+html #soudures-page .soudures-plan:focus-within > tr > th {
+    background: var(--ligne-survol);
+}
+
+/* La pastille du compte a la teinte du survol : sur la ligne éclairée, elle s'y fondait. */
+#soudures-page .soudures-plan:hover .prefa-groupe-compte,
+#soudures-page .soudures-plan:focus-within .prefa-groupe-compte {
+    background: var(--surface);
+}
+
+/* Le même fondu au survol des feuilles, pour que les deux sortes de lignes répondent pareil. */
+#soudures-page .soudures-feuille > tr > td {
+    transition: background-color .12s ease;
+}
+
+html #soudures-page .soudures-plan-bascule {
+    display: inline-flex;
     align-items: center;
-    flex-wrap: wrap;
     gap: 8px;
-}
-
-#soudures-page .soudures-filtres .filtres-barre {
-    flex-wrap: nowrap;
-}
-
-#soudures-page .soudures-resultat {
-    margin: -4px 16px 8px;
-}
-
-/* Le dessin du plan : la seule commande qui ne filtre pas, rangée au bout de la barre. */
-html #soudures-page .soudures-voir-dessin {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    height: var(--ctrl-sm);
-    margin-left: auto;
-    padding: 0 10px;
-    border: 1px solid var(--border) !important;
-    border-radius: var(--r-md);
-    background: var(--surface) !important;
-    color: var(--text) !important;
-    font: inherit;
-    font-size: 13px;
-    white-space: nowrap;
-    cursor: pointer;
-}
-
-html #soudures-page .soudures-voir-dessin:hover {
-    background: var(--hover) !important;
-}
-
-#soudures-page .soudures-voir-dessin .icon {
-    width: 14px;
-    height: 14px;
-    color: var(--text-muted);
-}
-
-/* ----- Le plan : une pastille de filtre, et sa liste à recherche ----- */
-
-/* Même forme que les pastilles de la barre (filtres.css) : 1 px de filet, rayon 6, la
-   hauteur des contrôles de barre. C'était un bloc de 36 px sur sa propre ligne, avec son
-   étiquette, son compte et un filet dessous. */
-#soudures-page .soudures-choix-plan {
-    position: relative;
-}
-
-html #soudures-page .soudures-plan-declencheur {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    max-width: 360px;
-    height: var(--ctrl-sm);
     margin: 0;
-    padding: 0 8px 0 10px;
-    border: 1px solid var(--border) !important;
-    border-radius: var(--r-md);
-    background: var(--surface) !important;
-    color: var(--text) !important;
+    padding: 0;
+    border: 0 !important;
+    background: none !important;
+    color: inherit !important;
     font: inherit;
-    font-size: 13px;
-    white-space: nowrap;
     cursor: pointer;
 }
 
-html #soudures-page .soudures-plan-declencheur:hover {
-    background: var(--hover) !important;
-}
-
-html #soudures-page .soudures-plan-declencheur[aria-expanded="true"] {
-    border-color: var(--accent) !important;
-}
-
-#soudures-page .soudures-plan-declencheur:focus-visible {
+#soudures-page .soudures-plan-bascule:focus-visible {
     outline: 2px solid var(--accent);
-    outline-offset: 2px;
+    outline-offset: 3px;
+    border-radius: var(--r-sm);
 }
 
-.soudures-plan-libelle {
-    color: var(--text-muted);
-}
-
-.soudures-plan-declencheur strong {
-    overflow: hidden;
-    font-weight: 500;
-    text-overflow: ellipsis;
-}
-
-.soudures-plan-demande {
-    color: var(--text-muted);
-    font-size: 12px;
-    font-variant-numeric: tabular-nums;
-}
-
-.soudures-plan-chevron {
+/* Pointée vers le nom, repliée ; vers les feuilles, déroulée. Elle tourne au rythme des
+   feuilles qui entrent (soudures.js, « MOUVEMENT »). */
+.soudures-plan-fleche {
     flex: none;
     width: 14px;
     height: 14px;
     color: var(--text-muted);
+    transition: transform .22s cubic-bezier(.2, .8, .2, 1), color .12s ease;
 }
 
-#soudures-page .soudures-plan-menu {
-    position: absolute;
-    top: calc(100% + 6px);
-    left: 0;
-    z-index: 30;
-    display: flex;
-    flex-direction: column;
-    box-sizing: border-box;
-    width: 420px;
-    max-width: calc(100vw - 32px);
-    padding: 4px;
-    border: 1px solid var(--border);
-    border-radius: var(--r-lg);
-    background: var(--surface);
-    box-shadow: 0 1px 2px rgb(15 15 16 / 6%), 0 12px 32px rgb(15 15 16 / 16%);
+.soudures-plan-bascule[aria-expanded="true"] .soudures-plan-fleche {
+    transform: rotate(90deg);
 }
 
-:root:not([data-theme="light"]) #soudures-page .soudures-plan-menu {
-    box-shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 12px 32px rgb(0 0 0 / 50%);
-}
-
-.soudures-plan-recherche {
-    position: relative;
-    display: flex;
-    align-items: center;
-    margin-bottom: 4px;
-}
-
-.soudures-plan-recherche .icon {
-    position: absolute;
-    left: 8px;
-    width: 14px;
-    height: 14px;
-    color: var(--text-muted);
-    pointer-events: none;
-}
-
-html #soudures-page .soudures-plan-recherche input {
-    box-sizing: border-box;
-    width: 100%;
-    height: var(--h-lg);
-    padding: 0 8px 0 28px;
-    border: 0 !important;
-    border-bottom: 1px solid var(--border-faint) !important;
-    border-radius: var(--r-md) var(--r-md) 0 0;
-    background: transparent !important;
-    color: var(--text) !important;
-    font: inherit;
-    font-size: 13px;
-    outline: none;
-}
-
-.soudures-plan-options {
-    max-height: 320px;
-    margin: 0;
-    padding: 0;
-    overflow-y: auto;
-    list-style: none;
-}
-
-.soudures-plan-option {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas: "nom compte" "demande compte";
-    align-items: center;
-    column-gap: 12px;
-    padding: 6px 8px;
-    border-radius: var(--r-md);
-    cursor: pointer;
-}
-
-.soudures-plan-option:hover,
-.soudures-plan-option.est-active {
-    background: var(--hover);
-}
-
-.soudures-plan-option[aria-selected="true"] {
-    background: var(--selection-fond);
-}
-
-.soudures-plan-option-nom {
-    grid-area: nom;
-    overflow: hidden;
+#soudures-page .soudures-plan:hover .soudures-plan-fleche {
     color: var(--text);
-    font-size: 13px;
-    font-weight: 500;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
-.soudures-plan-option-demande {
-    grid-area: demande;
-    overflow: hidden;
-    color: var(--text-muted);
-    font-size: 12px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+@media (prefers-reduced-motion: reduce) {
+    .soudures-plan-fleche {
+        transition: none;
+    }
 }
 
-.soudures-plan-option-compte {
-    grid-area: compte;
-    color: var(--text-muted);
-    font-size: 12px;
-    white-space: nowrap;
+/* Ne tient que la largeur d'un « Renseigner » (soudures.php) : rien à voir, rien à cliquer. */
+#soudures-page .soudures-plan-gabarit {
+    visibility: hidden;
 }
 
-.soudures-plan-option.est-sans-dessin .soudures-plan-option-nom {
-    color: var(--text-muted);
-}
-
-html #soudures-page .soudures-plan-mot {
-    margin: 0;
-    padding: 8px;
-    color: var(--text-muted) !important;
-    font-size: 12px;
+/* Déplier un plan allonge assez la page pour faire paraître la barre de défilement, et sa
+   largeur décalait de huit pixels les colonnes de droite à chaque dépli : sa place est
+   gardée. C'est « .page » qui défile, et cette section en est une. */
+#soudures-page {
+    scrollbar-gutter: stable;
 }
 
 /* ----- Les feuilles ----- */
 
-/* Le nom prend la place, les trois autres colonnes celle de leur contenu. */
-html #soudures-page table.soudures-feuilles {
+/* Rangées sous le nom de leur plan : leur point s'aligne sur lui, après la flèche — 12 px de
+   cellule, 14 de flèche, 8 d'écart. */
+html #soudures-page .soudures-feuille td.soudures-feuille-nom {
+    padding-left: 34px;
+}
+
+/* La page porte la largeur libre, comme l'affaire sur les autres listes : le numéro de
+   ligne et sa page se rassemblent à gauche, les cordons et l'action se serrent contre le
+   bord droit. Trois colonnes partagées à parts égales laissaient un désert au milieu. */
+html #soudures-page .soudures-feuilles th.soudures-feuille-page,
+html #soudures-page .soudures-feuilles td.soudures-feuille-page {
     width: 100%;
-    min-width: 0;
-    table-layout: auto;
 }
 
-html #soudures-page .soudures-feuilles th:not(:first-child),
-html #soudures-page .soudures-feuilles td:not(:first-child) {
-    width: 1%;
-    white-space: nowrap;
+/* L'en-tête de la première colonne suit les numéros : les 34 px des feuilles, et 16 pour le
+   point (prefa-list.css, « .prefa-reference .prefa-point »). */
+html #soudures-page .soudures-feuilles thead th:first-child {
+    padding-left: 50px;
 }
 
-html #soudures-page .soudures-feuilles .soudures-feuille-cordons {
-    padding-right: 24px;
+#soudures-page .soudures-feuille-page,
+#soudures-page .soudures-feuille-cordons {
+    font-variant-numeric: tabular-nums;
 }
 
-html #soudures-page .soudures-feuilles td.soudures-feuille-nom {
-    max-width: none;
-}
-
-#soudures-page .soudures-feuille {
+/* Toute la ligne ouvre le dessin ; « Renseigner » est là pour le clavier. */
+#soudures-page .soudures-feuille > tr {
     cursor: pointer;
 }
 
-/* La feuille ouverte dans le volet reste marquée dans la liste : on sait d'où l'on vient. */
-html #soudures-page .soudures-feuille.est-choisie > td {
+/* La feuille dont le dessin est ouvert — ou l'a été en dernier — reste marquée dans la
+   liste : en refermant le dessin, on sait d'où l'on vient. */
+html #soudures-page .soudures-feuille.est-choisie > tr > td {
     background: var(--selection-fond) !important;
 }
 
-html #soudures-page .soudures-feuille.est-choisie > td:first-child {
+html #soudures-page .soudures-feuille.est-choisie > tr > td:first-child {
     box-shadow: inset 2px 0 0 var(--accent);
 }
 
-/* Le nom ouvre la feuille : un bouton, pour le clavier, qui se lit comme du texte. */
-html #soudures-page .soudures-renseigner {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 8px;
-    height: auto;
-    margin: 0;
-    padding: 0;
-    border: 0 !important;
-    background: transparent !important;
-    color: var(--text) !important;
-    font: inherit;
-    font-size: 13px;
-    text-align: left;
-    white-space: nowrap;
-    cursor: pointer;
-}
+/* L'état d'une feuille, dans le point qui ouvre sa ligne et dans celui de son onglet : les
+   couleurs de l'écran « Soudures » du chef. Rien de soudé, un cercle vide ; en cours, le
+   point plein de l'accent ; soudée, celui du vert. Le cercle vide garde la liste calme —
+   c'est l'état de la plupart des feuilles — et ce qui avance s'y voit d'un coup d'œil.
 
-#soudures-page .soudures-renseigner strong {
-    font-weight: 500;
-    font-variant-numeric: tabular-nums;
-}
-
-#soudures-page .soudures-renseigner span {
+   Les deux états qui ne disent rien du travail : la liste pas encore lue, d'un gris pâle,
+   et la feuille où rien n'a été reconnu, à la couleur de ce qui attend quelqu'un. */
+.soudures-point.est-a_faire {
+    background: transparent;
+    box-shadow: inset 0 0 0 1.5px currentColor;
     color: var(--text-muted);
-    font-size: 12px;
-    font-variant-numeric: tabular-nums;
 }
 
-#soudures-page .soudures-feuille:hover .soudures-renseigner strong {
+.soudures-point.est-en_cours {
     color: var(--accent-texte);
 }
 
-#soudures-page .soudures-renseigner:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-    border-radius: var(--r-sm);
+.soudures-point.est-soudee {
+    color: var(--succes-texte);
 }
 
-/* Le compte des cordons, et sa barre fine dessous, alignée à droite avec le nombre. */
-#soudures-page .soudures-feuille-cordons {
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
+.soudures-point.est-non_lue {
+    color: var(--border-fort);
+}
+
+.soudures-point.est-sans_liste {
+    color: var(--attente-texte);
 }
 
 .soudures-barre {
@@ -335,47 +200,6 @@ html #soudures-page .soudures-renseigner {
     height: 100%;
     border-radius: inherit;
     background: var(--accent);
-}
-
-#soudures-page .soudures-feuille-actions {
-    text-align: right;
-}
-
-/* Le dessin d'une feuille : une icône, qui ne paraît qu'au survol de la ligne ou au
-   clavier (DA, § 7 ter). Sans survol — une tablette d'atelier —, elle reste. */
-html #soudures-page .soudures-dessin-icone {
-    display: inline-grid;
-    place-items: center;
-    width: var(--h-md);
-    height: var(--h-md);
-    padding: 0;
-    border: 0 !important;
-    border-radius: var(--r-md);
-    background: transparent !important;
-    color: var(--text-muted) !important;
-    cursor: pointer;
-}
-
-html #soudures-page .soudures-dessin-icone:hover {
-    background: var(--hover) !important;
-    color: var(--text) !important;
-}
-
-#soudures-page .soudures-dessin-icone .icon {
-    width: 16px;
-    height: 16px;
-}
-
-@media (hover: hover) {
-    #soudures-page .soudures-dessin-icone {
-        opacity: 0;
-    }
-
-    #soudures-page .soudures-feuille:hover .soudures-dessin-icone,
-    #soudures-page .soudures-feuille:focus-within .soudures-dessin-icone,
-    #soudures-page .soudures-feuille.est-choisie .soudures-dessin-icone {
-        opacity: 1;
-    }
 }
 
 /* ----- Le matériel signalé ----- */
@@ -417,6 +241,13 @@ html #soudures-page .soudures-materiel-table td:not(:first-child) {
     white-space: nowrap;
 }
 
+/* L'en-tête de la première colonne réserve la place de l'urgence (prefa-list.css) ; un
+   manque n'en a pas, et « Article » tombait 22 px à droite de ses articles. Même
+   correction que sur « Commande matériel ». */
+html #soudures-page .soudures-materiel-table thead th:first-child {
+    padding-left: 12px;
+}
+
 html #soudures-page .soudures-materiel-table td.soudures-materiel-article {
     min-width: 280px;
     max-width: none;
@@ -440,251 +271,266 @@ html #soudures-page .soudures-materiel-article span {
     color: var(--accent-texte);
 }
 
-/* ----- La feuille travaillée : le volet flottant ----- */
+/* ----- Le dessin : les numéros des soudures, qu'on clique ----- */
 
-.prefa-detail-row.soudures-volet-rang {
-    top: 8px;
-    right: 8px;
-    bottom: 8px;
-    left: auto;
-    width: min(640px, calc(100vw - 16px));
-    border: 1px solid var(--border);
-    border-radius: var(--r-xl);
-    background: var(--surface) !important;
-    box-shadow: 0 1px 2px rgb(15 15 16 / 6%), 0 24px 64px rgb(15 15 16 / 18%);
-    animation: fiche-tiroir 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-html body:has(.prefa-detail-row.soudures-volet-rang:not([hidden]))::before {
-    background: rgb(15 15 16 / 16%);
-    backdrop-filter: blur(2px);
-}
-
-/* Le volet porte son formulaire sur toute la hauteur : le pied reste en bas. */
-.soudures-volet-rang > .pv-volet {
-    display: flex;
-    flex-direction: column;
-    min-height: 100%;
-    max-width: none;
-    margin: 0;
-}
-
-.soudures-volet-rang .soudures-volet-form {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    margin: 0;
-}
-
-.soudures-volet-rang .soudures-volet-form > .pv-volet-section {
-    flex: 1;
-}
-
-/* « test · 26-DP-0006 · 2 / 4 cordons » : le point médian ne paraît qu'entre deux morceaux
-   présents. */
-.soudures-volet-rang [data-feuille-plan]:not(:empty) + [data-feuille-compte]:not(:empty)::before {
-    content: " · ";
-}
-
-/* Ce qui attend le chef : une puce ambre sous le titre. */
-html .soudures-volet-rang .soudures-attente {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    height: var(--h-xs);
-    margin: 8px 0 0;
-    padding: 0 8px;
-    border-radius: 999px;
-    background: var(--attente-fond);
-    color: var(--attente-texte) !important;
-    font-size: 12px;
-    font-weight: 500;
-}
-
-.soudures-volet-rang .soudures-attente::before {
-    content: "";
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: currentColor;
-}
-
-/* ----- Le tableau des cordons : celui des autres volets ----- */
-
-.soudures-cordons {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-}
-
-html .soudures-volet-rang .soudures-cordons th {
-    height: 32px;
-    padding: 0 8px;
-    border-bottom: 1px solid var(--border);
-    background: transparent !important;
-    color: var(--text-muted) !important;
-    font-size: 12px;
-    font-weight: 500;
-    text-align: left;
-    white-space: nowrap;
-}
-
-html .soudures-volet-rang .soudures-cordons td {
-    height: 40px;
-    padding: 0 8px;
-    border-bottom: 1px solid var(--border-faint);
-    background: transparent !important;
-    color: var(--text) !important;
-    vertical-align: middle;
-}
-
-html .soudures-volet-rang .soudures-cordons tbody tr:last-child td {
-    border-bottom: 0;
-}
-
-html .soudures-volet-rang .soudures-cordons tbody tr:hover td {
-    background: var(--ligne-survol) !important;
-}
-
-.soudures-volet-rang .soudures-cordons th:first-child,
-.soudures-volet-rang .soudures-cordons td:first-child {
-    width: 48px;
-    padding-left: 0;
-}
-
-.soudures-volet-rang .soudures-cordons th:nth-child(2) { width: 168px; }
-.soudures-volet-rang .soudures-cordons th:nth-child(3) { width: 120px; }
-
-/* Le repère, en pastille : c'est lui qu'on cherche en venant du dessin. Verte quand le
-   cordon est fait — la liste se lit alors d'un coup d'œil. */
-.soudures-numero {
-    display: inline-grid;
-    place-items: center;
-    min-width: 24px;
-    height: 24px;
-    padding: 0 4px;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    color: var(--text-muted);
-    font-size: 12px;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-}
-
-.soudures-ligne.est-faite .soudures-numero {
-    border-color: transparent;
-    background: var(--succes-fond);
-    color: var(--succes-texte);
-}
-
-/* Un repère saisi hors du tableau imprimé : il compte, mais il n'est pas sur la feuille. */
-.soudures-ligne.est-hors-tableau .soudures-numero {
-    border-style: dashed;
-    border-color: var(--attente-texte);
-    color: var(--attente-texte);
-}
-
-/* Renseigné, pas encore validé par le chef : un point ambre à côté du repère. */
-.soudures-ligne.est-en-attente .soudures-numero-cellule::after {
-    content: "";
-    display: inline-block;
-    width: 6px;
-    height: 6px;
-    margin-left: 4px;
-    border-radius: 50%;
-    background: var(--attente-texte);
-    vertical-align: middle;
-}
-
-/* Les champs d'une ligne : la hauteur des contrôles de ligne (DA, § 4), un filet discret
-   qui se marque au survol et à l'accent quand on écrit. */
-html .soudures-volet-rang .soudures-champ input {
+/* Posé exactement sur le rectangle imprimé : le chiffre du plan reste lisible au travers.
+   La couleur dit où en est le cordon, dans les tons des états de l'atelier : à faire en
+   azur — c'est l'invitation —, renseigné en ambre — il attend le chef —, validé en vert,
+   gris quand il est à un autre soudeur. */
+/* Le halo le fait voir de loin : le plan entier tient dans la fenêtre, et un rectangle
+   imprimé n'y fait qu'une dizaine de pixels. */
+.plan-cordon {
+    --cordon: var(--accent);
+    position: absolute;
     box-sizing: border-box;
-    width: 100%;
-    height: var(--h-md);
-    padding: 0 8px;
-    border: 1px solid var(--border) !important;
-    border-radius: var(--r-md);
-    background: transparent !important;
-    color: var(--text) !important;
-    font: inherit;
-    font-size: 13px;
-    font-variant-numeric: tabular-nums;
-}
-
-html .soudures-volet-rang .soudures-champ input:hover:not(:disabled) {
-    border-color: var(--border-fort) !important;
-}
-
-html .soudures-volet-rang .soudures-champ input:focus {
-    border-color: var(--accent) !important;
-    outline: 1px solid var(--accent);
-    outline-offset: -1px;
-}
-
-html .soudures-volet-rang .soudures-champ input::placeholder {
-    color: var(--text-muted);
-}
-
-/* Le cordon de quelqu'un d'autre, ou d'une feuille close : du texte, sans cadre. */
-html .soudures-volet-rang .soudures-champ input:disabled {
-    border-color: transparent !important;
-    color: var(--text-muted) !important;
-    cursor: default;
-}
-
-.soudures-soudeur {
-    overflow: hidden;
-    color: var(--text-muted);
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-html .soudures-volet-rang .soudures-ligne.est-faite .soudures-soudeur {
-    color: var(--text) !important;
-}
-
-html .soudures-volet-rang .soudures-cordons .prefa-table-empty {
-    padding: 24px 0;
-    color: var(--text-muted) !important;
-    text-align: center;
-}
-
-/* ----- Le pied du volet : le manque à gauche, l'enregistrement à droite ----- */
-
-.soudures-volet-pied {
-    position: sticky;
-    bottom: 0;
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 20px;
-    border-top: 1px solid var(--border);
-    background: var(--surface);
-}
-
-html .soudures-volet-pied .soudures-volet-manque {
-    display: inline-flex;
-    align-items: center;
-    height: var(--h-lg);
     margin: 0;
-    padding: 0 12px;
-    border: 1px solid var(--border) !important;
-    border-radius: var(--r-md);
-    background: var(--surface) !important;
-    color: var(--text) !important;
-    font: inherit;
-    font-size: 13px;
+    padding: 0;
+    border: 2px solid var(--cordon);
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--cordon) 22%, transparent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--cordon) 30%, transparent);
     cursor: pointer;
 }
 
-html .soudures-volet-pied .soudures-volet-manque:hover {
+/* La cible déborde du rectangle : imprimé, il fait trois millimètres, et un doigt en
+   couvre dix. */
+.plan-cordon::after {
+    content: "";
+    position: absolute;
+    inset: -12px;
+}
+
+.plan-cordon:hover,
+.plan-cordon.est-ouvert {
+    background: color-mix(in srgb, var(--cordon) 35%, transparent);
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--cordon) 45%, transparent);
+}
+
+.plan-cordon.est-en-attente { --cordon: var(--attente-texte); }
+.plan-cordon.est-validee { --cordon: var(--succes-texte); }
+.plan-cordon.est-verrouillee { --cordon: var(--text-muted); }
+
+/* Les lignes de la liste soudure imprimée : c'est là qu'on écrit, comme sur le tirage. Un
+   fond léger et un point devant chaque ligne, dans la couleur de son cordon, disent
+   qu'elle se clique et où elle en est ; le cadre vient au survol. Le texte écrit dans la
+   ligne passe au travers des clics (.plan-soudure). */
+.plan-ligne-soudure {
+    --cordon: var(--accent);
+    position: absolute;
+    z-index: 3;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--cordon) 8%, transparent);
+    cursor: pointer;
+}
+
+.plan-ligne-soudure::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: calc(100% + 4px);
+    width: 6px;
+    height: 6px;
+    margin-top: -3px;
+    border-radius: 50%;
+    background: var(--cordon);
+}
+
+.plan-ligne-soudure:hover,
+.plan-ligne-soudure.est-ouvert {
+    background: color-mix(in srgb, var(--cordon) 18%, transparent);
+    box-shadow: inset 0 0 0 2px var(--cordon);
+}
+
+.plan-ligne-soudure.est-en-attente { --cordon: var(--attente-texte); }
+.plan-ligne-soudure.est-validee { --cordon: var(--succes-texte); }
+.plan-ligne-soudure.est-verrouillee { --cordon: var(--text-muted); }
+
+/* Une ligne de la nomenclature : on la clique pour signaler que son matériel manque. Rien
+   au repos — la nomenclature se lit telle que le bureau d'études l'a tracée, et la plupart
+   du matériel est là ; la ligne se montre au survol. Un manque déjà signalé et pas encore
+   traité la teinte, avec le point qui marque les lignes de la liste soudure.
+
+   Le rouge des manques à traiter, celui de « Commande matériel » : l'ambre est déjà celui
+   des soudures qui attendent le chef, et la légende aurait donné deux sens à une couleur. */
+.plan-ligne-materiel {
+    --manque: var(--alerte-texte);
+    position: absolute;
+    z-index: 3;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 2px;
+    background: transparent;
+    cursor: pointer;
+}
+
+.plan-ligne-materiel:hover,
+.plan-ligne-materiel:focus-visible {
+    background: color-mix(in srgb, var(--manque) 12%, transparent);
+    box-shadow: inset 0 0 0 2px var(--manque);
+    outline: none;
+}
+
+.plan-ligne-materiel.est-signale {
+    background: color-mix(in srgb, var(--manque) 12%, transparent);
+}
+
+.plan-ligne-materiel.est-signale::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: calc(100% + 4px);
+    width: 6px;
+    height: 6px;
+    margin-top: -3px;
+    border-radius: 50%;
+    background: var(--manque);
+}
+
+/* Renseigné, pas encore validé : écrit dans sa ligne, dans le ton de l'attente. Le plan
+   final, lui, n'en portera rien tant que le chef n'aura pas validé. */
+.plan-soudure.est-en-attente {
+    color: var(--attente-texte);
+}
+
+/* Sous la consigne de la fenêtre : la légende des couleurs du dessin, puis, quand il y en
+   a, les soudures qu'aucune ligne de la liste ne porte — elles se renseignent d'ici. */
+.soudures-dessin-etat {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 16px;
+    margin-top: 2px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.soudures-dessin-etat:empty {
+    display: none;
+}
+
+/* Un point et un mot par couleur : le point des lignes de la liste soudure, en un cran plus
+   grand — le même que celui des onglets de l'écran, qui sont la légende de la liste des
+   feuilles. Le sélecteur passe devant « .plan-dialog-titre span », qui réduit tout texte du
+   titre à la taille de la consigne. */
+.soudures-legende {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 12px;
+}
+
+.plan-dialog-titre .soudures-legende-entree {
+    --legende: var(--accent);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-muted);
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.soudures-legende-entree::before {
+    content: "";
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--legende);
+}
+
+.soudures-legende-entree.est-en-attente { --legende: var(--attente-texte); }
+.soudures-legende-entree.est-validee { --legende: var(--succes-texte); }
+.soudures-legende-entree.est-verrouillee { --legende: var(--text-muted); }
+.soudures-legende-entree.est-manque { --legende: var(--alerte-texte); }
+
+.soudures-dessin-hors {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+html .soudures-hors-cordon {
+    --cordon: var(--accent);
+    min-width: 22px;
+    height: 20px;
+    margin: 0;
+    padding: 0 5px;
+    border: 1px solid var(--cordon) !important;
+    border-radius: var(--r-sm);
+    background: color-mix(in srgb, var(--cordon) 12%, transparent) !important;
+    color: var(--text) !important;
+    font-size: 12px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+}
+
+.soudures-hors-cordon.est-en-attente { --cordon: var(--attente-texte); }
+.soudures-hors-cordon.est-validee { --cordon: var(--succes-texte); }
+.soudures-hors-cordon.est-verrouillee { --cordon: var(--text-muted); }
+
+/* « Signaler un manque », dans la barre de la fenêtre : le dessin des autres commandes de
+   la barre — « Télécharger le PDF », « Sommaire » (plan-viewer.css). */
+html .soudures-dessin-manque {
+    display: inline-flex;
+    align-items: center;
+    height: 28px;
+    margin: 0;
+    padding: 0 12px;
+    border: 1px solid var(--border) !important;
+    border-radius: 6px;
+    background: transparent !important;
+    color: var(--text) !important;
+    font: inherit;
+    font-size: 12px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+html .soudures-dessin-manque:hover {
     background: var(--hover) !important;
 }
 
-.soudures-volet-pied .pv-message {
-    text-align: right;
+/* ----- La fenêtre d'un cordon ----- */
+
+/* Deux champs : la fenêtre de la maison, à la largeur de ses fenêtres courtes — celles
+   des alertes. Le gabarit vient de fenetre.css. */
+dialog.fenetre.soudures-cordon {
+    width: min(440px, calc(100vw - 32px));
+}
+
+/* L'état du cordon, en pastille à côté de son numéro : aucune phrase ne l'explique. */
+dialog.fenetre .soudures-cordon-etat {
+    margin-left: 8px;
+    vertical-align: 2px;
+    font-weight: 500;
+}
+
+/* Le cordon d'un autre soudeur, ou d'une feuille close : du texte, sans cadre. */
+dialog.fenetre.soudures-cordon .fenetre-champ:disabled {
+    border-color: transparent;
+    padding-left: 0;
+    color: var(--text-muted);
+}
+
+/* Effacer remet le cordon à faire : à gauche, en retrait — ce n'est pas l'action qu'on
+   vient faire. */
+dialog.fenetre .fenetre-pied .soudures-cordon-effacer {
+    margin-right: auto;
+    border-color: transparent;
+    background: transparent;
+    color: var(--text-muted);
+}
+
+dialog.fenetre .fenetre-pied .soudures-cordon-effacer:hover {
+    background: var(--hover);
+    color: var(--text);
 }
 
 /* ----- La fenêtre « Signaler un manque » ----- */

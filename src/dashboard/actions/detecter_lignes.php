@@ -11,6 +11,9 @@ require_once __DIR__ . '/../includes/atelier/plan_document.php';
 require_once __DIR__ . '/../includes/lecture/plan_lignes.php';
 
 prefaPost();
+// Le jeton est vérifié, et rien d'autre ne s'écrit dans la session : la feuille, son image et
+// ses vignettes se servent en même temps (Session::liberer()).
+Session::liberer();
 
 $elementId = filter_var($_POST['plan'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 if (!$elementId) prefaError(400, 'Plan invalide.');
@@ -54,6 +57,11 @@ if (!is_file($source)) prefaError(404, 'Plan introuvable.');
 $page = filter_var($_POST['page'] ?? 1, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 if (!$page || $page > (int) $plan['pages']) prefaError(400, 'Page du plan invalide.');
 
+// Un plan déposé avant qu'une lecture existe, ou lu par une version plus ancienne : ses
+// feuilles partent en lecture, en fond, pendant que celle-ci se lit.
+require_once __DIR__ . '/../includes/lecture/plan_index.php';
+planIndexerElementSiBesoin($db, $elementId, (int) $plan['id_demande']);
+
 // La lecture des tableaux et le rangement de la liste soudure vivent dans plan_lignes.php :
 // le plan final s'en sert aussi, et doit montrer exactement ce que montre le lecteur.
 $analyse = planLignesAnalyse($source, planLignesCache($plan['id_demande'], $plan['cle_document'], $page), $page);
@@ -76,13 +84,14 @@ if (!empty($liste['occupees'])) {
         : $liste['occupees'] . ' cases de la liste soudure portent déjà du texte sur le plan :'
             . ' elles sont laissées telles quelles.';
 }
-// Le plan ne porte que du validé : sans ce mot, le soudeur qui vient de renseigner dix
-// cordons ouvre son dessin, ne les y voit pas, et croit sa saisie perdue.
+// Le plan ne porte que du validé : le chef qui le regarde doit savoir que des cordons
+// attendent sa validation. Le soudeur, lui, voit les siens dans la liste du dessin (écrits
+// en attente par « Mes soudures ») : la fenêtre ne lui montre pas ces avertissements.
 if (!empty($liste['enAttente'])) {
     $avertissements[] = $liste['enAttente'] === 1
-        ? 'Un cordon renseigné attend la validation du chef d’atelier : il ne s’écrit pas encore sur le plan.'
-        : $liste['enAttente'] . ' cordons renseignés attendent la validation du chef d’atelier :'
-            . ' ils ne s’écrivent pas encore sur le plan.';
+        ? 'Une soudure renseignée attend la validation du chef d’atelier : elle ne s’écrit pas encore sur le plan.'
+        : $liste['enAttente'] . ' soudures renseignées attendent la validation du chef d’atelier :'
+            . ' elles ne s’écrivent pas encore sur le plan.';
 }
 if ($soudures && $horsTableau) {
     $avertissements[] = count($horsTableau) === 1

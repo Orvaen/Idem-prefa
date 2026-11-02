@@ -101,8 +101,14 @@ function accueilTuiles(PDO $db, Utilisateur $utilisateur): array
         $courantes = 'FROM affectation_atelier a JOIN element_atelier e ON e.id = a.id_element
             JOIN demande_prefabrication d ON d.id = e.id_demande
             WHERE a.id_utilisateur = ? AND a.actif = 1 AND d.id_statut = 2';
-        $actives = $db->prepare('SELECT COUNT(DISTINCT a.id_element) ' . $courantes);
-        $actives->execute([$utilisateur->id]);
+        // Les plans, eux, comptent aussi ceux où la personne ne tient qu'un métier : ils sont
+        // dans sa liste (atelierPlansDeSql()). « À terminer » reste aux travaux, seuls à
+        // porter un avancement.
+        require_once __DIR__ . '/../atelier/atelier.php';
+        $actives = $db->prepare('SELECT COUNT(*) FROM element_atelier e
+            JOIN demande_prefabrication d ON d.id = e.id_demande
+            WHERE d.id_statut = 2 AND e.id IN ' . atelierPlansDeSql($db));
+        $actives->execute([$utilisateur->id, $utilisateur->id]);
         $aFinir = $db->prepare('SELECT COUNT(*) ' . $courantes . ' AND COALESCE(a.avancement, 0) < 100');
         $aFinir->execute([$utilisateur->id]);
         // Les cordons qu'il a déclarés : c'est son travail, et c'est ce qui fait avancer
@@ -113,7 +119,7 @@ function accueilTuiles(PDO $db, Utilisateur $utilisateur): array
         return [
             $tuile((int) $actives->fetchColumn(), 'Mes plans', 'plans qui me sont confiés', 'btn-list-prefa'),
             $tuile((int) $aFinir->fetchColumn(), 'À terminer', 'travaux sous les 100 %', 'btn-list-prefa'),
-            $tuile((int) $cordons->fetchColumn(), 'Mes soudures', 'cordons que j’ai renseignés', 'btn-soudures'),
+            $tuile((int) $cordons->fetchColumn(), 'Mes soudures', 'soudures que j’ai renseignées', 'btn-soudures'),
         ];
     }
 

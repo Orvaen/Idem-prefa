@@ -1,144 +1,442 @@
 (() => {
-    // « Mes soudures » : on choisit sa feuille dans le tableau, son tableau de cordons
-    // arrive dessous, on le remplit.
+    // « Mes soudures » : on choisit sa feuille dans le tableau, son dessin s'ouvre, et on
+    // clique une ligne de sa liste soudure pour la renseigner — la date et le procédé, dans
+    // la fenêtre d'un cordon. La feuille se remplissait dans une liste à côté du dessin : on
+    // allait et venait entre le tirage, le dessin et le tableau.
     //
-    // La liste des cordons n'est pas rendue avec la page. Elle est reconnue sur le PDF du
-    // plan, et la première lecture d'une page coûte quelques secondes : relire les quinze
-    // feuilles d'un cahier avant d'afficher quoi que ce soit ferait attendre une
-    // demi-minute devant du vide. On ne lit donc que la feuille regardée, au moment où on
-    // la regarde — le tableau des feuilles, lui, se contente de ce qui est déjà connu.
+    // Les numéros ne sont pas rendus avec la page. Ils sont reconnus sur le PDF du plan
+    // (plan_reperes.php), et la première lecture d'une page coûte une ou deux secondes : on
+    // ne lit que la page regardée, au moment où la fenêtre du plan l'affiche — elle le dit
+    // par l'événement « plan:page ».
     const page = () => document.getElementById('soudures-page');
 
-    function vues() {
-        const racine = page();
-        if (!racine) return null;
-        const corps = racine.querySelector('#soudures-corps');
-        const form = racine.querySelector('#soudures-form');
-        return corps && form ? { racine, corps, form } : null;
-    }
+    // Le cordon dont la fenêtre est ouverte — { viewer, numero } —, ou null.
+    let fiche = null;
+    // Le procédé du dernier cordon enregistré : un soudeur en change rarement d'une soudure
+    // à l'autre, il n'a pas à le retaper.
+    let dernierProcede = '';
 
-    /** La feuille travaillée : c'est la ligne marquée du tableau, et elle porte tout. */
-    const ligneChoisie = racine => racine.querySelector('.soudures-feuille.est-choisie');
+    // ===== Le dessin d'une feuille =====
 
-    /** « élément:feuille:page » — un seul repère, parce que c'est une seule question. */
-    function repere(ligne) {
-        const [element, document_, numero] = String((ligne && ligne.dataset.repere) || '').split(':');
-        return { element, document: document_, page: numero };
-    }
+    /** La page qu'une fenêtre du plan affiche. */
+    const pageVue = viewer => Math.max(1, Number(viewer.dataset.page) || 1);
 
-    /** Ce que le tableau dit quand il n'a pas de lignes à montrer : une seule cellule. */
-    function attente(corps, texte) {
-        const tr = document.createElement('tr');
-        const td = document.createElement('td');
-        td.colSpan = 5;
-        td.className = 'prefa-table-empty';
-        td.textContent = texte;
-        tr.append(td);
-        corps.replaceChildren(tr);
+    /** « élément:feuille:page » : la ligne du tableau des feuilles qui montre cette page. */
+    const repereDe = (viewer, numeroPage) => viewer.dataset.plan + ':' + viewer.dataset.document + ':' + numeroPage;
+
+    /** Une fenêtre du plan de cet écran — et non celle d'un autre écran resté dans la page. */
+    const duSoudeur = viewer => Boolean(viewer && viewer.closest && viewer.closest('.soudures-lecteur'));
+
+    /** Ce que la fenêtre du plan dit dans sa barre : la lecture, un enregistrement, un refus. */
+    function direDansLeDessin(viewer, texte, erreur) {
+        const zone = viewer.querySelector('.plan-viewer-message');
+        if (!zone) return;
+        zone.textContent = texte;
+        zone.classList.toggle('is-error', Boolean(erreur));
     }
 
     /**
-     * Ce que le tableau porte à cet instant, en une chaîne.
-     *
-     * Sert à savoir s'il y a quelque chose à enregistrer : une feuille entièrement
-     * soudée et déjà envoyée n'a plus rien à dire, et le bouton n'a plus lieu d'être
-     * cliquable. On compare ce qui est à l'écran à ce que le serveur a renvoyé — pas une
-     * liste de lignes « touchées », qui tiendrait une seconde vérité à jour.
+     * Où en est un cordon : la classe de son numéro sur le dessin, et le mot qui le dit — au
+     * féminin, l'écran parle de « soudures ». Le serveur a tranché — renseigné, validé, à
+     * quelqu'un d'autre — ; le script le redit.
      */
-    function empreinte(corps) {
-        return [...corps.querySelectorAll('.soudures-ligne')].map(li => {
-            const date = li.querySelector('.soudures-date');
-            const type = li.querySelector('.soudures-type');
-            return li.dataset.numero + '' + (date ? date.value : '') + '' + (type ? type.value : '');
-        }).join('');
+    function etatCordon(ligne) {
+        if (!ligne.remplie) return { cle: 'a-faire', court: 'à faire' };
+        if (ligne.verrouillee) return { cle: 'verrouillee', court: 'soudée par ' + (ligne.soudeur || 'un autre soudeur') };
+        if (!ligne.validee) return { cle: 'en-attente', court: 'en attente du chef' };
+        return { cle: 'validee', court: 'validée' };
     }
 
     /**
-     * Le bouton d'enregistrement ne s'allume que s'il y a quelque chose à écrire.
-     *
-     * Une feuille complète et enregistrée laissait un bouton actif qui répondait « Rien
-     * à enregistrer » : il faut cliquer pour apprendre qu'il n'y avait rien à faire. Le
-     * bouton le dit maintenant sans qu'on le touche, et se rallume dès qu'on corrige une
-     * ligne.
+     * Une feuille entièrement soudée dont le chef a tout validé est close : ce qu'elle porte
+     * est signé et le plan l'écrit. Tant qu'un cordon attend, elle reste ouverte — le chef
+     * peut refuser, et il faut pouvoir reprendre.
      */
-    function majEnregistrer(racine) {
-        const corps = racine.querySelector('#soudures-corps');
-        const form = racine.querySelector('#soudures-form');
-        if (!corps || !form) return;
-        const bouton = form.querySelector('button[type="submit"]');
-        // Rangé sur une feuille close : il n'y a plus de sort à lui donner.
-        if (!bouton || bouton.hidden) return;
-        const change = empreinte(corps) !== (form.dataset.empreinte || '');
-        bouton.disabled = !change;
-        bouton.title = change ? '' : 'Rien de nouveau à enregistrer sur cette feuille.';
+    function estClose(donnees) {
+        const lignes = [...donnees.lignes.values()];
+        const total = donnees.reponse.imprimees || lignes.length;
+        const faites = lignes.filter(ligne => ligne.remplie).length;
+        return total > 0 && faites >= total && !(donnees.reponse.attente && donnees.reponse.attente.cordons);
     }
 
-    function poser(corps, lignes) {
-        const modele = document.getElementById('soudures-modele');
-        if (!modele) return;
-        corps.replaceChildren();
-        lignes.forEach(ligne => {
-            const li = modele.content.firstElementChild.cloneNode(true);
-            li.dataset.numero = ligne.numero;
-            li.classList.toggle('est-faite', Boolean(ligne.remplie));
-            // Renseignée mais pas encore validée par le chef : elle ne s'écrit pas sur le
-            // plan tant qu'il ne l'a pas tranchée, et la ligne le dit.
-            li.classList.toggle('est-en-attente', Boolean(ligne.remplie) && !ligne.validee);
-            li.classList.toggle('est-verrouillee', Boolean(ligne.verrouillee));
-            li.classList.toggle('est-hors-tableau', !ligne.imprimee);
+    /** Les lignes d'une réponse, rangées par numéro. */
+    const parNumero = lignes => new Map((lignes || []).map(ligne => [String(ligne.numero), ligne]));
 
-            li.querySelector('.soudures-numero').textContent = ligne.numero;
-            if (!ligne.imprimee) {
-                li.querySelector('.soudures-numero').title =
-                    'Ce repère n’a pas de ligne imprimée sur la feuille : il a été ajouté.';
-            }
-            li.querySelector('.soudures-soudeur').textContent = ligne.soudeur || '';
+    /** Un bouton posé sur le dessin, en fractions de l'image comme tout ce qui s'y pose. */
+    function boutonSurLeDessin(scene, classe, numero, x, y, l, h) {
+        const bouton = document.createElement('button');
+        bouton.type = 'button';
+        bouton.className = classe;
+        bouton.dataset.numero = numero;
+        bouton.style.left = (x * 100).toFixed(4) + '%';
+        bouton.style.top = (y * 100).toFixed(4) + '%';
+        bouton.style.width = (l * 100).toFixed(4) + '%';
+        bouton.style.height = (h * 100).toFixed(4) + '%';
+        scene.append(bouton);
+        return bouton;
+    }
 
-            const date = li.querySelector('.soudures-date');
-            const type = li.querySelector('.soudures-type');
-            date.value = ligne.date || '';
-            type.value = ligne.type || '';
-            // Le cordon de quelqu'un d'autre se lit, ne se reprend pas : son nom part sur le
-            // plan final. Le serveur le redit de son côté — une case grisée ne protège rien.
-            date.disabled = Boolean(ligne.verrouillee);
-            type.disabled = Boolean(ligne.verrouillee);
-            if (ligne.verrouillee) {
-                date.title = 'Soudure déclarée par ' + (ligne.soudeur || 'quelqu’un d’autre') + '.';
-                type.title = date.title;
-            }
-            corps.append(li);
+    /**
+     * Pose ce qu'on clique sur le dessin de la page : chaque ligne de la liste soudure
+     * imprimée — c'est là qu'on écrit, comme sur le tirage —, et chaque numéro reconnu le
+     * long du tube, exactement sur son rectangle. Ceux de la page d'avant s'en vont : ils
+     * n'ont de place que sur leur dessin.
+     */
+    function poserDessin(viewer) {
+        const scene = viewer.querySelector('.plan-viewer-scene');
+        if (!scene) return;
+        scene.querySelectorAll('.plan-cordon, .plan-ligne-soudure, .plan-ligne-materiel').forEach(bouton => bouton.remove());
+        const donnees = viewer.cordons;
+        ecrireEnAttente(viewer);
+        if (!donnees) {
+            dessinerEtat(viewer);
+            return;
+        }
+
+        donnees.cliquables = new Set();
+        const tableau = donnees.tableau;
+        if (tableau && tableau.lignes && tableau.bords && tableau.bords.length >= 2) {
+            const gauche = tableau.bords[0];
+            const largeur = tableau.bords[tableau.bords.length - 1] - gauche;
+            tableau.lignes.forEach((ligne, rang) => {
+                const numero = String(rang + 1);
+                if (!donnees.lignes.has(numero)) return;
+                // La ligne entière, d'un trait à l'autre : la géométrie relevée est celle de
+                // son texte, en retrait des traits, et le pas rend la bande complète.
+                const retrait = (tableau.pas - ligne.h) / 2;
+                boutonSurLeDessin(scene, 'plan-ligne-soudure', numero, gauche, ligne.y - retrait, largeur, tableau.pas);
+                donnees.cliquables.add(numero);
+            });
+        }
+        // Un numéro dessiné que la liste ne porte pas n'a rien à renseigner ; un numéro
+        // trouvé deux fois sur le tube ne se clique qu'à un endroit.
+        const dessines = new Set();
+        donnees.reperes.forEach(repere => {
+            if (!donnees.lignes.has(repere.numero) || dessines.has(repere.numero)) return;
+            dessines.add(repere.numero);
+            boutonSurLeDessin(scene, 'plan-cordon', repere.numero, repere.x, repere.y, repere.w, repere.h);
+            donnees.cliquables.add(repere.numero);
         });
 
-        // Ce que le serveur vient de dire fait foi : c'est à partir de là qu'on mesure
-        // ce qui a changé.
-        const form = corps.closest('form');
-        if (form) form.dataset.empreinte = empreinte(corps);
+        // Les lignes de la nomenclature, d'un bord du tableau à l'autre : on clique celle du
+        // matériel qui manque, comme on la montrerait du doigt sur le tirage.
+        const nomenclature = donnees.nomenclature;
+        if (nomenclature && nomenclature.lignes) {
+            nomenclature.lignes.forEach((ligne, rang) => {
+                const bouton = boutonSurLeDessin(scene, 'plan-ligne-materiel', ligne.repere, nomenclature.gauche, ligne.y,
+                    nomenclature.droite - nomenclature.gauche, ligne.h);
+                bouton.dataset.rang = rang;
+                marquerMateriel(bouton, ligne);
+            });
+        }
+        majNumeros(viewer);
+    }
+
+    /** Ce que dit une ligne de nomenclature au survol, et sa couleur quand son manque est signalé. */
+    function marquerMateriel(bouton, ligne) {
+        bouton.classList.toggle('est-signale', Boolean(ligne.signale));
+        const article = 'Repère ' + ligne.repere + (ligne.designation ? ' · ' + ligne.designation : '');
+        const libelle = article + (ligne.signale ? ' — manque signalé le ' + ligne.signale : ' — signaler un manque');
+        bouton.setAttribute('aria-label', libelle);
+        bouton.title = libelle;
     }
 
     /**
-     * La ligne de la feuille qu'on vient de lire ou d'enregistrer suit : son compte de
-     * cordons, et son état.
-     *
-     * C'est le serveur qui les dit, et non ce script : une feuille jamais ouverte ignorait
-     * son total et vient de l'apprendre, et le libellé de l'état est celui de l'écran du
-     * chef. Deux listes de libellés à tenir d'accord finiraient par ne plus l'être.
+     * L'état de chaque ligne et de chaque numéro, et la ligne sous le titre : redits après
+     * chaque enregistrement. La ligne et le numéro d'un même cordon s'allument ensemble
+     * quand sa fiche est ouverte — on voit où il est sur le tube.
      */
-    function majTableau(racine, reponse) {
-        const ligne = ligneChoisie(racine);
+    function majNumeros(viewer) {
+        const donnees = viewer.cordons;
+        if (!donnees) return;
+        viewer.querySelectorAll('.plan-cordon, .plan-ligne-soudure').forEach(bouton => {
+            const ligne = donnees.lignes.get(bouton.dataset.numero);
+            if (!ligne) return;
+            const etat = etatCordon(ligne);
+            const sorte = bouton.classList.contains('plan-ligne-soudure') ? 'plan-ligne-soudure' : 'plan-cordon';
+            const ouvert = fiche && fiche.viewer === viewer && fiche.numero === bouton.dataset.numero;
+            bouton.className = sorte + ' est-' + etat.cle + (ouvert ? ' est-ouvert' : '');
+            const libelle = (sorte === 'plan-ligne-soudure' ? 'Ligne ' : 'Soudure ') + ligne.numero + ' : ' + etat.court;
+            bouton.setAttribute('aria-label', libelle);
+            bouton.title = libelle;
+        });
+        dessinerEtat(viewer);
+    }
+
+    /** « 2026-10-30 » devient « 30/10/26 » : la date comme le plan final l'écrit. */
+    const dateDuPlan = iso => /^\d{4}-\d{2}-\d{2}$/.test(iso || '')
+        ? iso.slice(8, 10) + '/' + iso.slice(5, 7) + '/' + iso.slice(2, 4) : '';
+
+    /**
+     * Ce qui est renseigné et attend le chef s'écrit dans sa ligne de la liste, dans le ton
+     * de l'attente : on voit sa saisie là où on l'a faite. Le validé, lui, est écrit par la
+     * fenêtre du plan, comme sur le plan final.
+     */
+    function ecrireEnAttente(viewer) {
+        if (typeof window.planEcrireEnAttente !== 'function') return;
+        const donnees = viewer.cordons;
+        const valeurs = {};
+        if (donnees && donnees.tableau) {
+            donnees.lignes.forEach(ligne => {
+                if (!ligne.remplie || ligne.validee || !ligne.imprimee) return;
+                valeurs[Number(ligne.numero) - 1] = ['', ligne.soudeur || '', dateDuPlan(ligne.date), ligne.type || '', '', '', '', ''];
+            });
+        }
+        window.planEcrireEnAttente(viewer, donnees ? donnees.tableau : null, valeurs);
+    }
+
+    /**
+     * La légende des couleurs du dessin, un point et un mot par couleur. Les trois de la
+     * liste soudure — à faire, en attente du chef, validée — dès que la page a une liste ;
+     * « soudée par un autre » et « manque signalé » seulement quand la page en porte, comme
+     * les onglets de l'écran qui ne paraissent que s'ils comptent quelque chose.
+     */
+    function legende(donnees) {
+        const entrees = [];
+        if (donnees.lignes.size) {
+            entrees.push(['a-faire', 'À faire'], ['en-attente', 'En attente du chef'], ['validee', 'Validée']);
+            if ([...donnees.lignes.values()].some(ligne => etatCordon(ligne).cle === 'verrouillee')) {
+                entrees.push(['verrouillee', 'Soudée par un autre']);
+            }
+        }
+        if ((donnees.nomenclature?.lignes || []).some(ligne => ligne.signale)) entrees.push(['manque', 'Manque signalé']);
+        if (!entrees.length) return null;
+
+        const bloc = document.createElement('span');
+        bloc.className = 'soudures-legende';
+        const titre = document.createElement('span');
+        titre.className = 'sr-only';
+        titre.textContent = 'Légende :';
+        bloc.append(titre);
+        entrees.forEach(([cle, libelle]) => {
+            const entree = document.createElement('span');
+            entree.className = 'soudures-legende-entree est-' + cle;
+            entree.textContent = libelle;
+            bloc.append(entree);
+        });
+        return bloc;
+    }
+
+    /**
+     * Sous la consigne de la fenêtre : la légende des couleurs, puis, seulement quand il y en
+     * a, les soudures qu'aucune ligne de la liste ne porte — ajoutées hors de la liste
+     * imprimée, ou toute une page dont la liste n'a pas été reconnue. Elles se renseignent
+     * d'ici.
+     *
+     * Le reste se lit sur le dessin : la couleur de chaque ligne dit où en est sa soudure.
+     * Le compte et la déclaration chez le chef s'écrivaient aussi en haut : on le lisait deux
+     * fois, et le dessin passait après.
+     */
+    function dessinerEtat(viewer) {
+        const titre = viewer.querySelector('.plan-dialog-titre');
+        if (!titre) return;
+        let zone = titre.querySelector('.soudures-dessin-etat');
+        if (!zone) {
+            zone = document.createElement('div');
+            zone.className = 'soudures-dessin-etat';
+            titre.append(zone);
+        }
+        zone.replaceChildren();
+        const donnees = viewer.cordons;
+        if (!donnees) return;
+        const couleurs = legende(donnees);
+        if (couleurs) zone.append(couleurs);
+
+        const hors = [...donnees.lignes.values()].filter(ligne => !donnees.cliquables.has(String(ligne.numero)));
+        if (!hors.length) return;
+        const groupe = document.createElement('span');
+        groupe.className = 'soudures-dessin-hors';
+        groupe.textContent = donnees.cliquables.size ? 'Hors de la liste :' : 'Soudures à renseigner :';
+        hors.forEach(ligne => {
+            const bouton = document.createElement('button');
+            bouton.type = 'button';
+            bouton.className = 'soudures-hors-cordon est-' + etatCordon(ligne).cle;
+            bouton.dataset.numero = ligne.numero;
+            bouton.textContent = ligne.numero;
+            bouton.setAttribute('aria-label', 'Soudure ' + ligne.numero + ' : ' + etatCordon(ligne).court);
+            groupe.append(bouton);
+        });
+        zone.append(groupe);
+    }
+
+    /**
+     * « Signaler un manque » dans la barre de la fenêtre, avec les autres commandes : c'est
+     * en soudant qu'on s'aperçoit qu'une pièce n'est pas là, et le dessin occupe l'écran.
+     */
+    function poserManque(viewer) {
+        const outils = viewer.querySelector('.plan-dialog-outils');
+        if (!outils || outils.querySelector('.soudures-dessin-manque')) return;
+        const bouton = document.createElement('button');
+        bouton.type = 'button';
+        bouton.className = 'soudures-dessin-manque';
+        bouton.dataset.signalerManque = '';
+        bouton.textContent = 'Signaler un manque';
+        outils.insertBefore(bouton, outils.querySelector('.plan-dialog-imprimer, .plan-dialog-telecharger'));
+    }
+
+    /**
+     * La barre de la fenêtre, telle que le soudeur s'en sert : « Signaler un manque », et
+     * « Imprimer » à la place de « Télécharger le PDF ». Il vient chercher sa feuille sur
+     * papier pour la souder, pas un fichier — et le plan final, que le lien téléchargeait,
+     * refuse tant que rien n'y est validé. Posée dès que la fenêtre arrive, avant qu'elle
+     * s'ouvre : le lien ne paraît jamais.
+     */
+    function equiperBarre(viewer) {
+        poserManque(viewer);
+        const lien = viewer.querySelector('.plan-dialog-telecharger');
+        if (!lien) return;
+        const bouton = document.createElement('button');
+        bouton.type = 'button';
+        bouton.className = 'plan-dialog-imprimer';
+        bouton.title = 'Imprimer la feuille affichée';
+        bouton.textContent = 'Imprimer';
+        lien.replaceWith(bouton);
+    }
+
+    /** Un texte sûr dans le HTML qu'on écrit à la main — le titre de la page d'impression. */
+    const echapper = texte => String(texte).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+    /**
+     * Imprime la feuille affichée, seule, à la taille du papier et dans son sens : un cadre
+     * invisible qui ne porte que son image, et l'impression du navigateur. La fenêtre du plan
+     * reste ouverte derrière, sur la même page.
+     */
+    function imprimerFeuille(viewer) {
+        const image = viewer.querySelector('.plan-viewer-scene img');
+        if (!image || !image.src) return;
+        const titre = (viewer.querySelector('.plan-dialog-titre strong')?.textContent || 'Plan')
+            + ' — page ' + pageVue(viewer);
+        const cadre = document.createElement('iframe');
+        cadre.className = 'plan-impression';
+        cadre.setAttribute('aria-hidden', 'true');
+        cadre.srcdoc = '<!doctype html><meta charset="utf-8"><title>' + echapper(titre) + '</title><style>'
+            + '@page { size: ' + (image.naturalWidth >= image.naturalHeight ? 'landscape' : 'portrait') + '; margin: 8mm; }'
+            + ' html, body { height: 100%; margin: 0; }'
+            + ' img { display: block; width: 100%; height: 100%; object-fit: contain; }'
+            + '</style><img src="' + echapper(image.src) + '" alt="">';
+        cadre.addEventListener('load', () => {
+            const fenetre = cadre.contentWindow;
+            const feuille = cadre.contentDocument.querySelector('img');
+            const imprimer = () => {
+                // Le cadre s'en va une fois l'impression faite ou abandonnée.
+                fenetre.addEventListener('afterprint', () => cadre.remove(), { once: true });
+                fenetre.focus();
+                fenetre.print();
+            };
+            if (feuille.complete) imprimer();
+            else feuille.addEventListener('load', imprimer, { once: true });
+        }, { once: true });
+        document.body.append(cadre);
+    }
+
+    document.addEventListener('click', evenement => {
+        const viewer = evenement.target.closest('.plan-dialog-imprimer')?.closest('.plan-viewer');
+        if (duSoudeur(viewer)) imprimerFeuille(viewer);
+    });
+
+    /** Ce qu'on sait déjà d'une page de cette fenêtre — sa dernière lecture —, ou null. */
+    function lectureDe(viewer, numeroPage) {
+        viewer.lectures ??= {};
+        return viewer.lectures[numeroPage] || null;
+    }
+
+    /**
+     * Lit la page affichée : ses lignes, et où sont ses numéros. Une ouverture annonce
+     * parfois deux fois la même page ; la seconde demande attend la première.
+     */
+    async function chargerPage(viewer, numeroPage) {
+        const bloc = viewer.closest('.soudures-lecteur');
+        if (!bloc || viewer.cordonsDemande === numeroPage) return;
+        viewer.cordonsDemande = numeroPage;
+        // Une page déjà lue se remontre telle qu'on l'a laissée, tout de suite, et se relit
+        // sans bruit derrière — le chef a pu valider entre-temps. Rouvrir une feuille effaçait
+        // tout ce qui était posé sur son dessin et redisait « Lecture de la feuille… », alors
+        // qu'on l'avait sous les yeux une seconde plus tôt.
+        const deja = lectureDe(viewer, numeroPage);
+        if (viewer.cordons !== deja) {
+            viewer.cordons = deja;
+            poserDessin(viewer);
+        }
+        if (!deja) direDansLeDessin(viewer, 'Lecture de la feuille…', false);
+
+        const corps = new URLSearchParams();
+        corps.set('csrf', bloc.dataset.csrf);
+        corps.set('element', viewer.dataset.plan);
+        corps.set('document', viewer.dataset.document);
+        corps.set('page', numeroPage);
+        try {
+            const reponse = await fetch('actions/soudures_feuille.php', {
+                method: 'POST', body: corps,
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            });
+            const retour = await reponse.json();
+            // On a tourné la page pendant la lecture : cette réponse décrit une autre feuille.
+            if (pageVue(viewer) !== numeroPage) return;
+            if (!reponse.ok || !retour.success) {
+                direDansLeDessin(viewer, retour.message || 'Lecture impossible.', true);
+                return;
+            }
+            viewer.cordons = { page: numeroPage, lignes: parNumero(retour.lignes), tableau: retour.tableau || null,
+                reperes: retour.reperes || [], nomenclature: retour.nomenclature || null, reponse: retour,
+                cliquables: new Set() };
+            viewer.lectures[numeroPage] = viewer.cordons;
+            poserDessin(viewer);
+            majFeuille(repereDe(viewer, numeroPage), retour);
+            direDansLeDessin(viewer, retour.message || '', Boolean(retour.message));
+        } catch {
+            // Relue en silence, la page montrée reste juste : seul ce qui n'a rien à montrer le dit.
+            if (pageVue(viewer) === numeroPage && !deja) direDansLeDessin(viewer, 'Le serveur ne répond pas.', true);
+        } finally {
+            if (viewer.cordonsDemande === numeroPage) viewer.cordonsDemande = null;
+        }
+    }
+
+    // La fenêtre du plan prévient quand une page est à l'écran : on y pose ses numéros. La
+    // ligne de cette page se marque dans le tableau — en refermant, on sait d'où l'on vient.
+    document.addEventListener('plan:page', evenement => {
+        const viewer = evenement.target;
+        if (!duSoudeur(viewer)) return;
+        // La fenêtre d'un cordon parle d'une page : on n'en tourne pas une autre dessous.
+        if (fenetreCordon()?.open) fenetreCordon().close();
+        poserManque(viewer);
+        marquerFeuille(repereDe(viewer, evenement.detail.page));
+        chargerPage(viewer, evenement.detail.page);
+    });
+
+    /** La ligne de la feuille ouverte, marquée dans le tableau. */
+    function marquerFeuille(repere) {
+        document.querySelectorAll('#soudures-page .soudures-feuille').forEach(ligne => {
+            const sienne = ligne.dataset.repere === repere;
+            ligne.classList.toggle('est-choisie', sienne);
+            if (sienne) ligne.setAttribute('aria-current', 'true');
+            else ligne.removeAttribute('aria-current');
+        });
+    }
+
+    /**
+     * La ligne d'une feuille suit ce que le serveur vient de dire : son compte de cordons,
+     * le point de son état et sa barre. Les onglets recomptent, et le résumé du plan suit.
+     *
+     * Ils viennent du serveur et non de ce script : une feuille jamais ouverte ignorait son
+     * total et vient de l'apprendre, et le libellé de l'état est celui de l'écran du chef.
+     */
+    function majFeuille(repere, reponse) {
+        const ligne = [...document.querySelectorAll('#soudures-page .soudures-feuille')]
+            .find(candidate => candidate.dataset.repere === repere);
         const feuille = reponse.feuille;
         if (!ligne || !feuille) return;
 
         const compte = ligne.querySelector('[data-cordons]');
         if (compte && feuille.compte) compte.textContent = feuille.compte;
-        const etat = ligne.querySelector('[data-etat]');
-        if (etat && feuille.etat) {
-            etat.textContent = feuille.etat.libelle;
-            etat.className = 'prefa-status ' + feuille.etat.classe;
+        const point = ligne.querySelector('[data-etat-point]');
+        if (point && feuille.etat) {
+            point.className = 'prefa-point soudures-point est-' + feuille.etat.cle;
+            point.title = feuille.etat.libelle;
+            point.setAttribute('aria-label', feuille.etat.libelle);
         }
+        // Les onglets lisent la ligne : elle doit dire son état.
+        if (feuille.etat) ligne.dataset.etat = feuille.etat.cle;
 
-        // La barre suit le compte. Elle était dessinée au chargement et jamais reprise :
-        // « 4 / 4 — Soudée » gardait sa barre aux trois quarts. Une feuille qui vient
-        // d'apprendre son total n'en avait pas encore : elle la reçoit.
         if (compte && typeof feuille.part === 'number' && feuille.imprimees) {
             let barre = ligne.querySelector('.soudures-barre');
             if (!barre) {
@@ -150,443 +448,530 @@
             }
             barre.firstElementChild.style.setProperty('--part', feuille.part + '%');
         }
+        majResume(repere.split(':')[0], reponse.plan);
+        filtrer();
     }
 
     /**
-     * Ce que la réponse du serveur déplace à l'écran : le compte dans l'en-tête de la
-     * feuille, celui du pied, et la ligne de la feuille dans le tableau de son plan.
-     *
-     * Un seul compte, dit deux fois au même endroit — en haut à côté du nom, en bas à côté
-     * du bouton qui enregistre. L'écran en portait trois, sur une ligne où ils se
-     * touchaient : on ne savait plus lequel parlait de quoi.
+     * Les comptes de soudures : celui du plan, en tête de ses feuilles — « 7 / 69 », comme une
+     * feuille —, puis celui de tous les plans à droite des onglets, « 12 soudures faites sur
+     * 58 » : la phrase de la page, refaite ici sur la somme des plans.
      */
-    function montrer(racine, corps, reponse) {
-        const total = reponse.imprimees || corps.querySelectorAll('.soudures-ligne').length;
-        const faites = corps.querySelectorAll('.soudures-ligne.est-faite').length;
-
-        const entete = racine.querySelector('[data-feuille-compte]');
-        if (entete) {
-            entete.textContent = total
-                ? faites + ' / ' + total + ' cordons'
-                : (reponse.message || 'aucune ligne reconnue sur cette feuille');
-        }
-        majTableau(racine, reponse);
-
-        // Ce qui attend le chef, dit une fois pour toute la feuille. Deux choses peuvent
-        // attendre, et pas toujours ensemble : des cordons renseignés qui ne s'écrivent
-        // pas encore sur le plan, et la déclaration partie au chef. On peut avoir la
-        // seconde sans les premiers — une validation d'hier couvre déjà ces lignes.
-        const attente = racine.querySelector('[data-feuille-attente]');
-        if (attente) {
-            const combien = reponse.attente ? reponse.attente.cordons : 0;
-            const depuis = reponse.attente ? reponse.attente.depuis : '';
-            attente.hidden = !combien && !depuis;
-            if (combien) {
-                // Court : la phrase tient sur une ligne de la pastille, à côté du point.
-                attente.textContent = (combien > 1
-                    ? combien + ' cordons à valider par le chef'
-                    : '1 cordon à valider par le chef')
-                    + (depuis ? ' · déclarés le ' + depuis : '');
-            } else if (depuis) {
-                attente.textContent = 'Déclaration chez le chef depuis le ' + depuis;
-            }
-        }
-
-        // Une feuille entièrement soudée dont le chef a tout validé est close : ce qu'elle
-        // porte est signé et le plan l'écrit. Il n'y a plus rien à y enregistrer — le
-        // bouton s'en va, et les cases avec lui. Tant qu'un cordon attend, en revanche,
-        // elle reste ouverte : le chef peut refuser, et il faut pouvoir reprendre.
-        const close = total > 0 && faites >= total
-            && !(reponse.attente && reponse.attente.cordons);
-
-        const form = racine.querySelector('#soudures-form');
-        if (form) {
-            form.classList.toggle('est-close', close);
-            const envoyer = form.querySelector('button[type="submit"]');
-            if (envoyer) envoyer.hidden = close;
-            if (close) {
-                corps.querySelectorAll('.soudures-date, .soudures-type')
-                    .forEach(champ => { champ.disabled = true; });
-            }
-        }
-
-        majEnregistrer(racine);
-    }
-
-    async function charger() {
-        const v = vues();
-        if (!v) return;
-        const { racine, corps, form } = v;
-        const cle = repere(ligneChoisie(racine));
-        if (!cle.element) return;
-
-        attente(corps, 'Lecture de la feuille — quelques secondes à sa première ouverture.');
-        const entete = racine.querySelector('[data-feuille-compte]');
-        if (entete) entete.textContent = 'lecture en cours…';
-        form.dataset.element = cle.element;
-        form.dataset.document = cle.document;
-        form.dataset.page = cle.page;
-
-        const donnees = new URLSearchParams();
-        donnees.set('csrf', form.dataset.csrf);
-        donnees.set('element', cle.element);
-        donnees.set('document', cle.document);
-        donnees.set('page', cle.page);
-
-        try {
-            const reponse = await fetch('actions/soudures_feuille.php', {
-                method: 'POST', body: donnees,
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            });
-            const corpsJson = await reponse.json();
-            if (!reponse.ok || !corpsJson.success) {
-                attente(corps, corpsJson.message || 'Lecture impossible.');
-                return;
-            }
-            if (!corpsJson.lignes.length) {
-                attente(corps, corpsJson.message || 'Aucune ligne de soudure sur cette feuille.');
-                montrer(racine, corps, corpsJson);
-                return;
-            }
-            poser(corps, corpsJson.lignes);
-            montrer(racine, corps, corpsJson);
-        } catch {
-            attente(corps, 'Le serveur ne répond pas.');
-        }
-    }
-
-    /**
-     * Choisir une feuille : sa ligne se marque, l'en-tête de la saisie prend son nom, et
-     * son tableau se lit. Rien n'est rechargé — la page entière est déjà là.
-     */
-    function choisir(ligne) {
-        const racine = page();
-        if (!racine || !ligne) return;
-        const volet = racine.querySelector('#soudures-volet');
-        // La même feuille, volet ouvert : rien à relire. Volet refermé — par Échap ou un
-        // clic à côté —, on le rouvre.
-        if (ligne.classList.contains('est-choisie') && volet && !volet.hidden) return;
-
-        racine.querySelectorAll('.soudures-feuille').forEach(autre => {
-            const choisie = autre === ligne;
-            autre.classList.toggle('est-choisie', choisie);
-            if (choisie) autre.setAttribute('aria-current', 'true');
-            else autre.removeAttribute('aria-current');
-        });
-
-        // L'en-tête de la saisie redit la feuille : le tableau fait quinze lignes sur un
-        // cahier, et on ne doit pas remonter pour savoir ce qu'on remplit. Le plan, lui,
-        // est juste au-dessus — la saisie se pose dans son bloc.
-        const titre = racine.querySelector('[data-feuille-titre]');
-        const bouton = racine.querySelector('[data-feuille-plan-bouton]');
-        if (titre) titre.textContent = ligne.dataset.feuille || '';
-        if (bouton) bouton.dataset.repere = ligne.dataset.repere || '';
-
-        // La feuille s'ouvre dans le volet flottant, à droite, par-dessus la liste : un seul
-        // volet à la fois, comme sur les autres écrans.
-        document.querySelectorAll('.prefa-detail-row:not([hidden])').forEach(autre => {
-            if (autre !== volet) autre.hidden = true;
-        });
-        if (volet) {
-            volet.hidden = false;
-            volet.scrollTop = 0;
-        }
-
-        // Le plan de la feuille, dans l'en-tête du volet : à droite du tableau, celui-ci a
-        // cédé ses colonnes d'identité.
-        const plan = racine.querySelector('[data-feuille-plan]');
-        if (plan) {
-            // Le numéro de la demande seul : la référence complète y ajoutait l'affaire, et la
-            // ligne passait sur deux.
-            plan.textContent = [ligne.dataset.plan, ligne.dataset.reference || ligne.dataset.demande].filter(Boolean).join(' · ');
-        }
-
-        charger();
-    }
-
-    // Cliquer la ligne choisit la feuille : c'est le geste qu'on a dans une liste. Les
-    // commandes de la ligne gardent le leur — « Plan » ouvre le dessin sans changer de
-    // feuille travaillée, et on y clique pour vérifier un repère, pas pour se déplacer.
-    document.addEventListener('click', evenement => {
-        const ligne = evenement.target.closest('.soudures-feuille');
-        if (!ligne) return;
-        if (evenement.target.closest('button, a, input, label')) return;
-        choisir(ligne);
-    });
-
-    /** Refermer la feuille travaillée : le volet se range, la ligne n'est plus choisie. */
-    function fermerSaisie() {
+    function majResume(element, plan) {
         const racine = page();
         if (!racine) return;
-        const volet = racine.querySelector('#soudures-volet');
-        if (volet) volet.hidden = true;
-        racine.querySelectorAll('.soudures-feuille.est-choisie').forEach(ligne => {
-            ligne.classList.remove('est-choisie');
-            ligne.removeAttribute('aria-current');
+        const compte = racine.querySelector('.soudures-plan[data-element="' + element + '"] [data-plan-cordons]');
+        if (compte && plan) {
+            compte.dataset.faites = Number(plan.faites) || 0;
+            compte.dataset.prevues = Number(plan.prevues) || 0;
+            compte.textContent = compte.dataset.faites + ' / ' + (Number(compte.dataset.prevues) > 0 ? compte.dataset.prevues : '—');
+        }
+        let faites = 0;
+        let prevues = 0;
+        racine.querySelectorAll('[data-plan-cordons]').forEach(cellule => {
+            faites += Number(cellule.dataset.faites) || 0;
+            prevues += Number(cellule.dataset.prevues) || 0;
         });
+        const faits = racine.querySelector('[data-cordons-faits]');
+        const libelle = racine.querySelector('[data-cordons-libelle]');
+        if (!faits || !libelle) return;
+        faits.textContent = faites;
+        libelle.textContent = (faites > 1 ? 'soudures faites' : 'soudure faite') + (prevues > 0 ? ' sur ' + prevues : '');
     }
 
-
-    // ===== Choisir un plan =====
+    // ===== La fenêtre d'un cordon =====
     //
-    // Une liste à recherche plutôt que des onglets : un soudeur peut avoir des centaines de
-    // plans. Choisir recharge l'écran sur ce plan — seules ses feuilles sont lues — et le
-    // serveur s'en souvient pour les rechargements suivants.
-    //
-    // Au-delà de cent lignes trouvées, la liste n'en montre que cent et invite à préciser :
-    // en dessiner dix mille à chaque frappe ne servirait personne.
-    const PLANS_MONTRES = 100;
-    const sansAccents = texte => texte.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    // Cliquer une ligne de la liste soudure — ou le numéro du cordon sur le tube — ouvre la
+    // fenêtre de la maison, par-dessus celle du plan : la date, le procédé, « Enregistrer ».
+    // Échap ou « Annuler » la referment, et le dessin reste ouvert pour le cordon suivant.
 
-    function choixPlan() {
+    const fenetreCordon = () => document.getElementById('soudures-cordon');
+
+    function aujourdhui() {
+        const jour = new Date();
+        const deux = nombre => String(nombre).padStart(2, '0');
+        return jour.getFullYear() + '-' + deux(jour.getMonth() + 1) + '-' + deux(jour.getDate());
+    }
+
+    /** Les pastilles d'état de la maison, celles des PV et des bons de commande. */
+    const PUCES = { 'en-attente': 'pv-puce-a_faire', validee: 'pv-puce-fait', verrouillee: 'pv-puce-sans_objet' };
+
+    /** Le procédé dans sa liste : choisi s'il y est, sinon « Autre procédé… » et son texte dessous. */
+    function poserProcede(fenetre, valeur) {
+        const liste = fenetre.querySelector('[data-liste-filtrable="cordon-procede"]');
+        const connu = valeur !== '' && valeur !== 'autre'
+            && [...liste.querySelectorAll('[role="option"]')].some(option => option.dataset.value === valeur);
+        choisirDans(fenetre, 'cordon-procede', connu ? valeur : (valeur ? 'autre' : ''));
+        fenetre.querySelector('#cordon-procede-autre-field').hidden = connu || !valeur;
+        fenetre.querySelector('#cordon-procede-autre').value = connu ? '' : valeur;
+    }
+
+    /** Le procédé tel que la fenêtre le dit : choisi, écrit dans « Autre », ou tapé sans choisir. */
+    function procedeSaisi(form) {
+        const choisi = form.elements.type.value;
+        if (choisi === 'autre') return form.elements.type_autre.value.trim();
+        const tape = form.querySelector('[data-liste-filtrable="cordon-procede"] .liste-filtrable-champ');
+        return choisi || (tape ? tape.value.trim() : '');
+    }
+
+    function ouvrirCordon(viewer, numero) {
+        const donnees = viewer.cordons;
+        const ligne = donnees && donnees.lignes.get(numero);
+        const fenetre = fenetreCordon();
+        if (!ligne || !fenetre) return;
+        const form = fenetre.querySelector('form');
+        fiche = { viewer, numero };
+
+        const etat = etatCordon(ligne);
+        // Le cordon d'un autre soudeur se lit sans se reprendre ; une feuille close aussi.
+        const figee = ligne.verrouillee || estClose(donnees);
+
+        fenetre.querySelector('[data-cordon-numero]').textContent = numero;
+        const puce = fenetre.querySelector('[data-cordon-etat]');
+        puce.hidden = !PUCES[etat.cle];
+        puce.className = 'pv-puce soudures-cordon-etat ' + (PUCES[etat.cle] || '');
+        puce.textContent = etat.cle === 'verrouillee' ? 'Soudée par ' + (ligne.soudeur || 'un autre soudeur')
+            : etat.cle === 'en-attente' ? 'En attente du chef' : 'Validée';
+
+        // Un cordon à faire s'ouvre sur la date du jour et le dernier procédé : on soude, on
+        // clique, on enregistre. Rien ne part sans « Enregistrer ».
+        form.elements.date.value = ligne.date || (figee ? '' : aujourdhui());
+        poserProcede(fenetre, ligne.type || (figee ? '' : dernierProcede));
+        form.elements.date.disabled = figee;
+        form.elements.type_autre.disabled = figee;
+        const champProcede = fenetre.querySelector('[data-liste-filtrable="cordon-procede"] .liste-filtrable-champ');
+        champProcede.disabled = figee;
+        form.querySelector('[data-cordon-effacer]').hidden = figee || !ligne.remplie;
+        form.querySelector('.fenetre-valider').hidden = figee;
+        form.querySelector('.fenetre-annuler').textContent = figee ? 'Fermer' : 'Annuler';
+        const message = form.querySelector('.fenetre-message');
+        message.textContent = '';
+        message.classList.remove('is-error');
+
+        majNumeros(viewer);
+        fenetre.showModal();
+        // La date est déjà là. Le procédé aussi, le plus souvent — celui du cordon d'avant :
+        // il n'y a plus qu'à enregistrer, et Entrée le fait. Sinon c'est lui qu'on vient
+        // choisir, et sa liste s'ouvre. Ouverte d'office, elle couvrait « Enregistrer ».
+        const suivant = figee ? form.querySelector('.fenetre-annuler')
+            : procedeSaisi(form) ? form.querySelector('.fenetre-valider') : champProcede;
+        suivant.focus();
+    }
+
+    /**
+     * Enregistre le cordon de la fenêtre, et lui seul : l'action reçoit les cordons qu'on lui
+     * envoie et laisse les autres tels quels. Effacer, c'est l'envoyer vide — il redevient
+     * à faire.
+     */
+    async function enregistrerCordon(effacer) {
+        if (!fiche) return;
+        const { viewer, numero } = fiche;
+        const fenetre = fenetreCordon();
+        const form = fenetre.querySelector('form');
+        const donnees = viewer.cordons;
+        const bloc = viewer.closest('.soudures-lecteur');
+        const message = form.querySelector('.fenetre-message');
+        const date = effacer ? '' : form.elements.date.value;
+        const type = effacer ? '' : procedeSaisi(form);
+        if (!effacer && !date && !type) {
+            message.textContent = 'Notez la date ou le procédé.';
+            message.classList.add('is-error');
+            return;
+        }
+
+        const corps = new URLSearchParams();
+        corps.set('csrf', bloc.dataset.csrf);
+        corps.set('element', viewer.dataset.plan);
+        corps.set('document', viewer.dataset.document);
+        corps.set('page', donnees.page);
+        corps.set('soudures[' + numero + '][date]', date);
+        corps.set('soudures[' + numero + '][type]', type);
+
+        const boutons = form.querySelectorAll('.fenetre-pied button');
+        boutons.forEach(bouton => { bouton.disabled = true; });
+        message.classList.remove('is-error');
+        message.textContent = 'Enregistrement…';
+        try {
+            const reponse = await fetch('actions/save_soudures_atelier.php', {
+                method: 'POST', body: corps,
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            });
+            const retour = await reponse.json();
+            if (!reponse.ok || !retour.success) {
+                message.textContent = retour.message || 'Enregistrement impossible.';
+                message.classList.add('is-error');
+                return;
+            }
+            if (type) dernierProcede = type;
+            // Ce que le serveur vient de dire fait foi : la page reprend ses lignes.
+            if (viewer.cordons === donnees) {
+                donnees.lignes = parNumero(retour.lignes);
+                donnees.reponse = retour;
+            }
+            // La fenêtre se referme sur le dessin : la ligne qui vient de s'écrire, dans sa
+            // couleur, dit que c'est fait. Aucun message n'a à le redire en haut.
+            fenetre.close();
+            majNumeros(viewer);
+            ecrireEnAttente(viewer);
+            // Un cordon validé qu'on reprend repart chez le chef : la liste du dessin se
+            // relit, et il n'y est plus écrit comme validé.
+            if (typeof window.planRelireSoudures === 'function') window.planRelireSoudures(viewer);
+            majFeuille(repereDe(viewer, donnees.page), retour);
+        } catch {
+            message.textContent = 'Le serveur ne répond pas.';
+            message.classList.add('is-error');
+        } finally {
+            boutons.forEach(bouton => { bouton.disabled = false; });
+        }
+    }
+
+    // Une ligne de la liste soudure, un numéro le long du tube, ou un cordon hors de la liste
+    // sous le titre : sa fenêtre s'ouvre.
+    document.addEventListener('click', evenement => {
+        const numero = evenement.target.closest('.plan-ligne-soudure, .plan-cordon, .soudures-hors-cordon');
+        if (!numero) return;
+        const viewer = numero.closest('.plan-viewer');
+        if (duSoudeur(viewer)) ouvrirCordon(viewer, numero.dataset.numero);
+    });
+
+    document.addEventListener('submit', evenement => {
+        if (!evenement.target.closest('#soudures-cordon-form')) return;
+        evenement.preventDefault();
+        enregistrerCordon(false);
+    });
+
+    document.addEventListener('click', evenement => {
+        if (evenement.target.closest('#soudures-cordon [data-cordon-effacer]')) enregistrerCordon(true);
+        else if (evenement.target.closest('#soudures-cordon [data-fermer-cordon]')) fenetreCordon()?.close();
+    });
+
+    // La fenêtre refermée — enregistrée, annulée, ou par Échap — rend sa couleur à la ligne.
+    document.addEventListener('close', evenement => {
+        if (evenement.target.id !== 'soudures-cordon' || !fiche) return;
+        const { viewer } = fiche;
+        fiche = null;
+        majNumeros(viewer);
+    }, true);
+
+    // Cliquer la ligne d'une feuille ouvre son dessin : c'est le geste qu'on a dans une liste.
+    // Le nom est un bouton, pour le clavier ; c'est lui que la ligne actionne.
+    document.addEventListener('click', evenement => {
+        const ligne = evenement.target.closest('#soudures-page .soudures-feuille');
+        if (!ligne || evenement.target.closest('button, a, input, label')) return;
+        ligne.querySelector('.soudures-ouvrir-plan')?.click();
+    });
+
+    // ===== La fenêtre du plan =====
+    //
+    // Une par plan, rendue à la première feuille qu'on en ouvre (actions/soudures_lecteur.php)
+    // et posée sous le tableau : l'écran montre tous les plans de la personne, et n'a pas à
+    // construire des fenêtres qu'on n'ouvrira pas. Elle est demandée dès que le pointeur passe
+    // sur une feuille de ce plan, ou que le clavier arrive sur son bouton : au clic, elle est
+    // d'ordinaire déjà là.
+
+    /** Le bloc qui porte la fenêtre du plan de cet élément : déjà dans la page, ou demandé. */
+    function lecteurDe(element) {
         const racine = page();
-        const zone = racine?.querySelector('[data-choix-plan]');
-        if (!zone) return null;
-        return {
-            zone,
-            bouton: zone.querySelector('.soudures-plan-declencheur'),
-            menu: zone.querySelector('.soudures-plan-menu'),
-            recherche: zone.querySelector('.soudures-plan-recherche input'),
-            options: [...zone.querySelectorAll('.soudures-plan-option')],
-            mot: zone.querySelector('.soudures-plan-mot'),
-        };
+        const zone = racine && racine.querySelector('[data-lecteurs]');
+        if (!zone) return Promise.reject(new Error(''));
+        const present = zone.querySelector('.soudures-lecteur[data-element="' + element + '"]');
+        if (present) return Promise.resolve(present);
+        // Une demande par plan, que le survol et le clic se partagent. Elle est gardée sur la
+        // zone : l'écran rechargé repart de zéro.
+        zone.demandes ??= new Map();
+        if (!zone.demandes.has(element)) {
+            zone.demandes.set(element, fetch('actions/soudures_lecteur.php?plan=' + encodeURIComponent(element),
+                { credentials: 'same-origin' })
+                .then(async reponse => {
+                    const corps = await reponse.json().catch(() => null);
+                    if (!reponse.ok || !corps?.html) throw new Error(corps?.message || '');
+                    zone.insertAdjacentHTML('beforeend', corps.html);
+                    const bloc = zone.querySelector('.soudures-lecteur[data-element="' + element + '"]');
+                    bloc?.querySelectorAll('.plan-viewer').forEach(equiperBarre);
+                    return bloc;
+                })
+                .catch(erreur => {
+                    // Ratée, elle se redemande au geste suivant.
+                    zone.demandes.delete(element);
+                    throw erreur;
+                }));
+        }
+        return zone.demandes.get(element);
     }
 
-    function filtrerPlans() {
-        const c = choixPlan();
-        if (!c) return;
-        const cherche = sansAccents(c.recherche.value.trim());
-        let trouves = 0;
-        c.options.forEach(option => {
-            const garde = !cherche || sansAccents(option.dataset.cherche || '').includes(cherche);
-            if (garde) trouves++;
-            option.hidden = !garde || trouves > PLANS_MONTRES;
+    // Le survol d'une feuille, ou le clavier sur son bouton : la fenêtre de son plan se
+    // prépare. Un échec ne dit rien ici ; le clic le dira.
+    ['pointerover', 'focusin'].forEach(type => document.addEventListener(type, evenement => {
+        const ligne = evenement.target.closest('#soudures-page .soudures-feuille');
+        if (ligne) lecteurDe(ligne.dataset.element).catch(() => {});
+    }));
+
+    // « Renseigner » — ou toute la ligne, qui l'actionne : la fenêtre du plan s'ouvre sur la
+    // feuille désignée, l'élément, le cahier ET la page, pas sur la première page du cahier. La
+    // page est donnée à l'ouverture (pageVoulue, plan-viewer.js) : une seule image, une seule
+    // lecture des tableaux.
+    document.addEventListener('click', async evenement => {
+        const bouton = evenement.target.closest('#soudures-page .soudures-ouvrir-plan');
+        if (!bouton) return;
+        const [element, feuille, numeroPage] = String(bouton.dataset.repere || '').split(':');
+        if (!element) return;
+        let bloc;
+        try {
+            bloc = await lecteurDe(element);
+        } catch (erreur) {
+            window.toast?.(erreur.message || 'Le plan n’a pas pu s’ouvrir. Réessayez.', { erreur: true });
+            return;
+        }
+        const lecteur = bloc && bloc.querySelector('.plan-viewer[data-document="' + feuille + '"]');
+        // Deux clics pendant que la fenêtre arrive : elle ne s'ouvre qu'une fois.
+        if (!lecteur || lecteur.querySelector('.plan-dialog')?.open) return;
+        bloc.hidden = false;
+        // Ce qui se pose sur le dessin suit la feuille avant que la fenêtre paraisse : sa
+        // dernière lecture si on l'a déjà ouverte, rien sinon — jamais les lignes de la
+        // feuille d'avant, le temps que celle-ci arrive.
+        const page = Number(numeroPage) || 1;
+        const deja = lectureDe(lecteur, page);
+        if (lecteur.cordons !== deja) {
+            lecteur.cordons = deja;
+            poserDessin(lecteur);
+        }
+        lecteur.dataset.pageVoulue = page;
+        lecteur.querySelector('.plan-viewer-ouvrir').click();
+    });
+
+    // ===== Les plans, repliés ou déroulés =====
+    //
+    // Chaque plan arrive replié : sa ligne, son avancement, et ses feuilles se déroulent
+    // dessous d'un clic. Une recherche ou un onglet déroule de lui-même les plans où il trouve
+    // des feuilles — on cherche la feuille qu'on a en main sans savoir de quel plan elle est —,
+    // et les vider rend les plans comme on les avait laissés.
+
+    /** Les plans déroulés, par leur élément. */
+    const plansDeroules = racine => new Set([...racine.querySelectorAll('.soudures-plan')]
+        .filter(groupe => groupe.querySelector('.soudures-plan-bascule')?.getAttribute('aria-expanded') === 'true')
+        .map(groupe => groupe.dataset.element));
+
+    /** Déroule ou replie un plan. Sa flèche le dit ; filtrer() montre ou cache ses feuilles. */
+    function derouler(groupe, ouvert) {
+        groupe.querySelector('.soudures-plan-bascule')?.setAttribute('aria-expanded', String(ouvert));
+    }
+
+    // Le mouvement. Dérouler fait entrer les feuilles l'une après l'autre, et ce qui est
+    // dessous descend au lieu de sauter ; replier les efface, puis le dessous remonte. Un
+    // tableau ne sait pas animer sa hauteur : on note où était chaque ligne avant le
+    // changement, puis on la fait glisser de là à sa nouvelle place. Rien ne bouge quand le
+    // système demande moins d'animations, ni quand c'est la recherche qui déroule : la liste
+    // ne danse pas à chaque lettre tapée.
+    const MOUVEMENT = { duration: 220, easing: 'cubic-bezier(.2, .8, .2, 1)' };
+    const sansMouvement = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    /** Les lignes montrées d'un plan : ses feuilles, ou sa ligne d'attente. */
+    const lignesDuPlan = groupe => [...page().querySelectorAll(
+        '.soudures-feuille[data-element="' + groupe.dataset.element + '"]:not([hidden]) > tr,'
+        + ' .soudures-plan-vide[data-element="' + groupe.dataset.element + '"]:not([hidden]) > tr')];
+
+    /** Ce qui est sous un plan — les lignes des plans suivants, le matériel —, et où c'est. */
+    function placesDessous(groupe) {
+        const places = new Map();
+        for (let corps = groupe.nextElementSibling; corps; corps = corps.nextElementSibling) {
+            if (corps.hidden || corps.dataset.element === groupe.dataset.element) continue;
+            [...corps.rows].forEach(ligne => places.set(ligne, ligne.getBoundingClientRect().top));
+        }
+        const materiel = page()?.querySelector('.soudures-materiel');
+        if (materiel) places.set(materiel, materiel.getBoundingClientRect().top);
+        return places;
+    }
+
+    /** Chacun glisse de sa place d'avant à la sienne. Sous l'écran, personne ne le verrait. */
+    function glisser(places) {
+        places.forEach((avant, element) => {
+            // Un glissement pas fini s'arrête : le suivant part d'où l'on voyait la ligne.
+            element.getAnimations().forEach(animation => animation.cancel());
+            const apres = element.getBoundingClientRect().top;
+            if (avant === apres || Math.min(avant, apres) > window.innerHeight) return;
+            element.animate([{ transform: 'translateY(' + (avant - apres) + 'px)' }, { transform: 'none' }], MOUVEMENT);
         });
-        c.mot.hidden = trouves > 0 && trouves <= PLANS_MONTRES;
-        c.mot.textContent = trouves === 0
-            ? 'Aucun plan ne correspond.'
-            : PLANS_MONTRES + ' plans montrés sur ' + trouves + ' : précisez la recherche.';
     }
 
-    function ouvrirChoixPlan() {
-        const c = choixPlan();
-        if (!c) return;
-        c.menu.hidden = false;
-        c.bouton.setAttribute('aria-expanded', 'true');
-        c.recherche.value = '';
-        filtrerPlans();
-        c.recherche.focus();
-        c.zone.querySelector('.soudures-plan-option[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' });
-        document.addEventListener('pointerdown', surClicHorsChoix, true);
+    /** Déroule ou replie un plan sous les yeux de qui a cliqué. */
+    function basculer(groupe, ouvert) {
+        // Un repli en cours s'arrête : on rouvre avant qu'il ait fini.
+        groupe.sortie?.forEach(animation => animation.cancel());
+        groupe.sortie = null;
+        derouler(groupe, ouvert);
+        if (sansMouvement()) {
+            filtrer();
+            return;
+        }
+
+        if (ouvert) {
+            const places = placesDessous(groupe);
+            filtrer();
+            glisser(places);
+            // Les feuilles entrent l'une après l'autre ; passé la dixième, d'un bloc.
+            lignesDuPlan(groupe).forEach((ligne, rang) => ligne.animate(
+                [{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'none' }],
+                { ...MOUVEMENT, delay: Math.min(rang, 10) * 16, fill: 'backwards' }));
+            return;
+        }
+
+        // Les feuilles s'effacent d'abord, à leur place ; puis elles disparaissent, et le
+        // dessous remonte d'où il était.
+        const sortie = lignesDuPlan(groupe).map(ligne => ligne.animate(
+            [{ opacity: 1 }, { opacity: 0, transform: 'translateY(-4px)' }],
+            { duration: 120, easing: 'ease-in', fill: 'forwards' }));
+        groupe.sortie = sortie;
+        Promise.all(sortie.map(animation => animation.finished)).then(() => {
+            if (groupe.sortie !== sortie) return;
+            groupe.sortie = null;
+            const places = placesDessous(groupe);
+            filtrer();
+            sortie.forEach(animation => animation.cancel());
+            glisser(places);
+        }, () => {});
     }
 
-    function fermerChoixPlan(rendreLeFocus) {
-        const c = choixPlan();
-        if (!c || c.menu.hidden) return;
-        c.menu.hidden = true;
-        c.bouton.setAttribute('aria-expanded', 'false');
-        document.removeEventListener('pointerdown', surClicHorsChoix, true);
-        if (rendreLeFocus) c.bouton.focus();
-    }
-
-    function surClicHorsChoix(evenement) {
-        const c = choixPlan();
-        if (c && !c.zone.contains(evenement.target)) fermerChoixPlan(false);
-    }
-
-    function choisirPlan(option) {
-        if (!option) return;
-        if (option.getAttribute('aria-selected') === 'true') { fermerChoixPlan(true); return; }
-        const c = choixPlan();
-        c.mot.hidden = false;
-        c.mot.textContent = 'Ouverture du plan…';
-        const contenu = document.getElementById('content');
-        if (!contenu) return;
-        window.chargerDans(contenu, 'pages/soudures.php?plan=' + encodeURIComponent(option.dataset.element)).then(({ ok }) => {
-            if (!ok) contenu.textContent = 'Impossible d’ouvrir ce plan. Actualisez la page.';
-        });
-    }
-
+    // Un clic sur la ligne d'un plan — sa flèche, son nom, n'importe où — le déroule ou le
+    // replie. Déroulé, la fenêtre de son plan se prépare : on va ouvrir l'une de ses feuilles.
     document.addEventListener('click', evenement => {
-        if (!evenement.target.closest('.soudures-plan-declencheur')) return;
-        const c = choixPlan();
-        if (c && !c.menu.hidden) fermerChoixPlan(true);
-        else ouvrirChoixPlan();
-    });
-    document.addEventListener('input', evenement => {
-        if (evenement.target.closest('.soudures-plan-recherche input')) filtrerPlans();
-    });
-    document.addEventListener('click', evenement => {
-        const option = evenement.target.closest('.soudures-plan-option');
-        if (option) choisirPlan(option);
-    });
-
-    // Le clavier : la recherche garde le focus, les flèches promènent la surbrillance,
-    // Entrée ouvre le plan surligné — ou le premier trouvé —, Échap referme.
-    document.addEventListener('keydown', evenement => {
-        if (!evenement.target.closest('.soudures-plan-recherche input, .soudures-plan-option')) return;
-        const c = choixPlan();
-        if (!c) return;
-        const visibles = c.options.filter(option => !option.hidden);
-        const actif = c.zone.querySelector('.soudures-plan-option.est-active');
-        if (evenement.key === 'Escape') {
-            evenement.preventDefault();
-            evenement.stopPropagation();
-            fermerChoixPlan(true);
-        } else if (evenement.key === 'ArrowDown' || evenement.key === 'ArrowUp') {
-            evenement.preventDefault();
-            const rang = visibles.indexOf(actif);
-            const pas = evenement.key === 'ArrowDown' ? 1 : -1;
-            const suivant = visibles[rang === -1 ? (pas > 0 ? 0 : visibles.length - 1) : (rang + pas + visibles.length) % visibles.length];
-            actif?.classList.remove('est-active');
-            suivant?.classList.add('est-active');
-            suivant?.scrollIntoView({ block: 'nearest' });
-        } else if (evenement.key === 'Enter') {
-            evenement.preventDefault();
-            choisirPlan(actif && !actif.hidden ? actif : visibles[0]);
+        const groupe = evenement.target.closest('#soudures-page .soudures-plan');
+        if (!groupe) return;
+        const ouvert = groupe.querySelector('.soudures-plan-bascule')?.getAttribute('aria-expanded') !== 'true';
+        basculer(groupe, ouvert);
+        if (ouvert && page()?.querySelector('.soudures-feuille[data-element="' + groupe.dataset.element + '"]')) {
+            lecteurDe(groupe.dataset.element).catch(() => {});
         }
     });
-    document.addEventListener('input', evenement => {
-        if (!evenement.target.closest('.soudures-plan-recherche input')) return;
-        choixPlan()?.zone.querySelector('.soudures-plan-option.est-active')?.classList.remove('est-active');
+
+    // « Actualiser », comme sur les autres listes : l'écran se recharge, sa recherche, son
+    // onglet et ses plans déroulés avec.
+    document.addEventListener('click', evenement => {
+        if (!evenement.target.closest('.soudures-actualiser')) return;
+        const racine = page();
+        const recherche = racine?.querySelector('#soudures-recherche')?.value || '';
+        const etat = racine?.querySelector('.soudures-onglet[aria-pressed="true"]')?.dataset.etat || '';
+        const deroules = racine ? plansDeroules(racine) : new Set();
+        const avantFiltre = racine?.deroulesAvantFiltre || null;
+        const contenu = document.getElementById('content');
+        if (!contenu) return;
+        window.chargerDans(contenu, 'pages/soudures.php').then(({ ok }) => {
+            if (!ok) {
+                contenu.textContent = 'Impossible de recharger cet écran. Actualisez la page.';
+                return;
+            }
+            const champ = document.getElementById('soudures-recherche');
+            if (champ) champ.value = recherche;
+            document.querySelectorAll('.soudures-onglet').forEach(o => o.setAttribute('aria-pressed', String(o.dataset.etat === etat)));
+            if (!document.querySelector('.soudures-onglet[aria-pressed="true"]')) {
+                document.querySelector('.soudures-onglet[data-etat=""]')?.setAttribute('aria-pressed', 'true');
+            }
+            const rechargee = page();
+            if (rechargee) {
+                rechargee.querySelectorAll('.soudures-plan').forEach(groupe => derouler(groupe, deroules.has(groupe.dataset.element)));
+                rechargee.deroulesAvantFiltre = avantFiltre;
+            }
+            filtrer();
+        });
     });
 
     // Le filtrage : tout est déjà rendu, on se contente de cacher ce qui ne correspond
     // pas. Un cahier porte quinze feuilles et on en a souvent trois : quarante lignes se
     // parcourent mal à l'œil, et un rechargement serveur à chaque frappe coûterait plus
-    // qu'il ne rapporte. C'est la mécanique de l'écran « Soudures » du chef.
-    function filtrer() {
+    // qu'il ne rapporte. C'est la mécanique de « Commande matériel » : la recherche et
+    // l'onglet se combinent, et les comptes des onglets suivent la recherche.
+    //
+    // « deroulerTrouves » : la recherche ou l'onglet vient de changer, et les plans suivent —
+    // ceux où ils trouvent se déroulent, les autres se replient. Le premier filtre retient
+    // comment on les avait laissés, et le dernier qu'on vide le rend.
+    function filtrer({ deroulerTrouves = false } = {}) {
         const racine = page();
         if (!racine) return;
         const texte = (racine.querySelector('#soudures-recherche')?.value || '').trim().toLowerCase();
-        const etats = [...racine.querySelectorAll('.soudures-filtres input[name="etat[]"]:checked')]
-            .map(choix => choix.value);
-        const cherche = texte !== '' || etats.length > 0;
+        const etat = racine.querySelector('.soudures-onglet[aria-pressed="true"]')?.dataset.etat || '';
+        const filtre = Boolean(texte || etat);
 
-        // La recherche vit dans la barre d'outils du plan ouvert : elle ne porte que sur
-        // ses feuilles. Filtrer aussi les autres plans rangerait la section qui la
-        // contient, et elle disparaîtrait en même temps que ce qu'elle filtre.
-        const section = racine.querySelector('.soudures-feuilles-section:not([hidden])');
-        if (!section) return;
+        // Ce que la recherche et l'onglet retiennent, et les plans où ils le trouvent.
+        const parEtat = {};
+        const retenues = new Map();
+        const plansTrouves = new Set();
+        racine.querySelectorAll('.soudures-feuille').forEach(ligne => {
+            const trouvee = !texte || (ligne.dataset.cherche || '').includes(texte);
+            if (trouvee) parEtat[ligne.dataset.etat] = (parEtat[ligne.dataset.etat] || 0) + 1;
+            const retenue = trouvee && (!etat || ligne.dataset.etat === etat);
+            retenues.set(ligne, retenue);
+            if (retenue) plansTrouves.add(ligne.dataset.element);
+        });
+        // Un plan sans feuille garde sa ligne d'attente tant qu'aucun état n'est choisi : c'est
+        // là qu'on apprend qu'il attend son dessin. Elle ne compte dans aucun onglet.
+        racine.querySelectorAll('.soudures-plan-vide').forEach(vide => {
+            const retenue = !etat && (!texte || (vide.dataset.cherche || '').includes(texte));
+            retenues.set(vide, retenue);
+            if (retenue) plansTrouves.add(vide.dataset.element);
+        });
 
-        let trouvees = 0;
-        let total = 0;
-        section.querySelectorAll('.soudures-feuille').forEach(ligne => {
-            total++;
-            const garde = (!texte || (ligne.dataset.cherche || '').includes(texte))
-                && (!etats.length || etats.includes(ligne.dataset.etat));
-            ligne.hidden = !garde;
-            if (garde) trouvees++;
+        if (deroulerTrouves && filtre) {
+            racine.deroulesAvantFiltre ??= plansDeroules(racine);
+            racine.querySelectorAll('.soudures-plan').forEach(groupe => derouler(groupe, plansTrouves.has(groupe.dataset.element)));
+        } else if (deroulerTrouves && racine.deroulesAvantFiltre) {
+            const avant = racine.deroulesAvantFiltre;
+            racine.querySelectorAll('.soudures-plan').forEach(groupe => derouler(groupe, avant.has(groupe.dataset.element)));
+            racine.deroulesAvantFiltre = null;
+        }
+
+        // Une feuille paraît si elle est retenue et que son plan est déroulé. La ligne d'un plan
+        // reste sans filtre, repliée ou non ; avec un filtre, seulement s'il y trouve quelque
+        // chose.
+        const deroules = plansDeroules(racine);
+        retenues.forEach((retenue, ligne) => { ligne.hidden = !(retenue && deroules.has(ligne.dataset.element)); });
+        let plans = 0;
+        racine.querySelectorAll('.soudures-plan').forEach(groupe => {
+            groupe.hidden = filtre && !plansTrouves.has(groupe.dataset.element);
+            if (!groupe.hidden) plans++;
+        });
+
+        racine.querySelectorAll('.soudures-onglet').forEach(onglet => {
+            const compte = onglet.querySelector('.prefa-onglet-compte');
+            if (!compte) return;
+            compte.textContent = onglet.dataset.etat
+                ? (parEtat[onglet.dataset.etat] || 0)
+                : Object.values(parEtat).reduce((a, b) => a + b, 0);
         });
 
         // Un filtre peut tout cacher : un mot le dit plutôt que de laisser un tableau sans
         // lignes sous ses en-têtes.
-        const aucune = section.querySelector('[data-aucune]');
-        if (aucune) aucune.hidden = trouvees > 0;
-
-        // Ce que la recherche a trouvé, et de quoi tout défaire. Muets tant qu'on n'a rien
-        // demandé : un compte qui ne bouge jamais n'apprend rien.
-        const resultat = racine.querySelector('.soudures-resultat');
-        if (resultat) {
-            resultat.hidden = !cherche;
-            resultat.textContent = trouvees === 0
-                ? 'Aucune feuille ne correspond'
-                : trouvees + (trouvees > 1 ? ' feuilles' : ' feuille') + ' sur ' + total;
+        const aucune = racine.querySelector('[data-aucune]');
+        if (aucune) {
+            aucune.hidden = plans > 0;
+            aucune.querySelector('td').textContent = texte
+                ? 'Aucune feuille ne correspond à cette recherche.'
+                : 'Aucune feuille dans cet état.';
         }
-        const effacer = racine.querySelector('.filtres-tout-effacer');
-        if (effacer) effacer.hidden = !cherche;
     }
 
-    // La barre de filtres de la maison prévient son formulaire quand on coche : c'est à
-    // l'écran de savoir ce qu'il en fait. Ici, rien ne part au serveur — tout est déjà là.
-    // Corriger une ligne rallume le bouton ; revenir à ce qui était enregistré l'éteint.
-    const surSaisieCordon = evenement => {
-        if (!evenement.target.closest('#soudures-corps .soudures-date, #soudures-corps .soudures-type')) return;
-        const racine = page();
-        if (racine) majEnregistrer(racine);
-    };
-    document.addEventListener('input', surSaisieCordon);
-    document.addEventListener('change', surSaisieCordon);
-
     document.addEventListener('input', evenement => {
-        if (evenement.target.closest('#soudures-recherche')) filtrer();
+        if (evenement.target.closest('#soudures-recherche')) filtrer({ deroulerTrouves: true });
     });
-    document.addEventListener('change', evenement => {
-        if (evenement.target.closest('.soudures-filtres')) filtrer();
+    document.addEventListener('click', evenement => {
+        const onglet = evenement.target.closest('.soudures-onglet');
+        if (!onglet) return;
+        document.querySelectorAll('.soudures-onglet').forEach(o => o.setAttribute('aria-pressed', String(o === onglet)));
+        filtrer({ deroulerTrouves: true });
     });
+    // Entrée dans la recherche n'envoie rien : tout est déjà là.
     document.addEventListener('submit', evenement => {
         if (evenement.target.closest('.soudures-filtres')) evenement.preventDefault();
     });
 
-    // Fermer la feuille : le volet se range et la ligne n'est plus choisie. Sans ce
-    // geste, le seul moyen de quitter une feuille est d'en ouvrir une autre.
-    document.addEventListener('click', evenement => {
-        if (evenement.target.closest('[data-fermer-saisie]')) fermerSaisie();
-    });
-
-    document.addEventListener('click', evenement => {
-        const bouton = evenement.target.closest('.soudures-renseigner');
-        if (bouton) choisir(bouton.closest('.soudures-feuille'));
-    });
-
-    // « Plan » et « Ouvrir la feuille » sont servis par plan-viewer.js : c'est lui qui sait
-    // aller à la bonne page d'un cahier, et dupliquer ce savoir ici le ferait diverger.
-
-    document.addEventListener('submit', async event => {
-        if (!event.target.closest('#soudures-form')) return;
-        event.preventDefault();
-        const v = vues();
-        if (!v) return;
-        const { racine, corps, form } = v;
-        const retour = form.querySelector('.atelier-message');
-        const boutons = form.querySelectorAll('button');
-
-        const donnees = new URLSearchParams();
-        donnees.set('csrf', form.dataset.csrf);
-        donnees.set('element', form.dataset.element);
-        donnees.set('document', form.dataset.document);
-        donnees.set('page', form.dataset.page);
-        corps.querySelectorAll('.soudures-ligne').forEach(li => {
-            const date = li.querySelector('.soudures-date');
-            const type = li.querySelector('.soudures-type');
-            // Les lignes verrouillées ne partent pas : le serveur les refuserait, et les
-            // envoyer ferait croire qu'on a essayé de les changer.
-            if (date.disabled && type.disabled) return;
-            donnees.set('soudures[' + li.dataset.numero + '][date]', date.value || '');
-            donnees.set('soudures[' + li.dataset.numero + '][type]', type.value || '');
-        });
-
-        boutons.forEach(b => { b.disabled = true; });
-        retour.textContent = 'Enregistrement…';
-        try {
-            const reponse = await fetch('actions/save_soudures_atelier.php', {
-                method: 'POST', body: donnees,
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            });
-            const corpsJson = await reponse.json();
-            if (!reponse.ok || !corpsJson.success) {
-                retour.textContent = corpsJson.message || 'Enregistrement impossible.';
-                return;
-            }
-            poser(corps, corpsJson.lignes);
-            montrer(racine, corps, corpsJson);
-            retour.textContent = corpsJson.message || 'Enregistré.';
-        } catch {
-            retour.textContent = 'Le serveur ne répond pas.';
-        } finally {
-            boutons.forEach(b => { b.disabled = false; });
-            // Les boutons reviennent tous, puis celui d'enregistrement retrouve son sort :
-            // la feuille qu'on vient d'envoyer n'a plus rien à dire.
-            majEnregistrer(racine);
-        }
-    });
-
     // ===== Signaler un manque =====
     //
-    // La fenêtre de la maison, ouverte depuis l'en-tête ou depuis la feuille travaillée. Le
-    // plan proposé est celui qu'on regarde ; les articles suggérés sont ceux du bon de
-    // commande de sa demande — on peut toujours en écrire un autre.
+    // La fenêtre de la maison, ouverte depuis l'en-tête, depuis la barre du dessin, ou en
+    // cliquant sur le dessin la ligne de nomenclature du matériel qui manque. Le plan proposé
+    // est celui qu'on regarde ; les articles suggérés sont ceux du bon de commande de sa
+    // demande — on peut toujours en écrire un autre.
     const fenetreManque = () => document.getElementById('soudures-manque');
+
+    /** La fenêtre du plan ouverte sur cet écran, s'il y en a une. */
+    const dessinOuvert = () => document.querySelector('.soudures-lecteur .plan-dialog[open]')?.closest('.plan-viewer') || null;
 
     function articlesDuPlan(fenetre, plan) {
         let articles = {};
@@ -638,33 +1023,95 @@
         libre.hidden = !sansListe;
     }
 
-    document.addEventListener('click', evenement => {
-        if (!evenement.target.closest('[data-signaler-manque]')) return;
+    /**
+     * Ouvre la fenêtre. Depuis une ligne de la nomenclature, elle arrive avec l'article de la
+     * ligne écrit dans « Autre article… » — tel que le plan l'imprime —, le repère et la
+     * feuille en précision, et la quantité du plan en invite. La quantité qui manque, elle,
+     * n'est pas devinée : il en manque peut-être une partie seulement. Le motif non plus.
+     *
+     * @param {{article?: string, auPlan?: string, precision?: string}} proposition
+     */
+    function ouvrirManque(proposition = {}) {
         const fenetre = fenetreManque();
         if (!fenetre) return;
         const form = fenetre.querySelector('form');
         form.reset();
-        // Le plan de la feuille ouverte s'il y en a une, sinon celui du sélecteur.
-        const racine = page();
-        const feuille = racine && ligneChoisie(racine);
-        const section = racine && racine.querySelector('.soudures-feuilles-section');
-        const plan = (feuille && feuille.dataset.element) || (section && section.dataset.element) || '';
-        if (plan) {
-            const champ = form.querySelector('[name="element"]');
-            if (fenetre.querySelector('[data-liste-filtrable="manque-plan"]')) choisirDans(fenetre, 'manque-plan', plan);
-            else champ.value = plan;
-        }
+        // Le plan du dessin ouvert s'il y en a un. Sinon rien n'est choisi : l'écran montre tous
+        // les plans, et n'en devine pas un — sauf s'il n'y en a qu'un, déjà posé.
+        const plan = dessinOuvert()?.dataset.plan || '';
+        if (fenetre.querySelector('[data-liste-filtrable="manque-plan"]')) choisirDans(fenetre, 'manque-plan', plan);
+        else if (plan) form.querySelector('[name="element"]').value = plan;
         choisirDans(fenetre, 'manque-motif', '');
         choisirDans(fenetre, 'manque-unite', '');
         poserArticles(fenetre);
+
+        if (proposition.article) {
+            if (!fenetre.querySelector('[data-liste-filtrable="manque-article"]').hidden) choisirDans(fenetre, 'manque-article', 'autre');
+            fenetre.querySelector('#manque-article-autre-field').hidden = false;
+            fenetre.querySelector('#manque-article-autre').value = proposition.article;
+        }
+        const quantite = form.querySelector('[name="quantite"]');
+        quantite.dataset.invite ??= quantite.placeholder;
+        quantite.placeholder = proposition.auPlan ? 'Quantité (' + proposition.auPlan + ' au plan)' : quantite.dataset.invite;
+        form.querySelector('[name="commentaire"]').value = proposition.precision || '';
+
         const message = form.querySelector('.fenetre-message');
         message.textContent = '';
         message.classList.remove('is-error');
         fenetre.showModal();
-        const premier = fenetre.querySelector('[data-liste-filtrable="manque-article"]:not([hidden]) .liste-filtrable-champ')
-            || fenetre.querySelector('#manque-article-autre');
+        const premier = proposition.article ? quantite
+            : fenetre.querySelector('[data-liste-filtrable="manque-article"]:not([hidden]) .liste-filtrable-champ')
+                || fenetre.querySelector('#manque-article-autre');
         premier?.focus();
+    }
+
+    document.addEventListener('click', evenement => {
+        if (evenement.target.closest('[data-signaler-manque]')) ouvrirManque();
     });
+
+    // Une ligne de la nomenclature, sur le dessin : la fenêtre s'ouvre sur son article.
+    document.addEventListener('click', evenement => {
+        const bouton = evenement.target.closest('.plan-ligne-materiel');
+        const viewer = bouton && bouton.closest('.plan-viewer');
+        if (!duSoudeur(viewer)) return;
+        const ligne = viewer.cordons?.nomenclature?.lignes?.[Number(bouton.dataset.rang)];
+        if (!ligne) return;
+        const feuille = document.querySelector('#soudures-page .soudures-feuille[data-repere="'
+            + repereDe(viewer, pageVue(viewer)) + '"]')?.dataset.feuille || '';
+        ouvrirManque({
+            article: ligne.designation || '',
+            auPlan: ligne.quantite || '',
+            precision: 'Repère ' + ligne.repere + (feuille ? ' · ' + feuille : ''),
+        });
+    });
+
+    /** La date du jour comme le serveur l'écrit : « 02/11/2026 ». */
+    function dateDuJour() {
+        const jour = new Date();
+        const deux = nombre => String(nombre).padStart(2, '0');
+        return deux(jour.getDate()) + '/' + deux(jour.getMonth() + 1) + '/' + jour.getFullYear();
+    }
+
+    /**
+     * Après un signalement, les lignes de la nomenclature ouverte qui portent cet article
+     * prennent leur marque — la règle du serveur, qui les reconnaît à leur article : un
+     * article réécrit dans la fenêtre ne marque aucune ligne, ni maintenant ni plus tard.
+     */
+    function marquerSignale(article) {
+        const viewer = dessinOuvert();
+        const nomenclature = viewer?.cordons?.nomenclature;
+        if (!nomenclature || !article) return;
+        const cherche = article.trim().toLowerCase();
+        nomenclature.lignes.forEach(ligne => {
+            if ((ligne.designation || '').trim().toLowerCase() === cherche) ligne.signale = dateDuJour();
+        });
+        viewer.querySelectorAll('.plan-ligne-materiel').forEach(bouton => {
+            const ligne = nomenclature.lignes[Number(bouton.dataset.rang)];
+            if (ligne) marquerMateriel(bouton, ligne);
+        });
+        // La légende gagne « Manque signalé » si c'est le premier de la page.
+        dessinerEtat(viewer);
+    }
 
     // Le composant prévient par un « change » sur son champ caché.
     document.addEventListener('change', evenement => {
@@ -710,7 +1157,8 @@
         // ne couvre : on dit ce qui manque avant d'envoyer.
         const article = form.querySelector('[name="designation"]').value;
         const libre = form.querySelector('#manque-article-autre').value.trim();
-        const manque = (!article || article === 'autre') && !libre ? 'Indiquez l’article qui manque.'
+        const manque = !form.querySelector('[name="element"]').value ? 'Choisissez le plan.'
+            : (!article || article === 'autre') && !libre ? 'Indiquez l’article qui manque.'
             : !form.querySelector('[name="quantite"]').value.trim() ? 'Indiquez la quantité.'
             : !form.querySelector('[name="motif"]').value ? 'Choisissez le motif du manque.' : '';
         if (manque) {
@@ -743,10 +1191,16 @@
             if (zone && corps.html) zone.innerHTML = corps.html;
             const compte = racine && racine.querySelector('#soudures-materiel-titre .prefa-onglet-compte');
             if (compte && zone) compte.textContent = zone.querySelectorAll('tbody tr').length;
-            // Ouvert depuis une feuille : le pied du volet le dit. Sinon, le tableau suffit.
-            const retour = racine && racine.querySelector('#soudures-volet:not([hidden]) .atelier-message');
-            if (retour) retour.textContent = corps.message;
-            racine?.querySelector('.soudures-materiel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            // Signalé depuis le dessin : sa barre le dit, la ligne de l'article prend sa
+            // marque, et il reste ouvert. Sinon, le tableau du matériel, sous les feuilles,
+            // suffit.
+            const dessin = dessinOuvert();
+            if (dessin) {
+                direDansLeDessin(dessin, corps.message, false);
+                marquerSignale(!article || article === 'autre' ? libre : article);
+            } else {
+                racine?.querySelector('.soudures-materiel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
         } catch {
             message.classList.add('is-error');
             message.textContent = 'Le serveur ne répond pas.';
@@ -755,7 +1209,7 @@
         }
     });
 
-    // Rien ne se lit à l'arrivée : aucune feuille n'est choisie, et la première lecture
+    // Rien ne se lit à l'arrivée : aucune feuille n'est ouverte, et la première lecture
     // d'une page coûte quelques secondes — les dépenser pour une feuille que personne n'a
     // demandée, c'est faire attendre devant un tableau qu'on n'allait pas remplir.
 })();

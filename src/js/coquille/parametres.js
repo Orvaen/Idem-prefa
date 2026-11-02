@@ -423,7 +423,7 @@
 
     async function supprimerSignature() {
         if (!await window.confirmer('Supprimer votre signature ?', {
-            texte: 'Vos prochains visas porteront votre nom. Les cordons déjà visés gardent leur signature.',
+            texte: 'Vos prochains visas porteront votre nom. Les soudures déjà visées gardent leur signature.',
             action: 'Supprimer',
             ton: 'danger',
         })) return;
@@ -463,6 +463,36 @@
 
     // Refermée en pleine signature, la fenêtre se rouvre sans le cadre.
     fenetre.addEventListener('close', () => fermerCadre(false));
+
+    // ---------------------------------------------------------------- le mot de passe
+    //
+    // Il ne se change pas d'ici. « Demander » prévient le chargé de production, et la ligne
+    // dit que c'est parti ; lui « Réinitialiser » le sien, et la page repart à l'écran de
+    // connexion, où il choisit le nouveau (actions/mon_mot_de_passe.php).
+
+    const sectionMotDePasse = fenetre.querySelector('.mot-de-passe-section');
+
+    sectionMotDePasse?.addEventListener('click', async evenement => {
+        const bouton = evenement.target.closest('button[data-mdp]');
+        if (!bouton || bouton.disabled) return;
+        const operation = bouton.dataset.mdp;
+        if (operation === 'reinitialiser' && !await window.confirmer('Réinitialiser votre mot de passe ?', {
+            texte: 'Vous serez déconnecté de cet appareil, et choisirez le nouveau en vous reconnectant.',
+            action: 'Réinitialiser',
+        })) return;
+        bouton.disabled = true;
+        const corps = await envoyer('actions/mon_mot_de_passe.php', { csrf: sectionMotDePasse.dataset.csrf, operation },
+            sectionMotDePasse.querySelector('.mot-de-passe-message'));
+        if (!corps) {
+            bouton.disabled = false;
+            return;
+        }
+        if (corps.connexion) {
+            location.href = corps.connexion;
+            return;
+        }
+        bouton.closest('.parametre').outerHTML = corps.html;
+    });
 
     // ---------------------------------------------------------------- l'ouvrir
 

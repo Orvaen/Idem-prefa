@@ -19,10 +19,10 @@ try {
         // découvre sur le plan sans savoir d'où elle vient.
         $signes = signatureEnregistrer($db, $utilisateur->id, (string) ($_POST['dessin'] ?? ''));
         $message = match (true) {
-            $signes === 0 => 'Signature enregistrée : elle visera les cordons que vous validez.',
-            $signes === 1 => 'Signature enregistrée : elle remplace votre nom sur le cordon que vous aviez visé, et visera les suivants.',
+            $signes === 0 => 'Signature enregistrée : elle visera les soudures que vous validez.',
+            $signes === 1 => 'Signature enregistrée : elle remplace votre nom sur la soudure que vous aviez visée, et visera les suivantes.',
             default => 'Signature enregistrée : elle remplace votre nom sur les ' . $signes
-                . ' cordons que vous aviez visés, et visera les suivants.',
+                . ' soudures que vous aviez visées, et visera les suivantes.',
         };
     } else {
         signatureSupprimer($db, $utilisateur->id);

@@ -416,6 +416,14 @@ try {
         materielLireEnFond($bonsDeposes);
     }
 
+    // Les plans déposés se lisent eux aussi dès maintenant, en fond : liste soudure,
+    // repères, nomenclature et images sont prêts avant que l'atelier n'ouvre la première
+    // feuille. Ceux déjà lus sont passés sans rien refaire.
+    if ($savedFiles) {
+        require_once __DIR__ . '/../includes/lecture/plan_index.php';
+        planIndexerDemandeEnFond($savedId);
+    }
+
     // Après le commit, jamais avant : une annonce pour une demande que la transaction
     // aurait annulée vaut moins que pas d'annonce du tout. Une modification n'en est pas
     // une nouvelle — on ne prévient que du dépôt.

@@ -30,8 +30,8 @@ navigateur — sur un poste de bureau comme sur une tablette d'atelier.
    **ou la refuse**, avec un motif.
 4. **Une demande validée est ouverte à l'atelier** : le chef d'atelier y ajoute ses plans ISO et
    les répartit entre le personnel, par type de travail — plan, montage, suivi soudage.
-5. **Le personnel déclare son avancement** : les étapes du plan, et les soudures cordon par
-   cordon. **Le chef d'atelier valide** ces déclarations ; lui seul fait bouger l'avancement.
+5. **Le personnel déclare son avancement** : les étapes du plan, et les soudures une à
+   une. **Le chef d'atelier valide** ces déclarations ; lui seul fait bouger l'avancement.
 6. **Les PV** — réception matériel, fin de fabrication, passivation — documentent la
    fabrication, photos et pièces à l'appui. Le chargé d'affaire les consulte.
 
@@ -61,7 +61,7 @@ Le détail, écran par écran, est dans [Rôles et droits](/fonctionnalites/role
 | **Affectation** | Le fait de confier un élément à une personne, pour un type de travail : plan, montage ou soudage. |
 | **Avancement** | Le pourcentage fait d'une affectation. Il se calcule (étapes faites, soudures remplies) et n'est écrit que quand le chef d'atelier valide. |
 | **Déclaration** | Un avancement proposé par l'atelier, en attente de la validation du chef. |
-| **Cordon, soudure** | Une soudure du tableau imprimé sur le plan. Le soudeur la remplit dans « Mes soudures ». |
+| **Soudure** | Une ligne de la liste soudure imprimée sur le plan — un cordon. L'écran ne dit que « soudure ». Le soudeur la remplit dans « Mes soudures ». |
 | **Coulée** | Le numéro de fabrication d'un lot de tube ou d'acier, porté par le certificat matière. C'est une donnée de traçabilité. |
 | **CCPU** | Le certificat matière du fournisseur (EN 10204 type 3.1), qui porte les numéros de coulée. |
 | **Nomenclature** | La liste des pièces d'un plan, avec leurs coulées. |
@@ -69,7 +69,7 @@ Le détail, écran par écran, est dans [Rôles et droits](/fonctionnalites/role
 | **Bon de commande, bon de livraison** | Ce qu'IDEM commande au fournisseur, et ce qui arrive réellement. |
 | **Manque** | Un matériel qui manque à l'atelier, signalé par le soudeur depuis « Mes soudures ». |
 | **Passivation** | Le traitement de surface de l'inox après fabrication (décapage, acide citrique…). |
-| **RT, VT, PT** | Les contrôles de soudure : radiographie, contrôle visuel, ressuage. Le chef les coche en validant les cordons ; une croix sur le plan veut dire OK. |
+| **RT, VT, PT** | Les contrôles de soudure : radiographie, contrôle visuel, ressuage. Le chef les coche en validant les soudures ; une croix sur le plan veut dire OK. |
 | **QMOS, DMOS** | La qualification et le descriptif du mode opératoire de soudage. |
 | **Pouce ISO** | L'unité de charge de la tuyauterie. Le temps par pouce ISO sert à estimer le délai d'une demande. |
 

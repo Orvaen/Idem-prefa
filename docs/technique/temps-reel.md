@@ -42,6 +42,7 @@ d'une ligne de journal.
 | `affaire.confiee` | Une affaire est confiée à un chargé d'affaire | Ce chargé d'affaire |
 | `manque.signale` | L'atelier signale un manque | Chaque membre de l'encadrement, nommément |
 | `manque.traite` | Un manque est traité | Celui qui l'avait signalé |
+| `compte.mdp_a_reinitialiser` | Quelqu'un demande un nouveau mot de passe, avec son motif : oublié à l'écran de connexion, ou à changer depuis ses paramètres | Chaque chargé de production, nommément — sauf le demandeur |
 
 **Qui reçoit quoi.** Un événement adressé à quelqu'un ne va qu'à lui. Les autres suivent la règle
 de visibilité des demandes (`Demande::clauseVisible()`), évaluée sur l'état **actuel** de la
@@ -49,8 +50,9 @@ demande. L'auteur d'un événement n'est jamais prévenu de son propre geste.
 
 ## Ce que le navigateur en fait
 
-- **Les compteurs** — en attente, urgentes, nouvelles affaires, mes affaires, manques — voyagent
-  avec chaque événement et sont **posés**, jamais incrémentés : un message perdu ne fausse rien.
+- **Les compteurs** — en attente, urgentes, nouvelles affaires, mes affaires, manques, mots de
+  passe à réinitialiser — voyagent avec chaque événement et sont **posés**, jamais incrémentés :
+  un message perdu ne fausse rien.
   Ils alimentent les pastilles de la barre latérale (`data-compteur`) et les tuiles de l'accueil.
 - **Les alertes** : trois au plus à la fois, neuf secondes chacune, cliquables pour ouvrir ce
   qu'elles annoncent.

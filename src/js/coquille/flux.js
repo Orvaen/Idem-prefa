@@ -68,13 +68,21 @@
 
     // Les compteurs sont posés, jamais incrémentés : deux onglets ouverts, une alerte
     // ratée pendant une reconnexion, et un compteur incrémenté dérive sans qu'on le voie.
-    function poserCompteurs({ enAttente, urgentes, affairesNouvelles, mesAffaires, manques }) {
+    function poserCompteurs({ enAttente, urgentes, affairesNouvelles, mesAffaires, manques, motsDePasse }) {
         // La pastille de « Commande matériel » : les manques que personne n'a regardés.
         const pastilleManques = document.querySelector('.nav-urgent-badge[data-compteur="manques"]');
         if (pastilleManques && typeof manques === 'number') {
             pastilleManques.textContent = manques;
             pastilleManques.setAttribute('aria-label', manques + ' manque(s) de matériel à traiter');
             pastilleManques.hidden = manques === 0;
+        }
+
+        // La pastille d'« Utilisateurs » : les nouveaux mots de passe demandés, à réinitialiser.
+        const pastilleMotsDePasse = document.querySelector('.nav-urgent-badge[data-compteur="mots-de-passe"]');
+        if (pastilleMotsDePasse && typeof motsDePasse === 'number') {
+            pastilleMotsDePasse.textContent = motsDePasse;
+            pastilleMotsDePasse.setAttribute('aria-label', motsDePasse + ' mot(s) de passe à réinitialiser');
+            pastilleMotsDePasse.hidden = motsDePasse === 0;
         }
 
         // La pastille de l'entrée Accueil : « +1 » pour une affaire confiée pas encore vue.
@@ -133,6 +141,13 @@
             detail: [e.article, e.reference].filter(Boolean).join(' · '),
             ouvre: 'btn-soudures',
         }),
+        // Oublié, la personne attend devant l'écran de connexion ; à changer, elle travaille
+        // et le choisira à sa prochaine connexion.
+        'compte.mdp_a_reinitialiser': e => ({
+            titre: e.motif === 'oubli' ? 'Mot de passe oublié' : 'Nouveau mot de passe demandé',
+            detail: [e.nom, e.identifiant].filter(Boolean).join(' · ') + ' — à réinitialiser',
+            ouvre: 'btn-list-users',
+        }),
         'demande.refusee': e => ({
             titre: 'Demande refusée',
             // Le motif est la seule chose qui compte dans un refus : sans lui, il faut
@@ -149,6 +164,12 @@
         if (!event.target.closest('#btn-accueil')) return;
         const pastille = document.querySelector('.nav-urgent-badge[data-compteur="affaires"]');
         if (pastille) pastille.hidden = true;
+    });
+
+    // Une réinitialisation faite d'ici : l'action renvoie le nouveau compte (HX-Trigger), la
+    // pastille le suit sans attendre le prochain événement du flux.
+    document.body.addEventListener('reinitialisationsEnAttente', evenement => {
+        poserCompteurs({ motsDePasse: evenement.detail && evenement.detail.compte });
     });
 
     const flux = new EventSource('/api/flux.php');

@@ -750,26 +750,9 @@ body.is-panning-gantt .gantt-bar:hover {
    LE VOLET D'UNE DEMANDE
    ==========================================================================
 
-   Le volet des PV (pv.css) : carte flottante à droite, sections, lignes de propriétés.
-   Cette feuille ne pose que sa place et ce qui est propre au planning. */
-
-.prefa-detail-row.planning-volet-rang {
-    top: 8px;
-    right: 8px;
-    bottom: 8px;
-    left: auto;
-    width: min(560px, calc(100vw - 16px));
-    border: 1px solid var(--border);
-    border-radius: var(--r-xl);
-    background: var(--surface) !important;
-    box-shadow: 0 1px 2px rgb(15 15 16 / 6%), 0 24px 64px rgb(15 15 16 / 18%);
-    animation: fiche-tiroir 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-html body:has(.prefa-detail-row.planning-volet-rang:not([hidden]))::before {
-    background: rgb(15 15 16 / 16%);
-    backdrop-filter: blur(2px);
-}
+   Le volet des PV (pv.css) : sections, lignes de propriétés, dans la grande fenêtre de
+   tous les volets (prefa-list.css). Cette feuille ne pose que ce qui est propre au
+   planning. */
 
 .planning-volet-rang .pv-volet {
     max-width: none;
@@ -876,8 +859,12 @@ html body:has(.prefa-detail-row.planning-volet-rang:not([hidden]))::before {
     font-weight: 500;
 }
 
+/* L'étape prend la largeur libre, les plans se serrent à droite (DA, § 7 ter) : dans la
+   grande fenêtre, une colonne de plan étirée sur sept cents pixels posait ses tirets au
+   milieu de nulle part. */
 .planning-matrix-table th:first-child,
 .planning-matrix-table td:first-child {
+    width: 100%;
     padding-left: 0;
     color: var(--text);
     text-align: left;

@@ -80,6 +80,13 @@ if ($type === 'materiel') {
     materielLireEnFond(array_column($ajoutes, 'id'));
 }
 
+// Un plan aussi, de la même façon : liste soudure, repères, nomenclature et images sont
+// prêts avant que l'atelier n'ouvre sa première feuille (plan_index.php).
+if ($type === 'plan') {
+    require_once __DIR__ . '/../includes/lecture/plan_index.php';
+    planIndexerDemandeEnFond($idDemande);
+}
+
 $html = '';
 foreach ($ajoutes as $document) {
     $html .= prefaDocumentLigne($idDemande, $famille, $document, $canViewAllPrefa);

@@ -201,7 +201,7 @@ function dashboardMenu(): array
  * nav-urgent-badge, et la mise à jour des urgentes les repeignait toutes : les PV restant
  * à renseigner tombaient au nombre de demandes urgentes à chaque rafraîchissement.
  */
-function dashboardBadge(string $id, Utilisateur $utilisateur, int $urgentes, int $pvAFaire, int $manques = 0): string
+function dashboardBadge(string $id, Utilisateur $utilisateur, int $urgentes, int $pvAFaire, int $manques = 0, int $motsDePasse = 0): string
 {
     $pastille = static fn (string $quoi, string $attributs, int $compte): string =>
         '<span class="nav-urgent-badge" data-compteur="' . $quoi . '" ' . $attributs
@@ -218,6 +218,11 @@ function dashboardBadge(string $id, Utilisateur $utilisateur, int $urgentes, int
         // Toujours posée, même à zéro : le flux l'allume en direct quand l'atelier signale.
         'commande-materiel' => $pastille('manques', 'aria-label="' . $manques . ' manque(s) de matériel à traiter"'
             . ' title="Manques de matériel signalés par l’atelier"', $manques),
+        // Toujours posée aussi : un nouveau mot de passe demandé — oublié à l'écran de
+        // connexion, ou à changer depuis les paramètres — l'allume en direct, chez
+        // l'administrateur.
+        'list-users' => $pastille('mots-de-passe', 'aria-label="' . $motsDePasse . ' mot(s) de passe à réinitialiser"'
+            . ' title="Nouveaux mots de passe demandés, à réinitialiser"', $motsDePasse),
         default => '',
     };
 }
@@ -347,6 +352,9 @@ function dashboardRessources(Utilisateur $utilisateur): array
         'css/dashboard/barre-laterale.css',
     ];
     $scripts = [
+        // La fin de la connexion, avant tout ce qui appelle le serveur : son fetch est celui
+        // que les autres scripts reçoivent.
+        'js/coquille/connexion.js',
         // Le chargement d'un écran dans #content : la navigation et les écrans s'en servent.
         'js/composants/charger.js',
         'js/composants/suggestions.js',

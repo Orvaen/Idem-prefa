@@ -12,9 +12,10 @@ $email = trim($_POST['email'] ?? '');
 $name = trim($_POST['name'] ?? '');
 $role = $_POST['role'] ?? '';
 $prenom = trim($_POST['prenom'] ?? '');
-$password = $_POST['password'] ?? '';
 
-if ($name === '' || $prenom === '' || $role === '' || $password === '') {
+// Pas de mot de passe : la personne choisit le sien à sa première connexion. L'administrateur
+// n'en connaît donc aucun, et n'a rien à transmettre que l'identifiant.
+if ($name === '' || $prenom === '' || $role === '') {
     http_response_code(400);
 
     echo json_encode([
@@ -36,11 +37,12 @@ if (!$known->fetchColumn()) prefaError(400, 'Choisissez un rôle dans la liste.'
 $user = new User($db);
 
 try {
-    $user->register($name, $prenom, $role, $password, $email);
+    $user->register($name, $prenom, $role, '', $email);
 
     echo json_encode([
         'success' => true,
-        'message' => 'Utilisateur créé avec succès.'
+        'message' => 'Compte créé : ' . User::buildIdentifiant($name, $prenom)
+            . ' choisira son mot de passe à sa première connexion.'
     ]);
 
 } catch (DomainException $e) {

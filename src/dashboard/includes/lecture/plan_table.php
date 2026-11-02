@@ -75,46 +75,11 @@ function planTableAnalyser(string $cheminPbm): array
 {
     $image = planTableLirePbm($cheminPbm);
     if (!$image) return [];
+    $grille = planTableNomenclatureGrille($image);
+    if ($grille === null) return [];
+    ['rangees' => $rangees, 'droite' => $droite, 'colonnes' => $colonnes] = $grille;
     $largeur = $image['l'];
     $hauteur = $image['h'];
-
-    // Le tableau occupe le quart haut droit de la feuille : s'y limiter écarte le cadre
-    // de la page, le cartouche du bas et la liste des soudures, qui ont la même allure.
-    $retenues = [];
-    foreach (planTableHorizontales($image, (int) ($largeur * 0.12)) as $ligne) {
-        if ($ligne['y'] >= $hauteur * 0.30 || $ligne['x1'] <= $largeur * 0.55) continue;
-        $retenues[] = $ligne;
-    }
-    // Un trait épais noircit deux ou trois rangées voisines : elles ne font qu'un trait.
-    $rangees = planTableFusionner($retenues, planTablePx(0.02));
-    // Titre, en-tête et au moins une ligne : moins, ce n'est pas une nomenclature.
-    if (count($rangees) < 4) return [];
-
-    // Le trait du haut manque-t-il à l'appel ?
-    //
-    // Une rangée n'est jugée que sur son plus long segment. Or le haut du tableau tombe
-    // souvent sur le cadre de la feuille, qui court d'un bord à l'autre : le plus long
-    // segment part alors de la marge, la rangée est écartée comme n'appartenant pas au
-    // tableau, et toutes les lignes glissent d'un rang — la première ligne de matériel
-    // n'ayant plus de case où recevoir sa coulée.
-    //
-    // On ne rebalaie pas toute la feuille pour autant : on regarde un seul endroit, à un
-    // pas au-dessus du premier trait connu, et sur la seule largeur du tableau. Ailleurs
-    // on ne ramasserait que des traits de cadre, qui feraient prendre le titre pour une
-    // ligne de matériel.
-    $premier = planTableTraitAuDessus($image, $rangees);
-    if ($premier !== null) array_unshift($rangees, $premier);
-
-    $bas = end($rangees)['y'];
-    $gauche = min(array_column($rangees, 'x1'));
-    $droite = max(array_column($rangees, 'x2'));
-
-    // Les séparateurs de colonnes ne commencent que SOUS le titre : « NOMENCLATURE DE
-    // MATÉRIEL » occupe toute la largeur et aucune verticale ne le traverse. Les
-    // chercher depuis le haut du tableau ne trouverait que ses deux bords.
-    $hautGrille = $rangees[1]['y'];
-    $colonnes = planTableVerticales($image, $gauche, $droite, (int) $hautGrille, (int) $bas);
-    if (count($colonnes) < 3) return [];
 
     // « N° COULÉE » est la dernière colonne : entre l'avant-dernier séparateur et le bord.
     $xCoulee = $colonnes[count($colonnes) - 2];
@@ -140,6 +105,63 @@ function planTableAnalyser(string $cheminPbm): array
         ];
     }
     return $cases;
+}
+
+/**
+ * La grille de la nomenclature : ses traits horizontaux, ses deux bords et les séparateurs
+ * de ses colonnes, en pixels de l'image analysée. Les cases de coulée en sortent, et la
+ * lecture de la nomenclature (plan_nomenclature.php) en tire ses lignes.
+ *
+ * Les rangées 0 et 1 bordent le titre et l'en-tête ; les lignes de matériel vont de la
+ * rangée 2 au trait du bas.
+ *
+ * @return array{rangees: list<array{y:float, x1:int, x2:int}>, gauche:int, droite:int,
+ *               colonnes: list<float>}|null null si la page n'en porte pas
+ */
+function planTableNomenclatureGrille(array $image): ?array
+{
+    $largeur = $image['l'];
+    $hauteur = $image['h'];
+
+    // Le tableau occupe le quart haut droit de la feuille : s'y limiter écarte le cadre
+    // de la page, le cartouche du bas et la liste des soudures, qui ont la même allure.
+    $retenues = [];
+    foreach (planTableHorizontales($image, (int) ($largeur * 0.12)) as $ligne) {
+        if ($ligne['y'] >= $hauteur * 0.30 || $ligne['x1'] <= $largeur * 0.55) continue;
+        $retenues[] = $ligne;
+    }
+    // Un trait épais noircit deux ou trois rangées voisines : elles ne font qu'un trait.
+    $rangees = planTableFusionner($retenues, planTablePx(0.02));
+    // Titre, en-tête et au moins une ligne : moins, ce n'est pas une nomenclature.
+    if (count($rangees) < 4) return null;
+
+    // Le trait du haut manque-t-il à l'appel ?
+    //
+    // Une rangée n'est jugée que sur son plus long segment. Or le haut du tableau tombe
+    // souvent sur le cadre de la feuille, qui court d'un bord à l'autre : le plus long
+    // segment part alors de la marge, la rangée est écartée comme n'appartenant pas au
+    // tableau, et toutes les lignes glissent d'un rang — la première ligne de matériel
+    // n'ayant plus de case où recevoir sa coulée.
+    //
+    // On ne rebalaie pas toute la feuille pour autant : on regarde un seul endroit, à un
+    // pas au-dessus du premier trait connu, et sur la seule largeur du tableau. Ailleurs
+    // on ne ramasserait que des traits de cadre, qui feraient prendre le titre pour une
+    // ligne de matériel.
+    $premier = planTableTraitAuDessus($image, $rangees);
+    if ($premier !== null) array_unshift($rangees, $premier);
+
+    $bas = end($rangees)['y'];
+    $gauche = min(array_column($rangees, 'x1'));
+    $droite = max(array_column($rangees, 'x2'));
+
+    // Les séparateurs de colonnes ne commencent que SOUS le titre : « NOMENCLATURE DE
+    // MATÉRIEL » occupe toute la largeur et aucune verticale ne le traverse. Les
+    // chercher depuis le haut du tableau ne trouverait que ses deux bords.
+    $hautGrille = $rangees[1]['y'];
+    $colonnes = planTableVerticales($image, $gauche, $droite, (int) $hautGrille, (int) $bas);
+    if (count($colonnes) < 3) return null;
+
+    return ['rangees' => $rangees, 'gauche' => $gauche, 'droite' => $droite, 'colonnes' => $colonnes];
 }
 
 /**

@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/prefa_context.php';
+require_once __DIR__ . '/../includes/vue/liste.php';
 require_once __DIR__ . '/../includes/materiel/materiel_bon.php';
 require_once __DIR__ . '/../includes/materiel/manques.php';
 
@@ -67,25 +68,7 @@ $iconesManque = '<svg class="pv-etat-icone materiel-manque-signe-nouvelle" viewB
                 <p>Les bons déposés sur les demandes, et les articles qu’ils commandent. La lecture propose, vous corrigez.</p>
             </div>
             <div class="prefa-vue-outils">
-                <div class="prefa-densite" role="group" aria-label="Densité du tableau">
-                    <button type="button" class="prefa-densite-choix" data-densite="confortable"
-                            aria-pressed="true" aria-label="Lignes confortables" title="Lignes confortables">
-                        <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true">
-                            <rect x="2" y="3" width="12" height="2.6" rx="1" />
-                            <rect x="2" y="6.7" width="12" height="2.6" rx="1" />
-                            <rect x="2" y="10.4" width="12" height="2.6" rx="1" />
-                        </svg>
-                    </button>
-                    <button type="button" class="prefa-densite-choix" data-densite="compact"
-                            aria-pressed="false" aria-label="Lignes compactes" title="Lignes compactes">
-                        <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true">
-                            <rect x="2" y="2.6" width="12" height="1.6" rx=".8" />
-                            <rect x="2" y="5.6" width="12" height="1.6" rx=".8" />
-                            <rect x="2" y="8.6" width="12" height="1.6" rx=".8" />
-                            <rect x="2" y="11.6" width="12" height="1.6" rx=".8" />
-                        </svg>
-                    </button>
-                </div>
+                <?= listeDensite() ?>
                 <button type="button" class="materiel-refresh pv-outil">
                     <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-2l2 3M4 16l2 3a7 7 0 0 1 12-2" />

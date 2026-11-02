@@ -42,9 +42,20 @@ Les pages chargent htmx depuis un CDN : sans internet sur le **poste**, le table
 bord ne s'anime pas. Ouvrir les outils de développement du navigateur (F12), onglet Console :
 une erreur de chargement de `htmx.js` le confirme.
 
+### Quelqu'un a oublié son mot de passe, ou veut en changer
+
+Oublié, il clique « Mot de passe oublié ? » sur l'écran de connexion ; à changer, « Demander »
+dans Paramètres → Compte. Le chargé de production le voit sur « Utilisateurs » — pastille, et
+« Nouveau mot de passe demandé » sur la ligne — et choisit « Réinitialiser le mot de passe » dans
+le menu de la ligne. La personne se reconnecte avec son seul identifiant, et choisit un nouveau
+mot de passe.
+
+Le chargé de production qui veut changer le sien le réinitialise dans Paramètres → Compte : il
+est déconnecté, et choisit le nouveau en se reconnectant.
+
 ### On revient sans cesse à l'écran de connexion
 
-La session a expiré — 8 heures d'inactivité — ou le conteneur web a été recréé (`run down`,
+La connexion a pris fin — elle vaut 2 heures depuis le mot de passe, et l'écran de connexion le dit — ou le conteneur web a été recréé (`run down`,
 `run rebuild`, changement de mode) : les sessions vivent dedans. Se reconnecter.
 
 ### Une modification de CSS ou de JS ne se voit pas

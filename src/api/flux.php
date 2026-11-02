@@ -103,6 +103,9 @@ $compteurs = static function () use ($db, $visible, $utilisateur): array {
         // Les manques de matériel que l'encadrement n'a pas encore regardés : la pastille de
         // « Commande matériel ». Les autres profils n'ont pas cette entrée.
         'manques' => $utilisateur->gereLAtelier() ? manquesNouveauxCompte($db) : null,
+        // Les nouveaux mots de passe demandés, à réinitialiser : la pastille d'« Utilisateurs »,
+        // chez l'administrateur seulement.
+        'motsDePasse' => $utilisateur->est(Role::ChargeDeProduction) ? User::reinitialisationsEnAttente($db) : null,
     ];
 };
 
@@ -176,11 +179,16 @@ while (time() - $debut < FLUX_DUREE) {
                 'affaire' => (string) ($donnees['affaire'] ?? ''),
                 'demandeur' => trim(($ligne['prenom'] ?? '') . ' ' . ($ligne['name'] ?? '')),
                 'urgente' => (bool) ($donnees['urgente'] ?? false),
+                // Le motif d'un refus ; pour un nouveau mot de passe demandé, « oubli » ou
+                // « changement ».
                 'motif' => (string) ($donnees['motif'] ?? ''),
                 // Un manque de matériel : l'article et sa quantité, le plan, qui le signale.
                 'article' => (string) ($donnees['article'] ?? ''),
                 'plan' => (string) ($donnees['plan'] ?? ''),
                 'auteur' => (string) ($donnees['auteur'] ?? ''),
+                // Un nouveau mot de passe demandé : à qui il appartient.
+                'nom' => (string) ($donnees['nom'] ?? ''),
+                'identifiant' => (string) ($donnees['identifiant'] ?? ''),
             ] + $etat, $depuis);
         }
         $dernierMot = time();

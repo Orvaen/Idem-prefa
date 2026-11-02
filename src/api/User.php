@@ -52,7 +52,11 @@ class User
             return false;
         }
 
-        return $this->startSession($identifiant);
+        if (!$this->startSession($identifiant)) return false;
+        // Le mot de passe est vérifié : les deux heures de la connexion partent d'ici
+        // (Session::DUREE). La bascule entre comptes passe par startSession() seul.
+        Session::authentifiee();
+        return true;
     }
 
     /**
@@ -75,6 +79,128 @@ class User
         Journal::noter('connexion de ' . $utilisateur->identifiant
             . ' (' . ($utilisateur->role?->metier() ?? $utilisateur->roleEnBase) . ')');
 
+        return true;
+    }
+
+    // ------------------------------------------------------------ le mot de passe
+    //
+    // L'administrateur ne donne plus de mot de passe, et personne ne change le sien sur place :
+    // un compte se crée sans, la personne choisit le sien à sa première connexion, et pour en
+    // changer — oublié, ou simplement à remplacer — elle demande à l'administrateur de le
+    // réinitialiser, puis choisit le nouveau à sa connexion suivante. Un mot de passe ne se
+    // tape donc qu'à l'écran de connexion.
+    //
+    // Un compte sans mot de passe en porte un vide — tout juste créé, ou réinitialisé.
+    // password_verify() ne reconnaît rien contre une chaîne vide : la porte reste fermée tant
+    // qu'il n'est pas choisi.
+
+    /** La longueur minimale d'un mot de passe qu'on choisit. */
+    public const MOT_DE_PASSE_MINI = 8;
+
+    /** Ce qui ne va pas dans un mot de passe qu'on choisit, ou null s'il convient. */
+    public static function motDePasseRefus(string $motDePasse, string $confirmation): ?string
+    {
+        if (mb_strlen($motDePasse) < self::MOT_DE_PASSE_MINI) {
+            return 'Le mot de passe compte au moins ' . self::MOT_DE_PASSE_MINI . ' caractères.';
+        }
+        // Au-delà, bcrypt ne lit plus rien : deux mots de passe qui ne diffèrent qu'après le
+        // 72e octet seraient le même.
+        if (strlen($motDePasse) > 72) return 'Le mot de passe tient en 72 caractères.';
+        if ($motDePasse !== $confirmation) return 'Les deux saisies ne sont pas les mêmes.';
+        return null;
+    }
+
+    /**
+     * La demande de réinitialisation est-elle en base ? Pas tant que la migration
+     * 2026-11-02_mot_de_passe n'est pas passée sur ce serveur : on ne retient alors aucune
+     * demande, et l'écran dit de prévenir l'administrateur de vive voix.
+     */
+    public static function reinitialisationsEnBase(PDO $db): bool
+    {
+        static $presente = null;
+        return $presente ??= (bool) $db->query("SHOW COLUMNS FROM Utilisateur LIKE 'reinitialisation_demandee_le'")->fetch();
+    }
+
+    /** Les demandes que l'administrateur n'a pas encore traitées : la pastille d'« Utilisateurs ». */
+    public static function reinitialisationsEnAttente(PDO $db): int
+    {
+        if (!self::reinitialisationsEnBase($db)) return 0;
+        return (int) $db->query('SELECT COUNT(*) FROM Utilisateur WHERE reinitialisation_demandee_le IS NOT NULL')->fetchColumn();
+    }
+
+    /** Ce compte attend-il que la personne choisisse son mot de passe ? */
+    public function motDePasseACreer(string $identifiant): bool
+    {
+        $stmt = $this->db->prepare("SELECT password = '' FROM Utilisateur WHERE identifiant = ? LIMIT 1");
+        $stmt->execute([$identifiant]);
+        return (bool) $stmt->fetchColumn();
+    }
+
+    /**
+     * La personne choisit son mot de passe — première connexion, ou après une
+     * réinitialisation — et entre.
+     *
+     * Une seule fois : la requête ne pose rien sur un compte qui en a déjà un, que ce soit
+     * un second onglet ou quelqu'un qui aurait devancé son titulaire. Le journal le note,
+     * et l'écran des utilisateurs le montre : le compte n'y est plus « à créer ».
+     */
+    public function creerMotDePasse(string $identifiant, string $motDePasse): bool
+    {
+        $stmt = $this->db->prepare('UPDATE Utilisateur SET password = ?'
+            . (self::reinitialisationsEnBase($this->db) ? ', reinitialisation_demandee_le = NULL' : '')
+            . " WHERE identifiant = ? AND password = ''");
+        $stmt->execute([password_hash($motDePasse, PASSWORD_BCRYPT), $identifiant]);
+        if ($stmt->rowCount() !== 1) return false;
+        Journal::noter('mot de passe choisi pour ' . $identifiant);
+        if (!$this->startSession($identifiant)) return false;
+        Session::authentifiee();
+        return true;
+    }
+
+    /**
+     * L'administrateur réinitialise : le mot de passe se vide, et la personne en choisira un
+     * à sa prochaine connexion. Sa demande, s'il y en avait une, est traitée.
+     */
+    public function reinitialiserMotDePasse(int $id): void
+    {
+        $this->db->prepare("UPDATE Utilisateur SET password = ''"
+            . (self::reinitialisationsEnBase($this->db) ? ', reinitialisation_demandee_le = NULL' : '') . ' WHERE id = ?')
+            ->execute([$id]);
+    }
+
+    /**
+     * La personne demande un nouveau mot de passe : elle a oublié le sien — depuis l'écran de
+     * connexion —, ou veut en changer — depuis ses paramètres. Chaque chargé de production
+     * l'apprend, nommément ; il réinitialise, et elle choisit le nouveau en se reconnectant.
+     *
+     * Retenue une fois : une seconde demande avant la réinitialisation ne le prévient pas une
+     * seconde fois. Un compte qui n'a pas encore de mot de passe n'a rien à demander — il le
+     * choisit en se connectant.
+     *
+     * @param string $motif 'oubli' ou 'changement' : l'alerte le dit, pour que l'administrateur
+     *                      sache si quelqu'un attend, bloqué, à l'écran de connexion
+     * @return bool la demande vient-elle d'être retenue ?
+     */
+    public function demanderReinitialisation(string $identifiant, string $motif): bool
+    {
+        if (!self::reinitialisationsEnBase($this->db)) return false;
+        $stmt = $this->db->prepare("UPDATE Utilisateur SET reinitialisation_demandee_le = NOW()
+            WHERE identifiant = ? AND password <> '' AND reinitialisation_demandee_le IS NULL");
+        $stmt->execute([$identifiant]);
+        if ($stmt->rowCount() !== 1) return false;
+        $compte = $this->db->prepare("SELECT id, TRIM(CONCAT(prenom, ' ', name)) FROM Utilisateur WHERE identifiant = ?");
+        $compte->execute([$identifiant]);
+        [$id, $nom] = $compte->fetch(PDO::FETCH_NUM);
+        Journal::noter('nouveau mot de passe demandé (' . $motif . ') pour ' . $identifiant);
+
+        // Pas au demandeur lui-même : un chargé de production qui a oublié le sien le
+        // demande aux autres.
+        $admins = $this->db->prepare('SELECT id FROM Utilisateur WHERE id_role = ? AND id <> ?');
+        $admins->execute([Role::ChargeDeProduction->value, $id]);
+        foreach ($admins->fetchAll(PDO::FETCH_COLUMN) as $admin) {
+            Evenement::noter($this->db, Evenement::MOT_DE_PASSE_A_REINITIALISER, null, (int) $id,
+                ['nom' => $nom, 'identifiant' => $identifiant, 'motif' => $motif], (int) $admin);
+        }
         return true;
     }
 
@@ -122,7 +248,9 @@ class User
         $sql = "INSERT INTO Utilisateur (name, id_role, password, email, prenom, identifiant)
                 VALUES (:name, :id_role, :password, :email, :prenom, :identifiant)";
         $stmt = $this->db->prepare($sql);
-        $hash = password_hash($password, PASSWORD_BCRYPT);
+        // Sans mot de passe, le compte attend que la personne choisisse le sien à sa première
+        // connexion : c'est ainsi que l'écran des utilisateurs les crée.
+        $hash = $password === '' ? '' : password_hash($password, PASSWORD_BCRYPT);
 
         return $stmt->execute([
             'name' => $name,

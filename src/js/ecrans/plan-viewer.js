@@ -213,15 +213,22 @@
     delegue('click', '.plan-viewer-ouvrir', function () {
         const viewer = this.closest('.plan-viewer');
         const image = viewer.querySelector('.plan-viewer-scene img');
-        // L'image n'est demandée qu'ici : inutile de charger un plan qu'on n'ouvre pas.
-        if (image && !image.src && image.dataset.src) image.src = image.dataset.src;
-        // Les vignettes du sommaire suivent la même règle, et ne partent qu'une fois.
-        viewer.querySelectorAll('.plan-sommaire-page img').forEach(vignette => {
+        // La page voulue — « Renseigner », sur « Mes soudures », désigne une feuille d'un
+        // cahier — se pose avant que rien ne se charge. La fenêtre s'ouvrait sur la première
+        // page puis tournait : deux images demandées, et les tableaux lus deux fois.
+        const voulue = borner(Number(viewer.dataset.pageVoulue) || pageVue(viewer), 1,
+            Math.max(1, Number(viewer.dataset.pages) || 1));
+        delete viewer.dataset.pageVoulue;
+        viewer.querySelector('.plan-dialog').showModal();
+        if (voulue !== pageVue(viewer)) poserPage(viewer, voulue);
+        // Les vignettes du sommaire ne partent qu'une fois, et après la page : quinze petites
+        // images demandées en même temps qu'elle la retardaient.
+        const vignettes = () => viewer.querySelectorAll('.plan-sommaire-page img').forEach(vignette => {
             if (!vignette.src && vignette.dataset.src) vignette.src = vignette.dataset.src;
         });
-        viewer.querySelector('.plan-dialog').showModal();
         const caler = () => {
             appliquerZoom(viewer, Number(viewer.dataset.zoom) || 100);
+            annoncerPage(viewer);
             // À chaque ouverture, le plan va relire le tableau soudure de la page
             // affichée : la liste change sans lui. En revanche les cases de coulée ne se
             // posent qu'une fois, et seulement sur la première page — un plan déjà
@@ -229,12 +236,30 @@
             // du chef.
             // Les cases de coulée ne se posent que si on peut les poser ; la liste des
             // soudures, elle, se réaffiche pour tout le monde — elle ne fait que montrer.
-            if (viewer.dataset.csrf || viewer.dataset.lecture) {
-                detecter(viewer, true, Boolean(viewer.dataset.csrf) && pageVue(viewer) === 1 && reperes(viewer).length === 0);
-            }
+            const lecture = viewer.dataset.csrf || viewer.dataset.lecture
+                ? detecter(viewer, true, Boolean(viewer.dataset.csrf) && pageVue(viewer) === 1 && reperes(viewer).length === 0)
+                : null;
+            Promise.resolve(lecture).finally(vignettes);
         };
-        if (image && image.complete) caler();
-        else if (image) image.addEventListener('load', caler, { once: true });
+        if (!image) return;
+        // L'image n'est demandée qu'ici : inutile de charger un plan qu'on n'ouvre pas.
+        const adresse = image.dataset.src ? adressePage(image, voulue) : null;
+        if (adresse && image.getAttribute('src') !== adresse) {
+            image.addEventListener('load', caler, { once: true });
+            image.src = adresse;
+            // Une page déjà vue est encore dans les images du navigateur : elle se pose aussitôt,
+            // et il n'y a rien à cacher. Une autre vient du serveur, et la fenêtre gardait d'ici
+            // là la page vue la dernière fois, avec ce qui était posé dessus : le dessin reste
+            // caché jusqu'à ce qu'elle arrive.
+            if (!image.complete) {
+                const scene = image.closest('.plan-viewer-scene');
+                const montrer = () => scene.classList.remove('est-en-attente');
+                scene.classList.add('est-en-attente');
+                image.addEventListener('load', montrer, { once: true });
+                image.addEventListener('error', montrer, { once: true });
+            }
+        } else if (image.complete) caler();
+        else image.addEventListener('load', caler, { once: true });
     });
 
     /**
@@ -266,7 +291,8 @@
         const page = pageVue(viewer);
         donnees.set('page', page);
 
-        fetch('actions/detecter_lignes.php', { method: 'POST', body: donnees })
+        // La promesse est rendue : l'ouverture attend la lecture pour demander les vignettes.
+        return fetch('actions/detecter_lignes.php', { method: 'POST', body: donnees })
             .then(reponse => reponse.json().then(corps => ({ ok: reponse.ok, corps })))
             .then(({ ok, corps }) => {
                 // On a tourné la page pendant la lecture : cette réponse décrit une autre
@@ -317,27 +343,18 @@
                 // pas mérite un mot : une soudure sans ligne où s'écrire, un tableau non
                 // reconnu. Le nombre de pages, lui, se lit dans la barre — le répéter en
                 // message ne faisait qu'encombrer.
-                const souci = corps.avertissement || corps.message || '';
+                //
+                // Et ce mot ne va qu'à qui peut y faire quelque chose : le chef, qui pose et
+                // corrige. En consultation — le soudeur, le chargé d'affaire —, il remplissait
+                // la barre sans rien demander à personne.
+                const souci = viewer.dataset.csrf ? corps.avertissement || corps.message || '' : '';
                 if (souci) message(viewer, souci, true);
             })
             .catch(() => { if (!automatique) message(viewer, 'Détection impossible. Réessayez.', true); });
     }
 
-    // Sur « Mes soudures », chaque feuille du tableau porte son bouton, et l'en-tête de la
-    // saisie porte celui de la feuille travaillée : le lecteur de l'élément vit plus bas,
-    // masqué, et c'est sa fenêtre qu'on ouvre.
-    delegue('click', '.soudures-ouvrir-plan', function () {
-        // Le bouton dit l'élément, la feuille ET la page : la fenêtre s'ouvre donc sur
-        // l'isométrique qu'on vient de désigner, pas sur la première page de son cahier.
-        const [element, feuille, page] = String(this.dataset.repere || '').split(':');
-        if (!element) return;
-        const bloc = document.querySelector('.soudures-lecteur[data-element="' + element + '"]');
-        const lecteur = bloc && bloc.querySelector('.plan-viewer[data-document="' + feuille + '"]');
-        if (!lecteur) return;
-        bloc.hidden = false;
-        lecteur.querySelector('.plan-viewer-ouvrir').click();
-        allerPage(lecteur, Number(page) || 1);
-    });
+    // « Renseigner », sur « Mes soudures », n'est plus servi ici : la fenêtre de chaque plan y
+    // est rendue à la demande, et soudures.js l'ouvre sur la page voulue (pageVoulue).
 
     delegue('click', '.plan-dialog-fermer', function () {
         this.closest('dialog').close();
@@ -477,6 +494,18 @@
     }
 
     /**
+     * Dit aux écrans qu'une page est à l'écran, son dessin chargé et calé : « Mes soudures »
+     * y pose les numéros de ses cordons. La fenêtre ne sait rien d'eux — elle prévient, et
+     * l'écran qui la porte sait quoi en faire.
+     *
+     * Une ouverture sur une autre page que la première peut l'annoncer deux fois : celui qui
+     * écoute retient la page en cours, et laisse tomber ce qui ne la concerne plus.
+     */
+    function annoncerPage(viewer) {
+        viewer.dispatchEvent(new CustomEvent('plan:page', { bubbles: true, detail: { page: pageVue(viewer) } }));
+    }
+
+    /**
      * Tourne la page du cahier : le dessin, sa liste soudure et les tableaux reconnus
      * dessus vont ensemble.
      *
@@ -489,33 +518,44 @@
         const total = Math.max(1, Number(viewer.dataset.pages) || 1);
         const demandee = borner(voulue, 1, total);
         if (demandee === pageVue(viewer)) return;
-        viewer.dataset.page = demandee;
-
-        const scene = viewer.querySelector('.plan-viewer-scene');
-        const image = scene.querySelector('img');
-        // Chaque page a sa nomenclature, donc ses cases : on montre les siennes et on
-        // range les autres. Elles restent dans la page, prêtes à revenir.
-        viewer.querySelectorAll('.plan-coulee').forEach(repere => {
-            repere.hidden = Number(repere.dataset.page || 1) !== demandee;
-        });
-
-        viewer.querySelectorAll('.plan-dialog-liste').forEach(liste => {
-            liste.hidden = Number(liste.dataset.page) !== demandee;
-        });
-        const valeur = viewer.querySelector('.plan-page-valeur');
-        if (valeur) valeur.textContent = 'Page ' + demandee + ' / ' + total;
-        marquerSommaire(viewer, demandee);
+        poserPage(viewer, demandee);
+        const image = viewer.querySelector('.plan-viewer-scene img');
 
         message(viewer, '', false);
         image.addEventListener('load', () => {
             appliquerZoom(viewer, Number(viewer.dataset.zoom) || 100);
+            annoncerPage(viewer);
             // Une page jamais ouverte n'a pas encore ses cases : la lecture du tableau les
             // pose. Une page déjà travaillée garde les siennes — on ne les double pas.
             if (viewer.dataset.csrf || viewer.dataset.lecture) {
                 detecter(viewer, true, Boolean(viewer.dataset.csrf) && reperes(viewer).length === 0);
             }
         }, { once: true });
-        image.src = image.dataset.src + '&page=' + demandee;
+        image.src = adressePage(image, demandee);
+    }
+
+    /**
+     * Pose une page sans charger son image : son numéro, le sommaire, ses cases de coulée et
+     * sa liste. allerPage() charge ensuite l'image ; l'ouverture de la fenêtre aussi.
+     */
+    function poserPage(viewer, demandee) {
+        viewer.dataset.page = demandee;
+        // Chaque page a sa nomenclature, donc ses cases : on montre les siennes et on
+        // range les autres. Elles restent dans la page, prêtes à revenir.
+        viewer.querySelectorAll('.plan-coulee').forEach(repere => {
+            repere.hidden = Number(repere.dataset.page || 1) !== demandee;
+        });
+        viewer.querySelectorAll('.plan-dialog-liste').forEach(liste => {
+            liste.hidden = Number(liste.dataset.page) !== demandee;
+        });
+        const valeur = viewer.querySelector('.plan-page-valeur');
+        if (valeur) valeur.textContent = 'Page ' + demandee + ' / ' + Math.max(1, Number(viewer.dataset.pages) || 1);
+        marquerSommaire(viewer, demandee);
+    }
+
+    /** L'adresse de l'image d'une page, la même d'où qu'on l'ouvre : le navigateur la garde une fois. */
+    function adressePage(image, page) {
+        return image.dataset.src + '&page=' + page;
     }
 
     delegue('click', '.plan-page', function () {
@@ -1052,7 +1092,9 @@
     document.addEventListener('mousedown', function (evenement) {
         if (evenement.button !== 0 || geste) return;
         const scene = evenement.target.closest('.plan-viewer-scene');
-        if (!scene || evenement.target.closest('.plan-coulee, .plan-coulee-choix')) return;
+        // Les lignes de la liste soudure, les numéros des soudures et les lignes de la
+        // nomenclature (« Mes soudures ») se cliquent : ils ne prennent pas le plan.
+        if (!scene || evenement.target.closest('.plan-coulee, .plan-coulee-choix, .plan-ligne-soudure, .plan-cordon, .plan-ligne-materiel')) return;
         // C'est le corps de la fenêtre qui défile : c'est donc lui qu'on pousse.
         const corps = scene.closest('.plan-dialog-corps');
         if (!corps) return;
@@ -1261,8 +1303,28 @@
         cellule.replaceChildren(svg);
     }
 
+    /** Une case de la liste soudure, posée sur sa cellule imprimée. */
+    function celluleSoudure(scene, colonne, ligne, texte, classe) {
+        const cellule = document.createElement('div');
+        cellule.className = 'plan-soudure' + (classe ? ' ' + classe : '');
+        // Le texte vit dans son propre élément : c'est lui qu'on mesure pour ajuster la
+        // police, et lui qui coupe si la mention reste trop longue.
+        const valeur = document.createElement('span');
+        valeur.className = 'plan-soudure-valeur';
+        valeur.textContent = texte;
+        cellule.appendChild(valeur);
+        cellule.style.left = (colonne.x * 100).toFixed(4) + '%';
+        cellule.style.top = (ligne.y * 100).toFixed(4) + '%';
+        cellule.style.width = (colonne.w * 100).toFixed(4) + '%';
+        cellule.style.height = (ligne.h * 100).toFixed(4) + '%';
+        scene.appendChild(cellule);
+        return cellule;
+    }
+
     function remplirSoudures(scene, tableau, valeurs, signatures = {}) {
-        scene.querySelectorAll('.plan-soudure, .plan-soudure-trait, .plan-soudure-bord')
+        // Les saisies en attente ont leur calque à elles (ecrireEnAttente) : relire le
+        // tableau ne les efface pas.
+        scene.querySelectorAll('.plan-soudure:not(.est-en-attente), .plan-soudure-trait, .plan-soudure-bord')
             .forEach(element => element.remove());
         if (!tableau || !tableau.lignes || !tableau.colonnes) return;
 
@@ -1294,19 +1356,7 @@
             tableau.colonnes.forEach((colonne, index) => {
                 const texte = (donnees[index] || '').trim();
                 if (texte === '' || ecrites[index]) return;
-                const cellule = document.createElement('div');
-                cellule.className = 'plan-soudure' + (index === VISA ? ' plan-soudure-visa' : '');
-                // Le texte vit dans son propre élément : c'est lui qu'on mesure pour
-                // ajuster la police, et lui qui coupe si la mention reste trop longue.
-                const valeur = document.createElement('span');
-                valeur.className = 'plan-soudure-valeur';
-                valeur.textContent = texte;
-                cellule.appendChild(valeur);
-                cellule.style.left = (colonne.x * 100).toFixed(4) + '%';
-                cellule.style.top = (ligne.y * 100).toFixed(4) + '%';
-                cellule.style.width = (colonne.w * 100).toFixed(4) + '%';
-                cellule.style.height = (ligne.h * 100).toFixed(4) + '%';
-                scene.appendChild(cellule);
+                const cellule = celluleSoudure(scene, colonne, ligne, texte, index === VISA ? 'plan-soudure-visa' : '');
                 if (index !== VISA) {
                     ajusterPolice(cellule);
                     return;
@@ -1500,4 +1550,39 @@
             .catch(() => message(viewer, 'Enregistrement impossible. Réessayez.', true))
             .finally(() => { bouton.disabled = false; });
     });
+
+    // ---------------------------------------------------------------- pour « Mes soudures »
+
+    /**
+     * Les cordons renseignés que le chef n'a pas encore validés, écrits dans la liste du
+     * dessin, dans le ton de l'attente : le soudeur voit sa saisie là où il l'a faite, et
+     * sait qu'elle n'est pas encore sur le plan final — qui, lui, ne porte que le validé.
+     *
+     * Un calque à part : la lecture du tableau (remplirSoudures) ne l'efface pas, et lui ne
+     * touche pas au validé. Seules les lignes imprimées le reçoivent ; la case VISA reste
+     * vide, elle est au chef.
+     *
+     * @param valeurs rang (0 pour la ligne 1) => les huit cases de la ligne, comme remplirSoudures
+     */
+    window.planEcrireEnAttente = function (viewer, tableau, valeurs) {
+        const scene = viewer && viewer.querySelector('.plan-viewer-scene');
+        if (!scene) return;
+        scene.querySelectorAll('.plan-soudure.est-en-attente').forEach(element => element.remove());
+        if (!tableau || !tableau.lignes || !tableau.colonnes) return;
+        Object.entries(valeurs || {}).forEach(([rang, donnees]) => {
+            const ligne = tableau.lignes[Number(rang)];
+            if (!ligne) return;
+            const ecrites = ligne.cellules || [];
+            tableau.colonnes.forEach((colonne, index) => {
+                const texte = (donnees[index] || '').trim();
+                if (texte === '' || ecrites[index] || index === VISA) return;
+                ajusterPolice(celluleSoudure(scene, colonne, ligne, texte, 'est-en-attente'));
+            });
+        });
+    };
+
+    /** Relit la liste du dessin : ce qui vient d'être enregistré a pu quitter le validé. */
+    window.planRelireSoudures = function (viewer) {
+        if (viewer && (viewer.dataset.csrf || viewer.dataset.lecture)) detecter(viewer, true, false);
+    };
 })();

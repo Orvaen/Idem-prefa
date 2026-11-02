@@ -22,6 +22,11 @@ final class Evenement
     public const MANQUE_SIGNALE = 'manque.signale';
     /** Un manque signalé est traité : celui qui l'a signalé l'apprend. */
     public const MANQUE_TRAITE = 'manque.traite';
+    /**
+     * Quelqu'un demande un nouveau mot de passe — oublié, ou à changer : chaque
+     * administrateur l'apprend, nommément, et réinitialise.
+     */
+    public const MOT_DE_PASSE_A_REINITIALISER = 'compte.mdp_a_reinitialiser';
 
     /**
      * Note un événement.

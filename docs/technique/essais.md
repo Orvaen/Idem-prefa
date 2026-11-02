@@ -23,8 +23,13 @@ docker compose exec -T php php /tests/roles.php
 | `api_demandes.php` | La visibilité par rôle, les filtres, la recherche, la pagination, les décisions et leurs événements, les suppressions, les réponses 400, 403, 404, 405 et 409 | **Rien** : il crée ses comptes et ses demandes dans une transaction, puis l'annule |
 | `prefa_references.php` | La numérotation annuelle, le passage d'année, l'unicité, le non-réemploi d'une référence supprimée | Le schéma |
 | `atelier_plans.php` | La création et la modification d'un plan, l'unicité de son nom, les suppressions en cascade | Une demande et un compte |
-| `avancement_etapes.php` | Le calcul par étapes et par cordons, la déclaration, la validation | Une demande validée et deux comptes |
-| `prefa_pages.php <écran>` | Le rendu sans avertissement de `plans_iso`, `lists_prefa`, `planning`, `create_prefa`, `atelier`, `soudures`, et quelques contrôles du balisage | Les données de démonstration |
+| `avancement_etapes.php` | Le calcul par étapes et par soudures, la déclaration, la validation | Une demande validée et deux comptes |
+| `prefa_pages.php <écran>` | Le rendu sans avertissement de `plans_iso`, `lists_prefa`, `planning`, `create_prefa`, `atelier`, `soudures`, `suivi_soudures`, et quelques contrôles du balisage | Les données de démonstration |
+| `plan_reperes.php` | Les numéros des soudures sur le dessin : à quel rectangle va chaque numéro, la ressemblance des chiffres, ce qui traverse un rectangle | **Rien** : des glyphes de synthèse |
+| `plan_nomenclature.php` | La nomenclature lue sur le dessin : à quelle case va chaque mot lu, le nettoyage d'une case, l'article qu'une ligne donne au manque | **Rien** : des mots de synthèse, sans OCR |
+| `session.php` | La connexion vaut deux heures depuis le mot de passe : la bascule entre comptes ne les repousse pas, un mot de passe les relance, l'échéance vide la session et le dit une fois | **Rien** : une session à lui, détruite à la fin |
+| `metiers.php` | Les métiers d'un plan : plusieurs par personne, plusieurs par métier, un seul de chaque par personne, et l'accès au plan qu'ils ouvrent | Une demande validée ; il crée ses comptes et son plan dans une transaction, puis l'annule |
+| `mots_de_passe.php` | Le mot de passe choisi par son titulaire : un compte sans, le choix une seule fois, un nouveau demandé — retenu une fois, annoncé à chaque chargé de production avec son motif, sans rien changer avant la réinitialisation —, la réinitialisation | La migration `2026-11-02_mot_de_passe` ; il crée son compte dans une transaction, puis l'annule |
 
 ::: tip Sur une base vide
 Seuls `roles`, `encodage`, `dashboard_vues`, `api_demandes` et `prefa_references` passent :

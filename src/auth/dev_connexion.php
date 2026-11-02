@@ -59,6 +59,10 @@ if (!$user->startSession($compte)) {
 }
 
 session_regenerate_id(true);
+// Depuis l'écran de connexion, c'est une connexion : ses deux heures partent d'ici, comme
+// après un mot de passe (Session::DUREE). La prise de place depuis le menu des comptes
+// (dashboard/actions/dev_connexion.php) est une bascule, et ne les repousse pas.
+Session::authentifiee();
 Journal::noter(sprintf('[dev] connexion sans mot de passe sur %s', $compte));
 
 echo json_encode(['success' => true]);

@@ -10,6 +10,7 @@
 // et la page ne pourrait plus ni ouvrir la session ni poser d'en-tête.
 
 require_once __DIR__ . '/../includes/prefa_context.php';
+require_once __DIR__ . '/../includes/vue/liste.php';
 require_once __DIR__ . '/../includes/vue/liste_filtrable.php';
 require_once __DIR__ . '/../includes/vue/user_display.php';
 
@@ -38,25 +39,7 @@ foreach ($db->query('SELECT id, name FROM role ORDER BY id')->fetchAll(PDO::FETC
                   // densité retenue ailleurs — « compacte » sur la liste des demandes — sans
                   // qu'on puisse la changer ici : un tableau tassé, et aucun moyen d'en sortir. ?>
             <div class="prefa-vue-outils">
-                <div class="prefa-densite" role="group" aria-label="Densité du tableau">
-                    <button type="button" class="prefa-densite-choix" data-densite="confortable"
-                            aria-pressed="true" aria-label="Lignes confortables" title="Lignes confortables">
-                        <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true">
-                            <rect x="2" y="3" width="12" height="2.6" rx="1" />
-                            <rect x="2" y="6.7" width="12" height="2.6" rx="1" />
-                            <rect x="2" y="10.4" width="12" height="2.6" rx="1" />
-                        </svg>
-                    </button>
-                    <button type="button" class="prefa-densite-choix" data-densite="compact"
-                            aria-pressed="false" aria-label="Lignes compactes" title="Lignes compactes">
-                        <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true">
-                            <rect x="2" y="2.6" width="12" height="1.6" rx=".8" />
-                            <rect x="2" y="5.6" width="12" height="1.6" rx=".8" />
-                            <rect x="2" y="8.6" width="12" height="1.6" rx=".8" />
-                            <rect x="2" y="11.6" width="12" height="1.6" rx=".8" />
-                        </svg>
-                    </button>
-                </div>
+                <?= listeDensite() ?>
                 <button type="button" class="utilisateurs-nouveau" data-dialog="utilisateur-dialogue">
                     <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                          stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
@@ -126,12 +109,8 @@ foreach ($db->query('SELECT id, name FROM role ORDER BY id')->fetchAll(PDO::FETC
                         'nom' => 'role',
                     ]) ?>
 
-                    <div class="form-group">
-                        <label for="password">Mot de passe</label>
-                        <input type="password" id="password" name="password" placeholder="••••••••"
-                               autocomplete="new-password" required>
-                    </div>
-
+                    <?php // Pas de mot de passe : la personne choisit le sien à sa première
+                          // connexion. ?>
                     <p id="form-message" class="form-message" role="status" aria-live="polite"></p>
                 </div>
 

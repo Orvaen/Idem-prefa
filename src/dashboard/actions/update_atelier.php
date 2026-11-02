@@ -6,7 +6,11 @@ prefaPost();
 if (!$isWorkshopPersonnel && !$canManageWorkshop) prefaError(403, 'Action réservée au personnel atelier et au chef d’atelier.');
 $id = filter_var($_POST['affectation'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 $operation = $_POST['operation'] ?? '';
-if (!$id || !in_array($operation, ['progress', 'steps', 'valider', 'cordons'], true)) prefaError(400, 'Action invalide.');
+// Les étapes appartiennent au plan, pas à un travail : qui n'y tient qu'un métier — le
+// débiteur, le passiveur — les enregistre aussi, au titre du plan.
+$planSeul = $operation === 'steps' && !$id
+    ? filter_var($_POST['element'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) : false;
+if ((!$id && !$planSeul) || !in_array($operation, ['progress', 'steps', 'valider', 'cordons'], true)) prefaError(400, 'Action invalide.');
 // Trancher une déclaration engage celui qui le fait : le chiffre devient celui de
 // l’affectation, et son nom reste dessus. La personne affectée déclare, elle ne valide pas.
 if ($operation === 'valider' && !$canManageWorkshop) prefaError(403, 'Seul le chef d’atelier valide un avancement déclaré.');
@@ -16,10 +20,20 @@ $toutesAffectations = $canManageWorkshop;
 $reponse = 'Enregistrement effectué.';
 try {
     $db->beginTransaction();
-    $stmt = $db->prepare('SELECT a.* FROM affectation_atelier a JOIN element_atelier e ON e.id = a.id_element JOIN demande_prefabrication d ON d.id = e.id_demande WHERE a.id = ?' . ($toutesAffectations ? '' : ' AND a.id_utilisateur = ?') . ' AND a.actif = 1 AND d.id_statut = 2 FOR UPDATE');
-    $stmt->execute($toutesAffectations ? [$id] : [$id, $actor['id']]);
-    $assignment = $stmt->fetch();
-    if (!$assignment) { $db->rollBack(); prefaError(404, 'Affectation introuvable ou retirée.'); }
+    if ($planSeul) {
+        // Le plan, sur une demande ouverte au travail, et où l'on est — par un travail ou par
+        // un métier (atelierPlansDeSql()). Les étapes ne lisent que son identifiant.
+        $stmt = $db->prepare('SELECT e.id AS id_element FROM element_atelier e JOIN demande_prefabrication d ON d.id = e.id_demande
+            WHERE e.id = ? AND d.id_statut = 2' . ($toutesAffectations ? '' : ' AND e.id IN ' . atelierPlansDeSql($db)) . ' FOR UPDATE');
+        $stmt->execute($toutesAffectations ? [$planSeul] : [$planSeul, $actor['id'], $actor['id']]);
+        $assignment = $stmt->fetch();
+        if (!$assignment) { $db->rollBack(); prefaError(404, 'Plan introuvable, ou plus à vous.'); }
+    } else {
+        $stmt = $db->prepare('SELECT a.* FROM affectation_atelier a JOIN element_atelier e ON e.id = a.id_element JOIN demande_prefabrication d ON d.id = e.id_demande WHERE a.id = ?' . ($toutesAffectations ? '' : ' AND a.id_utilisateur = ?') . ' AND a.actif = 1 AND d.id_statut = 2 FOR UPDATE');
+        $stmt->execute($toutesAffectations ? [$id] : [$id, $actor['id']]);
+        $assignment = $stmt->fetch();
+        if (!$assignment) { $db->rollBack(); prefaError(404, 'Affectation introuvable ou retirée.'); }
+    }
     $comment = trim((string) ($_POST['commentaire'] ?? ''));
     if (mb_strlen($comment) > 2000) { $db->rollBack(); prefaError(400, 'Commentaire trop long.'); }
 
@@ -92,7 +106,7 @@ try {
         // y est affecté à un autre travail, et ils ne sont partis chez personne. Le chef les
         // valide d'un clic ; le suivi s'ouvre au nom du soudeur — l'affectation reçue est la
         // sienne — et reçoit le chiffre. Voir avancementSuiviSoudage().
-        if (!$canManageWorkshop) { $db->rollBack(); prefaError(403, 'Seul le chef d’atelier valide des cordons.'); }
+        if (!$canManageWorkshop) { $db->rollBack(); prefaError(403, 'Seul le chef d’atelier valide des soudures.'); }
         $elementId = (int) $assignment['id_element'];
         // Ouvert entre l'affichage et le clic : c'est alors son « Valider » à lui qu'il faut,
         // avec sa révision.
@@ -106,13 +120,13 @@ try {
         $poserControles();
         $suivi = avancementSuiviSoudage($db, $elementId, (int) $assignment['id_utilisateur']);
         avancementPoser($db, $suivi['id'], $actor['id'], avancementPourcentage($soudures, $total), $soudures, $total, null);
-        $reponse = 'Cordons validés : ' . $soudures . ' sur ' . $total . '.';
+        $reponse = 'Soudures validées : ' . $soudures . ' sur ' . $total . '.';
     } elseif ($operation === 'progress') {
         // L'atelier ne tape plus de pourcentage : il se calcule sur les étapes et les
         // cordons (avancement.php). Seul le chef garde la main, comme autorité.
         if (!$canManageWorkshop) {
             $db->rollBack();
-            prefaError(403, 'L’avancement se calcule tout seul, sur les étapes et les cordons : il ne se déclare plus à la main.');
+            prefaError(403, 'L’avancement se calcule tout seul, sur les étapes et les soudures : il ne se déclare plus à la main.');
         }
         $revision = filter_var($_POST['revision'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
         if ($revision === false) { $db->rollBack(); prefaError(400, 'Formulaire incomplet. Actualisez avant de réessayer.'); }

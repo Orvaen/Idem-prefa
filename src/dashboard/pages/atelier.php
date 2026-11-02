@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/prefa_context.php';
+require_once __DIR__ . '/../includes/vue/liste.php';
 require_once __DIR__ . '/../includes/demande/prefa_attachments.php';
 require_once __DIR__ . '/../includes/atelier/atelier.php';
 require_once __DIR__ . '/../includes/atelier/avancement.php';
@@ -21,7 +22,7 @@ if (!$isWorkshopPersonnel) prefaError(403, 'Cette page est réservée au personn
 | travaillent — et le volet de chaque travail les répétait.
 */
 
-$types = ['plan' => 'Plan / ISO', 'montage' => 'Montage', 'soudage' => 'Suivi soudage'];
+$types = atelierTravaux();
 
 $stmt = $db->prepare('SELECT a.*, e.reference, e.libelle, e.id_demande, d.nom_affaire, d.urgent
     FROM affectation_atelier a
@@ -46,11 +47,38 @@ foreach ($stmt->fetchAll() as $affectation) {
     $plans[$element]['travaux'][] = $affectation;
 }
 
+// Les métiers de la personne, plan par plan : ils s'ajoutent à ses travaux, et un plan où
+// elle ne tient qu'un métier — débiteur, passiveur — est aussi le sien. Il vient alors sans
+// travail, donc sans avancement à lui.
+$metiersDe = atelierMetiersDe($db, (int) $actor['id']);
+$seulementMetier = array_diff(array_keys($metiersDe), array_keys($plans));
+if ($seulementMetier) {
+    $stmt = $db->prepare('SELECT e.id, e.reference, e.libelle, e.id_demande, d.nom_affaire, d.urgent
+        FROM element_atelier e JOIN demande_prefabrication d ON d.id = e.id_demande
+        WHERE d.id_statut = 2 AND e.id IN (' . implode(',', array_fill(0, count($seulementMetier), '?')) . ')');
+    $stmt->execute(array_values($seulementMetier));
+    foreach ($stmt->fetchAll() as $ligne) {
+        $plans[(int) $ligne['id']] = [
+            'element' => (int) $ligne['id'],
+            'reference' => (string) $ligne['reference'],
+            'libelle' => (string) $ligne['libelle'],
+            'demande' => (int) $ligne['id_demande'],
+            'affaire' => (string) ($ligne['nom_affaire'] ?? ''),
+            'urgent' => !empty($ligne['urgent']),
+            'travaux' => [],
+        ];
+    }
+    // Rangés avec les autres : la demande la plus récente d'abord, puis le nom du plan.
+    uasort($plans, static fn (array $a, array $b): int =>
+        [$b['demande'], $a['reference']] <=> [$a['demande'], $b['reference']]);
+}
+
 // Les travaux d'un plan dans l'ordre où ils se font, et non dans l'ordre alphabétique.
 $ordreTravaux = array_flip(array_keys($types));
 foreach ($plans as &$plan) {
     usort($plan['travaux'], static fn (array $a, array $b): int =>
         ($ordreTravaux[$a['type_affectation']] ?? 9) <=> ($ordreTravaux[$b['type_affectation']] ?? 9));
+    $plan['metiers'] = $metiersDe[$plan['element']] ?? [];
 }
 unset($plan);
 
@@ -95,7 +123,15 @@ $groupes = [
 ];
 foreach ($plans as $plan) {
     $avancements = array_map(static fn (array $t): int => (int) $t['avancement'], $plan['travaux']);
-    $cle = min($avancements) === 100 ? 'termines' : (max($avancements) > 0 ? 'en-cours' : 'a-commencer');
+    if ($avancements) {
+        $cle = min($avancements) === 100 ? 'termines' : (max($avancements) > 0 ? 'en-cours' : 'a-commencer');
+    } else {
+        // Un plan où l'on ne tient qu'un métier n'a pas d'avancement à soi : il se range
+        // selon ses étapes, celles que tout le monde y coche.
+        $compte = avancementEtapes(atelierElementSteps($db, $plan['element'])['statuts']);
+        $cle = $compte['applicables'] && $compte['faites'] >= $compte['applicables'] ? 'termines'
+            : ($compte['faites'] > 0 ? 'en-cours' : 'a-commencer');
+    }
     $groupes[$cle]['plans'][] = $plan;
 }
 $declarationsEnAttente = count($enAttente);
@@ -153,25 +189,7 @@ $anciennes = $stmt->fetchAll();
 
             <?php // Les mêmes outils de vue que les autres listes, au même endroit. ?>
             <div class="prefa-vue-outils">
-                <div class="prefa-densite" role="group" aria-label="Densité du tableau">
-                    <button type="button" class="prefa-densite-choix" data-densite="confortable"
-                            aria-pressed="true" aria-label="Lignes confortables" title="Lignes confortables">
-                        <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true">
-                            <rect x="2" y="3" width="12" height="2.6" rx="1" />
-                            <rect x="2" y="6.7" width="12" height="2.6" rx="1" />
-                            <rect x="2" y="10.4" width="12" height="2.6" rx="1" />
-                        </svg>
-                    </button>
-                    <button type="button" class="prefa-densite-choix" data-densite="compact"
-                            aria-pressed="false" aria-label="Lignes compactes" title="Lignes compactes">
-                        <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true">
-                            <rect x="2" y="2.6" width="12" height="1.6" rx=".8" />
-                            <rect x="2" y="5.6" width="12" height="1.6" rx=".8" />
-                            <rect x="2" y="8.6" width="12" height="1.6" rx=".8" />
-                            <rect x="2" y="11.6" width="12" height="1.6" rx=".8" />
-                        </svg>
-                    </button>
-                </div>
+                <?= listeDensite() ?>
 
                 <button type="button" class="atelier-refresh mes-plans-actualiser">
                     <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
@@ -255,18 +273,22 @@ $anciennes = $stmt->fetchAll();
                         $etapes = atelierElementSteps($db, $element);
                         $compteEtapes = avancementEtapes($etapes['statuts']);
                         // Les étapes s'enregistrent au titre d'une affectation de la personne sur
-                        // ce plan : n'importe laquelle, elles appartiennent au plan.
-                        $affectationEtapes = (int) $plan['travaux'][0]['id'];
+                        // ce plan : n'importe laquelle, elles appartiennent au plan. Sans travail —
+                        // un métier seul —, au titre du plan lui-même (update_atelier.php).
+                        $affectationEtapes = (int) ($plan['travaux'][0]['id'] ?? 0);
                         $idsDuPlan = array_map(static fn (array $t): int => (int) $t['id'], $plan['travaux']);
-                        $lireHistorique = $db->prepare("SELECT h.*, a.type_affectation, TRIM(CONCAT(u.prenom, ' ', u.name)) AS auteur,
-                                TRIM(CONCAT(v.prenom, ' ', v.name)) AS validateur
-                            FROM avancement_atelier h JOIN affectation_atelier a ON a.id = h.id_affectation
-                            JOIN Utilisateur u ON u.id = h.id_utilisateur
-                            LEFT JOIN Utilisateur v ON v.id = h.valide_par
-                            WHERE h.id_affectation IN (" . implode(',', array_fill(0, count($idsDuPlan), '?')) . ")
-                            ORDER BY h.date_saisie DESC, h.id DESC");
-                        $lireHistorique->execute($idsDuPlan);
-                        $historiqueAvancement = $lireHistorique->fetchAll();
+                        $historiqueAvancement = [];
+                        if ($idsDuPlan) {
+                            $lireHistorique = $db->prepare("SELECT h.*, a.type_affectation, TRIM(CONCAT(u.prenom, ' ', u.name)) AS auteur,
+                                    TRIM(CONCAT(v.prenom, ' ', v.name)) AS validateur
+                                FROM avancement_atelier h JOIN affectation_atelier a ON a.id = h.id_affectation
+                                JOIN Utilisateur u ON u.id = h.id_utilisateur
+                                LEFT JOIN Utilisateur v ON v.id = h.valide_par
+                                WHERE h.id_affectation IN (" . implode(',', array_fill(0, count($idsDuPlan), '?')) . ")
+                                ORDER BY h.date_saisie DESC, h.id DESC");
+                            $lireHistorique->execute($idsDuPlan);
+                            $historiqueAvancement = $lireHistorique->fetchAll();
+                        }
                         $lireEtapes = $db->prepare("SELECT h.*, TRIM(CONCAT(u.prenom, ' ', u.name)) AS auteur
                             FROM element_atelier_etapes_historique h JOIN Utilisateur u ON u.id = h.modifie_par
                             WHERE h.id_element = ? ORDER BY h.revision DESC");
@@ -294,6 +316,11 @@ $anciennes = $stmt->fetchAll();
                                             $attente = $enAttente[(int) $travail['id']] ?? null; ?>
                                             <span class="atelier-work-status is-<?= $etat ?>"<?= $attente ? ' title="' . prefaEscape('En attente du chef d’atelier : ' . avancementPhrase($attente)) . '"' : '' ?>><?= prefaEscape($types[$travail['type_affectation']]) ?> · <?= (int) $travail['avancement'] ?> %</span>
                                         <?php endforeach; ?>
+                                        <?php // Ses métiers sur ce plan, à la suite : un nom, sans chiffre — un
+                                              // métier ne porte pas d'avancement. ?>
+                                        <?php foreach ($plan['metiers'] as $cleMetier): ?>
+                                            <span class="mes-plans-metier"><?= prefaEscape(atelierMetiers()[$cleMetier]) ?></span>
+                                        <?php endforeach; ?>
                                     </span>
                                 </td>
                                 <td class="prefa-nombre"><?= $feuilles ?: '<span class="mes-plans-aucun">—</span>' ?></td>
@@ -319,6 +346,15 @@ $anciennes = $stmt->fetchAll();
                                         <section class="pv-volet-section mes-plans-section">
                                             <h3 class="pv-volet-titre mes-plans-titre">Mes travaux</h3>
                                             <dl class="pv-proprietes mes-plans-proprietes">
+                                                <?php // Ses métiers d'abord : ce qu'on fait sur le plan, avant ce qui
+                                                      // s'y mesure. ?>
+                                                <?php if ($plan['metiers']): ?>
+                                                    <div>
+                                                        <dt><?= $iconesTravail['montage'] ?>Métiers</dt>
+                                                        <dd><span><?= prefaEscape(implode(' · ', array_map(
+                                                            static fn (string $cle): string => atelierMetiers()[$cle], $plan['metiers']))) ?></span></dd>
+                                                    </div>
+                                                <?php endif; ?>
                                                 <?php foreach ($plan['travaux'] as $travail):
                                                     $pct = (int) $travail['avancement'];
                                                     [$etat, $etatLibelle] = $etatTravail($pct);
@@ -327,7 +363,7 @@ $anciennes = $stmt->fetchAll();
                                                     <div>
                                                         <dt><?= $iconesTravail[$travail['type_affectation']] ?? '' ?><?= prefaEscape($libelle) ?></dt>
                                                         <dd>
-                                                            <span class="mes-plans-source"><?= avancementSource((string) $travail['type_affectation'], $soudureTotal) === 'cordons' ? 'selon les cordons' : 'selon les étapes' ?></span>
+                                                            <span class="mes-plans-source"><?= avancementSource((string) $travail['type_affectation'], $soudureTotal) === 'cordons' ? 'selon les soudures' : 'selon les étapes' ?></span>
                                                             <span class="atelier-work-status is-<?= $etat ?>"><?= $etatLibelle ?> · <?= $pct ?> %</span>
                                                         </dd>
                                                         <?php // Le nouveau chiffre, que le chef n'a pas encore tranché : la bande
@@ -339,7 +375,7 @@ $anciennes = $stmt->fetchAll();
                                                 <?php endforeach; ?>
                                                 <?php if ($soudureTotal): ?>
                                                     <div>
-                                                        <dt><?= $iconesTravail['cordons'] ?>Cordons</dt>
+                                                        <dt><?= $iconesTravail['cordons'] ?>Soudures</dt>
                                                         <dd>
                                                             <span><strong><?= $soudureFaites ?></strong><span class="mes-plans-sur"> sur <?= $soudureTotal ?> · soit <?= avancementPourcentage($soudureFaites, $soudureTotal) ?> %</span></span>
                                                             <button type="button" class="mes-plans-commande-ligne atelier-vers-soudures">Renseigner mes soudures</button>
@@ -363,7 +399,11 @@ $anciennes = $stmt->fetchAll();
                                             <p class="mes-plans-aide">Elles font l’avancement : OK compte, RAS ne compte pas. Partagées avec ceux qui travaillent sur ce plan.</p>
                                             <form class="atelier-action mes-plans-etapes" data-endpoint="update_atelier.php">
                                                 <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
-                                                <input type="hidden" name="affectation" value="<?= $affectationEtapes ?>">
+                                                <?php if ($affectationEtapes): ?>
+                                                    <input type="hidden" name="affectation" value="<?= $affectationEtapes ?>">
+                                                <?php else: ?>
+                                                    <input type="hidden" name="element" value="<?= $element ?>">
+                                                <?php endif; ?>
                                                 <input type="hidden" name="operation" value="steps">
                                                 <input type="hidden" name="etapes_revision" value="<?= $etapes['revision'] ?>">
                                                 <dl class="pv-proprietes mes-plans-proprietes">

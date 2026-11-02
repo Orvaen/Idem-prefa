@@ -54,8 +54,9 @@ if ($estValidee && $canManageWorkshop) {
     require_once __DIR__ . '/../includes/atelier/avancement.php';
     require_once __DIR__ . '/../includes/atelier/atelier.php';
     require_once __DIR__ . '/../includes/atelier/soudure.php';
+    require_once __DIR__ . '/../includes/atelier/decision.php';
     $attente =$db->prepare("SELECT h.*, a.id AS id_affectation, a.type_affectation, a.id_element,
-            a.id_utilisateur AS id_titulaire, e.reference,
+            a.id_utilisateur AS id_titulaire, a.avancement AS avancement_valide, e.reference,
             TRIM(CONCAT(u.prenom, ' ', u.name)) AS auteur
         FROM avancement_atelier h
         JOIN affectation_atelier a ON a.id = h.id_affectation
@@ -174,29 +175,28 @@ $decisionComment = trim((string) ($row['commentaire_validation'] ?? ''));
     <?php // Au-dessus des chiffres : c'est ce qui attend quelqu'un, et le reste de la fiche
           // ne fait que raconter. Les travaux d'un même plan se suivent, un bloc chacun. ?>
     <section class="fiche-a-valider" aria-label="Avancements déclarés par l’atelier">
-        <?php foreach ($avancementsAValider as $declaration): ?>
-            <div class="atelier-declaration">
-                <p class="atelier-declaration-titre">Avancement déclaré, à valider</p>
-                <p class="atelier-declaration-chiffre"><?= prefaEscape(avancementPhrase($declaration)) ?></p>
-                <p class="atelier-muted">
-                    <?= prefaEscape($declaration['reference']) ?> ·
-                    <?= prefaEscape($declaration['auteur']) ?> ·
-                    <?= prefaEscape(atelierLocalDateTime($declaration['date_saisie'])) ?>
-                </p>
-                <?php if ($declaration['commentaire']): ?><p class="atelier-note"><?= prefaEscape($declaration['commentaire']) ?></p><?php endif; ?>
-                <form class="atelier-action atelier-declaration-actions" data-endpoint="update_atelier.php">
-                    <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
-                    <input type="hidden" name="id" value="<?= $requestId ?>">
-                    <input type="hidden" name="operation" value="valider">
-                    <input type="hidden" name="affectation" value="<?= (int) $declaration['id_affectation'] ?>">
-                    <input type="hidden" name="declaration" value="<?= (int) $declaration['id'] ?>">
-                    <?= soudureControlesRendu(avancementCordonsAValider($db, (int) $declaration['id_element'], (int) $declaration['id_titulaire']), signatureAnnonceVisa($db, $utilisateur)) ?>
-                    <button type="submit" name="decision" value="valider" title="L’avancement du plan prendra ce chiffre.">Valider</button>
-                    <button type="submit" name="decision" value="refuser" class="bouton-discret" title="L’avancement ne change pas ; la personne affectée pourra déclarer autre chose.">Refuser</button>
-                    <span class="atelier-message" role="status" aria-live="polite"></span>
-                </form>
-            </div>
-        <?php endforeach; ?>
+        <?php foreach ($avancementsAValider as $declaration) {
+            // La fiche couvre tous les plans de la demande : le bloc dit duquel il parle,
+            // et de quel travail.
+            echo avancementDecisionRendu([
+                'titre' => 'Avancement déclaré',
+                'avancement' => (int) $declaration['avancement'],
+                'valide' => (int) $declaration['avancement_valide'],
+                'compte' => avancementCompte($declaration),
+                'contexte' => implode(' · ', array_filter([$declaration['reference'], atelierTravaux()[$declaration['type_affectation']] ?? null])),
+                'qui' => $declaration['auteur'],
+                'quand' => $declaration['date_saisie'],
+                'commentaire' => $declaration['commentaire'],
+            ], avancementDecisionFormulaire([
+                'champs' => ['id' => $requestId, 'operation' => 'valider',
+                    'affectation' => (int) $declaration['id_affectation'], 'declaration' => (int) $declaration['id']],
+                'cordons' => avancementCordonsAValider($db, (int) $declaration['id_element'], (int) $declaration['id_titulaire']),
+                'visa' => signatureAnnonceVisa($db, $utilisateur),
+                'valider' => 'Valider',
+                'valider_aide' => 'L’avancement du plan prendra ce chiffre.',
+                'refuser' => true,
+            ]));
+        } ?>
     </section>
 <?php endif; ?>
 

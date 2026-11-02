@@ -227,17 +227,23 @@
 
     const COCHE = '<svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>';
 
+    // Le même menu sert aux travaux et aux métiers. Un travail revient à une seule personne :
+    // choisir un nom la remplace. Un métier peut en avoir plusieurs : chaque nom se coche ou
+    // se décoche, et c'est cette personne-là qui le prend ou le rend.
     function ouvrirMenuAffectation(bouton) {
         const panneau = document.getElementById(bouton.dataset.form);
         const form = panneau?.querySelector('form');
         if (!form) return;
-        const actuel = bouton.dataset.user || '';
+        const multiple = 'metier' in bouton.dataset;
+        const actuel = multiple ? '' : (bouton.dataset.user || '');
+        const tenants = multiple ? (bouton.dataset.users || '').split(',').filter(Boolean) : [actuel];
         const personnes = Array.from(form.elements.utilisateur.options).filter(option => option.value);
 
         const menu = document.createElement('div');
         menu.className = 'atelier-affecter-menu';
         menu.setAttribute('role', 'menu');
-        menu.setAttribute('aria-label', (actuel ? 'Changer la personne : ' : 'Affecter : ') + bouton.dataset.label);
+        menu.setAttribute('aria-label', multiple ? 'Métier : ' + bouton.dataset.label
+            : (actuel ? 'Changer la personne : ' : 'Affecter : ') + bouton.dataset.label);
 
         if (!personnes.length) {
             menu.innerHTML = '<p class="atelier-affecter-vide">Aucun membre du personnel atelier.</p>';
@@ -268,13 +274,14 @@
         aucun.hidden = true;
 
         personnes.forEach(option => {
+            const tient = tenants.includes(option.value);
             const choix = document.createElement('button');
             choix.type = 'button';
             choix.className = 'atelier-affecter-choix';
-            choix.setAttribute('role', 'menuitemradio');
-            choix.setAttribute('aria-checked', String(option.value === actuel));
+            choix.setAttribute('role', multiple ? 'menuitemcheckbox' : 'menuitemradio');
+            choix.setAttribute('aria-checked', String(tient));
             choix.dataset.user = option.value;
-            choix.innerHTML = '<span class="atelier-affecter-coche">' + (option.value === actuel ? COCHE : '') + '</span>';
+            choix.innerHTML = '<span class="atelier-affecter-coche">' + (tient ? COCHE : '') + '</span>';
             choix.append(option.textContent);
             choix.dataset.cherche = sansAccents(option.textContent);
             liste.append(choix);
@@ -313,7 +320,7 @@
         menu.style.top = (bouton.offsetTop + bouton.offsetHeight + 4) + 'px';
         menu.style.left = bouton.offsetLeft + 'px';
 
-        menuOuvert = { menu, bouton, form, actuel };
+        menuOuvert = { menu, bouton, form, actuel, multiple, tenants };
         bouton.setAttribute('aria-expanded', 'true');
         document.addEventListener('pointerdown', surClicHorsDuMenu, true);
         (recherche || menu.querySelector('button'))?.focus();
@@ -325,9 +332,18 @@
 
     function envoyerAffectation(utilisateur) {
         if (!menuOuvert) return;
-        const { menu, bouton, form, actuel } = menuOuvert;
-        if (utilisateur === actuel) { fermerMenuAffectation(true); return; }
-        form.elements.type.value = bouton.dataset.type;
+        const { menu, bouton, form, actuel, multiple, tenants } = menuOuvert;
+        if (multiple) {
+            // Coché, la personne rend le métier ; décoché, elle le prend.
+            form.elements.operation.value = 'metier';
+            form.elements.metier.value = bouton.dataset.metier;
+            form.elements.retenir.value = tenants.includes(utilisateur) ? '' : '1';
+        } else {
+            if (utilisateur === actuel) { fermerMenuAffectation(true); return; }
+            // Un envoi de métier raté a pu laisser son opération dans le formulaire.
+            form.elements.operation.value = 'assign';
+            form.elements.type.value = bouton.dataset.type;
+        }
         form.elements.utilisateur.value = utilisateur || actuel;
         menu.querySelectorAll('button, input').forEach(b => { b.disabled = true; });
         const mot = menu.querySelector('.atelier-affecter-mot');
@@ -390,7 +406,7 @@
         }
     }, true);
 
-    // Les contrôles d'une validation. La case « Tous les cordons » d'une colonne la coche ou
+    // Les contrôles d'une validation. La case « Toutes les soudures » d'une colonne la coche ou
     // la décoche entière ; elle se recoche d'elle-même quand chaque cordon l'est, et se
     // décoche dès qu'un seul ne l'est plus. Elle n'a pas de nom : elle ne part pas avec le
     // formulaire, seules les cases des cordons comptent.

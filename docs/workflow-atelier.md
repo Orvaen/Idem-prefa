@@ -30,7 +30,7 @@ Les demandeurs continuent de consulter leurs demandes et l’administrateur cons
 
 Les mises à jour d’avancement référencent l’affectation et enregistrent leur auteur et leur date dans `avancement_atelier`. L’atelier ne saisit pas de pourcentage : il se calcule (`includes/atelier/avancement.php`).
 
-- Le suivi soudage d’un plan qui porte une liste de soudures se mesure aux cordons : renseignés sur prévus. Enregistrer ses cordons dans « Mes soudures » déclare le chiffre.
+- Le suivi soudage d’un plan qui porte une liste de soudures se mesure aux soudures : renseignées sur prévues. Enregistrer ses soudures dans « Mes soudures » déclare le chiffre.
 - Tous les autres travaux — montage, plan / ISO, et le suivi soudage d’un plan sans liste — se mesurent aux étapes du plan : celles qui sont « OK » sur celles qui s’appliquent. Une étape « RAS » ne s’applique pas et sort du total ; « Non OK » et une étape vide restent à faire. Enregistrer les étapes déclare le chiffre pour chaque travail du plan qui s’y mesure.
 
 Le chiffre calculé part en déclaration, que le chef d’atelier valide ou refuse ; il est posé d’office quand c’est le chef qui a changé les étapes. Une déclaration retient le compte qui l’a produite — « 4 étapes sur 6 », « 7 soudures sur 12 » — figé au jour où elle est faite. Le chef garde la main sur un pourcentage direct, comme autorité. Le suivi soudage possède sa propre affectation, son avancement et son compte rendu.
@@ -48,7 +48,7 @@ La mise en service couvre la migration, l’UI du chef, la liste du personnel et
 Deux essais couvrent ce modèle :
 
 - `tests/atelier_plans.php` — la création et la modification d’un élément, l’unicité de sa référence dans la demande, les suppressions en cascade ;
-- `tests/avancement_etapes.php` — le calcul de l’avancement par étapes et par cordons, la déclaration et sa validation par le chef.
+- `tests/avancement_etapes.php` — le calcul de l’avancement par étapes et par soudures, la déclaration et sa validation par le chef.
 
 Les points ci-dessous ne sont **pas** couverts par un essai automatique, et se vérifient à la main avec les comptes d’essai (`run demo`) :
 

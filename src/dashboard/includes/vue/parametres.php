@@ -19,6 +19,7 @@ require_once __DIR__ . '/../materiel/unites.php';
 require_once __DIR__ . '/../atelier/signature.php';
 require_once __DIR__ . '/passivation_row.php';
 require_once __DIR__ . '/user_display.php';
+require_once __DIR__ . '/mot_de_passe.php';
 
 /**
  * prefaEscape() et la ligne de passivation vivent avec le contexte des pages. Il ne peut pas
@@ -194,12 +195,12 @@ function parametresRendu(PDO $db, Utilisateur $utilisateur): void
                               // qu'on valide (includes/atelier/signature.php). Le bloc la montre
                               // comme au bas d'un document ; le cadre où l'on signe a sa forme et
                               // prend sa place (parametres.js). ?>
-                        <section class="parametres-section signature-section" data-cherche="signature visa cordon valider plan" data-csrf="<?= $jeton ?>">
+                        <section class="parametres-section signature-section" data-cherche="signature visa soudure cordon valider plan" data-csrf="<?= $jeton ?>">
                             <h4>Signature</h4>
                             <?php if (!$signaturesPretes): ?>
                                 <p class="parametres-section-aide">Les signatures arrivent avec la migration <code>2026-10-29_signatures</code>, pas encore passée sur ce serveur : vos visas portent votre nom.</p>
                             <?php else: ?>
-                                <p class="parametres-section-aide">Elle vise les cordons que vous validez.</p>
+                                <p class="parametres-section-aide">Elle vise les soudures que vous validez.</p>
                                 <div class="parametre signature-zone" data-cherche="tracer refaire supprimer">
                                     <div id="signature-actuelle"><?= signatureParametreRendu($signature, $utilisateur->nomComplet()) ?></div>
                                     <div class="signature-pave" hidden>
@@ -221,6 +222,15 @@ function parametresRendu(PDO $db, Utilisateur $utilisateur): void
                                     <p class="prefa-message signature-message" role="status" aria-live="polite"></p>
                                 </div>
                             <?php endif; ?>
+                        </section>
+
+                        <?php // Il ne se change pas d'ici : on le demande, le chargé de production
+                              // réinitialise, et l'on choisit le nouveau en se reconnectant
+                              // (includes/vue/mot_de_passe.php). ?>
+                        <section class="parametres-section mot-de-passe-section" data-cherche="mot de passe changer modifier réinitialiser sécurité" data-csrf="<?= $jeton ?>">
+                            <h4>Mot de passe</h4>
+                            <?= motDePasseParametre(motDePasseEtat($db, $utilisateur->id), $administre) ?>
+                            <p class="prefa-message mot-de-passe-message" role="status" aria-live="polite"></p>
                         </section>
 
                         <section class="parametres-section">

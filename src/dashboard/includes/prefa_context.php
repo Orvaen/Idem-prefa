@@ -30,9 +30,14 @@ $db = new MyPDO(__DIR__ . '/../../my_setting.ini');
 
 /** La personne connectée. C'est elle qu'on interroge pour tout droit. */
 $utilisateur = Session::utilisateur($db);
-// Session vide, ou compte supprimé depuis la connexion : dans les deux cas il faut
-// repasser par l'écran d'ouverture.
-if (!$utilisateur) prefaError(401, 'Veuillez vous reconnecter.');
+// Session vide, expirée (Session::DUREE) ou compte supprimé depuis la connexion : dans tous
+// les cas il faut repasser par l'écran d'ouverture. L'en-tête le dit au tableau de bord, qui
+// y renvoie la page entière (js/coquille/connexion.js) — un 401 seul ne se distingue pas
+// d'un mot de passe refusé à l'ajout d'un compte.
+if (!$utilisateur) {
+    header('X-Connexion: fermee');
+    prefaError(401, 'Votre connexion a pris fin : reconnectez-vous.');
+}
 
 // Le jeton est posé dès maintenant : les formulaires l'écrivent dans leur balisage, et
 // certains sont rendus avant qu'une action ne l'ait demandé.

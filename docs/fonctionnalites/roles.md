@@ -16,6 +16,10 @@ fréquente. Le code, lui, parle toujours par l'énumération `Role` (`src/modele
 
 Il n'y a pas de rôle 4 : il a été supprimé par la migration `2026-10-07_roles`.
 
+Le personnel d'atelier n'a pas de sous-rôle sur son compte. Ses **métiers** — débiteur,
+assembleur, pointeur, soudeur, passiveur — se donnent **plan par plan**, plusieurs à la même
+personne s'il le faut : voir [Les métiers](/fonctionnalites/atelier#les-metiers).
+
 ## Ce que chacun voit dans la barre latérale
 
 | Rôle | Accueil | Affaires & demandes | Atelier | Administration |
@@ -76,8 +80,8 @@ liste, la fiche, les fichiers, l'accueil, l'API et le flux en temps réel :
 | Personnel atelier | Aucune par cette règle : elle ne lui ouvre que les demandes validées **qu'il a déposées**, et il n'en dépose pas |
 
 Le personnel d'atelier n'entre donc pas par les demandes : **ses plans lui arrivent par ses
-affectations** (« Mes plans », « Mes soudures »), qui ne lui ouvrent que les documents rattachés
-à ces plans — pas le reste de la demande. Son journal « Aujourd'hui », sur l'accueil, reste vide
+affectations et ses métiers** (« Mes plans », « Mes soudures »), qui ne lui ouvrent que les
+documents rattachés à ces plans — pas le reste de la demande. Son journal « Aujourd'hui », sur l'accueil, reste vide
 pour la même raison.
 
 Une demande qu'on n'a pas le droit de voir répond « introuvable », et non « interdit » : un

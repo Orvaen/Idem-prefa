@@ -383,8 +383,9 @@
 }
 
 /* « Télécharger le PDF » est un lien : il prend la forme de ses voisins, sans soulignement
-   ni couleur de lien visité. */
+   ni couleur de lien visité. « Imprimer » le remplace chez le soudeur (soudures.js). */
 .plan-dialog-telecharger,
+.plan-dialog-imprimer,
 .plan-dialog-liste-ouvrir,
 .plan-dialog-sommaire-ouvrir {
     display: inline-flex;
@@ -401,9 +402,21 @@
 }
 
 .plan-dialog-telecharger:hover,
+.plan-dialog-imprimer:hover,
 .plan-dialog-liste-ouvrir:hover,
 .plan-dialog-sommaire-ouvrir:hover {
     background: var(--hover);
+}
+
+/* Le cadre d'où part l'impression d'une feuille : là, mais sans place ni bord. Caché par
+   « hidden », il imprimerait une page blanche dans certains navigateurs. */
+.plan-impression {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    width: 0;
+    height: 0;
+    border: 0;
 }
 
 .plan-dialog-telecharger {
@@ -676,6 +689,12 @@
     display: block;
     width: 100%;
     height: auto;
+}
+
+/* Le temps que la page demandée arrive, rien de l'ancienne ne se montre — ni son dessin, ni
+   ce qui y était posé (plan-viewer.js, à l'ouverture) : la feuille reste blanche. */
+.plan-viewer-scene.est-en-attente > * {
+    visibility: hidden;
 }
 
 /* Le plan s'attrape : la main ouverte le dit avant qu'on essaie, la main fermée pendant

@@ -275,11 +275,11 @@ function signatureAnnonceVisa(PDO $db, Utilisateur $utilisateur): string
 {
     static $annonces = [];
     if (isset($annonces[$utilisateur->id])) return $annonces[$utilisateur->id];
-    if (signatureEnCours($db, $utilisateur->id)) return $annonces[$utilisateur->id] = 'les vise de votre signature';
-    return $annonces[$utilisateur->id] = 'les vise à votre nom, ' . prefaEscape($utilisateur->nomComplet())
+    if (signatureEnCours($db, $utilisateur->id)) return $annonces[$utilisateur->id] = 'Valider les vise de votre signature.';
+    return $annonces[$utilisateur->id] = 'Valider les vise à votre nom, ' . prefaEscape($utilisateur->nomComplet())
         . (signaturesEnBase($db)
-            ? ' — <button type="button" class="soudure-controles-lien" data-ouvre-parametres="compte">tracer votre signature</button>'
-            : '');
+            ? ' · <button type="button" class="soudure-controles-lien" data-ouvre-parametres="compte">Tracer ma signature</button>'
+            : '.');
 }
 
 /**

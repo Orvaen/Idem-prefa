@@ -98,6 +98,11 @@ $pvAFaire = ($isAdmin || $isWorkshopChief) ? pvAFaireTotal($db) : 0;
 // Les manques de matériel signalés par l'atelier et que personne n'a encore regardés.
 require_once __DIR__ . '/includes/materiel/manques.php';
 $manquesNouveaux = ($isAdmin || $isWorkshopChief) ? manquesNouveauxCompte($db) : 0;
+
+// Les nouveaux mots de passe demandés — oubliés, ou à changer — que l'administrateur n'a pas
+// encore réinitialisés.
+require_once __DIR__ . '/../api/User.php';
+$reinitialisationsEnAttente = $isAdmin ? User::reinitialisationsEnAttente($db) : 0;
 ?>
 
 <!DOCTYPE html>
@@ -121,7 +126,9 @@ $manquesNouveaux = ($isAdmin || $isWorkshopChief) ? manquesNouveauxCompte($db) :
     <script src="../js/composants/floating-fields.js?v=<?= filemtime(__DIR__ . '/../js/composants/floating-fields.js') ?>" defer></script>
 </head>
 
-<body>
+<?php // Les secondes qui restent à la connexion : à l'heure dite, la page repart vers l'écran
+      // de connexion (js/coquille/connexion.js). ?>
+<body data-reste-connexion="<?= Session::reste() ?>">
     <div id="contenaire">
         <!-- La barre du haut, posée sur le cadre et non dans la vue : elle tient toute la
              largeur de l'écran, au-dessus de la carte de travail. C'est la forme des outils
@@ -278,7 +285,7 @@ $manquesNouveaux = ($isAdmin || $isWorkshopChief) ? manquesNouveauxCompte($db) :
                                     <button id="btn-<?= $entree['id'] ?>" class="nav-btn<?= $entree['id'] === $vue['id'] ? ' is-active' : '' ?>" type="button" data-page="<?= htmlspecialchars($entree['page'], ENT_QUOTES, 'UTF-8') ?>" <?= $entree['id'] === $vue['id'] ? ' aria-current="page"' : '' ?>>
                                         <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><?= $entree['icone'] ?></svg>
                                         <span><?= htmlspecialchars($libelle, ENT_QUOTES, 'UTF-8') ?></span>
-                                        <?= dashboardBadge($entree['id'], $utilisateur, $urgentPending, $pvAFaire, $manquesNouveaux) ?>
+                                        <?= dashboardBadge($entree['id'], $utilisateur, $urgentPending, $pvAFaire, $manquesNouveaux, $reinitialisationsEnAttente) ?>
                                     </button>
                                 <?php endforeach; ?>
                             </div>

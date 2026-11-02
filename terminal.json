@@ -87,6 +87,11 @@
       "description": "Applique une migration : run migration -- scripts/migrations/2026-10-07_prefa_references.php (le fichier du disque, pas celui de l'image)"
     },
 
+    "lire-plans": {
+      "run": "docker.exe compose exec -T -u www-data php php /var/www/html/dashboard/outils/lire_feuilles.php --tous",
+      "description": "Lit tout ce qui manque aux plans déposés (liste soudure, repères, nomenclature, images) — après une mise à jour qui change une lecture. Ne refait rien de ce qui est à jour"
+    },
+
     "test": {
       "run": [
         "docker.exe compose exec -T php php /tests/roles.php",
@@ -98,6 +103,12 @@
         "docker.exe compose exec -T php php /tests/avancement_etapes.php",
         "docker.exe compose exec -T php php /tests/affaires.php",
         "docker.exe compose exec -T php php /tests/commande_materiel.php",
+        "docker.exe compose exec -T php php /tests/plan_reperes.php",
+        "docker.exe compose exec -T php php /tests/plan_nomenclature.php",
+        "docker.exe compose exec -T php php /tests/plan_resume.php",
+        "docker.exe compose exec -T php php /tests/session.php",
+        "docker.exe compose exec -T php php /tests/metiers.php",
+        "docker.exe compose exec -T php php /tests/mots_de_passe.php",
         "run pages"
       ],
       "description": "Tous les essais, et il s'arrête au premier rouge. Ils lisent la base : run demo d'abord"
@@ -110,9 +121,10 @@
         "docker.exe compose exec -T php php /tests/prefa_pages.php planning",
         "docker.exe compose exec -T php php /tests/prefa_pages.php create_prefa",
         "docker.exe compose exec -T php php /tests/prefa_pages.php atelier",
-        "docker.exe compose exec -T php php /tests/prefa_pages.php soudures"
+        "docker.exe compose exec -T php php /tests/prefa_pages.php soudures",
+        "docker.exe compose exec -T php php /tests/prefa_pages.php suivi_soudures"
       ],
-      "description": "Dessine les six écrans et vérifie qu'aucun ne part en erreur"
+      "description": "Dessine les sept écrans et vérifie qu'aucun ne part en erreur"
     },
 
     "dev": {

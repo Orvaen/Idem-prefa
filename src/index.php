@@ -8,6 +8,7 @@
 
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/modeles/autoload.php';
+require_once __DIR__ . '/api/User.php';
 
 Session::demarrer();
 
@@ -29,6 +30,10 @@ if (Session::connectee()) {
     header('Location: dashboard/dashboard.php');
     exit;
 }
+
+// Revenu ici parce que les deux heures de la connexion sont passées (Session::DUREE) : on le
+// dit, plutôt que de laisser croire à une déconnexion sans raison.
+$expiree = Session::vientDExpirer();
 
 ?>
 
@@ -66,9 +71,12 @@ if (Session::connectee()) {
 
         <div class="connexion-corps">
             <p class="connexion-surtitre">Atelier de préfabrication</p>
-            <h1>Connexion</h1>
+            <h1 id="connexion-titre">Connexion</h1>
 
-            <form id="login-form" method="post">
+            <?php // Le mot de passe n'est pas exigé ici : à la première connexion — ou après
+                  // une réinitialisation —, l'identifiant suffit, et le serveur répond qu'il
+                  // faut en choisir un (auth/action.php). ?>
+            <form id="login-form" class="connexion-formulaire" method="post">
                 <label for="login">Identifiant</label>
                 <input
                     name="login"
@@ -82,12 +90,49 @@ if (Session::connectee()) {
                     name="password"
                     id="password"
                     type="password"
-                    required
                     autocomplete="current-password">
 
-                <p id="form-message" role="status" aria-live="polite"></p>
+                <p id="form-message" class="connexion-message<?= $expiree ? ' est-info' : '' ?>" role="status" aria-live="polite"><?= $expiree
+                    ? 'Votre connexion a pris fin au bout de ' . intdiv(Session::DUREE, 3600) . ' h : reconnectez-vous.' : '' ?></p>
 
                 <button type="submit">Se connecter</button>
+                <button type="button" class="connexion-lien" data-etape="oubli">Mot de passe oublié ?</button>
+            </form>
+
+            <?php // Première connexion, ou après une réinitialisation : la personne choisit son
+                  // mot de passe, deux fois, et entre. ?>
+            <form id="creation-form" class="connexion-formulaire" method="post" hidden>
+                <input type="hidden" name="csrf" value="<?= htmlspecialchars(Session::jeton(), ENT_QUOTES, 'UTF-8') ?>">
+                <input type="hidden" name="login">
+                <p class="connexion-explication"><strong data-creation-compte></strong> : choisissez votre mot de passe, d’au moins <?= User::MOT_DE_PASSE_MINI ?> caractères.</p>
+
+                <label for="creation-password">Nouveau mot de passe</label>
+                <input name="password" id="creation-password" type="password" required
+                       minlength="<?= User::MOT_DE_PASSE_MINI ?>" maxlength="72" autocomplete="new-password">
+
+                <label for="creation-confirmation">Le même, encore une fois</label>
+                <input name="confirmation" id="creation-confirmation" type="password" required
+                       minlength="<?= User::MOT_DE_PASSE_MINI ?>" maxlength="72" autocomplete="new-password">
+
+                <p class="connexion-message" role="status" aria-live="polite"></p>
+
+                <button type="submit">Enregistrer et entrer</button>
+                <button type="button" class="connexion-lien" data-etape="connexion">Retour à la connexion</button>
+            </form>
+
+            <?php // Un oubli se signale à l'administrateur, qui réinitialise ; on choisit alors
+                  // un nouveau mot de passe en se connectant. ?>
+            <form id="oubli-form" class="connexion-formulaire" method="post" hidden>
+                <input type="hidden" name="csrf" value="<?= htmlspecialchars(Session::jeton(), ENT_QUOTES, 'UTF-8') ?>">
+                <p class="connexion-explication">L’administrateur réinitialise votre mot de passe ; vous en choisirez un nouveau à votre prochaine connexion.</p>
+
+                <label for="oubli-login">Identifiant</label>
+                <input name="login" id="oubli-login" type="text" required autocomplete="username">
+
+                <p class="connexion-message" role="status" aria-live="polite"></p>
+
+                <button type="submit">Prévenir l’administrateur</button>
+                <button type="button" class="connexion-lien" data-etape="connexion">Retour à la connexion</button>
             </form>
         </div>
 

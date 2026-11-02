@@ -13,7 +13,7 @@ $operation = $_POST['operation'] ?? '';
 // travaillent. L'opération reste refusée explicitement, le temps que les pages ouvertes
 // avant la mise à jour se rechargent.
 if ($operation === 'take') prefaError(410, 'Une demande validée est désormais ouverte à l’atelier sans prise en charge. Rechargez la page.');
-if (!$requestId || !in_array($operation, ['element', 'update_element', 'delete_element', 'documents', 'assign', 'revoke'], true)) prefaError(400, 'Action atelier invalide.');
+if (!$requestId || !in_array($operation, ['element', 'update_element', 'delete_element', 'documents', 'assign', 'revoke', 'metier'], true)) prefaError(400, 'Action atelier invalide.');
 try {
     $db->beginTransaction();
     $stmt = $db->prepare('SELECT * FROM demande_prefabrication WHERE id = ? AND id_statut = 2 FOR UPDATE');
@@ -101,6 +101,28 @@ try {
         $ajouter = $db->prepare('INSERT INTO element_atelier_document (id_element, type_document, cle_document) VALUES (?, ?, ?)');
         foreach ($souhaites as $token => [$kind, $key]) {
             if (!isset($gardes[$token])) $ajouter->execute([$elementId, $kind, $key]);
+        }
+    } elseif ($operation === 'metier') {
+        // Un métier sur un plan : on le donne à quelqu'un de l'atelier, ou on le lui retire.
+        // Plusieurs personnes peuvent tenir le même, une personne plusieurs ; il n'y a donc
+        // personne à remplacer, seulement une ligne à poser ou à ôter.
+        $elementId = filter_var($_POST['element'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        $metier = (string) ($_POST['metier'] ?? '');
+        $stmt = $db->prepare('SELECT id FROM element_atelier WHERE id = ? AND id_demande = ?');
+        $stmt->execute([$elementId ?: 0, $requestId]);
+        if (!$stmt->fetchColumn() || !isset(atelierMetiers()[$metier])) { $db->rollBack(); prefaError(400, 'Plan ou métier invalide.'); }
+        if (!metiersEnBase($db)) {
+            $db->rollBack();
+            prefaError(409, 'Les métiers arrivent avec la migration 2026-11-02_metiers, pas encore passée sur ce serveur.');
+        }
+        $personnelId = prefaWorkshopPersonnelId($db, $_POST['utilisateur'] ?? '');
+        if (!$personnelId) { $db->rollBack(); prefaError(400, 'Sélectionnez un utilisateur atelier.'); }
+        if (!empty($_POST['retenir'])) {
+            $db->prepare('INSERT IGNORE INTO affectation_metier (id_element, id_utilisateur, metier, affecte_par) VALUES (?, ?, ?, ?)')
+                ->execute([$elementId, $personnelId, $metier, $actor['id']]);
+        } else {
+            $db->prepare('DELETE FROM affectation_metier WHERE id_element = ? AND id_utilisateur = ? AND metier = ?')
+                ->execute([$elementId, $personnelId, $metier]);
         }
     } else {
         $elementId = filter_var($_POST['element'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);

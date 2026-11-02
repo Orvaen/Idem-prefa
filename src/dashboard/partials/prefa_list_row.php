@@ -147,7 +147,7 @@ $pointStatut = $vueParAffaire ? '' : '<span class="prefa-point status-' . (int) 
                                             data-plan="<?= (int) $planFinal['id'] ?>" data-document="<?= (int) $feuille['id'] ?>"
                                             title="<?= prefaEscape($feuille['posee']
                                                 ? $feuille['nom'] . ', avec les numéros de coulée, la liste des soudures et les visas'
-                                                : 'Rien n’est encore posé sur cette feuille : aucune coulée placée, aucun cordon numéroté.') ?>">
+                                                : 'Rien n’est encore posé sur cette feuille : aucune coulée placée, aucune soudure numérotée.') ?>">
                                         <span class="prefa-sous-menu-nom"><?= prefaEscape($feuille['nom']) ?></span>
                                         <span class="prefa-sous-menu-note"><?= prefaEscape($feuille['posee']
                                             ? ($feuille['pages'] > 1 ? $feuille['pages'] . ' p.' : '')

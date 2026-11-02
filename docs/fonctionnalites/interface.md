@@ -68,7 +68,7 @@ menu du compte ou par `Ctrl ,` :
 | Rubrique | Pour qui | Ce qu'on y règle |
 | --- | --- | --- |
 | **Général** | tout le monde | Le thème — système, clair ou sombre —, et la liste des raccourcis clavier |
-| **Compte** | tout le monde | Son profil, en lecture : nom, identifiant, rôle, courriel. Sa **signature**, qui vise les cordons qu'on valide ([le visa](/fonctionnalites/soudures#visa)) : on la trace, on la refait, on la supprime. La déconnexion. |
+| **Compte** | tout le monde | Son profil, en lecture : nom, identifiant, rôle, courriel. Sa **signature**, qui vise les soudures qu'on valide ([le visa](/fonctionnalites/soudures#visa)) : on la trace, on la refait, on la supprime. Son **mot de passe**, qui ne se change pas sur place : on en demande un nouveau au chargé de production, et on le choisit en se reconnectant — lui réinitialise le sien ([le détail](/fonctionnalites/utilisateurs#le-mot-de-passe)). La déconnexion. |
 | **Fabrication** | chargé de production | Le **temps par pouce ISO**, qui sert à estimer le délai d'une demande |
 | **Passivation** | chargé de production | Les **types de passivation** proposés dans le formulaire de demande |
 | **Matériel** | chargé de production | Les **unités** proposées quand on signale un manque de matériel |

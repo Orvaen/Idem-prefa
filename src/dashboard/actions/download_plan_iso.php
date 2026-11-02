@@ -34,10 +34,10 @@ if (!$plan) prefaError(404, 'Plan introuvable.');
 
 if (!$canViewAllPrefa) {
     if ($isWorkshopPersonnel) {
-        // L'ouvrier n'obtient que les plans sur lesquels il est affecté et actif.
-        $acces = $db->prepare('SELECT 1 FROM affectation_atelier
-            WHERE id_element = ? AND id_utilisateur = ? AND actif = 1 LIMIT 1');
-        $acces->execute([$elementId, $actor['id']]);
+        // L'ouvrier n'obtient que les plans où il est : par un travail actif, ou par un
+        // métier (atelierPlansDeSql()).
+        $acces = $db->prepare('SELECT 1 FROM element_atelier WHERE id = ? AND id IN ' . atelierPlansDeSql($db) . ' LIMIT 1');
+        $acces->execute([$elementId, $actor['id'], $actor['id']]);
     } else {
         $acces = $db->prepare('SELECT 1 FROM demande_prefabrication WHERE id = ? AND idUsers = ?');
         $acces->execute([$plan['id_demande'], $actor['id']]);

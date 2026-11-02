@@ -16,28 +16,33 @@
  * Voir soudure.php pour la même liste côté encadrement, qui elle peut tout reprendre.
  */
 
+require_once __DIR__ . '/atelier.php';
 require_once __DIR__ . '/soudure.php';
 require_once __DIR__ . '/plan_document.php';
 require_once __DIR__ . '/avancement.php';
 require_once __DIR__ . '/../lecture/plan_lignes.php';
+require_once __DIR__ . '/../lecture/plan_reperes.php';
+require_once __DIR__ . '/../lecture/plan_nomenclature.php';
+require_once __DIR__ . '/../lecture/plan_index.php';
 
 /**
- * L'affectation active de cette personne sur cet élément, si elle existe.
+ * La place de cette personne sur cet élément, si elle en a une : un travail actif, ou un
+ * métier (atelierPlansDeSql()).
  *
- * C'est la porte de tout ce fichier : on ne renseigne une soudure que sur un plan qui vous
- * est confié, et sur une demande encore ouverte au travail.
+ * C'est la porte de tout ce fichier : on ne renseigne une soudure que sur un plan où l'on
+ * est, et sur une demande encore ouverte au travail. Les appelants ne demandent que cela —
+ * aucun ne lit l'affectation elle-même, que le métier n'a pas.
  *
- * @return array{id:int, id_element:int, type_affectation:string}|null
+ * @return array{id_element:int}|null
  */
 function soudureAtelierAffectation(PDO $db, int $elementId, int $userId): ?array
 {
-    $stmt = $db->prepare('SELECT a.id, a.id_element, a.type_affectation
-        FROM affectation_atelier a
-        JOIN element_atelier e ON e.id = a.id_element
+    $stmt = $db->prepare('SELECT e.id AS id_element
+        FROM element_atelier e
         JOIN demande_prefabrication d ON d.id = e.id_demande
-        WHERE a.id_element = ? AND a.id_utilisateur = ? AND a.actif = 1 AND d.id_statut = 2
+        WHERE e.id = ? AND d.id_statut = 2 AND e.id IN ' . atelierPlansDeSql($db) . '
         LIMIT 1');
-    $stmt->execute([$elementId, $userId]);
+    $stmt->execute([$elementId, $userId, $userId]);
     return $stmt->fetch() ?: null;
 }
 
@@ -63,6 +68,37 @@ function soudureAtelierTableauImprime(array $plan, int $page): array
     return [
         'imprimees' => $soudures ? count($soudures['lignes']) : 0,
         'libres' => (int) ($soudures['libres'] ?? 0),
+    ];
+}
+
+/**
+ * Ce que le soudeur clique sur le dessin de cette page : les lignes de la liste soudure
+ * imprimée et les numéros dessinés le long du tube, pour renseigner une soudure ; les
+ * lignes de la nomenclature, pour signaler un manque.
+ *
+ * « tableau » est la géométrie de la liste (plan_table.php) : ses colonnes, ses lignes et
+ * leur pas. « reperes » dit où chaque numéro est dessiné (plan_reperes.php) ; seuls ceux
+ * dont on a reconnu le numéro sont rendus. « nomenclature » porte les lignes du matériel et
+ * ce qu'elles disent (plan_nomenclature.php). Tout est lu une fois, puis gardé à côté du
+ * plan.
+ *
+ * @return array{tableau: ?array, reperes: list<array{numero:string, x:float, y:float, w:float, h:float}>,
+ *               nomenclature: ?array}
+ */
+function soudureAtelierDessin(array $plan, int $page): array
+{
+    $demande = (int) $plan['id_demande'];
+    $cle = (string) $plan['cle_document'];
+    $analyse = planLignesAnalyse($plan['chemin'], planLignesCache($demande, $cle, $page), $page);
+    $reperes = planReperesAnalyse($plan['chemin'], planReperesCache($demande, $cle, $page), $page, $analyse['soudures'] ?? null);
+    return [
+        'tableau' => $analyse['soudures'] ?? null,
+        'reperes' => array_values(array_map(
+            static fn (array $repere): array => ['numero' => (string) $repere['numero'],
+                'x' => $repere['x'], 'y' => $repere['y'], 'w' => $repere['w'], 'h' => $repere['h']],
+            array_filter($reperes, static fn (array $repere): bool => $repere['numero'] !== null)
+        )),
+        'nomenclature' => planNomenclatureAnalyse($plan['chemin'], planNomenclatureCache($demande, $cle, $page), $page),
     ];
 }
 
@@ -215,16 +251,16 @@ function soudureAtelierPlans(PDO $db, int $userId): array
     // ligne vide, et « COALESCE(doc.pages, 1) » en faisait une page : la liste annonçait
     // « 1 feuille » sur un plan vide, et le plan ouvert d'office n'était pas toujours un
     // plan qui en a.
+    // Les plans de la personne : par un travail ou par un métier (atelierPlansDeSql()).
     $stmt = $db->prepare("SELECT e.id, e.reference, e.id_demande, d.nom_affaire,
             COALESCE(SUM(CASE WHEN doc.id IS NULL THEN 0 ELSE GREATEST(COALESCE(doc.pages, 1), 1) END), 0) AS feuilles
-        FROM (SELECT DISTINCT id_element FROM affectation_atelier WHERE id_utilisateur = ? AND actif = 1) a
-        JOIN element_atelier e ON e.id = a.id_element
+        FROM element_atelier e
         JOIN demande_prefabrication d ON d.id = e.id_demande
         LEFT JOIN element_atelier_document doc ON doc.id_element = e.id AND doc.type_document = 'plan'
-        WHERE d.id_statut = 2
+        WHERE d.id_statut = 2 AND e.id IN " . atelierPlansDeSql($db) . "
         GROUP BY e.id, e.reference, e.id_demande, d.nom_affaire
         ORDER BY e.id_demande DESC, e.reference");
-    $stmt->execute([$userId]);
+    $stmt->execute([$userId, $userId]);
     return array_map(static fn (array $ligne): array => [
         'element' => (int) $ligne['id'],
         'reference' => (string) $ligne['reference'],
@@ -244,27 +280,24 @@ function soudureAtelierPlans(PDO $db, int $userId): array
  * feuille — c'est ce que l'atelier lit sur le papier qu'il a en main — et le compte de ses
  * cordons.
  *
- * Le dénominateur ne vient que du cache : aucun PDF n'est relu ici. La reconnaissance
- * coûte quelques secondes par page, et quinze feuilles feraient attendre une demi-minute
- * devant un écran vide. Une feuille jamais ouverte rend donc `imprimees` à null, et le
- * tableau le dit au lieu d'annoncer un total qu'il ne connaît pas.
+ * Le dénominateur ne vient que de ce qui a été lu au dépôt : aucun PDF n'est relu ici. Il se
+ * prend dans le repère de l'indexation, un fichier par cahier (planIndexLu()) — l'écran
+ * montre les feuilles de tous les plans confiés, et relire le cache de chacune de leurs
+ * pages coûtait une seconde pour dix plans. Une page que le repère ne connaît pas se lit dans
+ * son cache ; une feuille jamais lue rend `imprimees` à null, et le tableau le dit au lieu
+ * d'annoncer un total qu'il ne connaît pas.
  *
  * @return list<array{element:int, reference:string, libelle:string, demande:int, document:int,
  *                    nom:string, numero:string, page:int, pages:int, faites:int, imprimees:?int}>
  */
-function soudureAtelierFeuilles(PDO $db, int $userId, ?int $seulPlan = null): array
+function soudureAtelierFeuilles(PDO $db, int $userId): array
 {
-    // « $seulPlan » : l'écran ne lit plus que le plan ouvert. Lire les feuilles de tous les
-    // plans confiés relisait l'analyse de chaque page de chaque PDF à chaque affichage —
-    // une seconde pour dix plans, une minute pour six cents.
-    $stmt = $db->prepare('SELECT DISTINCT e.id, e.reference, e.libelle, e.id_demande
-        FROM affectation_atelier a
-        JOIN element_atelier e ON e.id = a.id_element
+    $stmt = $db->prepare('SELECT e.id, e.reference, e.libelle, e.id_demande
+        FROM element_atelier e
         JOIN demande_prefabrication d ON d.id = e.id_demande
-        WHERE a.id_utilisateur = ? AND a.actif = 1 AND d.id_statut = 2'
-        . ($seulPlan !== null ? ' AND e.id = ?' : '') . '
+        WHERE d.id_statut = 2 AND e.id IN ' . atelierPlansDeSql($db) . '
         ORDER BY e.id_demande DESC, e.reference');
-    $stmt->execute($seulPlan !== null ? [$userId, $seulPlan] : [$userId]);
+    $stmt->execute([$userId, $userId]);
 
     // Les cordons renseignés, rangés par feuille et par page : une lecture par plan, et
     // non une par ligne du tableau. Même condition qu'avancementSouduresFaites — une
@@ -284,12 +317,17 @@ function soudureAtelierFeuilles(PDO $db, int $userId, ?int $seulPlan = null): ar
 
         foreach (planDocuments($db, $elementId) as $doc) {
             $plan = planDocumentChoisi($db, $elementId, (int) $doc['id']);
-            $lisible = $plan !== null && is_file($plan['chemin']);
+            $index = $plan !== null ? planIndexLu((int) $plan['id_demande'], (string) $plan['cle_document']) : null;
+            $lisible = $plan !== null && ($index !== null || is_file($plan['chemin']));
             for ($page = 1; $page <= max(1, (int) $doc['pages']); $page++) {
-                $analyse = $lisible ? planLignesAnalyseGardee(
-                    $plan['chemin'],
-                    planLignesCache((int) $plan['id_demande'], (string) $plan['cle_document'], $page)
-                ) : null;
+                $imprimees = $index['soudures'][$page - 1] ?? null;
+                if ($imprimees === null && $lisible) {
+                    $analyse = planLignesAnalyseGardee(
+                        $plan['chemin'],
+                        planLignesCache((int) $plan['id_demande'], (string) $plan['cle_document'], $page)
+                    );
+                    $imprimees = $analyse === null ? null : count($analyse['soudures']['lignes'] ?? []);
+                }
                 $feuilles[] = [
                     'element' => $elementId,
                     'reference' => (string) $element['reference'],
@@ -303,7 +341,7 @@ function soudureAtelierFeuilles(PDO $db, int $userId, ?int $seulPlan = null): ar
                     'page' => $page,
                     'pages' => max(1, (int) $doc['pages']),
                     'faites' => $faites[(int) $doc['id'] . ':' . $page] ?? 0,
-                    'imprimees' => $analyse === null ? null : count($analyse['soudures']['lignes'] ?? []),
+                    'imprimees' => $imprimees,
                 ];
             }
         }
@@ -317,9 +355,10 @@ function soudureAtelierFeuilles(PDO $db, int $userId, ?int $seulPlan = null): ar
  *
  * Elle est ici, et non dans l'écran, parce que le tableau la rend au chargement et que les
  * actions la renvoient après chaque enregistrement : deux listes de libellés à tenir
- * d'accord finiraient par ne plus l'être.
+ * d'accord finiraient par ne plus l'être. Le libellé est celui de l'onglet de l'état, au
+ * singulier : il s'affiche au survol du point de la ligne.
  *
- * `$imprimees` à null veut dire « feuille jamais ouverte » : son tableau n'a pas encore
+ * `$imprimees` à null veut dire « feuille pas encore lue » : son tableau n'a pas encore
  * été reconnu, et on ne sait donc pas combien de cordons elle demande. Zéro veut dire
  * « lue, mais sans liste soudure » — un scan, ou un gabarit que la détection ne sait pas
  * lire. Les deux se disent, parce qu'on n'y répond pas de la même façon.
@@ -329,12 +368,12 @@ function soudureAtelierFeuilles(PDO $db, int $userId, ?int $seulPlan = null): ar
 function soudureAtelierEtatFeuille(int $faites, ?int $imprimees): array
 {
     if ($imprimees === null) {
-        return ['cle' => 'non_lue', 'libelle' => 'Pas encore ouverte', 'classe' => 'atelier-muted'];
+        return ['cle' => 'non_lue', 'libelle' => 'Pas encore lue', 'classe' => 'atelier-muted'];
     }
     if ($imprimees === 0) {
         return $faites > 0
             ? ['cle' => 'en_cours', 'libelle' => 'En cours', 'classe' => 'atelier-status-progress']
-            : ['cle' => 'sans_liste', 'libelle' => 'Aucune liste', 'classe' => 'atelier-muted'];
+            : ['cle' => 'sans_liste', 'libelle' => 'Sans liste', 'classe' => 'atelier-muted'];
     }
     if ($faites >= $imprimees) {
         return ['cle' => 'soudee', 'libelle' => 'Soudée', 'classe' => 'status-2'];

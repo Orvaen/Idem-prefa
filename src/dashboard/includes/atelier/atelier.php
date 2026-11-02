@@ -16,9 +16,95 @@ function atelierLocalDateTime(string $value, string $format = 'd/m/Y à H:i'): s
         ->setTimezone(new DateTimeZone('Europe/Paris'))->format($format);
 }
 
+/** Les trois travaux d'un plan, ceux qui portent un avancement, tels que l'atelier les nomme. */
+function atelierTravaux(): array
+{
+    return ['plan' => 'Plan / ISO', 'montage' => 'Montage', 'soudage' => 'Suivi soudage'];
+}
+
 function atelierSteps(): array
 {
     return ['debit' => 'Débit', 'decoupage' => 'Découpage', 'pliage' => 'Pliage', 'pointage' => 'Pointage', 'soudage' => 'Soudage', 'passivation' => 'Passivation', 'autre' => 'Autre'];
+}
+
+/**
+ * Les métiers de l'atelier, dans l'ordre où le plan passe entre leurs mains : le nom de
+ * celui qui le tient, tel que l'atelier le dit.
+ *
+ * Le chef d'atelier les donne plan par plan à n'importe qui du personnel (table
+ * affectation_metier) : une même personne peut en tenir plusieurs sur un plan, et un métier
+ * revenir à plusieurs personnes. Ils s'ajoutent aux trois travaux d'un plan sans les
+ * remplacer — un métier ne porte pas d'avancement — et donnent accès au plan comme eux
+ * (atelierPlansDeSql()).
+ *
+ * @return array<string, string> clé en base => le métier
+ */
+function atelierMetiers(): array
+{
+    return ['debit' => 'Débiteur', 'assemblage' => 'Assembleur', 'pointage' => 'Pointeur', 'soudage' => 'Soudeur', 'passivation' => 'Passiveur'];
+}
+
+/**
+ * Les métiers sont-ils en base ? Pas tant que la migration 2026-11-02_metiers n'est pas
+ * passée sur ce serveur : l'écran s'en passe alors, au lieu de tomber sur une table absente.
+ */
+function metiersEnBase(PDO $db): bool
+{
+    static $presente = null;
+    return $presente ??= (bool) $db->query("SHOW TABLES LIKE 'affectation_metier'")->fetch();
+}
+
+/**
+ * Les plans d'une personne, à poser après « IN » : ceux où elle a un travail actif, et ceux
+ * où elle tient un métier. C'est la règle de tout ce que le personnel atelier voit et fait
+ * — ses écrans, ses fichiers, ses soudures —, écrite une seule fois.
+ *
+ * Le fragment attend l'identifiant de la personne deux fois, avec ou sans métiers en base :
+ * les appelants n'ont pas à le savoir.
+ */
+function atelierPlansDeSql(PDO $db): string
+{
+    return metiersEnBase($db)
+        ? '(SELECT id_element FROM affectation_atelier WHERE id_utilisateur = ? AND actif = 1
+            UNION SELECT id_element FROM affectation_metier WHERE id_utilisateur = ?)'
+        : '(SELECT id_element FROM affectation_atelier WHERE id_utilisateur = ? AND actif = 1 AND id_utilisateur = ?)';
+}
+
+/**
+ * Les métiers d'un plan : qui tient lequel.
+ *
+ * @return array<string, list<array{id:int, nom:string}>> métier => ses personnes, par nom
+ */
+function atelierMetiersDuPlan(PDO $db, int $elementId): array
+{
+    $metiers = array_fill_keys(array_keys(atelierMetiers()), []);
+    if (!metiersEnBase($db)) return $metiers;
+    $stmt = $db->prepare("SELECT m.metier, u.id, TRIM(CONCAT(u.prenom, ' ', u.name)) AS nom
+        FROM affectation_metier m JOIN Utilisateur u ON u.id = m.id_utilisateur
+        WHERE m.id_element = ? ORDER BY u.prenom, u.name");
+    $stmt->execute([$elementId]);
+    foreach ($stmt->fetchAll() as $ligne) {
+        $metiers[$ligne['metier']][] = ['id' => (int) $ligne['id'], 'nom' => (string) $ligne['nom']];
+    }
+    return $metiers;
+}
+
+/**
+ * Les métiers d'une personne, plan par plan, dans l'ordre de atelierMetiers().
+ *
+ * @return array<int, list<string>> plan => ses clés de métier
+ */
+function atelierMetiersDe(PDO $db, int $userId): array
+{
+    if (!metiersEnBase($db)) return [];
+    $stmt = $db->prepare('SELECT id_element, metier FROM affectation_metier WHERE id_utilisateur = ?');
+    $stmt->execute([$userId]);
+    $ordre = array_flip(array_keys(atelierMetiers()));
+    $parPlan = [];
+    foreach ($stmt->fetchAll() as $ligne) $parPlan[(int) $ligne['id_element']][] = (string) $ligne['metier'];
+    foreach ($parPlan as &$metiers) usort($metiers, static fn (string $a, string $b): int => $ordre[$a] <=> $ordre[$b]);
+    unset($metiers);
+    return $parPlan;
 }
 
 function atelierElementSteps(PDO $db, int $elementId): array
@@ -31,13 +117,12 @@ function atelierElementSteps(PDO $db, int $elementId): array
 
 function atelierDocumentAllowed(PDO $db, int $userId, int $requestId, string $kind, string $key): bool
 {
-    $stmt = $db->prepare('SELECT 1 FROM affectation_atelier a
-        JOIN element_atelier e ON e.id = a.id_element
+    $stmt = $db->prepare('SELECT 1 FROM element_atelier e
         JOIN element_atelier_document doc ON doc.id_element = e.id
         JOIN demande_prefabrication d ON d.id = e.id_demande
-        WHERE a.id_utilisateur = ? AND a.actif = 1 AND d.id_statut = 2
+        WHERE e.id IN ' . atelierPlansDeSql($db) . ' AND d.id_statut = 2
         AND e.id_demande = ? AND doc.type_document = ? AND doc.cle_document = ? LIMIT 1');
-    $stmt->execute([$userId, $requestId, $kind, $key]);
+    $stmt->execute([$userId, $userId, $requestId, $kind, $key]);
     return (bool) $stmt->fetchColumn();
 }
 
@@ -52,6 +137,7 @@ function atelierElements(PDO $db, int $requestId): array
             WHERE a.id_element = ? ORDER BY a.actif DESC, a.date_affectation DESC, a.id DESC");
         $stmt->execute([$element['id']]);
         $element['affectations'] = $stmt->fetchAll();
+        $element['metiers'] = atelierMetiersDuPlan($db, (int) $element['id']);
         $stmt = $db->prepare('SELECT * FROM element_atelier_document WHERE id_element = ? ORDER BY id');
         $stmt->execute([$element['id']]);
         $element['documents'] = $stmt->fetchAll();

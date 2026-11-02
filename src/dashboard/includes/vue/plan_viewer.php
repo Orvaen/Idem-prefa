@@ -21,8 +21,10 @@ require_once __DIR__ . '/../atelier/nomenclature.php';
  *
  * @param list<array{id:int, nom:string, reperes:list<array<string,mixed>>, empreinte:string}> $plans
  * @param list<array<string, mixed>> $coulees les coulées proposées par les certificats
+ * @param string $consigne ce que la barre dit qu'on fait ici, quand ce n'est pas poser des
+ *               coulées — « Mes soudures » y renseigne ses cordons. Vide : « en consultation ».
  */
-function planViewerRendu(int $elementId, array $plans, array $coulees, bool $modifiable, bool $avecListe = true): string
+function planViewerRendu(int $elementId, array $plans, array $coulees, bool $modifiable, bool $avecListe = true, string $consigne = ''): string
 {
     // Les coulées des certificats, posées une seule fois : chaque case y puise ses
     // suggestions au moment où on la remplit. Une même coulée relevée sur deux certificats
@@ -92,7 +94,7 @@ function planViewerRendu(int $elementId, array $plans, array $coulees, bool $mod
         $resume = [];
         if ($pagesPlan > 1) $resume[] = $pagesPlan . ' pages';
         if (!empty($plan['cordons'])) $resume[] = (int) $plan['cordons']
-            . ((int) $plan['cordons'] > 1 ? ' cordons saisis' : ' cordon saisi');
+            . ((int) $plan['cordons'] > 1 ? ' soudures saisies' : ' soudure saisie');
         ?>
         <div class="plan-viewer" data-plan="<?= $elementId ?>" data-document="<?= (int) $plan['id'] ?>"
                  data-empreintes="<?= prefaEscape(json_encode((object) ($plan['empreintes'] ?? []))) ?>"
@@ -140,7 +142,7 @@ function planViewerRendu(int $elementId, array $plans, array $coulees, bool $mod
                         <strong><?= prefaEscape($plan['nom']) ?></strong>
                         <span><?= $modifiable
                             ? 'Double-cliquez une case pour choisir sa coulée. Ctrl+D en ajoute une sous la case choisie.'
-                            : 'Plan en consultation.' ?></span>
+                            : prefaEscape($consigne !== '' ? $consigne : '') ?></span>
                     </div>
 
                     <!-- La barre range ses commandes par métier : se déplacer dans le

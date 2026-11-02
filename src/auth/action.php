@@ -13,6 +13,17 @@ $password = $_POST['password'] ?? '';
 try {
     $db = new MyPDO(__DIR__ . '/../my_setting.ini');
     $user = new User($db);
+    // Un compte sans mot de passe — tout juste créé, ou réinitialisé à sa demande — ne se
+    // refuse pas : la personne choisit le sien, et l'écran de connexion le lui demande
+    // (creer_mot_de_passe.php). Rien n'est ouvert ici.
+    if ($login !== '' && $user->motDePasseACreer($login)) {
+        echo json_encode([
+            'success' => false,
+            'creer' => true,
+            'message' => 'Choisissez votre mot de passe.',
+        ]);
+        exit;
+    }
     if (!$user->login($login, $password)) {
         http_response_code(401);
 

@@ -1197,162 +1197,6 @@
     line-height: 1.5;
 }
 
-/* ===== AVANCEMENT DÉCLARÉ, AVANCEMENT RECONNU ===== */
-
-/* Deux chiffres cohabitent sur la ligne d'un travail : celui qui est reconnu — la pastille
-   d'état — et celui que la personne affectée annonce, qui n'a encore rien déplacé. Le
-   second se tient dans sa propre bande sous la ligne, avec son filet d'attente ; côte à
-   côte on les aurait confondus, et c'est précisément ce que la validation sépare.
-
-   « 1 / -1 » tient dans les trois gabarits de cette ligne — cinq colonnes au large, trois
-   dans le volet et sur petit écran : la bande occupe toute la largeur quelle qu'elle soit. */
-.atelier-declaration {
-    display: grid;
-    gap: 2px;
-    margin-top: 4px;
-    padding: 10px 12px;
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--attente-texte);
-    border-radius: var(--r-md);
-    background: var(--surface);
-}
-
-/* Dans la ligne d'un travail, la bande prend toute la largeur. « 1 / -1 » tient dans les
-   trois gabarits de cette ligne — cinq colonnes au large, trois dans le volet et sur petit
-   écran. Ailleurs — la fiche d'une demande, l'onglet Soudures — elle coule normalement. */
-.atelier-plan-work .atelier-declaration {
-    grid-column: 1 / -1;
-}
-
-.atelier-declaration p {
-    margin: 0;
-}
-
-.atelier-declaration-titre {
-    color: var(--attente-texte);
-    font-size: 10.5px;
-    font-weight: 700;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-}
-
-.atelier-declaration-chiffre {
-    font-size: 15px;
-    font-weight: 600;
-}
-
-.atelier-declaration .atelier-note {
-    margin-top: 4px;
-    font-size: 12.5px;
-    line-height: 1.5;
-}
-
-.atelier-declaration-actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-    margin-top: 8px;
-}
-
-/* Ce formulaire n'est pas un « prefa-form » : aucune forme de bouton ne lui arrive, il
-   porte donc la sienne. Les deux décisions ne se ressemblent pas — valider déplace le
-   pourcentage du plan, refuser ne déplace rien. */
-.atelier-declaration-actions button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    height: var(--ctrl-sm);
-    padding: 0 14px;
-    border: 1px solid transparent;
-    border-radius: var(--r-sm);
-    background: var(--accent);
-    color: #ffffff;
-    font: inherit;
-    font-size: 13px;
-    cursor: pointer;
-}
-
-.atelier-declaration-actions button:hover:not(:disabled) {
-    background: var(--accent-hover);
-}
-
-.atelier-declaration-actions button.bouton-discret {
-    border-color: var(--border);
-    background: transparent;
-    color: var(--text-muted);
-}
-
-.atelier-declaration-actions button.bouton-discret:hover:not(:disabled) {
-    border-color: var(--danger-bord);
-    background: transparent;
-    color: var(--danger-texte);
-}
-
-.atelier-declaration-actions button:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-}
-
-.atelier-declaration-actions button:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-}
-
-.atelier-declaration-actions .atelier-message {
-    color: var(--text-muted);
-    font-size: 12px;
-}
-
-/* Les contrôles posés en validant : les cordons que la validation couvre, entre le chiffre
-   et les boutons. Le formulaire range ses enfants en ligne ; la liste prend toute sa
-   largeur, et les boutons passent dessous. */
-.soudure-controles {
-    flex: 1 0 100%;
-    min-width: 0;
-    margin: 2px 0 4px;
-    overflow-x: auto;
-}
-
-.soudure-controles-titre {
-    margin: 0 0 4px;
-    color: var(--text-muted);
-    font-size: 12px;
-}
-
-/* « tracer votre signature » : un lien dans la phrase, qui ouvre les paramètres sur le
-   compte. Un bouton, puisqu'il ne mène à aucune adresse. */
-.soudure-controles-lien {
-    display: inline;
-    margin: 0;
-    padding: 0;
-    border: 0;
-    background: none;
-    color: var(--accent-texte);
-    font: inherit;
-    text-decoration: underline;
-    text-underline-offset: 2px;
-    cursor: pointer;
-}
-
-.soudure-controles-lien:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-}
-
-/* « Tous les cordons » est une commande, pas un cordon : sourde, sans la graisse du numéro
-   qui ouvre les autres lignes. */
-.soudure-controles-table .soudure-controles-tous td {
-    color: var(--text-muted);
-    font-size: 12px;
-    font-weight: 400;
-}
-
-.soudure-controles-table .soudure-croix {
-    margin: 0;
-    vertical-align: middle;
-}
-
 /* Côté atelier : ce qui a été annoncé et qui attend encore. Même filet d'attente que la
    bande du chef, pour que les deux écrans parlent visiblement du même objet. */
 .atelier-attente {
@@ -1975,18 +1819,6 @@
     outline-offset: 2px;
 }
 
-/* ===== L'ÉCRAN « SOUDURES » DE L'ENCADREMENT ===== */
-
-.suivi-soudures-cordons strong {
-    font-size: 15px;
-    font-weight: 400;
-    font-variant-numeric: tabular-nums;
-}
-
-.suivi-soudures-table .atelier-declaration {
-    margin-bottom: 18px;
-}
-
 /* ===== PLANS / ISO, SUR LE MODÈLE DE LA LISTE DES DEMANDES =====
  *
  * L'écran reprend la liste des demandes trait pour trait — recherche à la hauteur des
@@ -2003,8 +1835,14 @@
     font-size: 13px;
 }
 
-/* Les plans avancent : un demi-cercle à l'accent, entre le pointillé de l'attente et le
-   plein de ce qui est tranché. */
+/* Les plans avancent : sur Plans / ISO, le point de l'accent, comme une feuille en cours sur
+   « Mes soudures » et un plan en cours sur « Soudures » — « À préparer » prend celui de
+   l'attente (status-1), comme une demande en attente. Sur « Mes plans », le demi-cercle du
+   titre de groupe « En cours ». */
+.prefa-point.plans-iso-en-cours {
+    color: var(--accent-texte);
+}
+
 .prefa-statut-icone.plans-iso-en-cours {
     color: var(--accent);
 }
@@ -2317,7 +2155,7 @@ html .plans-iso-detail .atelier-plan-work .atelier-edit-progress {
 }
 
 html .plans-iso-detail .atelier-plan-work .atelier-work-report,
-html .plans-iso-detail .atelier-plan-work .atelier-declaration {
+html .plans-iso-detail .atelier-plan-work .decision {
     grid-column: 1 / -1;
 }
 
@@ -2420,63 +2258,6 @@ html .plans-iso-detail .atelier-work-report .atelier-note {
     color: var(--text) !important;
     font-size: 13px;
     line-height: 1.54;
-}
-
-/* ----- L'avancement déclaré : une bande d'attente, en casse normale ----- */
-
-html .plans-iso-detail .atelier-declaration {
-    margin: 2px 0 6px;
-    padding: 10px 12px;
-    border: 0;
-    border-left: 2px solid var(--attente-texte);
-    border-radius: 0 var(--r-md) var(--r-md) 0;
-    background: var(--carte);
-}
-
-html .plans-iso-detail .atelier-declaration-titre {
-    color: var(--attente-texte) !important;
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: normal;
-    text-transform: none;
-}
-
-html .plans-iso-detail .atelier-declaration-chiffre {
-    color: var(--text) !important;
-    font-size: 14px;
-    font-weight: 600;
-}
-
-html .plans-iso-detail .atelier-declaration .atelier-muted {
-    color: var(--text-muted) !important;
-    font-size: 12px;
-}
-
-/* Valider : le bouton plein, noir (DA, § 6). Refuser : secondaire. 28px, rayon 6. */
-html .plans-iso-detail .atelier-declaration-actions button {
-    height: var(--h-md);
-    padding: 0 10px;
-    border-radius: var(--r-md);
-    background: var(--bouton-plein);
-    color: var(--bouton-plein-texte);
-    font-size: 12px;
-    font-weight: 500;
-}
-
-html .plans-iso-detail .atelier-declaration-actions button:hover:not(:disabled) {
-    background: var(--bouton-plein-hover);
-}
-
-html .plans-iso-detail .atelier-declaration-actions button.bouton-discret {
-    border-color: var(--border);
-    background: var(--surface);
-    color: var(--text);
-}
-
-html .plans-iso-detail .atelier-declaration-actions button.bouton-discret:hover:not(:disabled) {
-    border-color: var(--border);
-    background: var(--alerte-fond);
-    color: var(--alerte-texte);
 }
 
 /* ----- Les soudures du plan : une ligne de propriété ----- */
@@ -2834,87 +2615,74 @@ html .atelier-affecter-recherche input {
    SOUDURES (ENCADREMENT) — LA LISTE ET LE VOLET « EXAMINER »
    ==========================================================================
 
-   La même grammaire que les autres volets et que la barre d'outils du planning (DA) :
-   filtres de 32px à libellé court, nombres alignés à droite, un volet flottant à
-   l'en-tête collant, des sections au filet pointillé, des lignes de propriété, et un
-   tableau de cordons à la hauteur d'une ligne de tableau. « html » en tête là où le thème
-   clair pose des « !important » génériques (paragraphes, cellules, boutons). */
-
-/* ----- La barre de filtres ----- */
-
-#suivi-soudures-page .suivi-soudures-filtres {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px 12px;
-}
-
-#suivi-soudures-page .suivi-soudures-filtres .filtres-recherche {
-    flex: 0 1 260px;
-}
-
-#suivi-soudures-page .suivi-soudures-filtres .filtres-recherche input {
-    height: var(--h-lg);
-}
-
-.suivi-soudures-champ {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-html .suivi-soudures-champ > label {
-    color: var(--text-muted) !important;
-    font-size: 12px;
-    font-weight: 500;
-    white-space: nowrap;
-}
-
-.suivi-soudures-select {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-}
-
-html .suivi-soudures-select select {
-    appearance: none;
-    -webkit-appearance: none;
-    min-width: 120px;
-    height: var(--h-lg);
-    padding: 0 30px 0 12px;
-    border: 1px solid var(--border) !important;
-    border-radius: var(--r-md);
-    background: var(--surface) !important;
-    color: var(--text) !important;
-    font: inherit;
-    font-size: 13px;
-    cursor: pointer;
-}
-
-html .suivi-soudures-select select:focus {
-    border-color: var(--accent) !important;
-    outline: 2px solid var(--accent);
-    outline-offset: -1px;
-}
-
-.suivi-soudures-chevron {
-    position: absolute;
-    right: 10px;
-    width: 14px;
-    height: 14px;
-    color: var(--text-muted);
-    pointer-events: none;
-}
+   La liste a l'ossature des autres (Demandes, Commande matériel, Mes soudures) : la
+   recherche seule, des onglets d'état comptés dont les points ouvrent les lignes, une seule
+   colonne qui prend la largeur libre — l'affaire —, les mesures serrées à droite et
+   « Examiner » au contour. Elle avait une liste déroulante « État » de 44 px à côté d'une
+   recherche de 32, et ses colonnes se partageaient la largeur à parts égales : la demande
+   à gauche, le plan au milieu, l'état au bout. « html » en tête là où le thème clair pose
+   des « !important » génériques (paragraphes, cellules, boutons). */
 
 /* ----- La liste ----- */
 
-#suivi-soudures-page .suivi-soudures-reference {
-    font-variant-numeric: tabular-nums;
+/* L'état d'un plan, dans le point qui ouvre sa ligne et dans celui de son onglet. Rien de
+   relevé, un cercle vide ; en cours, l'accent ; toutes soudées, le vert ; un avancement qui
+   attend une décision, la couleur de l'attente — celle de la carte « À valider » qu'il
+   ouvre. Les feuilles de « Mes soudures » ont les mêmes (soudures.css). */
+.suivi-soudures-point.est-a_valider {
+    color: var(--attente-texte);
+}
+
+.suivi-soudures-point.est-en_cours {
+    color: var(--accent-texte);
+}
+
+.suivi-soudures-point.est-complet {
+    color: var(--succes-texte);
+}
+
+.suivi-soudures-point.est-a_faire {
+    background: transparent;
+    box-shadow: inset 0 0 0 1.5px currentColor;
+    color: var(--text-muted);
+}
+
+/* Rien ne se casse hors de l'affaire : un nom de plan coupé en deux ne se lit plus. La
+   ligne entière ouvre le plan (suivi-soudures.js). */
+#suivi-soudures-page .suivi-soudures-plan > tr:first-child {
+    cursor: pointer;
+}
+
+#suivi-soudures-page .suivi-soudures-plan > tr:first-child > td:not(.prefa-affaire) {
     white-space: nowrap;
 }
 
-/* Le compte des cordons : « 9 / 24 », le total en sourd, et une barre fine dessous. */
-#suivi-soudures-page .suivi-soudures-cordons {
+/* La description du plan, sous son nom, alignée sur lui — après le point et la place de
+   l'urgence —, et coupée plutôt que de pousser l'affaire. */
+#suivi-soudures-page .suivi-soudures-nom .atelier-row-description {
+    max-width: 260px;
+    margin: 2px 0 0 38px;
+    overflow: hidden;
+    font-weight: 400;
+    text-overflow: ellipsis;
+}
+
+.prefa-list[data-densite="compact"] .suivi-soudures-nom .atelier-row-description {
+    display: none;
+}
+
+.suivi-soudures-plus {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+/* Le compte des soudures : « 9 / 24 », le total en sourd, et dessous une barre qui va du
+   validé au relevé — pleine pour ce qui est reconnu, pâle pour ce qui est relevé et attend
+   encore d'être validé. La part arrive du serveur, en variable : le PHP ne dit que les
+   nombres. */
+#suivi-soudures-page .suivi-soudures-cordons,
+#suivi-soudures-page .suivi-soudures-valide {
+    font-variant-numeric: tabular-nums;
     white-space: nowrap;
 }
 
@@ -2928,26 +2696,63 @@ html .suivi-soudures-select select:focus {
 }
 
 .suivi-soudures-barre {
-    display: block;
-    width: 64px;
+    display: flex;
+    width: 96px;
     height: 4px;
-    margin: 4px 0 0 auto;
+    margin: 6px 0 0 auto;
     overflow: hidden;
     border-radius: 999px;
     background: var(--hover);
 }
 
-/* La part faite arrive du serveur, en variable : le PHP ne dit que le nombre. */
+/* Une seule part dans le volet (« Validé »), deux dans la liste. */
 .suivi-soudures-barre > span {
-    display: block;
+    flex: none;
     width: var(--part, 0%);
     height: 100%;
-    border-radius: inherit;
     background: var(--accent);
 }
 
-/* « Examiner » : une commande de ligne de 24px (DA, § 4). */
-html #suivi-soudures-page .suivi-soudures-plan > tr:first-child .prefa-toggle,
+.suivi-soudures-barre > .suivi-soudures-barre-validee {
+    width: var(--validee, 0%);
+}
+
+.suivi-soudures-barre > .suivi-soudures-barre-relevee {
+    width: var(--relevee, 0%);
+    background: color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+/* Le chiffre qu'une déclaration propose, à la couleur de l'attente : « 6 % → 7 % ». */
+.suivi-soudures-propose {
+    margin-left: 6px;
+    color: var(--attente-texte);
+    font-weight: 500;
+}
+
+.suivi-soudures-a-valider {
+    color: var(--attente-texte);
+}
+
+.prefa-onglets-barre .prefa-list-summary .suivi-soudures-a-valider strong {
+    color: inherit;
+}
+
+/* « Examiner » a la forme de « Détails » d'un bon (prefa-ligne-contour). Il garde
+   « prefa-toggle », qui l'ouvre et le rouvre après un enregistrement, et que le thème clair
+   repeint en gras sur fond blanc, en !important. */
+#suivi-soudures-page .suivi-soudures-examiner {
+    background: transparent !important;
+    color: var(--text) !important;
+    font-weight: 500 !important;
+}
+
+#suivi-soudures-page .suivi-soudures-examiner:hover,
+#suivi-soudures-page .suivi-soudures-examiner[aria-expanded="true"],
+#suivi-soudures-page .suivi-soudures-plan > tr:first-child:hover .suivi-soudures-examiner {
+    background: var(--hover) !important;
+}
+
+/* « Mettre à jour », sur « Mes plans » : une commande de ligne de 24px (DA, § 4). */
 html #mes-plans-page .mes-plans-plan > tr:first-child .prefa-toggle {
     height: var(--h-sm);
     padding: 0 8px;
@@ -2959,7 +2764,6 @@ html #mes-plans-page .mes-plans-plan > tr:first-child .prefa-toggle {
     font-weight: 500 !important;
 }
 
-html #suivi-soudures-page .suivi-soudures-plan > tr:first-child .prefa-toggle:hover,
 html #mes-plans-page .mes-plans-plan > tr:first-child .prefa-toggle:hover {
     background: var(--hover) !important;
 }
@@ -3120,64 +2924,6 @@ html .mes-plans-detail .mes-plans-parcours {
     margin: 0;
 }
 
-/* La déclaration à valider : une bande d'attente, en casse normale, sous les chiffres
-   reconnus. Valider en bouton plein noir, Refuser en secondaire (DA, § 6). */
-html .suivi-soudures-detail .atelier-declaration {
-    margin: 4px 0 0;
-    padding: 10px 12px;
-    border: 0;
-    border-left: 2px solid var(--attente-texte);
-    border-radius: 0 var(--r-md) var(--r-md) 0;
-    background: var(--carte);
-}
-
-html .suivi-soudures-detail .atelier-declaration-titre {
-    color: var(--attente-texte) !important;
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: normal;
-    text-transform: none;
-}
-
-html .suivi-soudures-detail .atelier-declaration-chiffre {
-    margin-top: 2px;
-    color: var(--text) !important;
-    font-size: 14px;
-    font-weight: 600;
-}
-
-html .suivi-soudures-detail .atelier-declaration .atelier-note {
-    margin-top: 4px;
-    color: var(--text) !important;
-    font-size: 13px;
-}
-
-html .suivi-soudures-detail .atelier-declaration-actions button {
-    height: var(--h-md);
-    padding: 0 10px;
-    border: 0;
-    border-radius: var(--r-md);
-    background: var(--bouton-plein);
-    color: var(--bouton-plein-texte);
-    font-size: 12px;
-    font-weight: 500;
-}
-
-html .suivi-soudures-detail .atelier-declaration-actions button:hover:not(:disabled) {
-    background: var(--bouton-plein-hover);
-}
-
-html .suivi-soudures-detail .atelier-declaration-actions button.bouton-discret {
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text);
-}
-
-html .suivi-soudures-detail .atelier-declaration-actions button.bouton-discret:hover:not(:disabled) {
-    background: var(--alerte-fond);
-    color: var(--alerte-texte);
-}
-
 /* Les cordons : un tableau à la hauteur d'une ligne de tableau (36px), à même la
    surface. Les règles des cellules de la liste — hauteur, bornes, fonds forcés en thème
    clair — retombaient sur lui, et ses lignes montaient à 52px. */
@@ -3293,6 +3039,21 @@ html .mes-plans-page .prefa-table td.mes-plans-travaux-cellule {
     display: inline-flex;
     flex-wrap: nowrap;
     gap: 6px;
+}
+
+/* Un métier, à la suite des travaux : la même pastille, au trait et non au fond — il ne
+   porte pas d'avancement, donc pas d'état à colorer. */
+html .mes-plans-page .mes-plans-metier {
+    display: inline-flex;
+    align-items: center;
+    height: var(--h-xs);
+    padding: 0 8px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
 }
 
 html .mes-plans-page .mes-plans-commande .prefa-toggle {
@@ -3587,6 +3348,15 @@ html .plans-iso-detail .plan-volet-tete {
     justify-content: space-between;
     gap: 12px;
     padding: 14px 0 4px;
+}
+
+/* Les commandes du plan, à droite de son nom : « Résumé du plan », puis renommer et
+   supprimer dans leur cadre. */
+html .plans-iso-detail .plan-volet-actions {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 8px;
 }
 
 html .plans-iso-detail .plan-volet-tete .atelier-plan-identity {
@@ -3907,4 +3677,526 @@ html .mes-plans-detail .mes-plans-fichiers .pv-document {
 html .mes-plans-detail .mes-plans-fichiers .prefa-document-link,
 [data-theme="light"] .mes-plans-detail .mes-plans-fichiers .prefa-document-link {
     color: var(--text) !important;
+}
+
+/* ==========================================================================
+   LA DÉCISION : UN AVANCEMENT À VALIDER
+   ==========================================================================
+
+   Un seul dessin pour un seul objet, où qu'il paraisse — la fiche d'une demande, le volet
+   « Plans & affectations », l'écran « Soudures » (includes/atelier/decision.php). Il en
+   avait trois, une famille de règles par écran, et la fiche le donnait à lire comme une
+   suite de phrases : un surtitre, un chiffre, une ligne de noms, une consigne de trois
+   tirets, un tableau, deux boutons.
+
+   C'est une carte (DA, § 8) : ce qui attend une décision se détache de ce qui la raconte.
+   L'attente se dit par la pastille, de la couleur que la maison lui donne ; la mesure, par
+   une barre qui va du validé au déclaré ; le reste suit l'ordre de la lecture — quoi, qui,
+   combien, quelles soudures, que décider.
+
+   En fin de feuille, et préfixées de « html » là où il le faut : les volets posaient leurs
+   propres règles de tableau, en !important pour certaines, sur tout ce qu'ils contiennent. */
+
+.decision {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    background: var(--carte);
+}
+
+/* Dans la ligne d'un travail (Plans & affectations), elle prend toute la largeur. */
+.atelier-plan-work .decision {
+    grid-column: 1 / -1;
+    margin-top: 4px;
+}
+
+.decision p {
+    margin: 0;
+}
+
+/* ----- L'en-tête : l'état, ce que c'est, qui et quand ----- */
+
+.decision-entete {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 6px 10px;
+    padding: 14px 16px 0;
+}
+
+.decision-etat {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    height: var(--h-xs);
+    padding: 0 8px;
+    border: 1px solid var(--attente-bord);
+    border-radius: 999px;
+    background: var(--attente-fond);
+    color: var(--attente-texte);
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.decision-identite {
+    flex: 1 1 200px;
+    min-width: 0;
+}
+
+html .decision .decision-titre {
+    margin: 0;
+    color: var(--text) !important;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+}
+
+.decision-contexte {
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.decision-contexte,
+.decision-qui {
+    color: var(--text-muted);
+}
+
+.decision-qui {
+    font-size: 12px;
+    line-height: 20px;
+    white-space: nowrap;
+}
+
+/* ----- La mesure : le compte en grand, le pourcentage en face, la barre dessous ----- */
+
+.decision-mesure {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 8px 16px;
+    padding: 12px 16px 14px;
+}
+
+.decision-compte,
+.decision-pourcentage {
+    color: var(--text);
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+}
+
+.decision-pourcentage {
+    color: var(--attente-texte);
+}
+
+.decision-barre {
+    grid-column: 1 / -1;
+    display: flex;
+    height: 6px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--hover);
+}
+
+.decision-barre-validee {
+    width: var(--base);
+    background: var(--accent);
+}
+
+.decision-barre-attente {
+    width: var(--ecart);
+    background: var(--attente-texte);
+}
+
+.decision-legende {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+    font-size: 12px;
+}
+
+.decision-legende span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-muted);
+}
+
+.decision-legende span::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+}
+
+.decision-legende-validee::before {
+    background: var(--accent);
+}
+
+.decision-legende-attente::before {
+    background: var(--attente-texte);
+}
+
+/* ----- La note de l'atelier : ses mots, à part de ce que l'application calcule ----- */
+
+.decision-note {
+    margin: 0 16px 14px;
+    padding: 2px 0 2px 12px;
+    border-left: 2px solid var(--border-fort);
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.54;
+    white-space: pre-wrap;
+}
+
+.decision-note span {
+    display: block;
+    color: var(--text-muted);
+    font-size: 12px;
+    white-space: normal;
+}
+
+/* ----- Ce qui tranche : les contrôles, puis le pied, sous un filet ----- */
+
+.decision-formulaire {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    border-top: 1px solid var(--border);
+}
+
+.decision-formulaire + .decision-formulaire {
+    border-top-style: dashed;
+}
+
+.decision-pied {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 16px;
+}
+
+.decision-pied .atelier-message {
+    margin-right: auto;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.decision-pied .atelier-message:empty {
+    display: none;
+}
+
+/* Valider : le bouton plein, l'action de la carte (DA, § 6). Refuser : encadré, rouge au
+   survol — il écarte ce qui a été déclaré. La hauteur d'un bouton, 32 px. Préfixées de
+   « html » : les volets peignent leurs boutons par des règles plus larges. */
+html .decision-pied button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: var(--h-lg);
+    padding: 0 14px;
+    border: 1px solid transparent;
+    border-radius: var(--r-md);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+html .decision-pied .decision-valider {
+    background: var(--bouton-plein);
+    color: var(--bouton-plein-texte);
+}
+
+html .decision-pied .decision-valider:hover:not(:disabled) {
+    background: var(--bouton-plein-hover);
+}
+
+html .decision-pied .decision-refuser {
+    border-color: var(--border-fort);
+    background: var(--surface);
+    color: var(--text);
+}
+
+html .decision-pied .decision-refuser:hover:not(:disabled) {
+    border-color: var(--danger-bord);
+    background: var(--danger-fond);
+    color: var(--danger-texte);
+}
+
+html .decision-pied button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+html .decision-pied button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* ----- Les contrôles : les soudures couvertes, une croix par contrôle -----
+
+   Ils ne vivent que dans la carte, à même sa surface : un tableau n'y prend pas de cadre
+   (DA, § 8), ses filets suffisent. Deux choses à dire au-dessus — comment cocher, et ce
+   que « Valider » signera — chacune à sa place. */
+
+.soudure-controles {
+    min-width: 0;
+    padding: 14px 16px 0;
+    overflow-x: auto;
+}
+
+.soudure-controles-entete {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 6px 24px;
+    margin-bottom: 8px;
+}
+
+html .decision .soudure-controles-titre {
+    margin: 0;
+    color: var(--text) !important;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 20px;
+}
+
+.soudure-controles-aide,
+.soudure-controles-visa {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+/* « Tracer ma signature » : un lien dans la phrase, qui ouvre les paramètres sur le
+   compte. Un bouton, puisqu'il ne mène à aucune adresse. */
+.soudure-controles-lien {
+    display: inline;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent-texte);
+    font: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+}
+
+.soudure-controles-lien:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* Transparent, et en !important : le thème clair peint tout tableau en blanc, ce qui
+   posait une seconde surface dans la carte. */
+html .decision .soudure-controles-table {
+    width: 100%;
+    background: transparent !important;
+    font-size: 13px;
+}
+
+html .decision .soudure-controles-table th {
+    height: 32px;
+    padding: 0 8px;
+    background: transparent !important;
+    vertical-align: middle;
+}
+
+html .decision .soudure-controles-table td {
+    max-width: none;
+    height: 36px;
+    padding: 0 8px;
+    background: transparent !important;
+    color: var(--text) !important;
+}
+
+html .decision .soudure-controles-table tbody tr:hover td {
+    background: var(--ligne-survol) !important;
+}
+
+html .decision .soudure-controles-table th:first-child,
+html .decision .soudure-controles-table tbody td:first-child {
+    width: 56px;
+    padding-left: 0;
+}
+
+/* La feuille prend la place libre ; les contrôles se serrent à droite, sur une colonne
+   chacun, la case au milieu. « tbody » : dans la ligne « Toutes les soudures », la
+   première cellule couvre quatre colonnes, et la deuxième est déjà une case. */
+html .decision .soudure-controles-table tbody td:nth-child(2) {
+    max-width: 0;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+html .decision .soudure-controles-table .soudure-controle {
+    width: 56px;
+    text-align: center;
+}
+
+/* « Toutes les soudures » est une commande, pas une soudure : sourde, sans la graisse du
+   numéro qui ouvre les autres lignes, sur le fond des en-têtes de groupe. */
+html .decision .soudure-controles-table .soudure-controles-tous td {
+    height: 36px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-muted) !important;
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.soudure-controles-table .soudure-croix {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    vertical-align: middle;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+/* ===== LE RÉSUMÉ D'UN PLAN =====
+   Ce qui manque au plan, feuille ISO par feuille ISO (atelier/plan_resume.php) : quatre
+   chiffres, puis deux tableaux courts — les soudures, les coulées. Une feuille complète n'y
+   paraît pas. La fenêtre est plus large que les autres : trois colonnes s'y lisent d'un
+   trait. Les textes de couleur sont des « div » : le thème clair grise tout paragraphe. */
+dialog.fenetre.plan-resume {
+    width: min(760px, calc(100vw - 32px));
+}
+
+.plan-resume-bilan {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+}
+
+@media (max-width: 640px) {
+    .plan-resume-bilan {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.plan-resume-chiffre {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.plan-resume-chiffre strong {
+    color: var(--text);
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+/* À zéro, c'est fait ; au-dessus, ça attend quelqu'un. */
+.plan-resume-chiffre.est-fait strong {
+    color: var(--succes-texte);
+}
+
+.plan-resume-chiffre.est-a-faire strong {
+    color: var(--attente-texte);
+}
+
+dialog.fenetre .plan-resume-section h3 {
+    margin: 8px 0;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.plan-resume-ccpu {
+    margin-bottom: 8px;
+    color: var(--text);
+    font-size: 12px;
+}
+
+.plan-resume-ccpu.est-alerte {
+    color: var(--alerte-texte);
+}
+
+.plan-resume-discret,
+.plan-resume-note,
+.plan-resume-attente {
+    color: var(--text-muted);
+}
+
+.plan-resume-note {
+    margin-top: 8px;
+    font-size: 12px;
+}
+
+dialog.fenetre table.plan-resume-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+dialog.fenetre .plan-resume-table th {
+    height: 28px;
+    padding: 0 8px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    text-align: left;
+}
+
+dialog.fenetre .plan-resume-table td {
+    height: auto;
+    padding: 7px 8px;
+    border-bottom: 1px solid var(--border-faint);
+    vertical-align: top;
+}
+
+/* Le nom de la feuille tient sa colonne ; les deux autres se partagent le reste. */
+dialog.fenetre .plan-resume-table th:first-child,
+dialog.fenetre .plan-resume-table td:first-child {
+    width: 34%;
+    white-space: nowrap;
+}
+
+/* Le nom d'une feuille l'ouvre dans la fenêtre du plan, à sa page (iso.js). */
+html dialog.fenetre .plan-resume-feuille {
+    margin: 0;
+    padding: 0;
+    border: 0 !important;
+    background: none !important;
+    color: var(--accent-texte) !important;
+    font: inherit;
+    font-weight: 500;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 3px;
+    cursor: pointer;
+    transition: text-decoration-color .12s ease;
+}
+
+html dialog.fenetre .plan-resume-feuille:hover,
+html dialog.fenetre .plan-resume-feuille:focus-visible {
+    text-decoration-color: currentColor;
+}
+
+/* L'article d'un repère paraît au survol : vingt désignations en clair noieraient le
+   tableau, et c'est le repère qu'on cherche sur le dessin. */
+.plan-resume-repere {
+    border-bottom: 1px dotted var(--border-fort);
+    cursor: help;
 }

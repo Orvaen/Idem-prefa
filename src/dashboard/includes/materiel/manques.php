@@ -135,6 +135,28 @@ function manquesDuSoudeur(PDO $db, int $userId): array
 }
 
 /**
+ * Les manques encore ouverts d'une demande, par article : la date du dernier signalé.
+ *
+ * Le dessin du soudeur s'en sert pour marquer les lignes de nomenclature dont le matériel
+ * est déjà signalé — par lui ou par un autre —, et éviter qu'on le signale deux fois. Un
+ * manque signalé depuis une ligne porte l'article que la ligne lui a donné
+ * (planNomenclatureDesignation()) ; s'il a été réécrit, la ligne ne le reconnaît pas.
+ *
+ * @return array<string, string> article en minuscules => date et heure du signalement
+ */
+function manquesOuvertsParArticle(PDO $db, int $demandeId): array
+{
+    $stmt = $db->prepare("SELECT designation, date_creation FROM demande_approvisionnement
+        WHERE id_demande = ? AND statut <> 'traitee' ORDER BY date_creation, id");
+    $stmt->execute([$demandeId]);
+    $ouverts = [];
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $manque) {
+        $ouverts[mb_strtolower(trim((string) $manque['designation']))] = (string) $manque['date_creation'];
+    }
+    return $ouverts;
+}
+
+/**
  * Ce que l'encadrement a à traiter : tout ce qui n'est pas encore traité, les nouveaux
  * d'abord.
  *

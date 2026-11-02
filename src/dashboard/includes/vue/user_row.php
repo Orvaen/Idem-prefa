@@ -24,11 +24,33 @@ function userCreationCourte(array $user): string
     return $date->setTimezone(new DateTimeZone('Europe/Paris'))->format('d/m/Y');
 }
 
+/**
+ * Où en est le mot de passe d'un compte, quand il y a quelque chose à en dire : à choisir —
+ * compte neuf, ou réinitialisé —, ou un nouveau demandé — oublié, ou à changer —, en attente
+ * que l'administrateur réinitialise.
+ *
+ * @return array{cle:string, libelle:string, detail:string}|null
+ */
+function userEtatMotDePasse(array $user): ?array
+{
+    if (($user['password'] ?? null) === '') {
+        return ['cle' => 'a-choisir', 'libelle' => 'Mot de passe à choisir (première connexion)',
+            'detail' => 'La personne choisira son mot de passe à sa prochaine connexion.'];
+    }
+    if (!empty($user['reinitialisation_demandee_le'])) {
+        return ['cle' => 'demande', 'libelle' => 'Nouveau mot de passe demandé',
+            'detail' => 'Demandé le ' . prefaFormatDate($user['reinitialisation_demandee_le'], true)
+                . ' : réinitialisez-le, la personne choisira le nouveau à sa prochaine connexion.'];
+    }
+    return null;
+}
+
 function userRow(array $user, int $moi): void
 {
     $id = (int) $user['id'];
     $nom = trim($user['prenom'] . ' ' . $user['name']);
     $cestMoi = $id === $moi;
+    $motDePasse = userEtatMotDePasse($user);
     ?>
     <tr data-id="<?= $id ?>"
         data-nom="<?= prefaEscape($nom) ?>"
@@ -42,6 +64,9 @@ function userRow(array $user, int $moi): void
                     <span class="utilisateur-nom"><?= prefaEscape($nom) ?><?php if ($cestMoi): ?> <span class="utilisateur-moi">vous</span><?php endif; ?></span>
                     <span class="utilisateur-identifiant"><?= prefaEscape($user['identifiant']) ?></span>
                 </span>
+                <?php if ($motDePasse): ?>
+                    <span class="utilisateur-mdp est-<?= $motDePasse['cle'] ?>" title="<?= prefaEscape($motDePasse['detail']) ?>"><?= prefaEscape($motDePasse['libelle']) ?></span>
+                <?php endif; ?>
             </span>
         </td>
         <?php // Le rôle, et dessous le métier qu'il recouvre : « Demandeur » seul ne dit pas
@@ -65,6 +90,25 @@ function userRow(array $user, int $moi): void
                 <button type="button" role="menuitem"
                         hx-get="/api/users/edit.php?id=<?= $id ?>"
                         hx-target="closest tr" hx-swap="outerHTML">Modifier</button>
+                <?php // Réinitialiser : le mot de passe se vide, la personne en choisit un
+                      // nouveau à sa prochaine connexion. Pas sur son propre compte — le sien
+                      // se réinitialise dans Paramètres → Compte, qui ferme aussitôt la
+                      // session —, ni sur un compte qui attend déjà. ?>
+                <?php if ($cestMoi): ?>
+                    <button type="button" role="menuitem" disabled
+                            title="Le vôtre se réinitialise dans Paramètres → Compte.">Réinitialiser le mot de passe</button>
+                <?php elseif (($motDePasse['cle'] ?? '') === 'a-choisir'): ?>
+                    <button type="button" role="menuitem" disabled
+                            title="La personne choisira son mot de passe à sa prochaine connexion.">Réinitialiser le mot de passe</button>
+                <?php else: ?>
+                    <button type="button" role="menuitem"
+                            hx-post="/dashboard/actions/reinitialiser_mot_de_passe.php"
+                            hx-vals='<?= prefaEscape(json_encode(['id' => $id, 'csrf' => Session::jeton()])) ?>'
+                            hx-confirm="Réinitialiser le mot de passe de <?= prefaEscape($nom) ?> ?"
+                            data-confirmer-texte="Son mot de passe actuel ne marchera plus : il en choisira un nouveau à sa prochaine connexion."
+                            data-confirmer-action="Réinitialiser"
+                            hx-target="closest tr" hx-swap="outerHTML">Réinitialiser le mot de passe</button>
+                <?php endif; ?>
                 <?php if ($cestMoi): ?>
                     <?php // Le bouton reste, éteint, avec sa raison : l'action le refuserait
                           // de toute façon, autant le dire avant le clic. ?>

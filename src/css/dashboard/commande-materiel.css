@@ -88,29 +88,10 @@
    LE VOLET D'UN BON
    ==========================================================================
 
-   Le panneau flottant de la maison (pv.css) : en-tête, sections séparées d'un filet
-   pointillé, lignes de propriétés. C'était une fenêtre pleine page avec sa propre
-   typographie — titre de 26 px en maigre, surtitre en capitales — que rien d'autre dans
-   l'application n'employait. Plus large que les autres volets : un bon porte un tableau
-   d'articles, pas une fiche. */
-
-.prefa-detail-row.materiel-volet-rang {
-    top: 8px;
-    right: 8px;
-    bottom: 8px;
-    left: auto;
-    width: min(880px, calc(100vw - 16px));
-    border: 1px solid var(--border);
-    border-radius: var(--r-xl);
-    background: var(--surface) !important;
-    box-shadow: 0 1px 2px rgb(15 15 16 / 6%), 0 24px 64px rgb(15 15 16 / 18%);
-    animation: fiche-tiroir 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-html body:has(.prefa-detail-row.materiel-volet-rang:not([hidden]))::before {
-    background: rgb(15 15 16 / 16%);
-    backdrop-filter: blur(2px);
-}
+   Le panneau de la maison (pv.css) : en-tête, sections séparées d'un filet pointillé,
+   lignes de propriétés, dans la grande fenêtre de tous les volets (prefa-list.css). C'était
+   une fenêtre pleine page avec sa propre typographie — titre de 26 px en maigre, surtitre
+   en capitales — que rien d'autre dans l'application n'employait. */
 
 /* Le formulaire porte le volet : il prend toute la hauteur, et le pied reste en bas. */
 .materiel-volet-rang > .pv-volet {

@@ -1,6 +1,6 @@
 # Base de données
 
-MySQL 8.4, une base `myapp`, **37 tables** en InnoDB et `utf8mb4`. Le schéma complet d'une
+MySQL 8.4, une base `myapp`, **38 tables** en InnoDB et `utf8mb4`. Le schéma complet d'une
 installation neuve est dans `db/schema.sql`.
 
 ## Les tables, par domaine
@@ -9,9 +9,9 @@ installation neuve est dans `db/schema.sql`.
 
 | Table | Ce qu'elle porte |
 | --- | --- |
-| `Utilisateur` | Un compte : `identifiant` (la connexion), `password` (bcrypt), `name` (le nom), `prenom`, `email`, `id_role`, `dernier_evenement_vu` |
+| `Utilisateur` | Un compte : `identifiant` (la connexion), `password` (bcrypt ; vide tant que la personne n'a pas choisi le sien), `reinitialisation_demandee_le` (un nouveau mot de passe demandé — oublié, ou à changer —, en attente de réinitialisation), `name` (le nom), `prenom`, `email`, `id_role`, `dernier_evenement_vu` |
 | `role` | Les quatre rôles — voir [Rôles et droits](/fonctionnalites/roles) |
-| `signature_utilisateur` | La signature de chacun, tracée dans les paramètres : ses traits (`dessin`, en JSON), rangés par versions. Celle en cours n'a pas de `date_retrait` ; une signature refaite ou supprimée reste tant qu'un cordon la porte |
+| `signature_utilisateur` | La signature de chacun, tracée dans les paramètres : ses traits (`dessin`, en JSON), rangés par versions. Celle en cours n'a pas de `date_retrait` ; une signature refaite ou supprimée reste tant qu'une soudure la porte |
 
 ### Affaires et demandes
 
@@ -33,6 +33,7 @@ installation neuve est dans `db/schema.sql`.
 | `element_atelier` | Un plan d'une demande : `reference` unique dans la demande |
 | `element_atelier_document` | Les documents rattachés à un plan, ses pages, ses numéros de ligne par page |
 | `affectation_atelier` | Un plan confié à une personne pour un travail (`plan`, `montage`, `soudage`) : `avancement` validé, `revision`. `actif` vaut 1, ou NULL une fois l'affectation remplacée — ce qui garde l'historique sous l'index unique |
+| `affectation_metier` | Un métier tenu sur un plan (`debit`, `assemblage`, `pointage`, `soudage`, `passivation`) : une ligne par personne et par métier — plusieurs métiers par personne, plusieurs personnes par métier. Pas d'avancement : il ouvre le plan, comme une affectation |
 | `avancement_atelier` | Les déclarations : `etat` (propose, valide, refuse), les soudures ou les étapes comptées |
 | `element_atelier_etapes`, `…_historique` | Les sept étapes d'un plan, en JSON, et leurs révisions |
 | `pointage_atelier` | Les anciens pointages d'heures. Rien ne l'écrit plus ; ses lignes servent encore de propositions au chef |
@@ -42,7 +43,7 @@ installation neuve est dans `db/schema.sql`.
 | Table | Ce qu'elle porte |
 | --- | --- |
 | `plan_nomenclature` | Une case de coulée : la ligne, la page, la coulée, sa position en fractions de page |
-| `plan_soudure` | Un cordon : numéro, soudeur, date, type, RT / VI / PT — VI s'affiche « VT », le mot du plan —, visa (`vise_par`, `date_visa` : qui a validé, et quand ; `id_signature` : sa signature ce jour-là) |
+| `plan_soudure` | Une soudure : numéro, soudeur, date, type, RT / VI / PT — VI s'affiche « VT », le mot du plan —, visa (`vise_par`, `date_visa` : qui a validé, et quand ; `id_signature` : sa signature ce jour-là) |
 | `demande_ccpu_documents` | Les certificats matière, **en BLOB**, et le résultat de leur lecture |
 | `demande_ccpu_coulees` | Les coulées lues : numéro, page, confiance, `confirmee` |
 

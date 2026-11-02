@@ -12,7 +12,9 @@ Comment l'application sait qui est là, ce qu'elle protège, et ce qui reste à 
 
 | Règle | Détail |
 | --- | --- |
-| Durée | Le fichier de session est ramassé après **8 heures** sans activité (`session.gc_maxlifetime=28800`). |
+| Durée | Une connexion vaut **2 heures**, comptées depuis le mot de passe et non depuis le dernier clic (`Session::DUREE`) : passé ce délai, on se reconnecte, même en plein travail. La bascule entre comptes mémorisés ne les repousse pas — elle se fait sans mot de passe ; l'ajout d'un compte, qui en demande un, les relance. À l'échéance, la session se vide, comptes mémorisés compris. |
+| Fin de connexion à l'écran | Le serveur répond `401` avec l'en-tête `X-Connexion: fermee` ; le tableau de bord renvoie alors la page entière à l'écran de connexion, qui dit pourquoi (`js/coquille/connexion.js`). La page y repart aussi d'elle-même à l'heure dite, sans attendre une requête. |
+| Ménage de PHP | Le fichier de session est ramassé après 8 heures sans activité (`session.gc_maxlifetime=28800`, `Dockerfile`) : un plafond de stockage, au-delà des deux heures. |
 | Cookie | Un cookie de session : fermer le navigateur déconnecte, et vide la liste des comptes mémorisés — la bonne règle sur un poste d'atelier partagé. |
 | Déconnexion | `auth/logout.php` vide la session, retire le cookie et détruit le stockage : **tous** les comptes de l'appareil sont déconnectés. |
 | Où elle vit | Dans le conteneur web : le recréer (`run down`, `run rebuild`, changement de mode) déconnecte tout le monde. |
@@ -82,6 +84,24 @@ pièce jointe sauf pour un aperçu.
 Hachés par `password_hash` (bcrypt), vérifiés par `password_verify`. Un mot de passe créé par
 `run admin` est tiré au sort et montré une seule fois ; ceux des comptes d'essai ne sont jamais
 affichés.
+
+Depuis l'écran « Utilisateurs », un compte se crée **sans mot de passe** : la colonne `password`
+est vide, et `password_verify` ne reconnaît rien contre une chaîne vide. L'écran de connexion
+demande alors à la personne de choisir le sien (`auth/creer_mot_de_passe.php`), une seule fois :
+la requête n'écrit que sur un mot de passe encore vide. Une réinitialisation par le chargé de
+production le revide.
+
+Personne ne change le sien sur place : un mot de passe ne se tape qu'à l'écran de connexion. On
+en demande un nouveau — oublié, sans être connecté (`auth/mot_de_passe_oublie.php`, jeton CSRF de
+la page, même réponse que le compte existe ou non) ; à changer, depuis les paramètres
+(`dashboard/actions/mon_mot_de_passe.php`, le compte lu dans la session, jamais dans le
+formulaire). Le chargé de production réinitialise, et l'on choisit le nouveau en se reconnectant.
+
+| Règle | Détail |
+| --- | --- |
+| Longueur | 8 caractères au moins (`User::MOT_DE_PASSE_MINI`), 72 octets au plus — au-delà, bcrypt ne lit plus rien |
+| Changer le sien | Il se demande ; l'ancien marche jusqu'à la réinitialisation. Le chargé de production réinitialise le sien lui-même, et sa session se ferme aussitôt : ouverte, elle laisserait le compte sans mot de passe pendant qu'il travaille. Réinitialiser sa propre ligne depuis « Utilisateurs » est refusé pour la même raison. |
+| La fenêtre sans mot de passe | Entre la création — ou la réinitialisation — et la première connexion, qui connaît l'identifiant peut choisir le mot de passe : voir [Utilisateurs](/fonctionnalites/utilisateurs#le-mot-de-passe) |
 
 ## La prise de place, en développement seulement
 

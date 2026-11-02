@@ -153,7 +153,7 @@ function soudureRelevees(PDO $db, int $elementId): array
  */
 function soudureSuiviPlans(PDO $db): array
 {
-    $plans = $db->query("SELECT e.id, e.reference, e.libelle, e.id_demande, d.nom_affaire
+    $plans = $db->query("SELECT e.id, e.reference, e.libelle, e.id_demande, d.nom_affaire, d.urgent
         FROM element_atelier e
         JOIN demande_prefabrication d ON d.id = e.id_demande
         WHERE d.id_statut = 2
@@ -161,7 +161,7 @@ function soudureSuiviPlans(PDO $db): array
     if (!$plans) return [];
 
     $stmt = $db->prepare("SELECT a.id, a.id_utilisateur, a.avancement, a.revision, a.type_affectation,
-            TRIM(CONCAT(u.prenom, ' ', u.name)) AS personne
+            TRIM(CONCAT(u.prenom, ' ', u.name)) AS personne, u.prenom, u.name
         FROM affectation_atelier a JOIN Utilisateur u ON u.id = a.id_utilisateur
         WHERE a.id_element = ? AND a.actif = 1
         ORDER BY a.type_affectation");
@@ -467,7 +467,7 @@ function soudureLigneRendu(array $ligne, array $soudeurs, bool $modifiable): str
 
     return '<tr class="tableau-ligne' . ($venueDuPointage ? ' soudure-du-pointage' : '') . '">'
         . '<td><input type="text" name="numero" value="' . $valeur('numero') . '" maxlength="20" aria-label="Numéro de soudure"'
-        . ($venueDuPointage ? ' title="Numéro proposé pour ce pointage. Corrigez-le si le cordon en porte un autre, puis enregistrez."' : '') . '>'
+        . ($venueDuPointage ? ' title="Numéro proposé pour ce pointage. Corrigez-le si la soudure en porte un autre, puis enregistrez."' : '') . '>'
         . ($origine ? '<input type="hidden" name="pointage" value="' . (int) $origine . '">' : '') . '</td>'
         . '<td>' . ($soudeurFige ?? '<select name="soudeur" aria-label="Soudeur">' . $options . '</select>') . '</td>'
         . '<td><input type="date" name="date" value="' . $valeur('date_soudure') . '" aria-label="Date de soudage"></td>'
@@ -503,8 +503,14 @@ function soudureControlesRendu(array $cordons, string $visa): string
     $html = '<input type="hidden" name="controles_vus" value="1">';
     if (!$cordons) return $html;
 
+    // Deux choses à dire, chacune à sa place : comment cocher, à gauche sous le titre ; ce
+    // que « Valider » signera, à droite. Elles tenaient en une seule phrase de trois tirets.
     $html .= '<div class="soudure-controles">'
-        . '<p class="soudure-controles-titre">Contrôles · une croix quand c’est OK — « Valider » ' . $visa . '</p>'
+        . '<div class="soudure-controles-entete">'
+        . '<div><h4 class="soudure-controles-titre">Contrôles</h4>'
+        . '<p class="soudure-controles-aide">Cochez ce qui est OK : une croix sur le plan.</p></div>'
+        . '<p class="soudure-controles-visa">' . $visa . '</p>'
+        . '</div>'
         . '<table class="atelier-soudures-table soudure-controles-table"><thead><tr>'
         . '<th scope="col">N°</th><th scope="col">Feuille</th><th scope="col">Date</th><th scope="col">Procédé</th>';
     foreach (SOUDURE_CONTROLES as $libelle) {
@@ -516,12 +522,12 @@ function soudureControlesRendu(array $cordons, string $visa): string
     // dire une seule chose. Une case par colonne les coche tous ; on décoche ensuite ceux
     // qui ne passent pas.
     if (count($cordons) > 1) {
-        $html .= '<tr class="soudure-controles-tous"><td colspan="4">Tous les cordons</td>';
+        $html .= '<tr class="soudure-controles-tous"><td colspan="4">Toutes les soudures</td>';
         foreach (SOUDURE_CONTROLES as $cle => $libelle) {
             $tous = !array_filter($cordons, static fn (array $cordon): bool => trim((string) $cordon[$cle]) === '');
             $html .= '<td class="soudure-controle"><input type="checkbox" class="soudure-croix soudure-controles-tout"'
                 . ' data-controle="' . $cle . '"' . ($tous ? ' checked' : '')
-                . ' aria-label="' . $libelle . ' OK sur tous les cordons"></td>';
+                . ' aria-label="' . $libelle . ' OK sur toutes les soudures"></td>';
         }
         $html .= '</tr>';
     }
@@ -540,7 +546,7 @@ function soudureControlesRendu(array $cordons, string $visa): string
             $html .= '<td class="soudure-controle"><input type="checkbox" class="soudure-croix" name="controles[' . $cle . '][]"'
                 . ' value="' . $id . '" data-controle="' . $cle . '"'
                 . (trim((string) $cordon[$cle]) !== '' ? ' checked' : '')
-                . ' aria-label="Cordon ' . $numero . ' : ' . $libelle . ' OK"></td>';
+                . ' aria-label="Soudure ' . $numero . ' : ' . $libelle . ' OK"></td>';
         }
         $html .= '</tr>';
     }

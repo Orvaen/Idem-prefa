@@ -3,20 +3,18 @@
 // visualiseur où les coulées se posent directement sur les lignes du plan.
 //
 // Le PDF est rasterisé une fois puis gardé à côté de l'original : un scan A4 pèse
-// environ 200 Ko en JPEG, et le refaire à chaque ouverture coûterait une seconde.
+// environ 200 Ko en JPEG, et le refaire à chaque ouverture coûterait une seconde. Il l'est
+// d'ordinaire dès le dépôt du plan, en tâche de fond (planApercu(), plan_index.php) : cette
+// action ne le fait elle-même que pour une page que la lecture n'a pas encore atteinte.
 require_once __DIR__ . '/../includes/prefa_context.php';
 require_once __DIR__ . '/../includes/demande/prefa_attachments.php';
 require_once __DIR__ . '/../includes/atelier/plan_document.php';
 require_once __DIR__ . '/../includes/atelier/atelier.php';
+require_once __DIR__ . '/../includes/lecture/plan_index.php';
 
-const PLAN_IMAGE_DPI = 150;
-
-/**
- * La définition d'une vignette de sommaire. On y reconnaît la feuille à son tracé, on n'y
- * lit rien : quinze pages en pleine définition feraient trois méga-octets pour une colonne
- * large comme le pouce.
- */
-const PLAN_IMAGE_DPI_VIGNETTE = 25;
+// Rien ne s'écrit dans la session d'ici : la page et ses quinze vignettes se servent en même
+// temps au lieu de s'attendre (Session::liberer()).
+Session::liberer();
 
 $elementId = filter_var($_GET['plan'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 if (!$elementId) prefaError(400, 'Plan invalide.');
@@ -54,20 +52,8 @@ if (!$page || $page > (int) $plan['pages']) prefaError(404, 'Page du plan introu
 $vignette = !empty($_GET['vignette']);
 
 // L'image n'est refaite que si le plan a changé depuis la dernière fois.
-$cache = prefaAttachmentDirectory($requestId) . '/apercu-' . substr($cle, 0, 32)
-    . ($page > 1 ? '-p' . $page : '') . ($vignette ? '-v' : '') . '.jpg';
-if (!is_file($cache) || filemtime($cache) < filemtime($source)) {
-    $base = substr($cache, 0, -4);
-    exec(sprintf(
-        'pdftoppm -r %d -jpeg -f %d -l %d -singlefile %s %s 2>/dev/null',
-        $vignette ? PLAN_IMAGE_DPI_VIGNETTE : PLAN_IMAGE_DPI,
-        $page,
-        $page,
-        escapeshellarg($source),
-        escapeshellarg($base)
-    ), $sortie, $code);
-    if ($code !== 0 || !is_file($cache)) prefaError(500, 'Aperçu du plan indisponible.');
-}
+$cache = planApercu($requestId, $cle, $page, $vignette);
+if ($cache === null) prefaError(500, 'Aperçu du plan indisponible.');
 
 header('Content-Type: image/jpeg');
 header('X-Content-Type-Options: nosniff');

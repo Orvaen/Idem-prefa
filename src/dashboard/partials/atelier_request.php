@@ -14,11 +14,12 @@ require_once __DIR__ . '/../includes/atelier/avancement.php';
 require_once __DIR__ . '/../includes/atelier/plan_document.php';
 require_once __DIR__ . '/../includes/atelier/nomenclature.php';
 require_once __DIR__ . '/../includes/atelier/soudure.php';
+require_once __DIR__ . '/../includes/atelier/decision.php';
 require_once __DIR__ . '/../includes/vue/plan_viewer.php';
 $elements = atelierElements($db, $requestId);
 // Les coulées des certificats de la demande : une seule lecture pour tous ses plans.
 $couleesDisponibles = nomenclatureCouleesDisponibles($db, $requestId);
-$types = ['plan' => 'Plan / ISO', 'montage' => 'Montage', 'soudage' => 'Suivi soudage'];
+$types = atelierTravaux();
 // Une icône par poste, comme les lignes de propriétés des volets (PV, fiche) : le libellé
 // se repère avant de se lire.
 $iconesPoste = [
@@ -126,6 +127,13 @@ $avancementsAValider = avancementEnAttentePlusieurs($db, $affectationsActives);
                                 <div class="atelier-plan-identity"><h3><?= prefaEscape($element['reference']) ?></h3><span class="atelier-row-description"><?= prefaEscape($element['libelle']) ?></span>
                                     <?php if (!$availableDocuments): ?><span class="atelier-missing-file"><?= !empty($attachmentsByRequest[$requestId]) ? 'Le fichier de la demande reste à rattacher à ce plan.' : 'Aucun fichier rattaché à ce plan.' ?></span><?php endif; ?>
                                 </div>
+                                <div class="plan-volet-actions">
+                                <?php // Ce qui manque au plan, feuille ISO par feuille ISO : les soudures, les
+                                      // coulées des CCPU. Pour tout l'encadrement : il ne fait que lire. ?>
+                                <button type="button" class="pv-outil plan-resume-ouvrir" data-element="<?= (int) $element['id'] ?>" aria-haspopup="dialog">
+                                    <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6v3H9z" /><path d="M15 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2" /><path d="M9 12h6M9 16h4" /></svg>
+                                    Résumé du plan
+                                </button>
                                 <?php if ($canManageWorkshop && $taken): ?>
                                     <div class="pv-volet-outils plan-volet-outils">
                                         <button type="button" class="prefa-toggle atelier-open-plan-edit" data-dialog="atelier-plan-dialog-<?= $requestId ?>" data-element="<?= (int) $element['id'] ?>" data-reference="<?= prefaEscape($element['reference']) ?>" data-description="<?= prefaEscape($element['libelle']) ?>" aria-label="Renommer le plan" title="Renommer le plan"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z" /><path d="m13.5 6.5 4 4" /></svg></button>
@@ -139,6 +147,7 @@ $avancementsAValider = avancementEnAttentePlusieurs($db, $affectationsActives);
                                         </form>
                                     </div>
                                 <?php endif; ?>
+                                </div>
                             </div>
 
                             <section class="plan-volet-section">
@@ -181,23 +190,23 @@ $avancementsAValider = avancementEnAttentePlusieurs($db, $affectationsActives);
                                         <?php if ($declaration && $canManageWorkshop && $taken): ?>
                                             <!-- Le chiffre annoncé se tient à part du chiffre reconnu, et ne
                                                  se confond pas avec lui : c'est tout l'objet de la validation. -->
-                                            <div class="atelier-declaration">
-                                                <p class="atelier-declaration-titre">Avancement calculé, à valider</p>
-                                                <p class="atelier-declaration-chiffre"><?= prefaEscape(avancementPhrase($declaration)) ?></p>
-                                                <p class="atelier-muted"><?= prefaEscape($declaration['auteur']) ?> · <?= prefaEscape(atelierLocalDateTime($declaration['date_saisie'])) ?></p>
-                                                <?php if ($declaration['commentaire']): ?><p class="atelier-note"><?= prefaEscape($declaration['commentaire']) ?></p><?php endif; ?>
-                                                <form class="atelier-action atelier-declaration-actions" data-endpoint="update_atelier.php">
-                                                    <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
-                                                    <input type="hidden" name="id" value="<?= $requestId ?>">
-                                                    <input type="hidden" name="operation" value="valider">
-                                                    <input type="hidden" name="affectation" value="<?= (int) $assignment['id'] ?>">
-                                                    <input type="hidden" name="declaration" value="<?= (int) $declaration['id'] ?>">
-                                                    <?= soudureControlesRendu(avancementCordonsAValider($db, (int) $element['id'], (int) $assignment['id_utilisateur']), signatureAnnonceVisa($db, $utilisateur)) ?>
-                                                    <button type="submit" name="decision" value="valider" title="L’avancement du plan prendra ce chiffre.">Valider</button>
-                                                    <button type="submit" name="decision" value="refuser" class="bouton-discret" title="L’avancement ne change pas ; la personne affectée pourra déclarer autre chose.">Refuser</button>
-                                                    <span class="atelier-message" role="status" aria-live="polite"></span>
-                                                </form>
-                                            </div>
+                                            <?= avancementDecisionRendu([
+                                                'titre' => 'Avancement déclaré',
+                                                'avancement' => (int) $declaration['avancement'],
+                                                'valide' => $pct,
+                                                'compte' => avancementCompte($declaration),
+                                                'qui' => $declaration['auteur'],
+                                                'quand' => $declaration['date_saisie'],
+                                                'commentaire' => $declaration['commentaire'],
+                                            ], avancementDecisionFormulaire([
+                                                'champs' => ['id' => $requestId, 'operation' => 'valider',
+                                                    'affectation' => (int) $assignment['id'], 'declaration' => (int) $declaration['id']],
+                                                'cordons' => avancementCordonsAValider($db, (int) $element['id'], (int) $assignment['id_utilisateur']),
+                                                'visa' => signatureAnnonceVisa($db, $utilisateur),
+                                                'valider' => 'Valider',
+                                                'valider_aide' => 'L’avancement du plan prendra ce chiffre.',
+                                                'refuser' => true,
+                                            ])) ?>
                                         <?php endif; ?>
                                         <?php // Un chiffre déclaré n'est pas un fait : il ne sort pas d'entre la
                                               // personne affectée et son chef avant d'être reconnu. Le reste de
@@ -214,6 +223,30 @@ $avancementsAValider = avancementEnAttentePlusieurs($db, $affectationsActives);
                             </div>
                             </section>
 
+                            <?php if (metiersEnBase($db)): ?>
+                                <?php // Les métiers, sous les travaux : qui débite, assemble, pointe, soude
+                                      // et passive ce plan. N'importe qui du personnel, plusieurs personnes
+                                      // par métier, plusieurs métiers par personne. Pas d'avancement ici —
+                                      // il reste aux trois travaux du dessus — mais le métier ouvre le plan
+                                      // à qui le tient, dans « Mes plans » et « Mes soudures ». ?>
+                                <section class="plan-volet-section">
+                                    <h4 class="atelier-plan-titre-section">Métiers</h4>
+                                    <div class="atelier-plan-work-grid atelier-plan-metiers">
+                                        <?php foreach (atelierMetiers() as $cleMetier => $libelleMetier):
+                                            $tenants = $element['metiers'][$cleMetier] ?? [];
+                                            $noms = implode(', ', array_column($tenants, 'nom')); ?>
+                                            <section class="atelier-plan-work atelier-plan-metier"><h4><?= prefaEscape($libelleMetier) ?></h4>
+                                                <?php if ($canManageWorkshop && $taken): ?>
+                                                    <button type="button" class="atelier-edit-assignment atelier-person-button <?= $tenants ? 'is-assigned' : '' ?>" data-form="<?= $formId ?>" data-metier="<?= $cleMetier ?>" data-users="<?= implode(',', array_column($tenants, 'id')) ?>" data-label="<?= prefaEscape($element['reference'] . ' · ' . $libelleMetier) ?>" aria-haspopup="menu" aria-expanded="false" title="<?= $tenants ? 'Ajouter ou retirer une personne' : 'Donner ce métier à quelqu’un' ?> — <?= prefaEscape($libelleMetier) ?>">
+                                                        <?= $tenants ? prefaEscape($noms) : 'Affecter' ?>
+                                                    </button>
+                                                <?php else: ?><span><?= $tenants ? prefaEscape($noms) : 'Personne' ?></span><?php endif; ?>
+                                            </section>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </section>
+                            <?php endif; ?>
+
                             <?php
                             // Ce que l'atelier a soudé sur ce plan, en une ligne. La liste
                             // entière vit dans l'onglet « Soudures » : elle y est avec celles
@@ -225,8 +258,8 @@ $avancementsAValider = avancementEnAttentePlusieurs($db, $affectationsActives);
                                 <p class="atelier-soudures-renvoi plan-volet-section">
                                     <span class="atelier-plan-titre-section">Soudures</span>
                                     <strong><?= $faitesIso ?><?= $soudureTotal ? ' / ' . $soudureTotal : '' ?></strong>
-                                    <span class="atelier-muted">cordon<?= $faitesIso > 1 ? 's' : '' ?> renseigné<?= $faitesIso > 1 ? 's' : '' ?><?= $soudureTotal ? ' sur ' . $soudureTotal . ' prévu' . ($soudureTotal > 1 ? 's' : '') . ' au plan' : '' ?></span>
-                                    <button type="button" class="atelier-vers-suivi-soudures" title="Ouvre l’écran « Soudures », où l’on voit les cordons et où l’on valide">Voir les cordons ↗</button>
+                                    <span class="atelier-muted">soudure<?= $faitesIso > 1 ? 's' : '' ?> renseignée<?= $faitesIso > 1 ? 's' : '' ?><?= $soudureTotal ? ' sur ' . $soudureTotal . ' prévue' . ($soudureTotal > 1 ? 's' : '') . ' au plan' : '' ?></span>
+                                    <button type="button" class="atelier-vers-suivi-soudures" title="Ouvre l’écran « Soudures », où l’on voit les soudures et où l’on valide">Voir les soudures ↗</button>
                                 </p>
                             <?php endif; ?>
 
@@ -303,7 +336,7 @@ $avancementsAValider = avancementEnAttentePlusieurs($db, $affectationsActives);
                                     <div id="<?= $formId ?>" class="atelier-manage-panel" hidden>
                                         <h5 class="atelier-manage-title">Affecter une personne</h5>
                                         <form class="atelier-action prefa-form atelier-manage-form" data-endpoint="save_atelier.php">
-                                            <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>"><input type="hidden" name="id" value="<?= $requestId ?>"><input type="hidden" name="operation" value="assign"><input type="hidden" name="element" value="<?= (int) $element['id'] ?>"><input type="hidden" name="type" value="plan">
+                                            <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>"><input type="hidden" name="id" value="<?= $requestId ?>"><input type="hidden" name="operation" value="assign"><input type="hidden" name="element" value="<?= (int) $element['id'] ?>"><input type="hidden" name="type" value="plan"><input type="hidden" name="metier" value=""><input type="hidden" name="retenir" value="">
                                             <div><label for="atelier-user-<?= $element['id'] ?>">Personnel atelier</label><select id="atelier-user-<?= $element['id'] ?>" name="utilisateur" required>
                                                     <option value="">Sélectionner une personne</option><?php foreach ($workshopUsers as $user): ?><option value="<?= (int) $user['id'] ?>"><?= prefaEscape($user['nom']) ?></option><?php endforeach; ?>
                                                 </select></div>

@@ -26,6 +26,7 @@ CREATE TABLE `Utilisateur` (
   `name` varchar(100) NOT NULL,
   `id_role` int NOT NULL,
   `password` varchar(100) NOT NULL,
+  `reinitialisation_demandee_le` datetime DEFAULT NULL COMMENT 'la personne demande un nouveau mot de passe — oublié, ou à changer : l''administrateur réinitialise ; NULL sinon',
   `email` varchar(255) DEFAULT NULL,
   `prenom` varchar(256) NOT NULL,
   `identifiant` varchar(256) NOT NULL,
@@ -71,6 +72,24 @@ CREATE TABLE `affectation_atelier` (
   CONSTRAINT `affectation_atelier_ibfk_2` FOREIGN KEY (`id_utilisateur`) REFERENCES `Utilisateur` (`id`),
   CONSTRAINT `affectation_atelier_ibfk_3` FOREIGN KEY (`affecte_par`) REFERENCES `Utilisateur` (`id`),
   CONSTRAINT `affectation_atelier_chk_1` CHECK ((`avancement` <= 100))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `affectation_metier` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `id_element` int NOT NULL,
+  `id_utilisateur` int NOT NULL,
+  `metier` enum('debit','assemblage','pointage','soudage','passivation') NOT NULL,
+  `affecte_par` int NOT NULL,
+  `date_affectation` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_metier` (`id_element`,`id_utilisateur`,`metier`),
+  KEY `idx_metier_utilisateur` (`id_utilisateur`),
+  KEY `fk_metier_affecte_par` (`affecte_par`),
+  CONSTRAINT `fk_metier_affecte_par` FOREIGN KEY (`affecte_par`) REFERENCES `Utilisateur` (`id`),
+  CONSTRAINT `fk_metier_element` FOREIGN KEY (`id_element`) REFERENCES `element_atelier` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_metier_utilisateur` FOREIGN KEY (`id_utilisateur`) REFERENCES `Utilisateur` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;

@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../includes/prefa_context.php';
+require_once __DIR__ . '/../includes/vue/liste.php';
 // return et non exit : cette page est aussi incluse par dashboard.php, qui a encore le
 // pied de page à écrire. « return » au premier niveau d'un fichier inclus rend la main à
 // celui qui l'inclut, et termine le script quand c'est le navigateur qui l'appelle.
@@ -130,25 +131,7 @@ if ($isWorkshopPersonnel) {
                       // commandes de la vue, pas du contenu. ?>
                 <div class="prefa-vue-outils">
 
-                    <div class="prefa-densite" role="group" aria-label="Densité du tableau">
-                        <button type="button" class="prefa-densite-choix" data-densite="confortable"
-                                aria-pressed="true" aria-label="Lignes confortables" title="Lignes confortables">
-                            <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true">
-                                <rect x="2" y="3" width="12" height="2.6" rx="1" />
-                                <rect x="2" y="6.7" width="12" height="2.6" rx="1" />
-                                <rect x="2" y="10.4" width="12" height="2.6" rx="1" />
-                            </svg>
-                        </button>
-                        <button type="button" class="prefa-densite-choix" data-densite="compact"
-                                aria-pressed="false" aria-label="Lignes compactes" title="Lignes compactes">
-                            <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true">
-                                <rect x="2" y="2.6" width="12" height="1.6" rx=".8" />
-                                <rect x="2" y="5.6" width="12" height="1.6" rx=".8" />
-                                <rect x="2" y="8.6" width="12" height="1.6" rx=".8" />
-                                <rect x="2" y="11.6" width="12" height="1.6" rx=".8" />
-                            </svg>
-                        </button>
-                    </div>
+                    <?= listeDensite() ?>
 
                     <button type="button" id="refresh-prefa">
 

@@ -56,6 +56,7 @@ function avancementSouduresPrevues(PDO $db, int $elementId): array
 {
     require_once __DIR__ . '/plan_document.php';
     require_once __DIR__ . '/../lecture/plan_lignes.php';
+    require_once __DIR__ . '/../lecture/plan_index.php';
 
     $demande = $db->prepare('SELECT id_demande FROM element_atelier WHERE id = ?');
     $demande->execute([$elementId]);
@@ -66,6 +67,18 @@ function avancementSouduresPrevues(PDO $db, int $elementId): array
     $lues = 0;
     $pages = 0;
     foreach (planDocuments($db, $elementId) as $doc) {
+        // Un document lu en entier porte le compte de chacune de ses pages dans son repère :
+        // un fichier au lieu d'un par page (planIndexLu()).
+        $repere = planIndexLu($requestId, (string) $doc['cle_document']);
+        if ($repere !== null && isset($repere['soudures'])) {
+            foreach ($repere['soudures'] as $compte) {
+                $pages++;
+                if ($compte === null) continue;
+                $lues++;
+                $prevues += (int) $compte;
+            }
+            continue;
+        }
         $plan = planDocumentChoisi($db, $elementId, (int) $doc['id']);
         if (!$plan || !is_file($plan['chemin'])) continue;
         for ($page = 1; $page <= max(1, (int) $doc['pages']); $page++) {
@@ -223,6 +236,15 @@ function avancementSuiviSoudage(PDO $db, int $elementId, int $soudeurId): ?array
         WHERE id_element = ? AND id_utilisateur = ? AND actif = 1 ORDER BY id LIMIT 1');
     $stmt->execute([$elementId, $soudeurId]);
     $parQui = $stmt->fetchColumn();
+    // Sans travail sur le plan, c'est un métier qui l'y a mis : celui qui le lui a donné
+    // ouvre le suivi, comme il aurait confié un travail.
+    require_once __DIR__ . '/atelier.php';
+    if ($parQui === false && metiersEnBase($db)) {
+        $stmt = $db->prepare('SELECT affecte_par FROM affectation_metier
+            WHERE id_element = ? AND id_utilisateur = ? ORDER BY id LIMIT 1');
+        $stmt->execute([$elementId, $soudeurId]);
+        $parQui = $stmt->fetchColumn();
+    }
     if ($parQui === false) return null;
 
     try {
@@ -386,7 +408,7 @@ function avancementViserCordons(PDO $db, int $elementId, int $soudeurId, int $ac
     sort($attendus);
     sort($recus);
     if ($attendus !== $recus) {
-        throw new DomainException('Les cordons à valider ont changé depuis l’affichage. Actualisez avant de valider.');
+        throw new DomainException('Les soudures à valider ont changé depuis l’affichage. Actualisez avant de valider.');
     }
 
     if (!$attendus) return;
@@ -592,18 +614,22 @@ function avancementTrancher(PDO $db, int $affectationId, int $declarationId, int
  */
 function avancementPhrase(array $declaration): string
 {
-    $pourcentage = (int) $declaration['avancement'] . ' %';
+    $compte = avancementCompte($declaration);
+    return ($compte !== null ? $compte . ' — ' : '') . (int) $declaration['avancement'] . ' %';
+}
+
+/** Le rapport seul — « 7 soudures sur 7 », « 2 étapes sur 5 » —, ou null s'il n'y en a pas. */
+function avancementCompte(array $declaration): ?string
+{
     if (($declaration['etapes'] ?? null) !== null && (int) ($declaration['etapes_total'] ?? 0) > 0) {
         $faites = (int) $declaration['etapes'];
-        return $faites . ($faites > 1 ? ' étapes sur ' : ' étape sur ')
-            . (int) $declaration['etapes_total'] . ' — ' . $pourcentage;
+        return $faites . ($faites > 1 ? ' étapes sur ' : ' étape sur ') . (int) $declaration['etapes_total'];
     }
-    if (($declaration['soudures'] ?? null) === null || (int) $declaration['soudures_total'] < 1) {
-        return $pourcentage;
+    if (($declaration['soudures'] ?? null) === null || (int) ($declaration['soudures_total'] ?? 0) < 1) {
+        return null;
     }
     $faites = (int) $declaration['soudures'];
-    return $faites . ($faites === 1 ? ' soudure sur ' : ' soudures sur ')
-        . (int) $declaration['soudures_total'] . ' — ' . $pourcentage;
+    return $faites . ($faites === 1 ? ' soudure sur ' : ' soudures sur ') . (int) $declaration['soudures_total'];
 }
 
 /** L'état d'une ligne d'historique, dit en clair avec le nom de qui a tranché. */

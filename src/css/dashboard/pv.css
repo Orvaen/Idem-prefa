@@ -96,41 +96,13 @@
 }
 
 /* ==========================================================================
-   LE VOLET — un panneau flottant, façon fiche
+   LE VOLET — une grande fenêtre, façon fiche
    ==========================================================================
 
-   Une carte posée à 8 px des bords, arrondie, la liste visible derrière sous un voile
-   léger. Dedans, une seule grammaire : des sections séparées par un filet pointillé, un
-   titre sourd en casse normale (DA, § 7 bis : jamais en capitales), et des lignes de
-   propriétés — icône et libellé à gauche, valeur ou champ à droite. */
-
-#pv-page .prefa-detail-row {
-    top: 8px;
-    right: 8px;
-    bottom: 8px;
-    left: auto;
-    width: min(560px, calc(100vw - 16px));
-    border: 1px solid var(--border);
-    border-radius: var(--r-xl);
-    box-shadow: 0 1px 2px rgb(15 15 16 / 6%), 0 24px 64px rgb(15 15 16 / 18%);
-    animation: pv-tiroir 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-body:has(#pv-page .prefa-detail-row:not([hidden]))::before {
-    background: rgb(15 15 16 / 16%);
-    backdrop-filter: blur(2px);
-}
-
-@keyframes pv-tiroir {
-    from {
-        opacity: 0;
-        transform: translateX(24px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
+   La fenêtre elle-même — sa place, sa taille, son voile — est celle de tous les volets
+   (prefa-list.css). Dedans, une seule grammaire : des sections séparées par un filet
+   pointillé, un titre sourd en casse normale (DA, § 7 bis : jamais en capitales), et des
+   lignes de propriétés — icône et libellé à gauche, valeur ou champ à droite. */
 
 #pv-page .prefa-detail-row > td {
     padding: 0;
@@ -791,14 +763,6 @@ body:has(#pv-page .prefa-detail-row:not([hidden]))::before {
 }
 
 @media (max-width: 560px) {
-
-    #pv-page .prefa-detail-row {
-        top: 0;
-        right: 0;
-        bottom: 0;
-        width: 100vw;
-        border-radius: 0;
-    }
 
     .pv-proprietes > div {
         grid-template-columns: 120px minmax(0, 1fr);

@@ -14,6 +14,16 @@
  */
 final class Session
 {
+    /**
+     * Ce que vaut une connexion : deux heures, comptées depuis le mot de passe — pas depuis
+     * le dernier clic. Passé ce délai, on se reconnecte, même en plein travail.
+     *
+     * Décidé le 2 novembre 2026. La session tenait jusque-là huit heures sans activité ;
+     * `session.gc_maxlifetime` (Dockerfile) reste à huit heures : c'est le plafond du ménage
+     * de PHP, la règle est ici.
+     */
+    public const DUREE = 7200;
+
     /** Relu une fois par requête : treize fichiers demandent qui est là. */
     private static ?Utilisateur $utilisateur = null;
 
@@ -28,6 +38,10 @@ final class Session
         self::demarrer();
         $identifiant = $_SESSION['identifiant'] ?? null;
         $identifiant = is_string($identifiant) && $identifiant !== '' ? $identifiant : null;
+        if ($identifiant !== null && self::reste() <= 0) {
+            self::expirer();
+            return null;
+        }
         // Le journal des requêtes relit cette note sous le nom %{qui}n : une ligne
         // « 200 POST /dashboard/actions/save_atelier.php » ne dit rien tant qu'on ignore
         // de quel poste de l'atelier elle vient. Le rôle s'y ajoute dans utilisateur().
@@ -38,6 +52,56 @@ final class Session
     public static function connectee(): bool
     {
         return self::identifiant() !== null;
+    }
+
+    /**
+     * Le mot de passe vient d'être vérifié : les deux heures repartent d'ici.
+     *
+     * Appelé par la connexion et par l'ajout d'un compte, jamais par la bascule entre les
+     * comptes mémorisés : elle se fait sans mot de passe, et repousser l'échéance à chaque
+     * bascule la rendrait sans fin.
+     */
+    public static function authentifiee(): void
+    {
+        self::demarrer();
+        $_SESSION['connexion'] = time();
+        unset($_SESSION['expiree']);
+    }
+
+    /**
+     * Les secondes qui restent à la connexion. Une session ouverte avant la règle n'a pas
+     * d'heure : son compte part de la première requête qui la lit.
+     */
+    public static function reste(): int
+    {
+        self::demarrer();
+        $_SESSION['connexion'] ??= time();
+        return self::DUREE - (time() - (int) $_SESSION['connexion']);
+    }
+
+    /**
+     * Les deux heures sont passées : la session se vide, comptes mémorisés compris — on y
+     * rebascule sans mot de passe, ce serait une porte dérobée autour de l'échéance. Seule
+     * reste la marque qui fait dire à l'écran de connexion pourquoi on y est revenu.
+     */
+    private static function expirer(): void
+    {
+        Journal::noter('connexion expirée au bout de ' . intdiv(self::DUREE, 3600) . ' h');
+        $_SESSION = ['expiree' => true];
+        self::$utilisateur = null;
+        // Un nouvel identifiant de session, comme à chaque changement de compte. Pas si la
+        // page a déjà commencé à s'écrire — l'échéance tombée en pleine requête : le cookie
+        // ne partirait plus, et la session vidée suffit.
+        if (!headers_sent()) session_regenerate_id(true);
+    }
+
+    /** Vrai une fois, sur l'écran de connexion, si l'on y revient parce que la connexion a expiré. */
+    public static function vientDExpirer(): bool
+    {
+        self::demarrer();
+        $expiree = !empty($_SESSION['expiree']);
+        unset($_SESSION['expiree']);
+        return $expiree;
     }
 
     /** Connecte ce compte. L'authentification est faite ailleurs : ici on la retient. */
@@ -113,6 +177,21 @@ final class Session
     public static function jetonValide(?string $recu): bool
     {
         return hash_equals(self::jeton(), (string) $recu);
+    }
+
+    /**
+     * Rend la session aux autres requêtes du même navigateur, pour une action qui n'y écrit
+     * plus rien.
+     *
+     * PHP la verrouille du début à la fin de chaque requête : ouvrir une feuille de plan en
+     * lance dix-huit d'un coup — sa page, ses quinze vignettes, sa liste soudure, ses
+     * tableaux —, et elles passaient l'une après l'autre. L'image de la page attendait
+     * 0,44 s derrière les vignettes au lieu de 0,05. Ce qui a été lu reste lisible ; un
+     * appel à demarrer() après celui-ci reprendrait le verrou.
+     */
+    public static function liberer(): void
+    {
+        if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
     }
 
     // ------------------------------------------------- les comptes mémorisés du poste

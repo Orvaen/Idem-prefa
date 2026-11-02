@@ -3,6 +3,7 @@
 // consulte les PV des demandes où il est affecté, le reste est réservé à l'encadrement.
 require_once __DIR__ . '/../includes/prefa_context.php';
 require_once __DIR__ . '/../includes/demande/pv.php';
+require_once __DIR__ . '/../includes/atelier/atelier.php';
 
 $id = filter_var($_GET['id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 if (!$id) prefaError(400, 'Document invalide.');
@@ -16,10 +17,10 @@ if (!$document) prefaError(404, 'Document introuvable.');
 
 if (!$canViewAllPrefa) {
     if ($isWorkshopPersonnel) {
-        $stmt = $db->prepare('SELECT 1 FROM affectation_atelier a
-            JOIN element_atelier e ON e.id = a.id_element
-            WHERE a.id_utilisateur = ? AND a.actif = 1 AND e.id_demande = ? LIMIT 1');
-        $stmt->execute([$actor['id'], $document['id_demande']]);
+        // Un plan de la demande où il est, par un travail ou par un métier.
+        $stmt = $db->prepare('SELECT 1 FROM element_atelier e
+            WHERE e.id IN ' . atelierPlansDeSql($db) . ' AND e.id_demande = ? LIMIT 1');
+        $stmt->execute([$actor['id'], $actor['id'], $document['id_demande']]);
     } else {
         $stmt = $db->prepare('SELECT 1 FROM demande_prefabrication WHERE id = ? AND idUsers = ?');
         $stmt->execute([$document['id_demande'], $actor['id']]);

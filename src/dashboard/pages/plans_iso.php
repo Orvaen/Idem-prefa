@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/prefa_context.php';
+require_once __DIR__ . '/../includes/vue/liste.php';
 require_once __DIR__ . '/../includes/demande/prefa_attachments.php';
 require_once __DIR__ . '/../includes/atelier/prefa_workshop.php';
 require_once __DIR__ . '/../includes/atelier/atelier.php';
@@ -100,9 +101,13 @@ $totalPlans = array_sum($planCounts);
 | plan, et celles dont les plans sont en cours. Ce sont les deux groupes, et les deux onglets.
 */
 
+// Chaque état a son point, comme les statuts de la liste des demandes : la couleur de
+// l'attente pour une demande qui n'a encore aucun plan, l'accent quand ses plans avancent.
+// Les onglets en sont la légende ; les titres de groupe, qui coupaient la liste en tranches
+// pour redire ce que les onglets comptent, sont partis.
 $groupesIso = [
-    'a-preparer' => ['libelle' => 'À préparer', 'aide' => 'aucun plan rattaché', 'demandes' => []],
-    'en-preparation' => ['libelle' => 'En préparation', 'aide' => 'plans en cours', 'demandes' => []],
+    'a-preparer' => ['libelle' => 'À préparer', 'aide' => 'Aucun plan rattaché', 'point' => 'status-1', 'demandes' => []],
+    'en-preparation' => ['libelle' => 'En préparation', 'aide' => 'Des plans en cours', 'point' => 'plans-iso-en-cours', 'demandes' => []],
 ];
 foreach ($validatedRequests as $req) {
     $cle = ($planCounts[(int) $req['id']] ?? 0) === 0 ? 'a-preparer' : 'en-preparation';
@@ -116,15 +121,6 @@ $enRetardIso = count(array_filter(
     static fn (array $r): bool => !empty($r['date_livraison_prevue']) && $r['date_livraison_prevue'] < $aujourdhui
 ));
 
-/** Le signe du groupe : un cercle pointillé qui attend ses plans, un demi-cercle quand ils avancent. */
-$iconeGroupeIso = static function (string $groupe): string {
-    return $groupe === 'a-preparer'
-        ? '<svg class="prefa-statut-icone status-1" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">'
-            . '<circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-dasharray="2.6 2.1" /></svg>'
-        : '<svg class="prefa-statut-icone plans-iso-en-cours" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">'
-            . '<circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.6" />'
-            . '<path d="M8 4a4 4 0 0 1 0 8z" fill="currentColor" /></svg>';
-};
 ?>
 
 <section class="page prefa-page prefa-list plans-iso-page" id="plans-iso-page" aria-labelledby="plans-iso-title" data-densite="confortable">
@@ -137,25 +133,7 @@ $iconeGroupeIso = static function (string $groupe): string {
 
             <?php // Les mêmes outils de vue que la liste des demandes, au même endroit. ?>
             <div class="prefa-vue-outils">
-                <div class="prefa-densite" role="group" aria-label="Densité du tableau">
-                    <button type="button" class="prefa-densite-choix" data-densite="confortable"
-                            aria-pressed="true" aria-label="Lignes confortables" title="Lignes confortables">
-                        <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true">
-                            <rect x="2" y="3" width="12" height="2.6" rx="1" />
-                            <rect x="2" y="6.7" width="12" height="2.6" rx="1" />
-                            <rect x="2" y="10.4" width="12" height="2.6" rx="1" />
-                        </svg>
-                    </button>
-                    <button type="button" class="prefa-densite-choix" data-densite="compact"
-                            aria-pressed="false" aria-label="Lignes compactes" title="Lignes compactes">
-                        <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true">
-                            <rect x="2" y="2.6" width="12" height="1.6" rx=".8" />
-                            <rect x="2" y="5.6" width="12" height="1.6" rx=".8" />
-                            <rect x="2" y="8.6" width="12" height="1.6" rx=".8" />
-                            <rect x="2" y="11.6" width="12" height="1.6" rx=".8" />
-                        </svg>
-                    </button>
-                </div>
+                <?= listeDensite() ?>
 
                 <button type="button" id="refresh-plans-iso">
                     <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
@@ -189,7 +167,9 @@ $iconeGroupeIso = static function (string $groupe): string {
                         Toutes <span class="prefa-onglet-compte"><?= (int) $totalValidated ?></span>
                     </button>
                     <?php foreach ($groupesIso as $cle => $groupe): ?>
-                        <button type="button" class="prefa-onglet plans-iso-onglet" data-groupe="<?= $cle ?>" aria-pressed="false">
+                        <button type="button" class="prefa-onglet plans-iso-onglet" data-groupe="<?= $cle ?>"
+                                title="<?= prefaEscape($groupe['aide']) ?>" aria-pressed="false">
+                            <span class="prefa-point <?= $groupe['point'] ?>" aria-hidden="true"></span>
                             <?= prefaEscape($groupe['libelle']) ?>
                             <span class="prefa-onglet-compte"><?= count($groupe['demandes']) ?></span>
                         </button>
@@ -207,7 +187,9 @@ $iconeGroupeIso = static function (string $groupe): string {
             </div>
 
             <div class="prefa-table-scroll" role="region" aria-label="Plans et affectations des demandes" tabindex="0">
-                <table class="prefa-table plans-iso-table" id="plans-iso-list">
+                <?php // « prefa-table-points » : chaque ligne s'ouvre sur le point de son état, et
+                      // l'en-tête de la première colonne prend le même retrait. ?>
+                <table class="prefa-table prefa-table-points plans-iso-table" id="plans-iso-list">
                     <thead><tr>
                         <th scope="col">Demande n°</th>
                         <th scope="col" class="prefa-affaire">Affaire</th>
@@ -217,19 +199,9 @@ $iconeGroupeIso = static function (string $groupe): string {
                         <th scope="col">Actions</th>
                     </tr></thead>
 
+                <?php // Rangées par état, dans l'ordre des onglets — à préparer d'abord —, sans
+                      // titre : le point de chaque ligne le dit. ?>
                 <?php foreach ($groupesIso as $cleGroupe => $groupe): ?>
-                    <?php if (!$groupe['demandes']) continue; ?>
-
-                    <tbody class="prefa-groupe plans-iso-groupe" data-groupe="<?= $cleGroupe ?>">
-                        <tr>
-                            <th scope="colgroup" colspan="6">
-                                <span class="prefa-groupe-nom prefa-groupe-statut"><?= $iconeGroupeIso($cleGroupe) ?><?= prefaEscape($groupe['libelle']) ?></span>
-                                <span class="prefa-groupe-compte"><?= count($groupe['demandes']) ?></span>
-                                <span class="prefa-groupe-aide"><?= prefaEscape($groupe['aide']) ?></span>
-                            </th>
-                        </tr>
-                    </tbody>
-
                 <?php foreach ($groupe['demandes'] as $req):
                     $row = $req;
                     $requestId = (int) $row['id'];
@@ -248,10 +220,13 @@ $iconeGroupeIso = static function (string $groupe): string {
                         data-search="<?= prefaEscape($filterData) ?>">
 
                         <tr>
-                            <?php // Le numéro seul, avec la place de l'urgence réservée devant :
-                                  // le chantier est dans la colonne d'à côté. ?>
+                            <?php // Le point de l'état ouvre la ligne, puis la place de l'urgence,
+                                  // réservée sur toutes les lignes, puis le numéro seul : le
+                                  // chantier est dans la colonne d'à côté. Pas d'espace entre le
+                                  // point et l'urgence, il compterait dans l'alignement. ?>
                             <td class="prefa-reference">
-                                <span class="prefa-urgence">
+                                <span class="prefa-point <?= $groupe['point'] ?>" role="img"
+                                      aria-label="<?= prefaEscape($groupe['libelle']) ?>" title="<?= prefaEscape($groupe['libelle']) ?>"></span><span class="prefa-urgence">
                                     <?php if (!empty($row['urgent'])): ?>
                                         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
                                             stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Urgente">
@@ -347,5 +322,26 @@ $iconeGroupeIso = static function (string $groupe): string {
                 </table>
             </div>
         <?php endif; ?>
+
+        <?php // Le résumé d'un plan : ce qui lui manque, feuille ISO par feuille ISO. Une seule
+              // fenêtre pour tous les volets ; « Résumé du plan » la remplit à l'ouverture
+              // (actions/plan_resume.php, iso.js). ?>
+        <dialog class="fenetre plan-resume" id="plan-resume" aria-labelledby="plan-resume-titre">
+            <?php // Le formulaire des autres fenêtres, pour sa mise en page : une colonne bornée
+                  // par la hauteur de la boîte, dont le corps défile sous un pied qui reste. ?>
+            <form method="dialog">
+                <div class="fenetre-entete">
+                    <h2 id="plan-resume-titre">Résumé du plan</h2>
+                    <button type="button" class="modal-close" data-fermer-resume aria-label="Fermer">
+                        <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg>
+                    </button>
+                </div>
+                <p class="fenetre-sous-titre" data-resume-sous-titre></p>
+                <div class="fenetre-corps" data-resume-corps aria-live="polite"></div>
+                <div class="fenetre-pied">
+                    <button type="button" class="fenetre-annuler" data-fermer-resume>Fermer</button>
+                </div>
+            </form>
+        </dialog>
     </div>
 </section>

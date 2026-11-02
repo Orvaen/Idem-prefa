@@ -37,6 +37,7 @@ qu'il dit. Voir [Développement et production](/guide/modes).
 | `run schema` | Crée les tables — **sur une base vide seulement** : sur une base remplie, les données de référence feraient des doublons |
 | `run dump` | Sauvegarde la base dans `db/dump.sql`, écarté du dépôt par `.gitignore` |
 | `run migration -- <fichier>` | Applique une migration — le fichier de la copie de travail, pas celui de l'image |
+| `run lire-plans` | Lit ce qui manque aux plans déposés — liste soudure, repères, nomenclature, images —, sans refaire ce qui est à jour, et dit plan par plan ce qu'il a fait. Après une mise à jour qui change une lecture ; sinon les plans se lisent seuls, à leur dépôt |
 | `run clean` | **Remise à zéro** : détruit la base et les fichiers déposés, puis recrée les tables |
 
 ```sh
@@ -90,7 +91,7 @@ docker compose exec -T php php -- --nom Dupont --prenom Jean --role chef-atelier
 | Commande | Ce qu'elle fait |
 | --- | --- |
 | `run test` | Tous les essais, et s'arrête au premier rouge. Ils lisent la base : `run demo` d'abord |
-| `run pages` | Dessine les six écrans principaux et vérifie qu'aucun ne part en erreur |
+| `run pages` | Dessine les sept écrans principaux et vérifie qu'aucun ne part en erreur |
 
 Le détail est dans [Les essais automatiques](/technique/essais).
 
