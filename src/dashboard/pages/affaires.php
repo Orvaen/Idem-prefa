@@ -52,6 +52,17 @@ $choixCharge = static function (array $options, int $idAffaire, ?int $choisi): s
  */
 $sansCharge = static fn (): string => '<span class="affaire-sans-charge" title="Aucun compte n’a le rôle Chargé d’affaire.">'
     . 'Aucun compte · <button type="button" class="affaires-creer-charge">Créer</button></span>';
+
+/**
+ * Le chargé d'affaire déjà désigné : son nom, sans champ, puisqu'il ne se change plus
+ * (Affaire::modifier() le refuse). L'identifiant reste sur la balise : l'enregistrement d'un
+ * renommage le renvoie tel quel. L'infobulle redonne le nom entier, que la carte coupe.
+ */
+$chargeDesigne = static fn (Affaire $affaire): string => '<span class="affaire-charge" data-charge="' . $affaire->idChargeAffaire . '"'
+    . ' title="' . prefaEscape($affaire->chargeAffaire) . ' — désigné, il ne se change plus.">'
+    . '<svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">'
+    . '<rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>'
+    . '<span class="affaire-charge-nom">' . prefaEscape($affaire->chargeAffaire) . '</span></span>';
 ?>
 <section class="users-page affaires-page" data-csrf="<?= prefaEscape(Session::jeton()) ?>">
     <div class="header-list affaires-entete">
@@ -98,8 +109,9 @@ $sansCharge = static fn (): string => '<span class="affaire-sans-charge" title="
          on ne les compare pas, on les ouvre. La carte donne au nom la place d'un titre,
          ce qu'une cellule ne fait pas.
 
-         Le nom et le chargé d'affaire restent modifiables sur place : c'est ce que
-         l'écran savait déjà faire, et c'est ce pour quoi on y revient. -->
+         Le nom reste modifiable sur place : c'est ce que l'écran savait déjà faire, et
+         c'est ce pour quoi on y revient. Le chargé d'affaire ne l'est que tant qu'il n'est
+         pas désigné. -->
     <div class="affaires-grille" id="affaires-rows">
         <?php foreach ($affaires as $affaire): ?>
             <?php
@@ -139,7 +151,11 @@ $sansCharge = static fn (): string => '<span class="affaire-sans-charge" title="
                     <?php if (!$enLecture): ?>
                         <div>
                             <dt><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.7-3.6 3.5-5.5 7-5.5s6.3 1.9 7 5.5" /></svg>Chargé d’affaire</dt>
-                            <dd><?= $optionsCharge ? $choixCharge($optionsCharge, $affaire->id, $affaire->idChargeAffaire) : $sansCharge() ?></dd>
+                            <dd><?= match (true) {
+                                $affaire->idChargeAffaire !== null => $chargeDesigne($affaire),
+                                (bool) $optionsCharge => $choixCharge($optionsCharge, $affaire->id, null),
+                                default => $sansCharge(),
+                            } ?></dd>
                         </div>
                     <?php endif; ?>
                     <div>

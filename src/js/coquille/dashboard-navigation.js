@@ -55,9 +55,21 @@ quandPret(function () {
 // Les tuiles de l'accueil ouvrent l'écran où l'on agit sur le chiffre qu'elles montrent.
 // Elles passent par le bouton du menu plutôt que de charger la page elles-mêmes : la
 // rubrique se marque ainsi comme active, exactement comme si on l'avait cliquée.
+//
+// Une tuile qui porte un filtre ouvre l'écran déjà resserré sur ce qu'elle compte —
+// « Urgentes » ouvre la liste des demandes sur les urgentes en attente. C'est toujours
+// l'entrée du menu qui s'allume.
 document.addEventListener('click', evenement => {
     const tuile = evenement.target.closest('.accueil-tuile[data-ouvre], .accueil-affaire-action[data-ouvre]');
-    if (tuile) document.getElementById(tuile.dataset.ouvre)?.click();
+    if (!tuile) return;
+    const bouton = document.getElementById(tuile.dataset.ouvre);
+    if (!bouton) return;
+    if (!tuile.dataset.filtre) {
+        bouton.click();
+        return;
+    }
+    const page = bouton.dataset.page;
+    ouvrirVue(bouton, { page: page + (page.includes('?') ? '&' : '?') + tuile.dataset.filtre });
 });
 
 // L'écran ouvert est inscrit dans l'adresse, sous ?vue=<identifiant de l'entrée>.
@@ -66,9 +78,9 @@ document.addEventListener('click', evenement => {
 // envoie à un collègue — ramenait toujours à l'accueil. Les boutons Précédent et Suivant du
 // navigateur ne servaient à rien non plus, ou pire : ils quittaient l'application.
 //
-// C'est l'identifiant de l'entrée du menu qu'on écrit, pas l'adresse de la page : la liste
-// des demandes et les demandes urgentes ouvrent le même fichier avec un filtre, et il faut
-// pouvoir les distinguer.
+// C'est l'identifiant de l'entrée du menu qu'on écrit, pas l'adresse de la page : un même
+// écran s'ouvre parfois sur un filtre — une affaire cliquée, une tuile de l'accueil —, et
+// c'est l'entrée qui dit où l'on est.
 function vueDeLAdresse() {
     return new URLSearchParams(window.location.search).get('vue');
 }

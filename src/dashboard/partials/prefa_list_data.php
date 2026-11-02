@@ -37,8 +37,6 @@ $statuses = $db->query('SELECT id, libelle FROM statut_demande ORDER BY id')->fe
 $status = $filtreRetenu('status', array_map(static fn ($item) => (string) $item['id'], $statuses));
 
 $priority = $filtreRetenu('priority', ['0', '1']);
-$urgentView = $canViewAllPrefa && ($_GET['view'] ?? '') === 'urgent';
-if ($urgentView) $priority = ['1'];
 $users = $canViewAllPrefa
     ? $db->query('SELECT DISTINCT u.id, u.prenom, u.name FROM Utilisateur u JOIN demande_prefabrication d ON d.idUsers = u.id ORDER BY u.prenom, u.name')->fetchAll()
     : [];

@@ -1,6 +1,6 @@
 <?php
 // Every menu entry must point at something dashboard.php can include on first paint: the
-// file has to exist, and the filter an entry may carry in its address ("?view=urgent") has
+// file has to exist, and the filter an entry may carry in its address ("?view=…") has
 // to parse. A broken entry used to show as a page cut in half, with a 200 status.
 // Run from stdin in the PHP container. Reads the menu only, touches nothing.
 $root = is_dir('/var/www/html/dashboard') ? '/var/www/html' : __DIR__ . '/../src';

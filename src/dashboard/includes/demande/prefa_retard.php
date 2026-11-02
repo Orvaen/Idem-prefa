@@ -30,6 +30,10 @@ function prefaJoursDeRetard(array $demande): int
  * Sans cette raison, « 13 j de retard » sur une demande « Validée » se lisait comme une
  * erreur — validée semblait vouloir dire terminée.
  *
+ * « court » se lit sur la ligne, à la suite du retard ; vide, rien ne s'y ajoute. La
+ * fabrication en cours n'y est plus écrite : c'est le cas ordinaire d'une demande validée
+ * en retard, et l'infobulle (« long ») le dit encore.
+ *
  * @return array{court: string, long: string}
  */
 function prefaRaisonDuRetard(array $demande): array
@@ -42,7 +46,7 @@ function prefaRaisonDuRetard(array $demande): array
         ];
     }
     return [
-        'court' => 'fabrication non terminée',
+        'court' => '',
         'long' => 'Fin prévue le ' . $fin . ' dépassée, et la fabrication n’est pas déclarée terminée. '
             . 'Le retard s’arrête quand le PV « Fin de fabrication et conformité » passe à « Fait ».',
     ];

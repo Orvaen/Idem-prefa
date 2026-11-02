@@ -61,8 +61,8 @@ $ressources = dashboardRessources($utilisateur);
 // les écrans de cette personne sont déjà dans la page : il n'y a rien à charger en plus.
 $vue = dashboardVueDemandee($utilisateur, isset($_GET['vue']) ? (string) $_GET['vue'] : null);
 
-// Une entrée de menu peut porter un filtre dans son adresse — « Demandes urgentes », c'est
-// la liste des demandes resserrée sur les urgentes. Le navigateur passe cette adresse
+// Une entrée de menu peut porter un filtre dans son adresse — « pages/x.php?view=y », un
+// écran resserré sur une partie de sa liste. Le navigateur passe cette adresse
 // telle quelle à $.load() ; ici il faut séparer le fichier de son filtre, et poser le
 // filtre dans $_GET comme l'aurait fait une vraie requête. Le filtre du menu l'emporte :
 // c'est lui qui définit l'écran, l'adresse n'a pas à le contredire.

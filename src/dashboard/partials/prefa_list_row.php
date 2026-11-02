@@ -67,7 +67,7 @@ $plansFinaux = $plansFinauxByRequest[$requestId] ?? [];
             <span class="prefa-date"><?= $row['date_fin_prevue'] ? prefaEscape(prefaFormatDate($row['date_fin_prevue'])) : '—' ?></span>
             <?php if ($enRetard): ?>
                 <?php $raison = prefaRaisonDuRetard($row); ?>
-                <span class="prefa-retard" title="<?= prefaEscape($raison['long']) ?>"><?= (int) $joursDeRetard ?> j de retard <span class="prefa-retard-raison">· <?= prefaEscape($raison['court']) ?></span></span>
+                <span class="prefa-retard" title="<?= prefaEscape($raison['long']) ?>"><?= (int) $joursDeRetard ?> j de retard<?php if ($raison['court'] !== ''): ?> <span class="prefa-retard-raison">· <?= prefaEscape($raison['court']) ?></span><?php endif; ?></span>
             <?php endif; ?>
             <?php if ($vueParAffaire && $row['urgent']): ?>
                 <span class="prefa-urgent">Urgente</span>

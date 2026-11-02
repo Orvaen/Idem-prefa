@@ -6,8 +6,9 @@ n'écrit rien.
 ## Les tuiles
 
 Des chiffres propres au métier de chacun. Une tuile s'ouvre d'un clic sur l'écran où l'on agit
-sur ce qu'elle compte ; elle se teinte d'azur quand son compte dépasse zéro — c'est le travail du
-jour, pas une anomalie.
+sur ce qu'elle compte — « Urgentes » ouvre la liste des demandes déjà filtrée sur les urgentes
+en attente ; elle se teinte d'azur quand son compte dépasse zéro — c'est le travail du jour, pas
+une anomalie.
 
 | Rôle | Tuiles |
 | --- | --- |

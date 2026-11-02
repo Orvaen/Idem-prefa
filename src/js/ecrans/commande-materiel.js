@@ -629,7 +629,7 @@
         if (bon.etat === 'a_lire') return 'Le bon n’a pas encore été lu : sa lecture se lance.';
         if (bon.etat === 'a_verifier') return 'Relisez les articles et corrigez-les si besoin, puis validez la commande. La réception se pointe une fois la commande validée.';
         if (bon.etat === 'echec') return bon.resume;
-        // Validée : qui l'a validée et quand, c'est ce qui la rend intouchable.
+        // Validée : qui l'a validée et quand, c'est ce qui la fige.
         if (bon.fige) return bon.resume + '. Cochez les articles à mesure qu’ils arrivent.';
         return '';
     }
@@ -742,6 +742,10 @@
         const groupe = page()?.querySelector('.materiel-liste-groupe[data-etat="' + bon.etat + '"]');
         if (groupe && ligne.previousElementSibling?.dataset.etat !== bon.etat) groupe.after(ligne);
         ligne.querySelector('.materiel-ouvrir')?.setAttribute('title', bon.resume || '');
+        // « Modifier » n'a de sens que sur une commande validée : il paraît quand on la valide,
+        // et repart quand on la rouvre.
+        const modifier = ligne.querySelector('.materiel-modifier');
+        if (modifier) modifier.hidden = !bon.fige;
         filtrer();
     }
 
@@ -799,7 +803,7 @@
         const valider = bouton.value === '1';
         // Valider engage la commande pour de bon : on le dit avant, pas après.
         if (valider && !await window.confirmer('Valider la commande ?', {
-            texte: 'Ses articles ne pourront plus être modifiés ; seule la réception restera possible.',
+            texte: 'Elle sera figée : seule la réception restera possible. « Modifier », sur sa ligne, la rouvrira au besoin.',
             action: 'Valider',
         })) return;
 
@@ -814,5 +818,35 @@
             poserEntete(reponse.document);
             remplirArticles(reponse.document);
         });
+    });
+
+    // ----- Modifier une commande validée -----
+    //
+    // Validée, la commande est figée : son volet ne montre plus que la réception. « Modifier »,
+    // sur sa ligne, la rouvre après confirmation, puis ouvre le volet sur ses articles — c'est
+    // pour les corriger qu'on l'a demandé.
+    document.addEventListener('click', async evenement => {
+        const bouton = evenement.target.closest('.materiel-modifier');
+        if (!bouton) return;
+        const id = bouton.dataset.document;
+        if (!await window.confirmer('Modifier la commande validée ?', {
+            texte: 'Elle repasse « À vérifier » : ses articles redeviennent modifiables, et il faudra la valider de nouveau. Les réceptions déjà pointées sont gardées.',
+            action: 'Modifier',
+        })) return;
+
+        bouton.disabled = true;
+        posterJson('actions/rouvrir_bon_materiel.php', {
+            csrf: dialogue().querySelector('[name="csrf"]').value,
+            document: id,
+        })
+            .then(reponse => {
+                rafraichirRang(reponse.document);
+                ouvrir(id);
+                // Après ouvrir(), qui efface le message du bon précédent.
+                dialogue().querySelector('.materiel-message').textContent = reponse.message || '';
+            }, lu => {
+                window.alerte(lu?.message || 'Impossible de rouvrir cette commande. Réessayez.', { ton: 'danger' });
+            })
+            .finally(() => { bouton.disabled = false; });
     });
 })();

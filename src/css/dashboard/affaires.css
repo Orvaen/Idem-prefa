@@ -293,6 +293,31 @@
     right: 0;
 }
 
+/* Le chargé d'affaire déjà désigné : la valeur au repos du champ, sans le champ, et un
+   cadenas qui dit pourquoi on ne peut plus cliquer dessus. */
+.affaire-charge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    height: 28px;
+    padding: 0 4px 0 8px;
+    font-weight: 500;
+}
+
+.affaire-charge .icon {
+    flex: none;
+    width: 12px;
+    height: 12px;
+    color: var(--text-muted);
+}
+
+.affaire-charge-nom {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 /* Aucun compte avec ce rôle : ce qui manque, et le lien pour le créer. */
 .affaire-sans-charge {
     color: var(--text-muted);

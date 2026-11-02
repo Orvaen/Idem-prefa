@@ -96,10 +96,22 @@ final class Affaire
         return (int) $db->lastInsertId();
     }
 
-    /** @throws DomainException si le nouveau nom est déjà pris par une autre affaire */
+    /**
+     * @throws DomainException si le nouveau nom est déjà pris par une autre affaire, ou si
+     *         on change un chargé d'affaire déjà désigné
+     */
     public static function modifier(PDO $db, int $id, string $nom, ?int $chargeAffaire): void
     {
         self::refuserUnDoublon($db, $nom, $id);
+        // Le chargé d'affaire, une fois désigné et enregistré, ne se change plus — ni pour un
+        // autre, ni pour personne. Une affaire ouverte sans lui le reçoit encore, une fois.
+        // Si son compte est supprimé, la clé étrangère remet la colonne à NULL : l'affaire
+        // peut alors être confiée de nouveau.
+        $avant = self::parId($db, $id);
+        if (!$avant) throw new DomainException('Cette affaire n’existe plus.');
+        if ($avant->idChargeAffaire !== null && $avant->idChargeAffaire !== $chargeAffaire) {
+            throw new DomainException('Le chargé d’affaire de cette affaire est déjà désigné : il ne se change plus.');
+        }
         // Le nom est recopié sur chaque demande — c'est lui qui s'affiche dans les listes et
         // dans les références. Renommer l'affaire doit donc renommer ses demandes, sans quoi
         // l'écran montrerait l'ancien nom jusqu'à la prochaine modification de chacune.

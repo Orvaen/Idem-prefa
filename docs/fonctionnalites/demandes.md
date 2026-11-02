@@ -3,9 +3,10 @@
 Le cœur de l'application : ce qu'un chargé d'affaire commande à l'atelier.
 
 **Écran :** l'entrée des demandes, section « Affaires & demandes ». Son nom change selon le
-rôle : « Valider les demandes » (chargé de production), « Suivi des demandes » (chef
-d'atelier), « Mes demandes » (chargé d'affaire). « Demandes urgentes » est la même liste,
-filtrée sur les urgentes, pour le chargé de production.
+rôle : « Demandes de préfa » (chargé de production), « Suivi des demandes » (chef
+d'atelier), « Mes demandes » (chargé d'affaire). Les urgentes n'ont pas d'écran à part : la
+pastille de l'entrée compte celles en attente, le filtre « Priorité » les isole, et la tuile
+« Urgentes » de l'accueil ouvre la liste déjà filtrée.
 
 ## Le cycle de vie
 

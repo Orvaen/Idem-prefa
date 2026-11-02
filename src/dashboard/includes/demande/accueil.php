@@ -41,7 +41,10 @@ function accueilJour(): array
 /**
  * Les tuiles de chiffres, dans l'ordre d'affichage.
  *
- * @return list<array{valeur:int, libelle:string, detail:string, ouvre:?string, alerte:bool}>
+ * « filtre » ouvre l'écran déjà resserré sur ce que la tuile compte : la chaîne d'adresse
+ * que la liste comprend, ajoutée à la page de l'entrée du menu.
+ *
+ * @return list<array{valeur:int, libelle:string, detail:string, ouvre:?string, alerte:bool, cle:?string, filtre:?string}>
  */
 function accueilTuiles(PDO $db, Utilisateur $utilisateur): array
 {
@@ -57,15 +60,18 @@ function accueilTuiles(PDO $db, Utilisateur $utilisateur): array
 
     // « cle » nomme la tuile pour le flux d'événements, qui y repose un compteur relu en
     // base. Les tuiles qu'il ne met pas à jour n'en portent pas.
-    $tuile = static fn (int $valeur, string $libelle, string $detail, ?string $ouvre = null, bool $alerte = false, ?string $cle = null): array =>
-        compact('valeur', 'libelle', 'detail', 'ouvre', 'alerte', 'cle');
+    $tuile = static fn (int $valeur, string $libelle, string $detail, ?string $ouvre = null, bool $alerte = false, ?string $cle = null, ?string $filtre = null): array =>
+        compact('valeur', 'libelle', 'detail', 'ouvre', 'alerte', 'cle', 'filtre');
 
     if ($utilisateur->est(Role::ChargeDeProduction)) {
         $enAttente = $demandes(' AND d.id_statut = 1');
         $urgentes = $demandes(' AND d.id_statut = 1 AND d.urgent = 1');
         return [
             $tuile($enAttente, 'À valider', 'demandes en attente de votre décision', 'btn-list-prefa', $enAttente > 0, 'en-attente'),
-            $tuile($urgentes, 'Urgentes', 'parmi celles en attente', 'btn-urgent-prefa', $urgentes > 0, 'urgentes'),
+            // Les urgentes n'ont plus d'entrée de menu : la tuile ouvre la liste des
+            // demandes sur l'onglet « En attente » et le filtre « Urgentes », soit
+            // exactement ce qu'elle compte.
+            $tuile($urgentes, 'Urgentes', 'parmi celles en attente', 'btn-list-prefa', $urgentes > 0, 'urgentes', 'status[]=1&priority[]=1'),
             $tuile(accueilPvAFaire($db), 'PV à renseigner', 'sur les demandes validées', 'btn-pv'),
             $tuile((int) $db->query('SELECT COUNT(*) FROM affaire')->fetchColumn(), 'Affaires', 'chantiers ouverts', 'btn-affaires'),
         ];

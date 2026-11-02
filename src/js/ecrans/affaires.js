@@ -97,7 +97,9 @@
 
         cartes.forEach(carte => {
             const nom = nomDeLaCarte(carte);
-            const charge = carte.querySelector('.liste-filtrable-champ')?.value || '';
+            // Un chargé d'affaire déjà désigné n'a plus de champ : son nom est du texte.
+            const charge = carte.querySelector('.liste-filtrable-champ')?.value
+                ?? carte.querySelector('.affaire-charge')?.textContent ?? '';
             const retenue = !q || aplatir(nom + ' ' + charge).includes(q);
             carte.classList.toggle('est-masquee', !retenue);
             if (retenue) visibles += 1;
@@ -243,8 +245,11 @@
         donnees.set('operation', 'modifier');
         donnees.set('id', ligne.dataset.affaire);
         donnees.set('nom', ligne.querySelector('.affaire-nom').value.trim());
-        // Le champ filtrable de la ligne range son choix dans son champ caché.
-        donnees.set('charge', ligne.querySelector('.liste-filtrable input[type="hidden"]')?.value || '');
+        // Le champ filtrable de la ligne range son choix dans son champ caché. Un chargé
+        // d'affaire déjà désigné n'a plus de champ : on renvoie celui qui est en place, et le
+        // serveur refuserait tout autre.
+        const choix = ligne.querySelector('.liste-filtrable input[type="hidden"]');
+        donnees.set('charge', choix ? choix.value : (ligne.querySelector('.affaire-charge')?.dataset.charge || ''));
 
         envoyer(donnees).then(({ ok, corps }) => {
             const message = corps.message || (ok ? 'Affaire modifiée.' : 'Modification impossible.');

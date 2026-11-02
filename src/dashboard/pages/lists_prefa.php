@@ -88,10 +88,7 @@ $iconeStatut = static function (int $statut): string {
 |--------------------------------------------------------------------------
 */
 
-if ($urgentView) {
-    $pageTitle = 'Demandes urgentes';
-    $pageDescription = 'Traitez en priorité les demandes signalées comme urgentes.';
-} elseif ($canViewAllPrefa) {
+if ($canViewAllPrefa) {
     $pageTitle = 'Demandes de préfabrication';
     $pageDescription = 'Vérifiez les demandes en attente avant de les valider ou de les refuser.';
 } else {
@@ -231,20 +228,14 @@ if ($isWorkshopPersonnel) {
                     echo '<input type="hidden" name="status[]" class="prefa-statut-choisi" value="' . prefaEscape($statutChoisi) . '">';
                 }
 
-                // L'écran des demandes urgentes est un filtre figé : on ne propose pas de
-                // le défaire, sinon l'entrée du menu ne voudrait plus rien dire.
-                if ($urgentView) {
-                    echo '<input type="hidden" name="view" value="urgent">';
-                    echo '<input type="hidden" name="priority[]" value="1">';
-                } else {
-                    $barre .= filtreRendu('priority', 'Priorité', [
-                        ['id' => 1, 'libelle' => 'Urgentes'],
-                        ['id' => 0, 'libelle' => 'Normales'],
-                    ], $priority);
-                }
+                // Les urgentes n'ont plus d'écran à elles : c'est ce filtre qui les isole, et
+                // la tuile « Urgentes » de l'accueil arrive ici avec lui déjà posé.
+                $barre .= filtreRendu('priority', 'Priorité', [
+                    ['id' => 1, 'libelle' => 'Urgentes'],
+                    ['id' => 0, 'libelle' => 'Normales'],
+                ], $priority);
 
-                $pose = $userId || (!$urgentView && $priority);
-                echo filtresBarre($barre, (bool) $pose);
+                echo filtresBarre($barre, $userId || $priority);
                 ?>
 
             </form>

@@ -30,7 +30,8 @@
                 <?php $icone = accueilIcone($tuile['ouvre']); ?>
                 <button type="button" class="accueil-tuile<?= $tuile['alerte'] ? ' est-en-alerte' : '' ?>"
                         <?= $tuile['cle'] ? 'data-tuile="' . htmlspecialchars($tuile['cle']) . '"' : '' ?>
-                        <?= $tuile['ouvre'] ? 'data-ouvre="' . htmlspecialchars($tuile['ouvre']) . '"' : 'disabled' ?>>
+                        <?= $tuile['ouvre'] ? 'data-ouvre="' . htmlspecialchars($tuile['ouvre']) . '"' : 'disabled' ?>
+                        <?= !empty($tuile['filtre']) ? 'data-filtre="' . htmlspecialchars($tuile['filtre']) . '"' : '' ?>>
                     <?php if ($icone): ?>
                         <!-- Le dessin vient du menu : c'est celui de l'écran que la tuile ouvre. -->
                         <span class="accueil-tuile-icone" aria-hidden="true">

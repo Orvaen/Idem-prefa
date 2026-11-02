@@ -252,11 +252,37 @@ function materielRecus(array $document): array
  * avec son propre bon et sa propre lecture. Corriger l'ancienne ferait disparaître ce qui
  * a réellement été commandé, et personne ne saurait plus ce qui a été reçu contre quoi.
  *
+ * Figée, mais pas pour toujours : « Modifier », sur la ligne du bon, la rouvre après
+ * confirmation (materielRouvrir()). Le verrou empêche de la retoucher par mégarde, pas de
+ * la reprendre.
+ *
  * @param array<string, mixed> $document
  */
 function materielEstFige(array $document): bool
 {
     return !empty($document['date_verification']);
+}
+
+/**
+ * Rouvre une commande validée : elle repasse « À vérifier », et ses articles se corrigent
+ * de nouveau dans le volet.
+ *
+ * Les réceptions déjà pointées restent. Elles sont sur les lignes, que la réouverture ne
+ * touche pas, et l'enregistrement suivant les reporte article par article, comme toute
+ * correction (materielPointagesParArticle()). Qui avait validé s'efface avec la
+ * validation : c'est la prochaine qui dira qui en répond.
+ *
+ * @throws DomainException si le bon n'existe pas, ou s'il n'est pas validé
+ */
+function materielRouvrir(PDO $db, int $idDocument): void
+{
+    $document = materielDocument($db, $idDocument);
+    if (!$document) throw new DomainException('Bon introuvable.');
+    if (!materielEstFige($document)) {
+        throw new DomainException('Cette commande n’est pas validée : ses articles se corrigent déjà depuis « Détails ».');
+    }
+    $db->prepare('UPDATE demande_materiel_documents SET verifie_par = NULL, date_verification = NULL WHERE id = ?')
+        ->execute([$idDocument]);
 }
 
 /**
@@ -375,7 +401,7 @@ function materielLireDocument(PDO $db, int $idDocument): void
     // modification comme une autre.
     $document = materielDocument($db, $idDocument);
     if ($document && materielEstFige($document)) {
-        throw new DomainException('Cette commande est validée : son bon ne peut plus être relu.');
+        throw new DomainException('Cette commande est validée : rouvrez-la par « Modifier », sur sa ligne, avant de relire son bon.');
     }
 
     // Ce qui a été pointé reçu survit à la relecture, reporté sur l'article de même
@@ -579,7 +605,7 @@ function materielEnregistrer(PDO $db, int $idDocument, array $lignes, int $idAct
     // et c'est elle qui doit refuser, quel que soit le chemin qui l'appelle un jour.
     $document = materielDocument($db, $idDocument);
     if ($document && materielEstFige($document)) {
-        throw new DomainException('Cette commande est validée : elle ne peut plus être modifiée. Une modification donne lieu à une nouvelle commande.');
+        throw new DomainException('Cette commande est validée : rouvrez-la par « Modifier », sur sa ligne, avant de la corriger.');
     }
 
     if (count($lignes) > MATERIEL_LIGNES_MAX) {

@@ -237,6 +237,13 @@ $iconesManque = '<svg class="pv-etat-icone materiel-manque-signe-nouvelle" viewB
                                     <span class="prefa-decision">
                                         <button type="button" class="prefa-ligne-contour materiel-ouvrir" data-document="<?= $id ?>"
                                                 aria-haspopup="dialog" title="<?= prefaEscape(materielResume($bon)) ?>">Détails</button>
+                                        <?php // « Modifier » rouvre une commande validée. Il est écrit sur
+                                              // toutes les lignes et ne se montre que sur celles-là :
+                                              // valider un bon dans le volet doit le faire paraître
+                                              // sans recharger l'écran. Après « Détails », pour que
+                                              // celui-ci reste aligné d'une ligne à l'autre. ?>
+                                        <button type="button" class="prefa-ligne-contour materiel-modifier" data-document="<?= $id ?>"
+                                                title="Rouvrir la commande pour corriger ses articles"<?= materielEstFige($bon) ? '' : ' hidden' ?>>Modifier</button>
                                     </span>
                                 </td>
                             </tr>
@@ -414,9 +421,9 @@ $iconesManque = '<svg class="pv-etat-icone materiel-manque-signe-nouvelle" viewB
             </section>
 
             <?php // Deux gestes, et non plus un : « Enregistrer » validait la commande, et une
-                  // commande validée ne se modifie plus. Un clic pour garder une correction la
-                  // figeait pour toujours, sans un mot. Enregistrer garde le travail ; Valider
-                  // engage la commande, et le demande avant. ?>
+                  // commande validée est figée. Un clic pour garder une correction la figeait,
+                  // sans un mot. Enregistrer garde le travail ; Valider engage la commande, et
+                  // le demande avant. « Modifier », sur la ligne, la rouvre. ?>
             <footer class="materiel-volet-pied">
                 <span class="pv-message materiel-message" role="status" aria-live="polite"></span>
                 <button type="submit" name="valider" value="0" class="materiel-enregistrer bouton-discret">Enregistrer</button>

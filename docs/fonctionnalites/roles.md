@@ -20,14 +20,14 @@ Il n'y a pas de rôle 4 : il a été supprimé par la migration `2026-10-07_role
 
 | Rôle | Accueil | Affaires & demandes | Atelier | Administration |
 | --- | --- | --- | --- | --- |
-| **Chargé de production** | ✓ | Affaires · Valider les demandes · Demandes urgentes | Soudures · Plans / ISO & Affectations · Planning · Commande matériel · PV de préfabrication | Utilisateurs |
+| **Chargé de production** | ✓ | Affaires · Demandes de préfa | Soudures · Plans / ISO & Affectations · Planning · Commande matériel · PV de préfabrication | Utilisateurs |
 | **Chef d'atelier** | ✓ | Suivi des demandes | Soudures · Plans / ISO & Affectations · Planning · Commande matériel · PV de préfabrication | — |
 | **Personnel atelier** | ✓ | Mes plans | Mes soudures & Suivi matériel | — |
 | **Chargé d'affaire** | ✓ | Mes affaires · Mes demandes | PV de préfabrication | — |
 
 Tout le monde a, en plus, les [paramètres](/fonctionnalites/interface#parametres) au
 pied de la barre. La même entrée change de nom selon le rôle : l'écran des demandes s'appelle
-« Valider les demandes » pour le chargé de production, « Suivi des demandes » pour le chef
+« Demandes de préfa » pour le chargé de production, « Suivi des demandes » pour le chef
 d'atelier, « Mes demandes » pour le chargé d'affaire — et pour le personnel d'atelier, il
 devient « Mes plans », un autre écran. De même, « Affaires » devient « Mes affaires » pour le
 chargé d'affaire, en lecture seule.

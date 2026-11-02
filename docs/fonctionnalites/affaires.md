@@ -14,8 +14,9 @@ d'affaire a le même écran sous le nom **« Mes affaires »**, en lecture seule
 - **Ouvrir une affaire** — « Nouvelle affaire » : un nom, et un chargé d'affaire facultatif.
   S'il n'existe encore aucun compte de chargé d'affaire, un bouton mène à « Utilisateurs », avec
   ce rôle déjà choisi.
-- **Modifier sur place** le nom et le chargé d'affaire, directement sur la carte ; une barre
-  « Enregistrer » apparaît après une modification.
+- **Modifier sur place** le nom, directement sur la carte ; une barre « Enregistrer » apparaît
+  après une modification. Le chargé d'affaire ne se choisit sur la carte que tant qu'aucun
+  n'est désigné : une fois enregistré, son nom s'affiche avec un cadenas.
 - **Ouvrir les demandes d'une affaire** : le compteur « N demandes » ouvre la liste des demandes,
   filtrée sur elle.
 - **Supprimer une affaire** — seulement si aucune demande n'y est rattachée ; la corbeille est
@@ -41,7 +42,8 @@ tuile « Mes affaires » de l'accueil y mène.
 | Nom unique | Sans tenir compte de la casse ni des accents : « BATIMENT A » et « Bâtiment a » sont le même nom. |
 | Renommer | Renomme aussi le nom d'affaire de ses demandes. |
 | Supprimer | **Définitif** — il n'existe pas d'état « clôturée ». Refusé (`409`) dès qu'une demande y est rattachée. |
-| Confier | Quand le chargé d'affaire change, le nouveau reçoit l'événement `affaire.confiee` : l'affaire s'annonce sur son accueil, avec « Déposer une demande ». |
+| Confier | Quand une affaire reçoit son chargé d'affaire, il reçoit l'événement `affaire.confiee` : l'affaire s'annonce sur son accueil, avec « Déposer une demande ». |
+| Chargé désigné | **Définitif** : une fois enregistré, il ne se change plus, ni pour un autre ni pour personne — refusé (`409`). Seule la suppression de son compte rend l'affaire de nouveau à confier. |
 | Déposer | Un chargé d'affaire ne peut déposer une demande que dans une affaire qui lui est confiée. Sans affaire, le formulaire le dit au lieu de s'afficher. |
 
 ## Dans le code
@@ -50,4 +52,5 @@ tuile « Mes affaires » de l'accueil y mène.
 | --- | --- |
 | `src/dashboard/pages/affaires.php`, `src/js/ecrans/affaires.js` | L'écran et sa fenêtre ; « Mes affaires » quand `$enLecture` |
 | `src/dashboard/actions/affaires.php` | `ouvrir`, `modifier`, `fermer` — réservé au chargé de production |
-| `src/modeles/Affaire.php` | Le modèle : unicité du nom, renommage des demandes, suppression. `Affaire::pour()` donne les affaires d'un chargé d'affaire |
+| `src/modeles/Affaire.php` | Le modèle : unicité du nom, renommage des demandes, chargé désigné verrouillé, suppression. `Affaire::pour()` donne les affaires d'un chargé d'affaire |
+| `tests/affaires.php` | Le verrou du chargé d'affaire désigné, dans une transaction annulée — inscrit dans `run test` |

@@ -39,7 +39,10 @@ en va de même depuis le volet et depuis la fiche de la demande.
    la lecture a manqué. « Enregistrer » garde les corrections ; « Relire le bon » repart de zéro
    et remplace ce qui est affiché, après confirmation.
 3. **Valider la commande** — après confirmation, elle est **figée** : ses articles ne se
-   modifient plus, et elle ne se relit plus.
+   modifient plus, et elle ne se relit plus. **« Modifier »**, qui paraît sur la ligne d'une
+   commande validée, la rouvre après confirmation : elle repasse « À vérifier », le volet
+   s'ouvre sur ses articles, et il faut la valider de nouveau. Les réceptions déjà pointées
+   sont gardées.
 4. **Recevoir** — une liste à cocher, rangée par date de livraison : « 8 / 13 reçus », « En
    retard » sur une livraison dont l'échéance est passée, des filtres Tous / À recevoir / Reçus,
    une recherche par référence pour pointer un bon de livraison, « Marquer reçue » par
@@ -81,6 +84,7 @@ circuit, enregistré dans `bon_livraison`. Voir [PV de préfabrication](/fonctio
 | `src/dashboard/pages/commande_materiel.php`, `src/js/ecrans/commande-materiel.js` | L'écran |
 | `src/dashboard/actions/lire_bon_materiel.php` | La lecture d'un bon |
 | `src/dashboard/actions/save_bon_materiel.php` | Les corrections, et la validation |
+| `src/dashboard/actions/rouvrir_bon_materiel.php` | « Modifier » : rouvre une commande validée |
 | `src/dashboard/actions/receptionner_bon_materiel.php` | Les pointages de réception |
 | `src/dashboard/actions/signaler_manque.php`, `traiter_manque.php` | Les manques |
 | `src/dashboard/includes/lecture/commandes_lignes.php` | L'interprétation des lignes lues, et le contrôle arithmétique |

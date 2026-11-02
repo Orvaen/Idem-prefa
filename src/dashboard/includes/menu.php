@@ -80,10 +80,16 @@ function dashboardMenu(): array
         [
             // La seule entrée que tout le monde voit, et la seule dont le nom change : on
             // ne valide pas, on suit, on pointe ou on consulte selon le métier.
+            //
+            // Le chargé de production avait deux entrées pour cet écran : « Valider les
+            // demandes », et « Demandes urgentes », la même liste resserrée sur les urgentes.
+            // Il n'en a plus qu'une. Les urgentes se comptent sur sa pastille, s'ouvrent par
+            // un éclair en tête de ligne, se filtrent par « Priorité », et la tuile
+            // « Urgentes » de l'accueil ouvre la liste déjà filtrée.
             'id' => 'list-prefa',
             'rayon' => 'affaires',
             'libelle' => static fn (Utilisateur $utilisateur): string => match (true) {
-                $utilisateur->est(Role::ChargeDeProduction) => 'Valider les demandes',
+                $utilisateur->est(Role::ChargeDeProduction) => 'Demandes de préfa',
                 $utilisateur->est(Role::ChefDAtelier) => 'Suivi des demandes',
                 // « Mes plans » pour l'atelier : ce qu'il ouvre ici, ce sont les plans
                 // qu'on lui a confiés. L'entrée s'est appelée « Mes affectations », puis
@@ -180,26 +186,16 @@ function dashboardMenu(): array
             'styles' => ['dashboard/pv.css', 'dashboard/commandes.css'],
             'scripts' => ['ecrans/pv.js', 'ecrans/commandes.js'],
         ],
-        [
-            'id' => 'urgent-prefa',
-            'rayon' => 'affaires',
-            'libelle' => 'Demandes urgentes',
-            'page' => 'pages/lists_prefa.php?view=urgent',
-            'pour' => [Role::ChargeDeProduction],
-            'icone' => '<path d="M12.5 3.5 5.5 13h6l-1 7.5 7-9.5h-6z"/>',
-            'styles' => [],
-            'scripts' => [],
-        ],
     ];
 }
 
 /**
  * La pastille d'une entrée, quand elle en porte une.
  *
- * Trois entrées en ont, et pas la même : celle de la liste des demandes est relue par le
- * JavaScript, qui la cherche par son identifiant ; celle des PV n'est là que s'il en reste
- * à faire ; celle des demandes urgentes double la première et n'a donc rien à annoncer aux
- * lecteurs d'écran. Les trois sont écrites ici plutôt que dispersées dans le balisage.
+ * Trois entrées en ont, et pas la même : celle de la liste des demandes — les urgentes en
+ * attente — est relue par le JavaScript, qui la cherche par son identifiant ; celle des PV
+ * n'est là que s'il en reste à faire ; celle des manques est toujours posée, pour que le
+ * flux l'allume. Les trois sont écrites ici plutôt que dispersées dans le balisage.
  *
  * data-compteur dit ce que la pastille compte. Les trois portaient la seule classe
  * nav-urgent-badge, et la mise à jour des urgentes les repeignait toutes : les PV restant
@@ -219,7 +215,6 @@ function dashboardBadge(string $id, Utilisateur $utilisateur, int $urgentes, int
             : '',
         'pv' => $pvAFaire === 0 ? '' : $pastille('pv', 'aria-label="' . $pvAFaire . ' PV à renseigner"'
             . ' title="PV encore à renseigner"', $pvAFaire),
-        'urgent-prefa' => $pastille('urgentes', 'aria-hidden="true"', $urgentes),
         // Toujours posée, même à zéro : le flux l'allume en direct quand l'atelier signale.
         'commande-materiel' => $pastille('manques', 'aria-label="' . $manques . ' manque(s) de matériel à traiter"'
             . ' title="Manques de matériel signalés par l’atelier"', $manques),
@@ -259,7 +254,7 @@ function dashboardVueDemandee(Utilisateur $utilisateur, ?string $vue): array
     $entrees = dashboardMenuVisible($utilisateur);
 
     // Les écrans fusionnés gardent leur adresse : un lien vers l'ancien ouvre le nouveau.
-    $vue = ['create-user' => 'list-users'][$vue ?? ''] ?? $vue;
+    $vue = ['create-user' => 'list-users', 'urgent-prefa' => 'list-prefa'][$vue ?? ''] ?? $vue;
 
     foreach ($entrees as $entree) {
         if ($entree['id'] === $vue) return $entree;
