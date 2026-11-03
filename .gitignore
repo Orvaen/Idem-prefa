@@ -16,3 +16,6 @@ docs/.vitepress/dist/
 # les tables sans aucune donnee metier.
 db/*.sql
 !db/schema.sql
+
+# Les dépendances du projet : elles sont gérées par npm.
+node_modules/

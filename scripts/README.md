@@ -114,7 +114,7 @@ pour `admin`, `demo` et `migration`, par le montage `/tests` pour `test` et `pag
 que vous venez de modifier part tel quel, sans rien reconstruire.
 
 ```
-docker.exe compose exec php php /scripts/init/add_user.php
+docker.exe compose exec web php /scripts/init/add_user.php
 ```
 
 Celle-ci, tapée à la main, lit `/scripts` **dans l'image**, que le `Dockerfile` a copié au

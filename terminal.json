@@ -2,172 +2,191 @@
   "scripts": {
     "up": {
       "run": [
-        "docker.exe compose up -d",
+        "docker compose up -d",
         "run wait",
         "echo \"Prêt : http://localhost:8080 — phpMyAdmin : http://localhost:8081 — documentation : http://localhost:8082\""
       ],
       "description": "Monte la stack et attend que la base réponde"
     },
-
     "down": {
-      "run": "docker.exe compose down",
+      "run": "docker compose down",
       "description": "Arrête la stack, sans toucher aux données"
     },
-
     "rebuild": {
       "run": [
-        "docker.exe compose up -d --build",
+        "docker compose up -d --build",
         "run wait"
       ],
       "description": "Reconstruit l'image php puis remonte — après un changement de Dockerfile ou de scripts/"
     },
-
     "wait": {
-      "run": "docker.exe compose exec -T -e MYSQL_PWD=mypassword db sh -c 'until mysql -umyuser -e \"select 1\" myapp >/dev/null 2>&1; do sleep 1; done'",
-      "description": "Attend que MySQL accepte les requêtes (boucle dans le conteneur)"
+      "run": "docker compose exec -T db sh -c 'export MYSQL_PWD=\"$MYSQL_PASSWORD\"; n=0; until mysql -u\"$MYSQL_USER\" \"$MYSQL_DATABASE\" -e \"select 1\" >/dev/null 2>&1; do n=$((n+1)); if [ $n -ge 90 ]; then echo \"MySQL refuse toujours la connexion après 90 s :\" >&2; mysql -u\"$MYSQL_USER\" \"$MYSQL_DATABASE\" -e \"select 1\"; exit 1; fi; sleep 1; done'",
+      "description": "Attend que MySQL accepte les requêtes (boucle dans le conteneur). Au bout de 90 s, montre l'erreur de MySQL au lieu d'attendre sans fin"
     },
-
     "etat": {
       "run": [
-        "docker.exe compose ps",
-        "docker.exe compose exec -T php printenv APP_ENV"
+        "docker compose ps",
+        "docker compose exec -T web printenv APP_ENV"
       ],
       "description": "Qui tourne, et si l'on est en dev ou en prod"
     },
-
     "logs": {
-      "run": "docker.exe compose logs -f --tail=50 php",
+      "run": "docker compose logs -f --tail=50 web",
       "description": "Suit les logs d'Apache et de PHP (Ctrl+C pour sortir)"
     },
-
     "db": {
-      "run": "docker.exe compose exec -e MYSQL_PWD=mypassword db mysql --default-character-set=utf8mb4 -umyuser myapp",
+      "run": "docker compose exec db sh -c 'export MYSQL_PWD=\"$MYSQL_PASSWORD\"; exec mysql --default-character-set=utf8mb4 -u\"$MYSQL_USER\" \"$MYSQL_DATABASE\"'",
       "description": "Ouvre un client MySQL sur la base"
     },
-
     "dump": {
-      "run": "docker.exe compose exec -T -e MYSQL_PWD=mypassword db mysqldump --default-character-set=utf8mb4 -umyuser --no-tablespaces --single-transaction myapp > db/dump.sql",
+      "run": "docker compose exec -T db sh -c 'export MYSQL_PWD=\"$MYSQL_PASSWORD\"; exec mysqldump --default-character-set=utf8mb4 -u\"$MYSQL_USER\" --no-tablespaces --single-transaction \"$MYSQL_DATABASE\"' > db/dump.sql",
       "description": "Sauvegarde la base dans db/dump.sql — écarté du dépôt par .gitignore"
     },
-
     "schema": {
-      "run": "docker.exe compose exec -T -e MYSQL_PWD=mypassword db mysql --default-character-set=utf8mb4 -umyuser myapp < db/schema.sql",
+      "run": [
+        "docker compose cp db/schema.sql db:/tmp/schema.sql",
+        "docker compose exec -T db sh -c 'export MYSQL_PWD=\"$MYSQL_PASSWORD\"; mysql --default-character-set=utf8mb4 -u\"$MYSQL_USER\" \"$MYSQL_DATABASE\" < /tmp/schema.sql; code=$?; rm -f /tmp/schema.sql; exit $code'"
+      ],
       "description": "Crée les tables sur une base VIDE — jamais sur une base remplie, les INSERT de référence feraient des doublons"
     },
-
+    "schema-pg": {
+      "run": [
+        "docker compose cp api/db/schema.sql postgres:/tmp/schema.sql",
+        "docker compose exec -T postgres sh -c 'export PGPASSWORD=\"$POSTGRES_PASSWORD\"; until pg_isready -q -h 127.0.0.1 -U \"$POSTGRES_USER\"; do sleep 1; done; psql -q -v ON_ERROR_STOP=1 -h 127.0.0.1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -f /tmp/schema.sql; code=$?; rm -f /tmp/schema.sql; exit $code'"
+      ],
+      "description": "Crée les tables de l'API dans PostgreSQL, sur une base VIDE. Sur une base qui a déjà ses tables, il échoue et ne garde rien : tout est dans une transaction"
+    },
+    "postgres": {
+      "run": "docker compose exec postgres sh -c 'export PGPASSWORD=\"$POSTGRES_PASSWORD\"; exec psql -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\"'",
+      "description": "Ouvre un client PostgreSQL sur la base"
+    },
     "clean": {
       "run": [
-        "docker.exe compose down -v",
-        "rm -rf src/uploads/prefa src/dashboard/uploads/prefa src/dashboard/uploads/pv",
-        "mkdir -p src/uploads/prefa src/dashboard/uploads/prefa src/dashboard/uploads/pv",
-        "docker.exe compose up -d",
+        "docker compose down -v",
+        "rm -rf web/src/uploads/prefa web/src/dashboard/uploads/prefa web/src/dashboard/uploads/pv",
+        "mkdir -p web/src/uploads/prefa web/src/dashboard/uploads/prefa web/src/dashboard/uploads/pv",
+        "docker compose up -d",
         "run wait",
         "run schema",
+        "run schema-pg",
         "echo \"Base remise à zéro. Comptes : run admin — jeu d'essai : run demo\""
       ],
       "description": "REMISE À ZÉRO : détruit la base et les fichiers déposés, puis recrée les tables"
     },
-
     "demo": {
       "run": [
-        "docker.exe compose exec -T php php < scripts/init/add_test_users.php",
-        "docker.exe compose exec -T php php < scripts/init/add_demo_data.php"
+        "docker compose exec -T web php /scripts/init/add_test_users.php",
+        "docker compose exec -T web php /scripts/init/add_demo_data.php"
       ],
       "description": "Comptes d'essai et données de démonstration — lit les scripts du disque, pas ceux de l'image"
     },
-
     "admin": {
-      "run": "docker.exe compose exec -T php php -- --nom $nom --prenom $prenom --role $role --courriel $courriel --mot-de-passe $mdp < scripts/init/add_user.php",
-      "args": ["nom", "prenom", "role=charge-production", "courriel=", "mdp="],
+      "run": "docker compose exec -T web php /scripts/init/add_user.php --nom $nom --prenom $prenom --role $role --courriel $courriel --mot-de-passe $mdp",
+      "args": [
+        "nom",
+        "prenom",
+        "role=charge-production",
+        "courriel=",
+        "mdp="
+      ],
       "description": "Crée un compte. Sans mot de passe, il en tire un au sort et le montre une fois. Rôle : charge-production, chef-atelier, personnel-atelier, charge-affaire — ou le métier (\"chef d'atelier\"), ou le libellé de la base (\"Gestionnaire\")"
     },
-
     "migration": {
-      "run": "docker.exe compose exec -T php php <",
+      "run": "docker compose exec -T -w / web php",
       "description": "Applique une migration : run migration -- scripts/migrations/2026-10-07_prefa_references.php (le fichier du disque, pas celui de l'image)"
     },
-
     "lire-plans": {
-      "run": "docker.exe compose exec -T -u www-data php php /var/www/html/dashboard/outils/lire_feuilles.php --tous",
+      "run": "docker compose exec -T -u www-data web php /var/www/html/dashboard/outils/lire_feuilles.php --tous",
       "description": "Lit tout ce qui manque aux plans déposés (liste soudure, repères, nomenclature, images) — après une mise à jour qui change une lecture. Ne refait rien de ce qui est à jour"
     },
-
     "test": {
       "run": [
-        "docker.exe compose exec -T php php /tests/roles.php",
-        "docker.exe compose exec -T php php /tests/encodage.php",
-        "docker.exe compose exec -T php php /tests/dashboard_vues.php",
-        "docker.exe compose exec -T php php /tests/api_demandes.php",
-        "docker.exe compose exec -T php php /tests/prefa_references.php",
-        "docker.exe compose exec -T php php /tests/atelier_plans.php",
-        "docker.exe compose exec -T php php /tests/avancement_etapes.php",
-        "docker.exe compose exec -T php php /tests/affaires.php",
-        "docker.exe compose exec -T php php /tests/commande_materiel.php",
-        "docker.exe compose exec -T php php /tests/plan_reperes.php",
-        "docker.exe compose exec -T php php /tests/plan_nomenclature.php",
-        "docker.exe compose exec -T php php /tests/plan_resume.php",
-        "docker.exe compose exec -T php php /tests/session.php",
-        "docker.exe compose exec -T php php /tests/metiers.php",
-        "docker.exe compose exec -T php php /tests/mots_de_passe.php",
+        "docker compose exec -T web php /tests/roles.php",
+        "docker compose exec -T web php /tests/encodage.php",
+        "docker compose exec -T web php /tests/dashboard_vues.php",
+        "docker compose exec -T web php /tests/api_demandes.php",
+        "docker compose exec -T web php /tests/prefa_references.php",
+        "docker compose exec -T web php /tests/atelier_plans.php",
+        "docker compose exec -T web php /tests/avancement_etapes.php",
+        "docker compose exec -T web php /tests/affaires.php",
+        "docker compose exec -T web php /tests/commande_materiel.php",
+        "docker compose exec -T web php /tests/plan_reperes.php",
+        "docker compose exec -T web php /tests/plan_nomenclature.php",
+        "docker compose exec -T web php /tests/plan_resume.php",
+        "docker compose exec -T web php /tests/session.php",
+        "docker compose exec -T web php /tests/metiers.php",
+        "docker compose exec -T web php /tests/mots_de_passe.php",
+        "docker compose exec -T web php /tests/signatures.php",
         "run pages"
       ],
       "description": "Tous les essais, et il s'arrête au premier rouge. Ils lisent la base : run demo d'abord"
     },
-
     "pages": {
       "run": [
-        "docker.exe compose exec -T php php /tests/prefa_pages.php plans_iso",
-        "docker.exe compose exec -T php php /tests/prefa_pages.php lists_prefa",
-        "docker.exe compose exec -T php php /tests/prefa_pages.php planning",
-        "docker.exe compose exec -T php php /tests/prefa_pages.php create_prefa",
-        "docker.exe compose exec -T php php /tests/prefa_pages.php atelier",
-        "docker.exe compose exec -T php php /tests/prefa_pages.php soudures",
-        "docker.exe compose exec -T php php /tests/prefa_pages.php suivi_soudures"
+        "docker compose exec -T web php /tests/prefa_pages.php plans_iso",
+        "docker compose exec -T web php /tests/prefa_pages.php lists_prefa",
+        "docker compose exec -T web php /tests/prefa_pages.php planning",
+        "docker compose exec -T web php /tests/prefa_pages.php create_prefa",
+        "docker compose exec -T web php /tests/prefa_pages.php atelier",
+        "docker compose exec -T web php /tests/prefa_pages.php soudures",
+        "docker compose exec -T web php /tests/prefa_pages.php suivi_soudures"
       ],
       "description": "Dessine les sept écrans et vérifie qu'aucun ne part en erreur"
     },
-
     "dev": {
-      "env": { "APP_ENV": "dev" },
+      "env": {
+        "APP_ENV": "dev"
+      },
       "run": [
-        "docker.exe compose up -d php",
+        "docker compose up -d web",
         "run wait",
         "echo \"Développement : la bascule de compte sans mot de passe est ouverte\""
       ],
       "description": "Remonte le conteneur web en développement, le temps de cette machine"
     },
-
     "prod": {
-      "env": { "APP_ENV": "prod" },
+      "env": {
+        "APP_ENV": "prod"
+      },
       "run": [
-        "docker.exe compose up -d php",
+        "docker compose up -d web",
         "run wait",
         "echo \"Production : plus aucune porte dérobée\""
       ],
       "description": "Remonte le conteneur web en production — c'est le mode du serveur de l'atelier"
     },
-
     "journal-complet": {
-      "env": { "JOURNAL_COMPLET": "1" },
+      "env": {
+        "JOURNAL_COMPLET": "1"
+      },
       "run": [
-        "docker.exe compose up -d php",
+        "docker compose up -d web",
         "run wait",
         "echo \"Journal complet : les fichiers statiques et le flux sont notés eux aussi. run up pour revenir.\""
       ],
       "description": "Remonte le conteneur web en notant tout, le temps de comprendre quelque chose de précis"
     },
-
     "docs": {
       "run": [
-        "docker.exe compose up -d docs",
+        "docker compose up -d docs",
         "echo \"Documentation : http://localhost:8082 — elle se recharge à chaque fichier enregistré dans docs/\""
       ],
       "description": "Lance la documentation (VitePress, mode développement) sur le port 8082"
     },
-
     "docs-verifier": {
-      "run": "docker.exe compose exec -T docs npm run build",
+      "run": "docker compose exec -T docs npm run build",
       "description": "Construit la documentation comme pour la publier : échoue sur un lien mort ou une page cassée"
+    },
+    "tablette": {
+      "run": [
+        "echo \"Tablette : branchée en USB, débogage USB activé. Si elle demande « Autoriser le débogage USB ? », accepter.\"",
+        "adb wait-for-usb-device",
+        "adb reverse tcp:8080 tcp:8080",
+        "adb reverse tcp:3000 tcp:3000",
+        "echo \"Sur la tablette : http://localhost:8080 — et internet passe par le câble tant que cette commande tourne (Ctrl+C pour couper).\"",
+        "g=$(which gnirehtet); GNIREHTET_APK=\"${g%.exe}.apk\" gnirehtet run"
+      ],
+      "description": "Partage le site et la connexion internet du PC avec une tablette Android branchée en USB. Demande adb et gnirehtet ; la première fois, la tablette installe gnirehtet et demande d'accepter sa connexion VPN"
     }
   }
 }

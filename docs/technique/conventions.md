@@ -63,6 +63,25 @@ Toute évolution de la base s'accompagne d'une **migration** datée dans `script
 relançable sans dégât, et de la mise à jour de `db/schema.sql`. Voir
 [Base de données](/technique/base-de-donnees).
 
+### Les composants d'écran
+
+Un balisage qui sert à plus d'un endroit s'écrit une fois, dans `src/dashboard/includes/vue/`,
+en fonction qui rend du HTML : la page ne fait plus que ranger ses morceaux. Les gros morceaux
+s'y écrivent tels quels entre `?>` et `<?php`, dans un `ob_start()` — du HTML qu'on lit et
+qu'on corrige ligne à ligne —, les petits bout à bout. Le composant reçoit les classes que le
+script de l'écran écoute ; il ne les invente pas.
+
+| Fichier | Ce qu'il rend |
+| --- | --- |
+| `vue/liste.php` | Les pièces des écrans de liste : la densité (`listeDensite()`), « Actualiser » (`listeActualiser()`), la recherche (`listeRecherche()`), les onglets d'état et leur résumé (`listeOnglets()`) |
+| `vue/liste_filtrable.php` | Le champ « liste filtrable » des fenêtres (`listeFiltrableRendu()`) |
+| `vue/filtres.php` | Les pastilles de filtre de la barre (`filtreRendu()`, `filtresBarre()`) |
+| `vue/soudures.php`, `vue/manques.php` | « Mes soudures » : un plan et ses feuilles, la fenêtre d'une soudure, celle d'un manque |
+
+Avant de recopier un bloc d'un écran à l'autre, en faire un composant. La densité était écrite
+à la main, à l'identique, dans huit écrans ; la sortir n'a pas changé un pixel — vérifié en
+photographiant les huit avant et après.
+
 ## JavaScript
 
 - **Pas de jQuery** : le DOM natif (`closest`, `classList`, `textContent`) et `fetch`. Un
@@ -106,8 +125,15 @@ relançable sans dégât, et de la mise à jour de `db/schema.sql`. Voir
   Un `hx-confirm` d'htmx passe par la même fenêtre ; l'élément dit le reste par
   `data-confirmer-texte` et `data-confirmer-action`.
 - **Les réponses** passent par `window.toast(message, { erreur })` — sauf dans une fenêtre, où
-  un refus s'écrit à côté du champ à corriger.
+  un refus s'écrit à côté du champ à corriger. Une action htmx qui répond par du HTML sans
+  changement visible — une ligne remplacée par une ligne identique — l'annonce par son en-tête :
+  `HX-Trigger: {"toast": "…"}` (`json_encode`, qui échappe les accents et les retours à la
+  ligne).
 - **Montrer, cacher : l'attribut `hidden`, et lui seul** — jamais `style.display` à côté.
+- **L'anneau de focus ne paraît qu'au clavier.** Chrome l'allume dès qu'une touche est pressée,
+  Échap compris : un clic dans un tableau puis Échap entourait le tableau entier.
+  `js/composants/focus.js` marque l'élément atteint au pointeur (`data-focus-pointeur`), et
+  `dashboard-base.css` éteint son anneau ; par Tab, il reste. Un composant n'a rien à refaire.
 
 ## CSS
 

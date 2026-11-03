@@ -1,0 +1,185 @@
+<?php
+// L'écran de connexion est la page d'accueil du site : http://localhost:8080 y mène, sans
+// adresse à retenir ni page intermédiaire. Ce qui l'accompagne reste dans auth/ — l'action
+// qui vérifie le mot de passe, celle qui ferme la session.
+//
+// Déjà connecté, on ne repasse pas par ici : la session est lue plus bas et le tableau de
+// bord prend la place.
+
+require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/modeles/autoload.php';
+require_once __DIR__ . '/api/User.php';
+
+Session::demarrer();
+
+// En développement, l'écran de connexion propose les comptes existants : un clic suffit à
+// entrer, sans mot de passe. C'est la seule façon d'essayer les quatre profils sans
+// connaître quatre mots de passe.
+//
+// En production, APP_ENV ne vaut pas « dev », cette requête n'est pas faite et rien de
+// tout cela n'apparaît.
+$comptesDev = [];
+if (Environnement::estDev()) {
+    $db = new MyPDO(__DIR__ . '/my_setting.ini');
+    $comptesDev = $db->query("SELECT u.identifiant, u.name, u.prenom, u.id_role, r.name AS role_name
+        FROM Utilisateur u JOIN role r ON r.id = u.id_role
+        ORDER BY u.id_role, u.prenom, u.name")->fetchAll(PDO::FETCH_ASSOC);
+}
+
+if (Session::connectee()) {
+    header('Location: dashboard/dashboard.php');
+    exit;
+}
+
+// Revenu ici parce que les deux heures de la connexion sont passées (Session::DUREE) : on le
+// dit, plutôt que de laisser croire à une déconnexion sans raison.
+$expiree = Session::vientDExpirer();
+
+?>
+
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <!-- Métadonnées -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Connexion — IDEM Préfabrication</title>
+    <!-- Installable sur une tablette : Chrome propose « Installer l'application », et
+         l'ouvre ensuite sans barre d'adresse (display: standalone). Il ne le fait que sur
+         une page sûre : HTTPS, ou localhost, comme à travers le câble de run tablette. -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="assets/icone-192.png">
+    <meta name="theme-color" content="#141820">
+
+    <!-- Le thème est posé avant le premier rendu, sinon l'écran clignote le temps que la
+         feuille s'applique. theme.js décide : le choix mémorisé s'il y en a un, celui du
+         système sinon. -->
+    <script src="js/composants/theme.js?v=<?= filemtime(__DIR__ . '/js/composants/theme.js') ?>"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.20.0/axios.min.js" integrity="sha512-OVq+Gfa9PIjbTC0jWOccSFSp/vzkBQ5pMcbHQrNZLl+izmdFmusmAMlX4LT550ivvSnMXMEeG7CxEtjIz6Dn2Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <link href="css/index.css?v=<?= filemtime(__DIR__ . '/css/index.css') ?>" rel="stylesheet" />
+    <link href="css/floating-fields.css?v=<?= filemtime(__DIR__ . '/css/floating-fields.css') ?>" rel="stylesheet" />
+
+    <script src="js/composants/floating-fields.js?v=<?= filemtime(__DIR__ . '/js/composants/floating-fields.js') ?>" defer></script>
+    <script src="js/composants/mot-de-passe.js?v=<?= filemtime(__DIR__ . '/js/composants/mot-de-passe.js') ?>" defer></script>
+    <script src="js/connexion/login.js?v=<?= filemtime(__DIR__ . '/js/connexion/login.js') ?>" defer></script>
+</head>
+
+<body>
+    <main class="connexion-panneau">
+        <div class="connexion-marque">
+            <img class="connexion-logo-clair" src="assets/logo-idem.png" alt="IDEM">
+            <img class="connexion-logo-sombre" src="assets/logo-idem-sombre.png" alt="IDEM">
+        </div>
+
+        <div class="connexion-corps">
+            <p class="connexion-surtitre">Atelier de préfabrication</p>
+            <h1 id="connexion-titre">Connexion</h1>
+
+            <?php // Le mot de passe n'est pas exigé ici : à la première connexion — ou après
+                  // une réinitialisation —, l'identifiant suffit, et le serveur répond qu'il
+                  // faut en choisir un (auth/action.php). ?>
+            <form id="login-form" class="connexion-formulaire" method="post">
+                <label for="login">Identifiant</label>
+                <input
+                    name="login"
+                    id="login"
+                    type="text"
+                    required
+                    autocomplete="username">
+
+                <label for="password">Mot de passe</label>
+                <input
+                    name="password"
+                    id="password"
+                    type="password"
+                    autocomplete="current-password">
+
+                <p id="form-message" class="connexion-message<?= $expiree ? ' est-info' : '' ?>" role="status" aria-live="polite"><?= $expiree
+                    ? 'Votre connexion a pris fin au bout de ' . intdiv(Session::DUREE, 3600) . ' h : reconnectez-vous.' : '' ?></p>
+
+                <button type="submit">Se connecter</button>
+                <button type="button" class="connexion-lien" data-etape="oubli">Mot de passe oublié ?</button>
+            </form>
+
+            <?php // Première connexion, ou après une réinitialisation : la personne choisit son
+                  // mot de passe, deux fois, et entre. ?>
+            <form id="creation-form" class="connexion-formulaire" method="post" hidden>
+                <input type="hidden" name="csrf" value="<?= htmlspecialchars(Session::jeton(), ENT_QUOTES, 'UTF-8') ?>">
+                <input type="hidden" name="login">
+                <p class="connexion-explication"><strong data-creation-compte></strong> : choisissez votre mot de passe, d’au moins <?= User::MOT_DE_PASSE_MINI ?> caractères.</p>
+
+                <label for="creation-password">Nouveau mot de passe</label>
+                <input name="password" id="creation-password" type="password" required
+                       minlength="<?= User::MOT_DE_PASSE_MINI ?>" maxlength="72" autocomplete="new-password">
+
+                <label for="creation-confirmation">Le même, encore une fois</label>
+                <input name="confirmation" id="creation-confirmation" type="password" required
+                       minlength="<?= User::MOT_DE_PASSE_MINI ?>" maxlength="72" autocomplete="new-password">
+
+                <p class="connexion-message" role="status" aria-live="polite"></p>
+
+                <button type="submit">Enregistrer et entrer</button>
+                <button type="button" class="connexion-lien" data-etape="connexion">Retour à la connexion</button>
+            </form>
+
+            <?php // Un oubli se signale à l'administrateur, qui réinitialise ; on choisit alors
+                  // un nouveau mot de passe en se connectant. ?>
+            <form id="oubli-form" class="connexion-formulaire" method="post" hidden>
+                <input type="hidden" name="csrf" value="<?= htmlspecialchars(Session::jeton(), ENT_QUOTES, 'UTF-8') ?>">
+                <p class="connexion-explication">L’administrateur réinitialise votre mot de passe ; vous en choisirez un nouveau à votre prochaine connexion.</p>
+
+                <label for="oubli-login">Identifiant</label>
+                <input name="login" id="oubli-login" type="text" required autocomplete="username">
+
+                <p class="connexion-message" role="status" aria-live="polite"></p>
+
+                <button type="submit">Prévenir l’administrateur</button>
+                <button type="button" class="connexion-lien" data-etape="connexion">Retour à la connexion</button>
+            </form>
+        </div>
+
+        <?php if ($comptesDev): ?>
+            <section class="connexion-dev" data-csrf="<?= htmlspecialchars(Session::jeton(), ENT_QUOTES, 'UTF-8') ?>">
+                <p class="connexion-dev-titre">
+                    Développement
+                    <span class="connexion-dev-marque">dev</span>
+                </p>
+                <p class="connexion-dev-mot">Entrer directement, sans mot de passe.</p>
+
+                <ul class="connexion-dev-liste">
+                    <?php foreach ($comptesDev as $compte):
+                        $nom = trim($compte['prenom'] . ' ' . $compte['name']);
+                        $metier = match ((int) $compte['id_role']) {
+                            1 => 'Chargé de production',
+                            2 => "Chef d'atelier",
+                            3 => 'Personnel atelier',
+                            5 => "Chargé d'affaire",
+                            default => '',
+                        };
+                    ?>
+                        <li>
+                            <button type="button" class="connexion-dev-compte"
+                                    data-compte="<?= htmlspecialchars($compte['identifiant'], ENT_QUOTES, 'UTF-8') ?>">
+                                <span class="connexion-dev-nom"><?= htmlspecialchars($nom, ENT_QUOTES, 'UTF-8') ?></span>
+                                <span class="connexion-dev-role"><?= htmlspecialchars($compte['role_name'] . ($metier !== '' ? ' · ' . $metier : ''), ENT_QUOTES, 'UTF-8') ?></span>
+                            </button>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </section>
+        <?php endif; ?>
+
+        <footer class="connexion-pied">
+            <p>Pas encore de compte ? Le chargé de production en crée un.</p>
+        </footer>
+    </main>
+
+    <!-- Décoratif : rien à annoncer aux lecteurs d'écran. -->
+    <div class="connexion-visuel" aria-hidden="true"></div>
+</body>
+
+</html>

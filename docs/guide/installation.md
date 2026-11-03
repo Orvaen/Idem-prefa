@@ -33,7 +33,7 @@ en production par mégarde.
 
 | Variable | Valeurs | Effet |
 | --- | --- | --- |
-| `APP_ENV` | `prod` (défaut) ou `dev` | Le mode. En `dev`, un repère **dev** paraît à côté du logo, et le chargé de production peut prendre la place de n'importe quel compte sans son mot de passe. |
+| `APP_ENV` | `prod` (défaut) ou `dev` | Le mode. En `dev`, un repère **dev** paraît à côté du logo, et l'on peut prendre la place de n'importe quel compte sans son mot de passe, depuis n'importe quel compte. |
 | `JOURNAL_COMPLET` | vide (défaut) ou `1` | Note aussi dans le journal les fichiers statiques et le flux d'événements. |
 | `COMPOSE_PROFILES` | vide (défaut) ou `docs` | Lu par Docker Compose lui-même : `docs` démarre aussi cette documentation, sur le port 8082. |
 

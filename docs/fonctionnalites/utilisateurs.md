@@ -16,6 +16,8 @@
 - **Réinitialiser le mot de passe** d'un compte, depuis le menu de sa ligne, après confirmation —
   à la demande de la personne, ou de soi-même : l'ancien ne marche plus, et elle en choisit un
   nouveau à sa prochaine connexion.
+- **Réinitialiser la signature** d'un compte, depuis le même menu, après confirmation : la
+  personne en trace une nouvelle et la valide ([le détail](#la-signature)).
 - **Modifier** le prénom et le nom ; l'identifiant est recalculé, et refusé s'il est déjà pris.
 - **Supprimer** un compte, après confirmation, ou **une sélection** de comptes : on les choisit
   comme dans l'explorateur de fichiers — un clic, `Ctrl` pour ajouter, `Maj` pour étendre, ou un
@@ -27,6 +29,7 @@
 | --- | --- |
 | Changer le **rôle** d'un compte existant | Ce n'est pas prévu dans l'interface : supprimer et recréer, ou passer par la base. |
 | Choisir le **mot de passe** de quelqu'un | Plus jamais : chacun choisit le sien. On le réinitialise, la personne en choisit un nouveau. |
+| Tracer la **signature** de quelqu'un | Elle ne vaudrait pas visa : chacun trace la sienne. On la réinitialise, la personne en trace une nouvelle. |
 | Supprimer **son propre** compte | Refusé ; dans une suppression en lot, il est simplement laissé de côté. |
 | Supprimer un compte qui a **déposé une demande** | Refusé : la demande perdrait son demandeur. |
 | Supprimer un compte qui a **travaillé en atelier** | Refusé par la base : affectations, pointages et validations le citent. |
@@ -56,13 +59,29 @@ porte « Mot de passe à choisir », personne n'est encore entré. Le journal no
 passe choisi.
 :::
 
+### La signature
+
+Elle vise les soudures qu'on valide ([le visa](/fonctionnalites/soudures#visa)). Chacun la
+trace dans Paramètres → Compte et la valide **une fois** : ensuite, il ne la refait ni ne la
+supprime lui-même — une signature qu'on changerait à sa guise ne vaudrait pas visa. Pour en
+changer, on le demande au chargé de production.
+
+| Moment | Ce qui se passe |
+| --- | --- |
+| **Valider** | « Valider » demande confirmation : une fois validée, seul un administrateur pourra la changer. Le cadre vide le dit déjà avant qu'on trace. Validée, elle s'affiche « Validée le … », sans outils, avec « Pour la changer, demandez à un administrateur. » |
+| **Réinitialisation** | Le chargé de production réinitialise depuis la ligne du compte, après confirmation. Un toast le confirme — la ligne n'en change pas d'aspect. La signature reste sur les soudures qu'elle a déjà visées ; les visas suivants portent le nom jusqu'à la nouvelle, que la personne trace et valide à son tour. Le journal note chaque réinitialisation. |
+| **Le menu de la ligne** | « Réinitialiser la signature » est éteint, avec sa raison, sur un compte qui n'en a pas et sur la sienne. |
+| **Le chargé de production** | Il garde la main sur la sienne : il la refait ou la supprime dans Paramètres → Compte, sans confirmation de validation. |
+| **Les signatures d'avant** | Celles tracées avant cette règle comptent comme validées. |
+
 ### Dans le code
 
 | Fichier | Rôle |
 | --- | --- |
 | `src/dashboard/pages/lists_users.php`, `src/api/users/get.php` | La liste, rendue par htmx |
 | `src/dashboard/includes/vue/user_row.php` | Une ligne, en lecture ou en saisie |
-| `src/dashboard/actions/create_users.php`, `edit_user.php`, `delete_user.php`, `check_identifiant.php`, `reinitialiser_mot_de_passe.php` | Les écritures — chargé de production seulement |
+| `src/dashboard/actions/create_users.php`, `edit_user.php`, `delete_user.php`, `check_identifiant.php`, `reinitialiser_mot_de_passe.php`, `reinitialiser_signature.php` | Les écritures — chargé de production seulement |
+| `signatureModifiable()`, `signatureColonneCompte()` dans `src/dashboard/includes/atelier/signature.php` | Qui peut changer sa signature ; la date de la signature en cours, que la ligne d'un compte lit pour proposer de la réinitialiser |
 | `src/api/User.php` | La fabrication de l'identifiant, le mot de passe : le hacher (bcrypt), le choisir, le réinitialiser, en demander un nouveau — et prévenir les chargés de production |
 | `src/auth/creer_mot_de_passe.php`, `mot_de_passe_oublie.php` | Le choix du mot de passe et l'oubli, depuis l'écran de connexion |
 | `src/dashboard/actions/mon_mot_de_passe.php`, `includes/vue/mot_de_passe.php` | Le sien, depuis les paramètres : en demander un nouveau — ou, pour le chargé de production, le réinitialiser — et la ligne qui dit où en est la demande |

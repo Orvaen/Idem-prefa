@@ -106,6 +106,7 @@ demande lui est refusé à part, dans `actions/create_prefa.php`.
 
 ## En développement
 
-Avec `APP_ENV=dev`, le chargé de production peut prendre la place de n'importe quel compte,
-sans son mot de passe, depuis le menu des comptes : c'est ainsi qu'on essaie les quatre profils.
+Avec `APP_ENV=dev`, on peut prendre la place de n'importe quel compte, depuis n'importe quel
+compte et sans son mot de passe, depuis le menu des comptes : c'est ainsi qu'on essaie les
+quatre profils.
 Voir [Développement et production](/guide/modes).

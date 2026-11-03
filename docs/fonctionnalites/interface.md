@@ -58,7 +58,8 @@ Le bouton du compte, en haut à droite, ouvre le menu des comptes :
   redemandé pour y revenir.
 - **Paramètres**, et **Se déconnecter**, qui ferme la session de tous les comptes de l'appareil.
 - En développement seulement, une section **Développement** permet de prendre la place de
-  n'importe quel compte sans son mot de passe.
+  n'importe quel compte sans son mot de passe. Elle ne liste que ceux qui ne sont pas encore
+  dans « Comptes » : chacun ne paraît qu'une fois, et quand tous y sont, la section disparaît.
 
 ## Les paramètres — Ctrl , {#parametres}
 
@@ -68,13 +69,13 @@ menu du compte ou par `Ctrl ,` :
 | Rubrique | Pour qui | Ce qu'on y règle |
 | --- | --- | --- |
 | **Général** | tout le monde | Le thème — système, clair ou sombre —, et la liste des raccourcis clavier |
-| **Compte** | tout le monde | Son profil, en lecture : nom, identifiant, rôle, courriel. Sa **signature**, qui vise les soudures qu'on valide ([le visa](/fonctionnalites/soudures#visa)) : on la trace, on la refait, on la supprime. Son **mot de passe**, qui ne se change pas sur place : on en demande un nouveau au chargé de production, et on le choisit en se reconnectant — lui réinitialise le sien ([le détail](/fonctionnalites/utilisateurs#le-mot-de-passe)). La déconnexion. |
+| **Compte** | tout le monde | Son profil, en lecture : nom, identifiant, rôle, courriel. Sa **signature**, qui vise les soudures qu'on valide ([le visa](/fonctionnalites/soudures#visa)) : on la trace et on la valide, une fois — pour la changer, on demande au chargé de production, qui la réinitialise ([le détail](/fonctionnalites/utilisateurs#la-signature)) ; lui refait ou supprime la sienne. Son **mot de passe**, qui ne se change pas sur place : on en demande un nouveau au chargé de production, et on le choisit en se reconnectant — lui réinitialise le sien ([le détail](/fonctionnalites/utilisateurs#le-mot-de-passe)). La déconnexion. |
 | **Fabrication** | chargé de production | Le **temps par pouce ISO**, qui sert à estimer le délai d'une demande |
 | **Passivation** | chargé de production | Les **types de passivation** proposés dans le formulaire de demande |
 | **Matériel** | chargé de production | Les **unités** proposées quand on signale un manque de matériel |
 
 Un réglage s'applique **dès qu'on le touche** : il n'y a pas de bouton « Enregistrer » — sauf
-sous le cadre de la signature, qu'on enregistre une fois tracée. Le temps par pouce part quand on
+sous le cadre de la signature, qu'on valide une fois tracée. Le temps par pouce part quand on
 quitte le champ ; un refus du serveur s'écrit sous la ligne. La recherche, en haut de la colonne,
 traverse toutes les rubriques.
 

@@ -48,8 +48,9 @@ ouvertes tombent.
 
 Une seule chose : **prendre la place de n'importe quel compte, sans son mot de passe**. Depuis
 le menu des comptes (en haut à droite), section « Développement », on essaie les quatre profils
-sans se déconnecter. Son propre compte reste dans la liste des comptes connectés : on y revient
-d'un clic.
+sans se déconnecter, depuis n'importe quel compte. Les deux comptes rejoignent la liste des
+comptes connectés — on revient au sien d'un clic — et quittent la section : elle ne liste que
+ceux qui n'y sont pas encore, et disparaît quand tous y sont.
 
 En production, l'action qui le permet répond `404` à tout le monde, y compris à un visiteur non
 connecté — rien n'indique qu'elle existe. La liste des comptes n'est même pas lue en base.

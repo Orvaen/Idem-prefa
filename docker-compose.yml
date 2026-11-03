@@ -1,8 +1,12 @@
 services:
-  php:
-    build: .
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: idem-web
     ports:
       - "8080:80"
+    restart: unless-stopped
     environment:
       # Production par défaut, et c'est le point important : ce fichier est aussi celui du
       # serveur de l'atelier, qui démarre sans rien de plus. Le développement s'active en
@@ -13,28 +17,59 @@ services:
       # de n'importe quel compte sans son mot de passe, pour essayer les quatre profils
       # sans se déconnecter. Rien de tout cela n'existe en production.
       APP_ENV: ${APP_ENV:-prod}
+      MYSQL_HOST: db
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-myapp}
+      MYSQL_USER: ${MYSQL_USER:-myuser}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-mypassword}
       # Le journal laisse de côté ce qui ne dit rien : les fichiers statiques, le flux
       # d'événements qui rend la main toutes les minutes, Apache qui se parle à lui-même.
       # JOURNAL_COMPLET=1 rend tout, le temps de comprendre quelque chose de précis.
       JOURNAL_COMPLET: ${JOURNAL_COMPLET:-}
     volumes:
-      - ./src:/var/www/html
+      - ./web/src:/var/www/html
+      - ./scripts:/scripts:ro
       # Les essais, en lecture seule et hors de la racine web : personne ne les sert, mais
       # php les lit comme des fichiers. Envoyés par l'entrée standard, leur code de sortie
       # se perdait en route — un essai rouge rendait quand même « tout va bien ».
       - ./tests:/tests:ro
     depends_on:
       - db
+      - api
+
+  api:
+    image: oven/bun:1
+    container_name: idem-api
+    working_dir: /app
+    command: sh -c "bun install && bun run dev"
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-myuser}:${POSTGRES_PASSWORD:-mypassword}@postgres:5432/${POSTGRES_DB:-myapp}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./api:/app
+    depends_on:
+      - postgres
+    restart: unless-stopped
 
   db:
     image: mysql:8.4
     environment:
-      MYSQL_DATABASE: myapp
-      MYSQL_USER: myuser
-      MYSQL_PASSWORD: mypassword
-      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-myapp}
+      MYSQL_USER: ${MYSQL_USER:-myuser}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-mypassword}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
     volumes:
       - mysql_data:/var/lib/mysql
+
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-myapp}
+      POSTGRES_USER: ${POSTGRES_USER:-myuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mypassword}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
   phpmyadmin:
     image: phpmyadmin:latest
@@ -70,3 +105,4 @@ services:
 volumes:
   mysql_data:
   docs_node_modules:
+  postgres_data:

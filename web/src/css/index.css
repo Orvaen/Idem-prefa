@@ -1,0 +1,433 @@
+/* ==========================================================================
+   ÉCRAN DE CONNEXION
+   ==========================================================================
+
+   Deux colonnes : le formulaire à gauche sur le fond de l'application, le visuel à
+   droite. Le formulaire tenait au milieu d'une page vide, et rien ne disait de quelle
+   application il ouvrait la porte.
+
+   Les mêmes jetons que le tableau de bord — c'est le premier écran qu'on voit, il ne
+   peut pas avoir sa propre charte. Le thème suit le choix mémorisé par le tableau de
+   bord : passer d'une connexion claire à un tableau sombre faisait un à-coup. */
+
+:root {
+    color-scheme: dark;
+    --frame: #141820;
+    --surface: #1c222d;
+    --border: #343d4c;
+    --text: #e2e7ef;
+    --text-muted: #a2adbd;
+    /* L'azur d'IDEM PROCESS, relevé sur le logo. Deux intensités, parce qu'une seule ne
+       peut pas faire les deux métiers : « accent » est le plein, qui doit porter du texte
+       blanc ; « accent-texte » est le trait, qui doit se lire sur le fond de la page.
+       L'ancien bleu #2563eb tenait les boutons mais ne faisait que 3:1 en lien sur fond
+       sombre — sous le minimum lisible. */
+    --accent: #0D79A8;
+    --accent-hover: #0A6890;
+    --accent-texte: #4FB9E8;
+    --danger: #f6a4a4;
+    --ctrl-sm: 32px;
+    --ctrl-md: 44px;
+    --r-sm: 4px;
+    --r-md: 6px;
+    --font: -apple-system, "Segoe UI", system-ui, "Noto Sans", "Ubuntu", sans-serif;
+}
+
+:root[data-theme="light"] {
+    color-scheme: light;
+    --frame: light-dark(#fafafa,#282c34);
+    --surface: #ffffff;
+    --border: #cbd5e1;
+    --text: #0f172a;
+    --text-muted: #64748b;
+    --danger: #b91c1c;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    display: grid;
+    /* Le visuel cède la place avant le formulaire : sur un écran étroit, c'est le
+       formulaire qu'on est venu chercher. */
+    grid-template-columns: minmax(420px, 46%) 1fr;
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ===== LA COLONNE DU FORMULAIRE ===== */
+
+.connexion-panneau {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    padding: 36px 48px;
+    background: var(--surface);
+    overflow-y: auto;
+}
+
+/* La marque reste en haut à gauche, comme dans la barre du tableau de bord : on
+   retrouve le même repère au même endroit une fois connecté. */
+/* Le même recadrage que la barre du tableau de bord : le fichier porte le verrou complet
+   — IDEM, la goutte et PROCESS — alors qu'on ne veut que le monogramme. */
+.connexion-marque img {
+    display: block;
+    height: 42px;
+    width: auto;
+    object-fit: cover;
+    object-position: left center;
+    aspect-ratio: 470 / 213;
+}
+
+/* Le dessin est fait pour du papier blanc : ses contours gris foncé disparaissent sur le
+   fond sombre. La plaque blanche qu'on posait derrière faisait une pièce claire collée
+   dans l'écran ; le thème sombre sert logo-idem-sombre.png, comme la barre du tableau de
+   bord. Celui qu'on cache est en display: none, donc hors de l'arbre d'accessibilité :
+   les deux peuvent porter le même alt. */
+.connexion-marque .connexion-logo-sombre {
+    display: none;
+}
+
+:root:not([data-theme="light"]) .connexion-logo-clair {
+    display: none;
+}
+
+:root:not([data-theme="light"]) .connexion-logo-sombre {
+    display: block;
+}
+
+/* Le bloc central flotte entre la marque et le pied : « margin: auto » le centre
+   verticalement dans la place qui reste, quelle que soit la hauteur de la fenêtre. */
+.connexion-corps {
+    width: 100%;
+    max-width: 360px;
+    margin: auto;
+    padding: 32px 0;
+}
+
+.connexion-surtitre {
+    margin: 0 0 4px;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.connexion-corps h1 {
+    margin: 0 0 24px;
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.connexion-formulaire {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* « hidden » l'emporte sur le « display: flex » du dessus : les trois étapes de l'écran
+   partagent la place, une seule se montre. */
+.connexion-formulaire[hidden] {
+    display: none;
+}
+
+/* La phrase qui ouvre une étape : à qui l'on parle, et ce qu'on attend. */
+.connexion-explication {
+    margin: 0 0 12px;
+    color: var(--text-muted);
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+.connexion-explication strong {
+    color: var(--text);
+    font-weight: 600;
+}
+
+/* « Mot de passe oublié ? », « Retour à la connexion » : un lien, sous le bouton. */
+.connexion-formulaire .connexion-lien {
+    align-self: center;
+    margin-top: 10px;
+    padding: 4px 6px;
+    border: 0;
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.connexion-formulaire .connexion-lien:hover {
+    color: var(--accent);
+    text-decoration: underline;
+}
+
+.connexion-formulaire .connexion-lien:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* Les champs sont habillés par floating-fields.css ; il ne reste ici que ce qui est
+   propre à cet écran. Le thème clair y redéfinit ses couleurs : cette page ne charge
+   pas la feuille du thème clair du tableau de bord. */
+:root[data-theme="light"] .floating-field {
+    --field-surface: #ffffff;
+    --field-text: #0f172a;
+    --field-muted: #64748b;
+    --field-border: #cbd5e1;
+    --field-focus: #0D79A8;
+}
+
+/* Le bouton d'envoi, et lui seul : « #login-form button » prenait aussi l'œil des mots de
+   passe, qui arrivait en bloc bleu de 42 px poussé de 16 px vers le bas. */
+.connexion-formulaire button[type="submit"] {
+    height: 42px;
+    margin-top: 16px;
+    border: 0;
+    border-radius: var(--r-md);
+    background: var(--accent);
+    color: #ffffff;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.connexion-formulaire button[type="submit"]:hover:not(:disabled) {
+    background: var(--accent-hover);
+}
+
+.connexion-formulaire button[type="submit"]:disabled {
+    opacity: 0.6;
+    cursor: progress;
+}
+
+/* Le focus des champs est celui de floating-fields.css, comme partout ailleurs. */
+.connexion-formulaire button[type="submit"]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* Le message n'existe qu'une fois rempli : vide, il réservait sa place et poussait le
+   bouton vers le bas au premier échec. */
+.connexion-message {
+    display: none;
+    margin-top: 12px;
+    padding: 9px 12px;
+    border-radius: var(--r-md);
+    background: rgb(246 164 164 / 12%);
+    color: var(--danger);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+/* Une information, et non une erreur : la connexion qui a pris fin, l'oubli bien transmis.
+   Rendue par le serveur, elle se montre d'elle-même — le script ne passe pas par là avant
+   le premier envoi. */
+.connexion-message.est-info {
+    background: var(--accent-fond, rgb(13 121 168 / 10%));
+    color: var(--text);
+}
+
+.connexion-message.est-info:not(:empty) {
+    display: flex;
+}
+
+.connexion-pied {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+/* ===== DÉVELOPPEMENT ===== */
+
+/* Les comptes proposés sous le formulaire n'existent que lorsque le serveur tourne avec
+   APP_ENV=dev : en production, ce balisage n'est pas rendu et ces règles n'habillent rien.
+   Le bloc est volontairement marqué — bordure en tirets, pastille ambre — pour qu'on ne
+   confonde jamais cet écran avec celui du serveur de l'atelier. */
+/* La marge du bas le décolle du pied de page, qui venait se coller sous sa bordure. */
+.connexion-dev {
+    margin: 28px 0 20px;
+    padding: 14px 16px 10px;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius, 8px);
+}
+
+.connexion-dev-titre {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.connexion-dev-marque {
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: #e0a92a;
+    color: #1b1403;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .08em;
+}
+
+.connexion-dev-mot {
+    margin: 4px 0 10px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.connexion-dev-liste {
+    display: grid;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.connexion-dev-compte {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    width: 100%;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background .12s ease;
+}
+
+.connexion-dev-compte:hover,
+.connexion-dev-compte:focus-visible {
+    background: var(--hover, rgba(0, 0, 0, .05));
+}
+
+.connexion-dev-compte:disabled {
+    opacity: .5;
+    cursor: progress;
+}
+
+.connexion-dev-nom {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.connexion-dev-role {
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+/* ===== LA COLONNE DU VISUEL ===== */
+
+.connexion-visuel {
+    min-height: 100%;
+    /* « cover » et non « contain » : l'image n'a pas de sujet à préserver, c'est une
+       matière. Elle se recadre par son centre quelle que soit la forme de la colonne. */
+    background: #16213f url("../assets/login-fond.jpg") center / cover no-repeat;
+}
+
+/* ===== ÉCRANS ÉTROITS ===== */
+
+@media (max-width: 860px) {
+    body {
+        grid-template-columns: 1fr;
+    }
+
+    .connexion-panneau {
+        padding: 28px 24px;
+    }
+
+    /* Le visuel passe derrière le haut du formulaire : sur un téléphone, une colonne
+       d'image à côté n'a plus de place, mais la page resterait nue sans elle. */
+    .connexion-visuel {
+        display: none;
+    }
+
+    /* Sur une seule colonne, le formulaire est centré dans ses 360 px : le bloc de
+       développement et le pied partaient du bord gauche et n'étaient alignés sur rien. */
+    .connexion-dev,
+    .connexion-pied {
+        width: 100%;
+        max-width: 360px;
+        margin-inline: auto;
+    }
+}
+
+/* ===== ÉCRANS BAS =====
+
+   Une tablette en paysage ne laisse qu'environ 500 px de haut, une fois la barre du
+   navigateur ôtée. Avec les marges d'un écran de bureau, le bouton touchait le bas, et les
+   comptes de développement passaient dessous. On resserre les marges verticales, jamais
+   les cibles. */
+@media (max-height: 640px) {
+    .connexion-panneau {
+        padding-top: 20px;
+        padding-bottom: 20px;
+    }
+
+    .connexion-marque img {
+        height: 34px;
+    }
+
+    .connexion-corps {
+        padding: 12px 0;
+    }
+
+    .connexion-corps h1 {
+        margin-bottom: 16px;
+    }
+
+    .connexion-dev {
+        margin-top: 16px;
+    }
+}
+
+/* ===== SUR UNE TABLETTE D'ATELIER =====
+
+   La règle des autres écrans : sous le doigt, une cible fait 44 px. Le bouton en faisait 42,
+   le lien « Mot de passe oublié ? » à peine 22, et chaque compte de développement 36. */
+@media (max-width: 1100px), (pointer: coarse) {
+    .connexion-formulaire button[type="submit"] {
+        height: 44px;
+    }
+
+    .connexion-formulaire .connexion-lien {
+        min-height: 44px;
+        margin-top: 4px;
+        padding: 0 12px;
+    }
+
+    .connexion-dev-compte {
+        justify-content: center;
+        min-height: 44px;
+    }
+}
+
+::selection {
+    background: #315a88;
+    color: #e2e7ef;
+}
+
+:root[data-theme="light"] ::selection {
+    background: #bfdbfe;
+    color: #1e3a8a;
+}

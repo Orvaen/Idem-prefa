@@ -1,25 +1,6 @@
 {
-  "private": true,
-  "scripts": {
-    "up": "terminal run up",
-    "down": "terminal run down",
-    "rebuild": "terminal run rebuild",
-    "wait": "terminal run wait",
-    "etat": "terminal run etat",
-    "logs": "terminal run logs",
-    "db": "terminal run db",
-    "dump": "terminal run dump",
-    "schema": "terminal run schema",
-    "clean": "terminal run clean",
-    "demo": "terminal run demo",
-    "admin": "terminal run admin",
-    "migration": "terminal run migration",
-    "test": "terminal run test",
-    "pages": "terminal run pages",
-    "dev": "terminal run dev",
-    "prod": "terminal run prod",
-    "journal-complet": "terminal run journal-complet",
-    "docs": "terminal run docs",
-    "docs-verifier": "terminal run docs-verifier"
+  "dependencies": {},
+  "devDependencies": {
+    "nodemon": "^3.1.14"
   }
 }

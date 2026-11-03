@@ -55,7 +55,11 @@ liste soudure toujours, le gris et le rouge d'un manque signalé quand la page e
 attend le chef s'écrit dans sa ligne en ambre ; le validé s'y écrit comme sur le plan final, qui
 ne porte que lui. Le haut de la fenêtre du plan ne dit que ce qu'on y fait : rien ne s'y annonce
 après un enregistrement, la ligne qui change suffit. « Signaler un manque » est dans sa barre,
-avec les autres commandes. Les soudures qu'aucune ligne ne porte — ajoutées hors de la liste
+avec les autres commandes, et **« Imprimer »** y remplace « Télécharger le PDF » : la feuille
+affichée ou tout le cahier — la fenêtre de choix de la maison le demande quand il en porte
+plusieurs —, une feuille par page de papier, à sa taille et dans son sens. Le soudeur vient chercher sa feuille
+sur papier, pas un fichier — et le plan final que le lien téléchargeait refuse tant que rien
+n'y est validé. Le chef garde « Télécharger le PDF ». Les soudures qu'aucune ligne ne porte — ajoutées hors de la liste
 imprimée, ou toute une page dont la liste n'a pas été reconnue (un scan) — s'affichent sous le
 titre, et s'y renseignent de la même façon.
 
@@ -168,20 +172,24 @@ tracer la sienne.
 | --- | --- |
 | Qui vise | Celui qui valide : chef d'atelier ou chargé de production. |
 | Ce qui est rangé | `plan_soudure.vise_par` et `date_visa` : qui, et quand ; `plan_soudure.id_signature` : la signature posée ce jour-là, s'il en avait une. Le nom s'écrit à l'affichage, depuis le compte. |
-| Les visas posés au nom | Ceux d'avant la signature — ou d'une période sans — prennent la première que la personne trace, puis la gardent. L'enregistrement dit combien de soudures elle vient de signer. |
-| Refaire sa signature | Les soudures déjà signées gardent celle du jour : comme sur le papier, changer la sienne ne retouche pas ce qui est signé. Seuls les visas suivants prennent la nouvelle. |
-| Supprimer sa signature | Les visas suivants reprennent le nom. Les soudures déjà visées gardent leur signature ; une signature qui ne vise aucune soudure est effacée. |
+| Les visas posés au nom | Ceux d'avant la signature — ou d'une période sans — prennent la première que la personne trace, puis la gardent. La validation dit combien de soudures elle vient de signer. |
+| Validée une fois | Tracée et validée, la signature ne se change plus de soi-même : une signature qu'on referait à sa guise ne vaudrait pas visa. Seul le **chargé de production** la réinitialise, depuis « Utilisateurs » ([le détail](/fonctionnalites/utilisateurs#la-signature)) ; la personne en trace alors une nouvelle, qu'elle valide à son tour. Lui garde la main sur la sienne : il la refait ou la supprime dans ses paramètres. |
+| Une signature remplacée | Les soudures déjà signées gardent celle du jour : comme sur le papier, changer de signature ne retouche pas ce qui est signé. Seuls les visas suivants prennent la nouvelle. |
+| Une signature retirée | Réinitialisée, ou supprimée par le chargé de production pour la sienne : les visas suivants reprennent le nom jusqu'à la nouvelle. Les soudures déjà visées gardent leur signature ; une signature qui ne vise aucune soudure est effacée. |
 | Refuser | Ne vise rien. |
 | Les soudures validées autrement | « Saisir l'avancement » et les étapes couvrent des soudures sans les viser : leur case VISA reste vide. |
 | Sur le plan final | La signature est faite de **traits** du PDF, le nom de **texte** : ni l'un ni l'autre n'est une image, tous deux restent nets à tous les zooms. Le visa occupe la ligne à une fine marge près, et rétrécit pour tenir dans la case. |
 
 Dans les paramètres, la signature s'affiche comme au bas d'un document : au-dessus d'un trait,
-le nom et la date dessous ; « Refaire » et « Supprimer » paraissent au survol. Elle se trace à
-la souris, au doigt ou au stylet, dans un cadre de la même forme qui prend sa place — on signe
-là où elle s'affichera —, avec de quoi défaire le dernier trait ou tout effacer
-([signature_pad](https://github.com/szimek/signature_pad), chargé à l'ouverture du cadre).
-« Enregistrer » reste éteint tant que le cadre est vide, et Échap abandonne sans fermer la
-fenêtre. Elle est rangée en points, recadrée sur l'encre (`signature_utilisateur.dessin`), et
+le nom et « Validée le … » dessous, et en dessous du cadre « Pour la changer, demandez à un
+administrateur. » — le chargé de production, lui, a « Refaire » et « Supprimer » au survol.
+Elle se trace à la souris, au doigt ou au stylet, dans un cadre de la même forme qui prend sa
+place — on signe là où elle s'affichera —, avec de quoi défaire le dernier trait ou tout
+effacer ([signature_pad](https://github.com/szimek/signature_pad), chargé à l'ouverture du
+cadre). « Valider » reste éteint tant que le cadre est vide, et Échap abandonne sans fermer la
+fenêtre. La règle se lit avant : sur le cadre vide (« Une fois validée, seul un administrateur
+pourra la changer »), puis dans la confirmation que « Valider » demande ; Annuler laisse le
+tracé en place. Elle est rangée en points, recadrée sur l'encre (`signature_utilisateur.dessin`), et
 se redessine lissée, dans la couleur du texte qui l'entoure. Avant la migration
 `2026-10-29_signatures`, la section le dit et les visas restent au nom.
 
@@ -256,6 +264,7 @@ condition dans `prefa_list_data.php`.
 | `src/dashboard/actions/plan_final_lecteur.php`, `ouvrirLecteurPlanFinal()` dans `src/js/ecrans/prefa-interactions.js` | La visionneuse en consultation, servie à la demande pour le sous-menu |
 | `src/js/ecrans/plan-viewer.js` | La visionneuse et ses cases ; elle annonce chaque page affichée (`plan:page`), où « Mes soudures » pose ses lignes et ses numéros, et lui prête `planEcrireEnAttente()` et `planRelireSoudures()` |
 | `avancementViserCordons()` dans `src/dashboard/includes/atelier/avancement.php` | Les contrôles et le visa posés en validant |
-| `src/dashboard/includes/atelier/signature.php`, `src/dashboard/actions/ma_signature.php` | La signature de chacun : la vérifier, la ranger, la poser en visa, la tracer en SVG |
+| `src/dashboard/includes/atelier/signature.php`, `src/dashboard/actions/ma_signature.php` | La signature de chacun : la vérifier, la ranger, la poser en visa, la tracer en SVG — et qui peut la changer, une fois validée (`signatureModifiable()`) |
+| `src/dashboard/actions/reinitialiser_signature.php` | Sa réinitialisation par le chargé de production, depuis « Utilisateurs » |
 | `planFinalSignature()` dans `plan_final.php`, `dessinerSignature()` dans `src/js/ecrans/plan-viewer.js` | La signature dans la case VISA, sur le plan final et dans la fenêtre du plan |
 | `src/dashboard/includes/lecture/ecriture_visa.php`, `planFinalEcritureVisa()` dans `plan_final.php` | L'écriture du visa : ses mesures, lues dans la police, et son embarquement dans le PDF |
