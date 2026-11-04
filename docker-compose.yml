@@ -44,6 +44,12 @@ services:
     command: sh -c "bun install && bun run dev"
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-myuser}:${POSTGRES_PASSWORD:-mypassword}@postgres:5432/${POSTGRES_DB:-myapp}
+      APP_ENV: ${APP_ENV:-prod}
+      # La clé qui signe les jetons de connexion (api/utils/jwt.ts) : 32 caractères au moins.
+      # Pas de valeur par défaut, et c'est voulu : une clé écrite dans ce fichier serait
+      # publique. Sans JWT_SECRET dans le .env, l'API refuse de démarrer, et le dit dans
+      # ses logs ; le reste de la stack tourne.
+      JWT_SECRET: ${JWT_SECRET:-}
     ports:
       - "3000:3000"
     volumes:
@@ -68,6 +74,11 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-myapp}
       POSTGRES_USER: ${POSTGRES_USER:-myuser}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mypassword}
+    # Pour un client de base de données sur le poste (l'extension Database Client de VS Code,
+    # DBeaver…) : localhost:5432. Sur 127.0.0.1 seulement : la machine elle-même y accède,
+    # personne d'autre sur le réseau — le serveur de l'atelier compris.
+    ports:
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 

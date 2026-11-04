@@ -1,37 +1,29 @@
 import * as dotenv from "dotenv";
-import { SQL } from "bun";
+import { docsRoutes } from "./docs/openapi";
+
+// All routes
+import { servicesRoutes } from "./routes/services.routes";
+import { authRoutes } from "./routes/auth.routes";
+
 
 // Load environment variables from .env file
 dotenv.config();
 
 const isDev = process.env.APP_ENV === "dev";
 
-// Set up PostgreSQL connection parameters
-const PostegresUsers = process.env.POSTGRES_USER ?? "IdemUsers";
-const PostegresPassword = process.env.POSTGRES_PASSWORD ?? "IdemPassword";
-const PostegresDB = process.env.POSTGRES_DB ?? "IdemDB";
-const PostegresConnectionString = `postgres://${PostegresUsers}:${PostegresPassword}@postgres:5432/${PostegresDB}`;
-
-const pg = new SQL(process.env.DATABASE_URL ?? PostegresConnectionString);
+// Toutes les routes de l'API : la doc Scalar est générée à partir d'elles
+const apiRoutes = {
+    ...servicesRoutes,
+    ...authRoutes,
+};
 
 // Create a Bun server
 const server = Bun.serve({
     development: isDev,
     port: 3000,
     routes: {
-        // Define API version
-        "/api/version": new Response(JSON.stringify({ version: "1.0.0" }), {
-            headers: {
-                "Content-Type": "application/json"
-            }
-        }),
-
-        // Define API status
-        "/api/status": new Response(JSON.stringify({ status: "ok" }), {
-            headers: {
-                "Content-Type": "application/json"
-            }
-        }),
+        ...apiRoutes,
+        ...docsRoutes(apiRoutes),
     },
 
     // Handle unmatched routes

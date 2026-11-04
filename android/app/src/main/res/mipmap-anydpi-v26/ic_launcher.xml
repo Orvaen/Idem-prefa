@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Icône adaptative : le lanceur la découpe à sa forme (rond, goutte, carré arrondi).
+     Le monogramme reste dans la zone sûre, le fond sombre remplit le reste. -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/fond" />
+    <foreground android:drawable="@mipmap/ic_launcher_premier_plan" />
+</adaptive-icon>

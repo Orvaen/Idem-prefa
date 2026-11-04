@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- usesCleartextTraffic : le site est en HTTP, sur localhost par le câble comme sur le
+         serveur de l'atelier. Sans cela, Android refuse la page.
+         allowBackup="false" : la session ouverte ne doit pas partir dans une sauvegarde. -->
+    <application
+        android:label="@string/nom_appli"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:theme="@style/Theme.Idem"
+        android:usesCleartextTraffic="true"
+        android:allowBackup="false">
+
+        <!-- configChanges : tourner la tablette ou sortir le clavier ne recrée pas l'écran.
+             Sans cela, la page se rechargeait et un formulaire à moitié rempli était perdu. -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation|uiMode|density"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

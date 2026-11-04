@@ -9,8 +9,11 @@
     "dev": "nodemon -L -e ts,js,json --exec \"bun run server.ts\""
   },
   "dependencies": {
+    "@scalar/api-reference": "^1.76.4",
     "dotenv": "^18.0.9",
-    "sql": "^0.78.0"
+    "jose": "^6.2.15",
+    "sql": "^0.78.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/bun": "^1.4.4",

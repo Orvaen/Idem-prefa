@@ -1,0 +1,6 @@
+# Ce que Gradle fabrique, et le chemin du SDK Android de ce poste.
+.gradle/
+build/
+local.properties
+.idea/
+*.iml

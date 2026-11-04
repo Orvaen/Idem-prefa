@@ -31,7 +31,7 @@
       "description": "Qui tourne, et si l'on est en dev ou en prod"
     },
     "logs": {
-      "run": "docker compose logs -f --tail=50 web",
+      "run": "docker compose logs -f --tail=50 api",
       "description": "Suit les logs d'Apache et de PHP (Ctrl+C pour sortir)"
     },
     "db": {
@@ -187,6 +187,21 @@
         "g=$(which gnirehtet); GNIREHTET_APK=\"${g%.exe}.apk\" gnirehtet run"
       ],
       "description": "Partage le site et la connexion internet du PC avec une tablette Android branchée en USB. Demande adb et gnirehtet ; la première fois, la tablette installe gnirehtet et demande d'accepter sa connexion VPN"
+    },
+    "apk": {
+      "run": [
+        "android\\gradlew.bat -p android assembleDebug -PurlSite=$url",
+        "adb wait-for-usb-device",
+        "adb reverse tcp:8080 tcp:8080",
+        "adb reverse tcp:3000 tcp:3000",
+        "adb install -r android/app/build/outputs/apk/debug/app-debug.apk",
+        "adb shell am start -n com.idem.prefabrication/.MainActivity",
+        "echo \"Installée : « IDEM Préfa » sur la tablette. L'APK est dans android/app/build/outputs/apk/debug/app-debug.apk\""
+      ],
+      "args": [
+        "url=http://localhost:8080/"
+      ],
+      "description": "Construit l'appli Android (le site en plein écran), l'installe sur la tablette branchée en USB et la lance. Pour le serveur de l'atelier : run apk -- url=http://IP:8080/. Demande le JDK 17 et le SDK Android"
     }
   }
 }

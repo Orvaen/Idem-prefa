@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nom_appli">IDEM Préfa</string>
+
+    <!-- Le fond de l'application (la variable frame des feuilles du site) : derrière les barres
+         du système, au démarrage, et sous l'icône. -->
+    <color name="fond">#141820</color>
+
+    <!-- Android 15 dessine l'appli derrière les barres du système : elles sont transparentes,
+         et c'est le fond de l'écran qui s'y voit. MainActivity rend la place à la page. -->
+    <style name="Theme.Idem" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/fond</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+</resources>
