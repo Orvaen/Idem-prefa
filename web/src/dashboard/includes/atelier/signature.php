@@ -3,10 +3,16 @@
 /**
  * Le visa des cordons : la signature de celui qui les valide.
  *
- * Chacun trace la sienne une fois, dans ses paramètres (rubrique Compte). Quand le chef
- * valide l'avancement d'un soudeur, les cordons que la validation couvre sont visés de sa
- * signature : la case VISA du plan la porte, dans la fenêtre du plan comme sur le plan
- * final. Qui n'en a pas tracé vise de son nom, écrit à la main (lecture/ecriture_visa.php).
+ * Chacun trace la sienne une fois, en grand, dans une fenêtre à elle (signatureFenetreRendu()).
+ * Quand le chef valide l'avancement d'un soudeur, les cordons que la validation couvre sont
+ * visés de sa signature : la case VISA du plan la porte, dans la fenêtre du plan comme sur le
+ * plan final.
+ *
+ * Pas de signature, pas de visa — demandé le 6 novembre 2026. Un nom tapé par l'application
+ * ne vaut pas signature : « Valider » attend qu'elle soit tracée (signatureVisa()), et le
+ * serveur refuse sans elle (avancementViserCordons()). Qui valide des soudures la trace dès
+ * son arrivée, s'il n'en a pas (signatureObligatoire()). Seuls les visas d'avant les
+ * signatures portent encore un nom, écrit à la main (lecture/ecriture_visa.php).
  *
  * Une signature est gardée telle qu'elle a été posée. La refaire en range une nouvelle ;
  * l'ancienne reste sur les cordons qu'elle a visés — comme sur le papier, changer de
@@ -192,10 +198,25 @@ function signatureSupprimer(PDO $db, int $utilisateurId): void
         ->execute([$utilisateurId]);
 }
 
+/** Le refus du serveur, quand on valide des soudures sans avoir tracé sa signature. */
+const SIGNATURE_REQUISE = 'Tracez d’abord votre signature : sans elle, vous ne pouvez pas valider de soudures.';
+
 /**
- * Vise ces cordons de la signature en cours de celui qui valide — d'aucune s'il n'en a pas
- * tracé, et son nom en tient lieu. Appelée par avancementViserCordons(), qui tient la
- * transaction et a déjà posé le visa.
+ * Cette personne doit-elle tracer sa signature avant tout le reste ? Oui si elle valide des
+ * soudures — le chef d'atelier, le chargé de production — et n'en a pas : sans elle,
+ * « Valider » lui serait refusé. Le tableau de bord ouvre alors le cadre dès l'arrivée, et il
+ * ne se referme pas sans elle (parametres.js). Tant que la migration n'est pas passée,
+ * personne : il n'y a pas où la ranger.
+ */
+function signatureObligatoire(PDO $db, Utilisateur $utilisateur): bool
+{
+    return $utilisateur->gereLAtelier() && signaturesEnBase($db) && !signatureEnCours($db, $utilisateur->id);
+}
+
+/**
+ * Vise ces cordons de la signature en cours de celui qui valide. Appelée par
+ * avancementViserCordons(), qui tient la transaction, a déjà posé le visa et vérifié qu'il y
+ * a une signature — sauf sur un serveur sans la migration, où le nom en tient lieu.
  *
  * @param list<int> $cordonIds
  */
@@ -272,19 +293,34 @@ function signatureVue(array $dessin): array
     return ['proportion' => (float) $dessin['proportion'], 'chemin' => signatureChemin($dessin)];
 }
 
+/** L'annonce d'un visa signé : le serveur l'écrit, et la page aussi, une fois la signature tracée. */
+const SIGNATURE_ANNONCE = 'Valider les vise de votre signature.';
+
 /**
- * Comment « Valider » visera, dit dans le bloc des contrôles (soudureControlesRendu()) :
- * de sa signature si on en a tracé une ; sinon de son nom, avec le chemin pour en tracer une.
+ * Ce que « Valider » visera, dit au-dessus du bouton (avancementDecisionFormulaire()).
+ *
+ * Avec une signature, elle. Sans, rien : « manquante » — le pied le dit, « Valider » attend,
+ * et « Tracer ma signature » ouvre le cadre sur place. Une fois tracée, la page rallume
+ * « Valider » sans recharger (parametres.js). Tant que la migration n'est pas passée, le
+ * nom : il n'y a pas de signature à tracer.
+ *
+ * @return array{annonce: string, manquante: bool} l'annonce, en HTML
  */
-function signatureAnnonceVisa(PDO $db, Utilisateur $utilisateur): string
+function signatureVisa(PDO $db, Utilisateur $utilisateur): array
 {
-    static $annonces = [];
-    if (isset($annonces[$utilisateur->id])) return $annonces[$utilisateur->id];
-    if (signatureEnCours($db, $utilisateur->id)) return $annonces[$utilisateur->id] = 'Valider les vise de votre signature.';
-    return $annonces[$utilisateur->id] = 'Valider les vise à votre nom, ' . prefaEscape($utilisateur->nomComplet())
-        . (signaturesEnBase($db)
-            ? ' · <button type="button" class="soudure-controles-lien" data-ouvre-parametres="compte">Tracer ma signature</button>'
-            : '.');
+    static $visas = [];
+    if (isset($visas[$utilisateur->id])) return $visas[$utilisateur->id];
+    if (!signaturesEnBase($db)) {
+        return $visas[$utilisateur->id] = [
+            'annonce' => 'Valider les vise à votre nom, ' . prefaEscape($utilisateur->nomComplet()) . '.',
+            'manquante' => false,
+        ];
+    }
+    $signee = signatureEnCours($db, $utilisateur->id) !== null;
+    return $visas[$utilisateur->id] = [
+        'annonce' => $signee ? SIGNATURE_ANNONCE : '',
+        'manquante' => !$signee,
+    ];
 }
 
 /**
@@ -348,9 +384,9 @@ function signatureColonneCompte(PDO $db): string
  * la zone à pointillés le prévient avant qu'il trace, et la signature validée n'a plus ses
  * outils — une ligne dit à qui s'adresser. La règle se lit là où elle sert, une fois.
  *
- * Le cadre où l'on signe a la même forme et prend sa place (vue/parametres.php) : on signe
- * là où elle s'affichera. L'action rend ce bloc après chaque changement
- * (actions/ma_signature.php) ; la fenêtre le remplace d'un bloc.
+ * On la trace dans sa grande fenêtre (signatureFenetreRendu()), pas dans ce bloc : il fait
+ * quatre centimètres de haut. L'action rend ce bloc après chaque changement
+ * (actions/ma_signature.php) ; les paramètres le remplacent d'un bloc.
  */
 function signatureParametreRendu(?array $signature, string $nom, bool $administrateur): string
 {
@@ -358,7 +394,7 @@ function signatureParametreRendu(?array $signature, string $nom, bool $administr
         return '<button type="button" class="signature-cadre signature-vide" data-signature-tracer>'
             . '<span class="signature-vide-icone">' . signatureIcone('refaire') . '</span>'
             . '<span class="signature-vide-titre">Tracer ma signature</span>'
-            . '<span class="signature-vide-aide">Sans elle, vos visas portent votre nom.'
+            . '<span class="signature-vide-aide">Il la faut pour valider des soudures.'
             . ($administrateur ? '' : ' Une fois validée, seul un administrateur pourra la changer.') . '</span>'
             . '</button>';
     }
@@ -378,4 +414,64 @@ function signatureParametreRendu(?array $signature, string $nom, bool $administr
         . '<span>Validée le ' . prefaFormatDate($signature['date']) . '</span></figcaption>'
         . $outils . '</figure>'
         . ($modifiable ? '' : '<div class="signature-verrou">Pour la changer, demandez à un administrateur.</div>');
+}
+
+/**
+ * La fenêtre où l'on trace sa signature, en grand.
+ *
+ * Demandé le 6 novembre 2026 : « Tracer ma signature » ouvrait un cadre de quatre centimètres
+ * dans les paramètres, et l'on signait du bout du doigt. Elle a sa fenêtre : large sur un
+ * écran de bureau, tout l'écran sur une tablette. Elle s'ouvre de partout où l'on voit
+ * « Tracer ma signature » — les paramètres, le pied d'une décision ([data-signature-tracer],
+ * parametres.js) —, et d'elle-même à l'arrivée pour qui doit la tracer
+ * (signatureObligatoire()) : elle n'a alors ni croix ni « Annuler », seulement de quoi se
+ * déconnecter.
+ *
+ * Le cadre garde le dessin du bloc de signature : l'invite au milieu, un trait, le nom et la
+ * date dessous, et dans son coin de quoi retirer le dernier trait ou tout effacer.
+ */
+function signatureFenetreRendu(Utilisateur $utilisateur, bool $administrateur, bool $obligatoire): string
+{
+    $croix = '<svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"'
+        . ' stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg>';
+    $aide = $obligatoire
+        ? 'Elle visera les soudures que vous validez : sans elle, pas de validation. Signez une fois, avec le doigt ou le stylet.'
+        : 'Signez dans le cadre, avec le doigt, le stylet ou la souris.';
+    if (!$administrateur) $aide .= ' Une fois validée, seul un administrateur pourra la changer.';
+
+    return '<dialog class="fenetre signature-fenetre" id="signature-fenetre" aria-labelledby="signature-fenetre-titre"'
+        . ' aria-describedby="signature-fenetre-aide" data-csrf="' . prefaEscape(Session::jeton()) . '"'
+        . ($administrateur ? '' : ' data-validation-definitive') . ($obligatoire ? ' data-obligatoire' : '') . '>'
+        . '<div class="signature-fenetre-cadre">'
+        // La phrase sous le titre est dans l'en-tête, à côté de la croix : sur un téléphone,
+        // posée dessous, elle passait sous elle.
+        . '<div class="fenetre-entete"><div>'
+        . '<h2 id="signature-fenetre-titre">' . ($obligatoire ? 'Avant de commencer : votre signature' : 'Votre signature') . '</h2>'
+        . '<p class="fenetre-sous-titre" id="signature-fenetre-aide">' . $aide . '</p>'
+        . '</div>'
+        . ($obligatoire ? '' : '<button type="button" class="modal-close" data-signature-annuler aria-label="Fermer">' . $croix . '</button>')
+        . '</div>'
+        . '<div class="fenetre-corps">'
+        // La zone mesure la place : le cadre y prend toute la largeur, et pas plus haut que
+        // large — une signature est en long (settings.css).
+        . '<div class="signature-fenetre-zone">'
+        . '<div class="signature-cadre est-a-signer est-vide" tabindex="-1">'
+        . '<canvas role="img" aria-label="Cadre de signature : signez au doigt, au stylet ou à la souris"></canvas>'
+        . '<div class="signature-trace"><span class="signature-invite">' . signatureIcone('refaire') . 'Signez ici</span></div>'
+        . '<div class="signature-ligne" aria-hidden="true"></div>'
+        . '<div class="signature-pied" aria-hidden="true"><span>' . prefaEscape($utilisateur->nomComplet()) . '</span><span>Aujourd’hui</span></div>'
+        . '<div class="signature-outils">'
+        . '<button type="button" class="signature-outil" data-signature-defaire title="Retirer le dernier trait"'
+        . ' aria-label="Retirer le dernier trait" disabled>' . signatureIcone('defaire') . '</button>'
+        . '<button type="button" class="signature-outil est-libelle" data-signature-effacer disabled>'
+        . signatureIcone('effacer') . '<span>Effacer</span></button>'
+        . '</div></div></div>'
+        . '<p class="fenetre-message signature-fenetre-message" role="status" aria-live="polite"></p>'
+        . '</div>'
+        . '<div class="fenetre-pied">'
+        . ($obligatoire
+            ? '<a class="signature-fenetre-sortir" href="../auth/logout.php">Se déconnecter</a>'
+            : '<button type="button" class="fenetre-annuler" data-signature-annuler>Annuler</button>')
+        . '<button type="button" class="fenetre-valider" data-signature-enregistrer disabled>Valider ma signature</button>'
+        . '</div></div></dialog>';
 }

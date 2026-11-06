@@ -29,7 +29,8 @@ try {
 
         echo json_encode([
             'success' => false,
-            'message' => 'Identifiants incorrects.'
+            // Les deux, sans dire lequel : on ne devine pas les identifiants par ici.
+            'message' => 'Identifiant ou mot de passe incorrect.'
         ]);
         exit;
     }

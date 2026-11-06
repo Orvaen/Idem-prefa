@@ -56,6 +56,23 @@ if ($nomenclature) {
     unset($ligne);
 }
 
+// La case « N° COULÉE » de chaque ligne se touche pour choisir sa coulée : parmi celles lues
+// sur les certificats de la demande, une fois chacune — confirmée si l'un des certificats la
+// confirme, rangée sous le premier qui la porte —, et avec celles déjà posées sur la page,
+// pour que le choix parte de l'existant.
+require_once __DIR__ . '/../includes/atelier/nomenclature.php';
+$coulees = [];
+foreach (nomenclatureCouleesDisponibles($db, (int) $plan['id_demande']) as $coulee) {
+    $numero = (string) $coulee['numero'];
+    if ($numero === '') continue;
+    $coulees[$numero] ??= ['numero' => $numero, 'confirmee' => false, 'certificat' => nomenclatureCertificatLibelle($coulee)];
+    $coulees[$numero]['confirmee'] = $coulees[$numero]['confirmee'] || (int) $coulee['confirmee'] === 1;
+}
+$couleesPosees = array_values(array_map(static fn (array $case): array => [
+    'y' => (float) $case['pos_y'], 'h' => (float) $case['pos_h'], 'coulee' => (string) $case['numero_coulee'],
+], array_filter(nomenclatureLignes($db, $elementId, (int) $plan['id'], $page),
+    static fn (array $case): bool => $case['pos_y'] !== null)));
+
 // L'état du plan entier, pour les deux autres chiffres de l'écran : la feuille ouverte ne
 // dit pas où en est le cahier, et c'est pourtant ce qui part en validation.
 require_once __DIR__ . '/../includes/atelier/avancement.php';
@@ -70,6 +87,8 @@ echo json_encode([
     'tableau' => $dessin['tableau'],
     'reperes' => $dessin['reperes'],
     'nomenclature' => $nomenclature,
+    'coulees' => array_values($coulees),
+    'coulees_posees' => $couleesPosees,
     'imprimees' => $feuille['imprimees'],
     'faites' => $feuille['faites'],
     'miennes' => $feuille['miennes'],

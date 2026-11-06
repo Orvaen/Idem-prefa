@@ -22,7 +22,8 @@ require_once __DIR__ . '/../../../api/User.php';
 function motDePasseEtat(PDO $db, int $id): array
 {
     $enBase = User::reinitialisationsEnBase($db);
-    $lecture = $db->prepare("SELECT password = '' AS reinitialise, "
+    // « !… » : un code d'accès, posé à la place du mot de passe (api/User.php).
+    $lecture = $db->prepare("SELECT (password = '' OR password LIKE '!%') AS reinitialise, "
         . ($enBase ? 'reinitialisation_demandee_le' : 'NULL') . ' AS demande_le FROM Utilisateur WHERE id = ?');
     $lecture->execute([$id]);
     $ligne = $lecture->fetch(PDO::FETCH_ASSOC) ?: ['reinitialise' => 0, 'demande_le' => null];
@@ -35,11 +36,11 @@ function motDePasseParametre(array $etat, bool $administre): string
     [$aide, $commande] = match (true) {
         // Réinitialisé pendant qu'on était connecté : il ne reste qu'à se reconnecter.
         $etat['reinitialise'] => [
-            'Réinitialisé : choisissez le nouveau en vous reconnectant.',
+            'Réinitialisé : choisissez le nouveau en vous reconnectant, avec le code reçu.',
             '<a class="parametres-bouton" href="../auth/logout.php">Se reconnecter</a>',
         ],
         $administre => [
-            'Réinitialisez-le : vous serez déconnecté, et choisirez le nouveau en vous reconnectant.',
+            'Réinitialisez-le : un code s’affiche, puis vous êtes déconnecté ; avec ce code, vous choisirez le nouveau en vous reconnectant.',
             '<button type="button" class="parametres-bouton" data-mdp="reinitialiser">Réinitialiser</button>',
         ],
         $etat['demandeLe'] !== null => [

@@ -523,19 +523,26 @@ document.addEventListener('click', async evenement => {
 });
 
 // ===== Le visualiseur PDF =====
-// Plein écran : le document à gauche, son sommaire à droite — une vignette par page,
-// qu'on clique pour s'y rendre. Le sommaire n'existe que pour les documents dont
-// l'adresse sait rendre ses pages (data-sommaire) ; les autres s'ouvrent sans.
+// Plein écran : une barre en tête, les pages du document en dessous, et son sommaire — une
+// vignette par page, qu'on touche pour s'y rendre.
 //
-// Deux façons de montrer le document. Un lien data-lecteur="pages" s'ouvre dans le lecteur
-// de l'application : le serveur rend chaque page en image (lecture/pdf_pages.php), et la
-// fenêtre les empile, avec son zoom. Les autres passent encore par une iframe, donc par le
-// lecteur du navigateur — sa barre, ses outils « Dessiner », étrangers à l'application.
+// Un seul lecteur : celui de l'application. Le serveur rend chaque page en image
+// (lecture/pdf_pages.php), à l'adresse même du document, et la fenêtre les empile, avec son
+// zoom. Le lecteur du navigateur, posé dans une iframe, est banni (6 novembre 2026) : sa
+// barre et ses outils — « Dessiner », « Surligner », « Imprimer » — n'étaient pas ceux de
+// l'application, et dans l'appli Android il n'affichait rien du tout. Un document que le
+// serveur ne sait pas rendre le dit, et propose de le télécharger.
+//
+// Sur une tablette, l'écran se simplifie : la page prend la largeur, le sommaire se replie
+// en volet par-dessus les pages, et une pastille dit où l'on en est.
 const PDF_ICONES = {
     fichier: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"/><path d="M14 3v5h5"/>',
     telecharger: '<path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/>',
     sommaire: '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M15 4v16"/>',
     fermer: '<path d="m6 6 12 12M18 6 6 18"/>',
+    moins: '<path d="M5 12h14"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    ajuster: '<path d="M4 9V5h4M20 9V5h-4M4 15v4h4M20 15v4h-4"/>',
 };
 
 // « 100 % », c'est la taille du papier : un A4, 210 mm, fait 794 pixels à 96 dpi. Les
@@ -544,6 +551,9 @@ const PDF_LARGEUR_A4 = 794;
 const PDF_ZOOMS = [50, 75, 100, 125, 150, 200, 300];
 const PDF_ZOOM_MIN = 25;
 const PDF_ZOOM_MAX = 300;
+
+/** Au doigt : la tablette, où l'écran se simplifie. */
+const pdfTactile = () => window.matchMedia('(pointer: coarse)').matches;
 
 /** L'adresse du document, avec une question de plus : ?pages, ?page=N, ?vignette=N. */
 function pdfAdresse(adresse, cle, valeur) {
@@ -573,19 +583,23 @@ function pdfViewer() {
             <span class="prefa-pdf-icone">${pdfIcone('fichier')}</span>
             <div class="prefa-pdf-titre"><h2 id="prefa-pdf-title"></h2><span class="prefa-pdf-pages"></span></div>
             <span class="prefa-pdf-zoom" hidden>
-                <button type="button" class="prefa-pdf-bouton prefa-pdf-bouton-carre" data-zoom="-1" aria-label="Réduire" title="Réduire (Ctrl + molette)">−</button>
+                <button type="button" class="prefa-pdf-bouton prefa-pdf-bouton-carre" data-zoom="-1" aria-label="Réduire" title="Réduire (Ctrl + molette)">${pdfIcone('moins')}</button>
                 <output class="prefa-pdf-zoom-valeur" aria-live="polite">100&nbsp;%</output>
-                <button type="button" class="prefa-pdf-bouton prefa-pdf-bouton-carre" data-zoom="1" aria-label="Agrandir" title="Agrandir (Ctrl + molette)">+</button>
-                <button type="button" class="prefa-pdf-bouton" data-zoom="0" title="La page à la largeur de la fenêtre">Ajuster</button>
+                <button type="button" class="prefa-pdf-bouton prefa-pdf-bouton-carre" data-zoom="1" aria-label="Agrandir" title="Agrandir (Ctrl + molette)">${pdfIcone('plus')}</button>
+                <button type="button" class="prefa-pdf-bouton prefa-pdf-ajuster" data-zoom="0" title="La page à la largeur de l’écran">${pdfIcone('ajuster')}<span>Ajuster</span></button>
             </span>
-            <button type="button" class="prefa-pdf-bouton prefa-pdf-bouton-sommaire" aria-pressed="true" title="Afficher ou masquer le sommaire">${pdfIcone('sommaire')}Sommaire</button>
-            <a class="prefa-pdf-bouton prefa-pdf-download" download>${pdfIcone('telecharger')}Télécharger</a>
+            <button type="button" class="prefa-pdf-bouton prefa-pdf-bouton-sommaire" aria-pressed="true" title="Afficher ou masquer les pages" hidden>${pdfIcone('sommaire')}<span>Pages</span></button>
+            <a class="prefa-pdf-bouton prefa-pdf-download" download title="Télécharger le document">${pdfIcone('telecharger')}<span>Télécharger</span></a>
             <button type="button" class="prefa-pdf-bouton prefa-pdf-close" aria-label="Fermer" title="Fermer (Échap)" autofocus>${pdfIcone('fermer')}</button>
         </header>
         <div class="prefa-pdf-corps">
-            <div class="prefa-pdf-feuilles" tabindex="0" aria-label="Pages du document" hidden></div>
-            <iframe title="Aperçu PDF"></iframe>
-            <aside class="prefa-pdf-sommaire" aria-label="Sommaire du document">
+            <div class="prefa-pdf-feuilles" tabindex="0" aria-label="Pages du document"></div>
+            <div class="prefa-pdf-etat" role="status" hidden>
+                <p class="prefa-pdf-etat-texte"></p>
+                <a class="prefa-pdf-bouton prefa-pdf-etat-telecharger" download hidden>${pdfIcone('telecharger')}<span>Télécharger le document</span></a>
+            </div>
+            <output class="prefa-pdf-position" aria-hidden="true" hidden></output>
+            <aside class="prefa-pdf-sommaire" aria-label="Pages du document" hidden>
                 <h3 class="prefa-pdf-sommaire-titre">Pages</h3>
                 <ol class="prefa-pdf-sommaire-corps"></ol>
             </aside>
@@ -594,7 +608,6 @@ function pdfViewer() {
 
     viewer.querySelector('.prefa-pdf-close').addEventListener('click', () => viewer.close());
     viewer.addEventListener('close', () => {
-        viewer.querySelector('iframe').src = 'about:blank';
         // Les pages partent avec la fenêtre : une douzaine d'images de 300 ko n'ont rien à
         // faire en mémoire une fois le document refermé.
         pdfObservateur?.disconnect();
@@ -620,28 +633,30 @@ function pdfViewer() {
         const actuel = Number(viewer.dataset.zoom) || 100;
         pdfZoom(viewer, actuel * (event.deltaY < 0 ? 1.12 : 1 / 1.12));
     }, { passive: false });
+
     // Le sommaire se replie pour rendre la largeur au document ; le choix tient d'un
-    // document à l'autre, le temps de la page.
+    // document à l'autre, le temps de la page. Sur tablette, il part replié : c'est un volet
+    // posé sur les pages, qu'on ouvre pour sauter à une page.
+    viewer.dataset.sommaireMasque = pdfTactile() ? '1' : '';
     viewer.querySelector('.prefa-pdf-bouton-sommaire').addEventListener('click', function () {
-        const montre = this.getAttribute('aria-pressed') !== 'true';
-        this.setAttribute('aria-pressed', String(montre));
-        viewer.dataset.sommaireMasque = montre ? '' : '1';
-        viewer.querySelector('.prefa-pdf-sommaire').hidden = !montre || !viewer.dataset.pages;
+        pdfMontrerSommaire(viewer, this.getAttribute('aria-pressed') !== 'true');
     });
     viewer.querySelector('.prefa-pdf-sommaire-corps').addEventListener('click', event => {
         const page = event.target.closest('.prefa-pdf-page');
         if (!page) return;
-        if (viewer.dataset.mode === 'pages') {
-            // Le défilement fait le reste : l'observateur marque la page quand elle arrive.
-            viewer.querySelector(`.prefa-pdf-feuille[data-page="${page.dataset.page}"]`)?.scrollIntoView({ block: 'start' });
-            return;
-        }
-        // Le lecteur PDF du navigateur suit l'ancre #page= : on ne recharge rien.
-        const iframe = viewer.querySelector('iframe');
-        iframe.src = viewer.dataset.apercu + '#page=' + page.dataset.page;
-        viewer.querySelectorAll('.prefa-pdf-page').forEach(p => p.classList.toggle('est-vue', p === page));
+        // Le défilement fait le reste : l'observateur marque la page quand elle arrive.
+        viewer.querySelector(`.prefa-pdf-feuille[data-page="${page.dataset.page}"]`)?.scrollIntoView({ block: 'start' });
+        // Sur tablette, le volet se referme sur la page choisie : il la cachait.
+        if (pdfTactile()) pdfMontrerSommaire(viewer, false);
     });
     return viewer;
+}
+
+/** Montre ou replie le sommaire, et retient le choix. */
+function pdfMontrerSommaire(viewer, montre) {
+    viewer.querySelector('.prefa-pdf-bouton-sommaire').setAttribute('aria-pressed', String(montre));
+    viewer.dataset.sommaireMasque = montre ? '' : '1';
+    viewer.querySelector('.prefa-pdf-sommaire').hidden = !montre || Number(viewer.dataset.pages) < 2;
 }
 
 /** Le compte en tête, et le sommaire : une vignette par page, la première marquée vue. */
@@ -652,7 +667,18 @@ function pdfRemplirSommaire(viewer, adresse, pages) {
         `<li><button type="button" class="prefa-pdf-page${i === 0 ? ' est-vue' : ''}" data-page="${i + 1}" aria-label="Aller à la page ${i + 1}">
             <img loading="lazy" alt="" src="${pdfAdresse(adresse, 'vignette', i + 1)}"><span>${i + 1}</span></button></li>`
     ).join('');
-    viewer.querySelector('.prefa-pdf-sommaire').hidden = viewer.dataset.sommaireMasque === '1';
+    viewer.querySelector('.prefa-pdf-bouton-sommaire').hidden = false;
+    pdfMontrerSommaire(viewer, viewer.dataset.sommaireMasque !== '1');
+}
+
+/** Ce que la fenêtre dit à la place des pages : l'attente, ou l'impossibilité. */
+function pdfEtat(viewer, texte, telecharger = '') {
+    const etat = viewer.querySelector('.prefa-pdf-etat');
+    etat.hidden = !texte;
+    viewer.querySelector('.prefa-pdf-etat-texte').textContent = texte;
+    const lien = viewer.querySelector('.prefa-pdf-etat-telecharger');
+    lien.hidden = !telecharger;
+    if (telecharger) lien.href = telecharger;
 }
 
 /** Repart d'une fenêtre vide : rien de l'ouverture précédente ne doit survivre. */
@@ -660,7 +686,11 @@ function pdfVider(viewer) {
     viewer.querySelector('.prefa-pdf-sommaire-corps').innerHTML = '';
     viewer.querySelector('.prefa-pdf-pages').textContent = '';
     viewer.querySelector('.prefa-pdf-sommaire').hidden = true;
+    viewer.querySelector('.prefa-pdf-bouton-sommaire').hidden = true;
+    viewer.querySelector('.prefa-pdf-zoom').hidden = true;
+    viewer.querySelector('.prefa-pdf-position').hidden = true;
     viewer.dataset.pages = '';
+    pdfEtat(viewer, '');
     pdfObservateur?.disconnect();
     viewer.querySelector('.prefa-pdf-feuilles').replaceChildren();
     // Un autre document peut s'ouvrir avant que celui-ci ait répondu : chaque réponse
@@ -668,24 +698,7 @@ function pdfVider(viewer) {
     return viewer.dataset.ouverture = String(Date.now());
 }
 
-function pdfSommaire(viewer, adresse) {
-    const bascule = viewer.querySelector('.prefa-pdf-bouton-sommaire');
-    const demande = pdfVider(viewer);
-    bascule.hidden = !adresse;
-    if (!adresse) return;
-
-    pdfNombreDePages(adresse).then(pages => {
-        // Un autre document a été ouvert entre-temps : ce sommaire n'est plus le sien.
-        if (viewer.dataset.ouverture !== demande) return;
-        if (!pages) {
-            bascule.hidden = true;
-            return;
-        }
-        pdfRemplirSommaire(viewer, adresse, pages);
-    });
-}
-
-// ----- Le lecteur de l'application : les pages en images -----
+// ----- Les pages en images -----
 
 /** La page qui passe au milieu de la fenêtre est celle qu'on lit : le sommaire la suit. */
 let pdfObservateur = null;
@@ -698,7 +711,7 @@ function pdfZoom(viewer, zoom) {
     const repere = feuilles.scrollHeight ? feuilles.scrollTop / feuilles.scrollHeight : 0;
     viewer.dataset.zoom = String(borne);
     feuilles.style.setProperty('--largeur-page', Math.round(PDF_LARGEUR_A4 * borne / 100) + 'px');
-    viewer.querySelector('.prefa-pdf-zoom-valeur').textContent = borne + ' %';
+    viewer.querySelector('.prefa-pdf-zoom-valeur').textContent = borne + ' %';
     feuilles.scrollTop = repere * feuilles.scrollHeight;
 }
 
@@ -715,18 +728,22 @@ function pdfZoomAjuste(viewer) {
 
 function pdfPages(viewer, adresse, demande) {
     const feuilles = viewer.querySelector('.prefa-pdf-feuilles');
-    const bascule = viewer.querySelector('.prefa-pdf-bouton-sommaire');
+    pdfEtat(viewer, 'Ouverture du document…');
 
     pdfNombreDePages(adresse).then(pages => {
         if (viewer.dataset.ouverture !== demande) return;
-        // Le serveur ne sait pas rendre ce document : il reste lisible, dans l'iframe.
+        // Le serveur ne sait pas rendre ce document : on le dit, et on propose de le
+        // télécharger. Pas de lecteur de secours — celui du navigateur est banni.
         if (!pages) {
-            pdfIframe(viewer, adresse);
+            pdfEtat(viewer, 'L’aperçu de ce document n’est pas disponible.', adresse);
             return;
         }
+        pdfEtat(viewer, '');
+        viewer.querySelector('.prefa-pdf-zoom').hidden = false;
 
-        // La taille du papier, ou la largeur de la fenêtre si elle est plus étroite.
-        pdfZoom(viewer, Math.min(100, pdfZoomAjuste(viewer)));
+        // Sur tablette, la page à la largeur de l'écran ; ailleurs, la taille du papier, ou
+        // la largeur de la fenêtre si elle est plus étroite.
+        pdfZoom(viewer, pdfTactile() ? pdfZoomAjuste(viewer) : Math.min(100, pdfZoomAjuste(viewer)));
 
         const fragment = document.createDocumentFragment();
         for (let page = 1; page <= Math.min(pages, 500); page++) {
@@ -745,8 +762,7 @@ function pdfPages(viewer, adresse, demande) {
         feuilles.replaceChildren(fragment);
         feuilles.scrollTop = 0;
 
-        // Une seule page : le sommaire ne mènerait nulle part, la largeur va au document.
-        bascule.hidden = pages < 2;
+        // Une seule page : ni sommaire ni pastille, la largeur va au document.
         if (pages < 2) {
             viewer.dataset.pages = '1';
             viewer.querySelector('.prefa-pdf-pages').textContent = '1 page';
@@ -754,60 +770,51 @@ function pdfPages(viewer, adresse, demande) {
         }
         pdfRemplirSommaire(viewer, adresse, pages);
 
+        // La pastille « 3 / 15 », en bas : sur une tablette, on n'a pas l'œil sur le sommaire.
+        const position = viewer.querySelector('.prefa-pdf-position');
+        position.textContent = '1 / ' + pages;
+        position.hidden = false;
+
         pdfObservateur = new IntersectionObserver(entrees => {
             const vue = entrees.find(entree => entree.isIntersecting);
             if (!vue) return;
             const numero = vue.target.dataset.page;
+            position.textContent = numero + ' / ' + pages;
             viewer.querySelectorAll('.prefa-pdf-page').forEach(vignette => {
                 const est = vignette.dataset.page === numero;
                 vignette.classList.toggle('est-vue', est);
-                if (est) vignette.scrollIntoView({ block: 'nearest' });
+                if (est && !viewer.querySelector('.prefa-pdf-sommaire').hidden) vignette.scrollIntoView({ block: 'nearest' });
             });
         }, { root: feuilles, rootMargin: '-50% 0px -50% 0px' });
         feuilles.querySelectorAll('.prefa-pdf-feuille').forEach(feuille => pdfObservateur.observe(feuille));
     });
 }
 
-/** Le document dans le lecteur du navigateur : l'iframe, et le sommaire si l'adresse en a un. */
-function pdfIframe(viewer, adresse, sommaire = false) {
-    viewer.dataset.mode = 'iframe';
-    viewer.querySelector('.prefa-pdf-feuilles').hidden = true;
-    viewer.querySelector('.prefa-pdf-zoom').hidden = true;
-    const iframe = viewer.querySelector('iframe');
-    iframe.hidden = false;
-    viewer.dataset.apercu = pdfAdresse(adresse, 'preview', 1);
-    iframe.src = viewer.dataset.apercu;
-    pdfSommaire(viewer, sommaire ? adresse : '');
-}
-
+// Tout lien de PDF s'ouvre ici, quel que soit l'écran qui le porte : l'ancien attribut
+// data-lecteur, qui choisissait entre ce lecteur et celui du navigateur, ne décide plus rien.
 document.addEventListener('click', event => {
     const lien = event.target.closest('.prefa-pdf-link');
     if (!lien) return;
     if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
     const viewer = pdfViewer();
-    viewer.querySelector('h2').textContent = lien.dataset.name;
+    const nom = lien.dataset.name || lien.textContent.trim();
+    viewer.querySelector('h2').textContent = nom;
     viewer.querySelector('.prefa-pdf-download').href = lien.href;
+    // « Télécharger » porte le nom du document. Sans nom, un lien « download » laisse
+    // l'application Android nommer le fichier d'après l'adresse : on recevait
+    // « download_prefa_attachment.php.pdf », puis « …_1.php.pdf » (6 novembre 2026).
+    const nomFichier = /\.[a-z0-9]{2,5}$/i.test(nom) ? nom : nom + '.pdf';
+    viewer.querySelectorAll('.prefa-pdf-download, .prefa-pdf-etat-telecharger').forEach(bouton => {
+        bouton.download = nomFichier;
+    });
     const demande = pdfVider(viewer);
-
-    if (lien.dataset.lecteur === 'pages') {
-        viewer.dataset.mode = 'pages';
-        const iframe = viewer.querySelector('iframe');
-        iframe.hidden = true;
-        iframe.src = 'about:blank';
-        viewer.querySelector('.prefa-pdf-feuilles').hidden = false;
-        viewer.querySelector('.prefa-pdf-zoom').hidden = false;
-        viewer.querySelector('.prefa-pdf-bouton-sommaire').hidden = true;
-        viewer.showModal();
-        // Le défilement au clavier — flèches, Page suivante — vise les pages, pas la croix.
-        viewer.querySelector('.prefa-pdf-feuilles').focus({ preventScroll: true });
-        // Après l'ouverture : « Ajuster » mesure une fenêtre qui doit déjà être posée.
-        pdfPages(viewer, lien.href, demande);
-    } else {
-        pdfIframe(viewer, lien.href, Boolean(lien.dataset.sommaire));
-        viewer.showModal();
-    }
+    viewer.showModal();
     document.body.classList.add('prefa-viewer-open');
+    // Le défilement au clavier — flèches, Page suivante — vise les pages, pas la croix.
+    viewer.querySelector('.prefa-pdf-feuilles').focus({ preventScroll: true });
+    // Après l'ouverture : « Ajuster » mesure une fenêtre qui doit déjà être posée.
+    pdfPages(viewer, lien.href, demande);
 });
 
 /**
@@ -892,10 +899,14 @@ function chargerRessource(adresse, feuille) {
  *
  * La fenêtre est rendue à la demande (plan_final_lecteur.php) et posée dans un bloc à part,
  * hors du contenu : elle survit au rafraîchissement de la liste qui l'a ouverte.
+ *
+ * @param {{page: number, numero: string}|null} soudure une soudure à montrer : la fenêtre
+ *        s'ouvre sur sa page, et la cercle sur le dessin (marquerSoudure).
  */
-async function ouvrirLecteurPlanFinal(element, documentId) {
+async function ouvrirLecteurPlanFinal(element, documentId, soudure = null) {
     try {
-        const adresse = `actions/plan_final_lecteur.php?plan=${encodeURIComponent(element)}&document=${encodeURIComponent(documentId)}`;
+        let adresse = `actions/plan_final_lecteur.php?plan=${encodeURIComponent(element)}&document=${encodeURIComponent(documentId)}`;
+        if (soudure?.page) adresse += `&page=${encodeURIComponent(soudure.page)}&numero=${encodeURIComponent(soudure.numero || '')}`;
         const reponse = await fetch(adresse, { credentials: 'same-origin' });
         const corps = await reponse.json().catch(() => null);
         if (!reponse.ok || !corps?.html) throw new Error(corps?.message || '');
@@ -912,11 +923,90 @@ async function ouvrirLecteurPlanFinal(element, documentId) {
             document.body.appendChild(bloc);
         }
         bloc.innerHTML = corps.html;
+        const viewer = bloc.querySelector('.plan-viewer');
+        // La page voulue se pose avant l'ouverture : la fenêtre s'ouvre dessus, sans passer
+        // par la première (plan-viewer.js, data-page-voulue). Et quand la soudure est reconnue
+        // sur le dessin, zoomée : la page entière la montrait trop petite pour qu'on la trouve
+        // — « je sais toujours pas laquelle c'est » (6 novembre 2026).
+        if (viewer && corps.cible?.page) viewer.dataset.pageVoulue = String(corps.cible.page);
+        if (viewer && (corps.cible?.repere || corps.cible?.ligne)) viewer.dataset.zoom = String(ZOOM_SOUDURE);
         bloc.querySelector('.plan-viewer-ouvrir')?.click();
+        if (viewer && corps.cible) marquerSoudure(viewer, corps.cible);
     } catch (erreur) {
         window.toast?.(erreur.message || 'Le plan n’a pas pu s’ouvrir. Réessayez.', { erreur: true });
     }
 }
+
+/**
+ * La soudure qu'on est venu voir, cerclée sur le dessin : son numéro le long du tube, et sa
+ * ligne dans la liste imprimée. Le cercle bat trois fois, puis reste ; la vue se centre
+ * dessus une fois l'image de la page arrivée. Il part quand on tourne la page.
+ *
+ * Le numéro n'est pas toujours reconnu sur le dessin : la fenêtre s'ouvre alors sur la bonne
+ * page, et un toast le dit.
+ */
+const ZOOM_SOUDURE = 250;
+
+function marquerSoudure(viewer, cible) {
+    const scene = viewer.querySelector('.plan-viewer-scene');
+    if (!scene) return;
+    scene.querySelectorAll('.plan-soudure-cible, .plan-soudure-etiquette').forEach(marque => marque.remove());
+    const poser = (rect, classe) => {
+        const marque = document.createElement('span');
+        marque.className = 'plan-soudure-cible ' + classe;
+        marque.style.left = (rect.x * 100).toFixed(4) + '%';
+        marque.style.top = (rect.y * 100).toFixed(4) + '%';
+        marque.style.width = (rect.w * 100).toFixed(4) + '%';
+        marque.style.height = (rect.h * 100).toFixed(4) + '%';
+        scene.append(marque);
+        return marque;
+    };
+    const surLeTube = cible.repere ? poser(cible.repere, 'est-sur-le-tube') : null;
+    if (cible.ligne) poser(cible.ligne, 'est-dans-la-liste');
+    // Le nom de la soudure, collé au cercle : on sait ce qu'on regarde.
+    const repere = cible.repere || cible.ligne;
+    if (repere && cible.numero) {
+        const etiquette = document.createElement('span');
+        etiquette.className = 'plan-soudure-etiquette';
+        etiquette.textContent = 'Soudure N° ' + cible.numero;
+        etiquette.style.left = ((repere.x + repere.w) * 100).toFixed(4) + '%';
+        etiquette.style.top = (repere.y * 100).toFixed(4) + '%';
+        scene.append(etiquette);
+    }
+    if (cible.numero && !cible.repere && !cible.ligne) {
+        window.toast?.('La soudure N° ' + cible.numero + ' n’a pas été retrouvée sur le dessin : elle est sur cette page.', { info: true });
+    }
+
+    // Centrée une fois l'image posée et le zoom appliqué — avant, la scène n'a pas encore sa
+    // taille. Deux fois : le zoom de la fenêtre se pose dans le même temps que l'image.
+    const centrer = () => (surLeTube || scene.querySelector('.plan-soudure-cible'))
+        ?.scrollIntoView({ block: 'center', inline: 'center' });
+    const apresImage = () => requestAnimationFrame(() => {
+        centrer();
+        setTimeout(centrer, 200);
+    });
+    const image = scene.querySelector('img');
+    if (image && !image.complete) image.addEventListener('load', apresImage, { once: true });
+    else apresImage();
+
+    // Une autre page : le cercle n'y a pas sa place.
+    viewer.addEventListener('plan:page', function quitter(evenement) {
+        if (evenement.detail?.page === cible.page) return;
+        scene.querySelectorAll('.plan-soudure-cible, .plan-soudure-etiquette').forEach(marque => marque.remove());
+        viewer.removeEventListener('plan:page', quitter);
+    });
+}
+
+// « N° 1 », dans les contrôles d'une validation, et le nom de sa feuille : ils se touchent
+// pour voir la soudure sur le plan (soudureControlesRendu()). « N° 1 » ne disait pas où elle
+// était — 6 novembre 2026.
+document.addEventListener('click', evenement => {
+    const bouton = evenement.target.closest('[data-voir-soudure]');
+    if (!bouton) return;
+    evenement.preventDefault();
+    ouvrirLecteurPlanFinal(bouton.dataset.element, bouton.dataset.document,
+        { page: Number(bouton.dataset.page) || 1, numero: bouton.dataset.numero || '' });
+});
 
 document.addEventListener('click', evenement => {
     const bascule = evenement.target.closest('.prefa-toggle[aria-controls]:not(.plans-iso-toggle)');
@@ -937,6 +1027,34 @@ document.addEventListener('click', evenement => {
 
     bascule.setAttribute('aria-expanded', String(!expanded));
     details.hidden = expanded;
+});
+
+// La ligne entière ouvre la fiche de la demande. Elle ne s'ouvrait que par « ⋯ » puis
+// « Détails » : on cliquait sur la demande, rien ne venait, et l'on croyait l'écran en panne.
+// Le clic passe par l'entrée « Détails » du menu — une seule façon d'ouvrir le volet.
+//
+// Même chose, le 6 novembre 2026, sur « Plans & équipes » : « quand je clique sur un
+// plan, rien ne se passe ». Seul le bouton « Plans & équipes » ouvrait le volet ; la
+// ligne entière l'ouvre maintenant, par ce bouton. (« Soudures » a déjà le sien :
+// suivi-soudures.js.)
+//
+// Les commandes de la ligne gardent leur geste, et un texte qu'on vient de sélectionner pour
+// le copier — une référence, un nom d'affaire — ne déclenche rien.
+// Sur « Plans & équipes », la ligne fait ce que fait son bouton visible : « Ajouter un
+// plan » tant qu'elle n'en a pas, le volet ensuite.
+const LIGNES_QUI_OUVRENT = {
+    '.prefa-table-demandes': '.prefa-toggle[aria-controls]',
+    '.plans-iso-table': '.prefa-decision button',
+};
+
+document.addEventListener('click', evenement => {
+    const ligne = evenement.target.closest('.prefa-request > tr:first-child');
+    if (!ligne) return;
+    const tableau = Object.keys(LIGNES_QUI_OUVRENT).find(selecteur => ligne.closest(selecteur));
+    if (!tableau) return;
+    if (evenement.target.closest('button, a, input, select, textarea, label, [role="menu"]')) return;
+    if (String(window.getSelection?.() || '').trim() !== '') return;
+    ligne.querySelector(LIGNES_QUI_OUVRENT[tableau])?.click();
 });
 
 document.addEventListener('click', evenement => {
@@ -1089,18 +1207,41 @@ document.addEventListener('click', evenement => {
     // Un identifiant numérique se lit en nombre : « 0 » ne désigne aucune demande.
     const brut = bouton.dataset.requestId;
     const reqId = brut !== undefined && String(Number(brut)) === brut ? Number(brut) : brut;
+    // Sans plan, « Ajouter un plan » : la création s'ouvre, par le bouton de la ligne. Avec,
+    // le volet « Plans & équipes ».
+    const ajouterPlan = bouton.hasAttribute('data-ajouter-plan');
     document.getElementById('btn-plans-iso')?.click();
     if (!reqId) return;
     const checkCard = setInterval(function () {
         const card = document.getElementById('plans-iso-card-' + reqId);
         if (card) {
             clearInterval(checkCard);
+            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if (ajouterPlan) {
+                card.querySelector('.atelier-open-plan-create')?.click();
+                return;
+            }
             const button = card.querySelector('.plans-iso-toggle');
             if (button && button.getAttribute('aria-expanded') !== 'true') button.click();
-            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     }, 50);
     setTimeout(function () { clearInterval(checkCard); }, 2000);
+});
+
+// ===================================================================== VALIDATION DES SOUDURES
+//
+// Le renvoi laissé là où la validation se faisait avant son écran — la fiche d'une demande,
+// « Plans & équipes », la fenêtre d'un plan dans « Soudures » (validationSouduresRenvoi()) :
+// « Valider → » ouvre « Validation des soudures », par l'entrée de la barre pour qu'elle se
+// marque, sur ce plan — on y arrive prêt à cocher. L'écran dit lui-même quel plan ouvrir à
+// son arrivée (validation-soudures.js) : on le lui dit avant de le charger. On guettait la
+// ligne du plan, et sur l'écran déjà ouvert on la trouvait dans l'ancienne page, juste avant
+// que la nouvelle la remplace.
+document.addEventListener('click', evenement => {
+    const bouton = evenement.target.closest('[data-vers-validation]');
+    if (!bouton) return;
+    window.validationSouduresOuvrir?.(bouton.dataset.versValidation);
+    document.getElementById('btn-validation-soudures')?.click();
 });
 
 // ===================================================================== CHAMPS OBLIGATOIRES

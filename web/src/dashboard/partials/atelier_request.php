@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../includes/atelier/validation_soudures.php';
 
 /** @var PDO $db */
 /** @var int $requestId */
@@ -57,8 +58,19 @@ $avancementsAValider = avancementEnAttentePlusieurs($db, $affectationsActives);
                 </div>
                 <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>"><input type="hidden" name="id" value="<?= $requestId ?>"><input type="hidden" name="operation" value="element">
                 <div class="fenetre-corps">
-                    <input class="fenetre-champ" name="reference" maxlength="80" required autocomplete="off" aria-label="Nom du plan" placeholder="Nom du plan">
-                    <input class="fenetre-champ" name="libelle" maxlength="180" required autocomplete="off" aria-label="Description" placeholder="Description">
+                    <?php // L'intitulé au-dessus du champ, et non dedans : à la première lettre
+                          // tapée, « Nom du plan » disparaissait, et sur une tablette on ne
+                          // savait plus lequel des deux champs on remplissait. Le libellé
+                          // englobe le champ, sans « for » : floating-fields.js n'y touche pas. ?>
+                    <label class="fenetre-bloc">
+                        <span class="fenetre-etiquette">Nom du plan</span>
+                        <input class="fenetre-champ" name="reference" maxlength="80" required autocomplete="off">
+                    </label>
+                    <?php // Facultative (6 novembre 2026) : le nom suffit à reconnaître un plan. ?>
+                    <label class="fenetre-bloc">
+                        <span class="fenetre-etiquette">Description (facultative)</span>
+                        <input class="fenetre-champ" name="libelle" maxlength="180" autocomplete="off">
+                    </label>
                     <?php if ($documentOptions): ?>
                         <fieldset class="fenetre-bloc">
                             <legend>Documents à associer</legend>
@@ -187,7 +199,14 @@ $avancementsAValider = avancementEnAttentePlusieurs($db, $affectationsActives);
                                         <?php // La bande vient après le bouton : elle occupe toute la largeur, et
                                               // placée avant elle, elle aurait renvoyé le bouton sur la ligne suivante.
                                         ?>
-                                        <?php if ($declaration && $canManageWorkshop && $taken): ?>
+                                        <?php if ($declaration && $canManageWorkshop && $taken):
+                                            $cordonsDeclares = avancementCordonsAValider($db, (int) $element['id'], (int) $assignment['id_utilisateur']); ?>
+                                        <?php if ($cordonsDeclares): ?>
+                                            <?php // Des soudures à valider : elles se valident dans « Validation des
+                                                  // soudures » (6 novembre 2026). Le bloc — les contrôles, la
+                                                  // signature — se dépliait ici, entre deux affectations. ?>
+                                            <?= validationSouduresRenvoi((int) $element['id'], count($cordonsDeclares)) ?>
+                                        <?php else: ?>
                                             <!-- Le chiffre annoncé se tient à part du chiffre reconnu, et ne
                                                  se confond pas avec lui : c'est tout l'objet de la validation. -->
                                             <?= avancementDecisionRendu([
@@ -201,12 +220,13 @@ $avancementsAValider = avancementEnAttentePlusieurs($db, $affectationsActives);
                                             ], avancementDecisionFormulaire([
                                                 'champs' => ['id' => $requestId, 'operation' => 'valider',
                                                     'affectation' => (int) $assignment['id'], 'declaration' => (int) $declaration['id']],
-                                                'cordons' => avancementCordonsAValider($db, (int) $element['id'], (int) $assignment['id_utilisateur']),
-                                                'visa' => signatureAnnonceVisa($db, $utilisateur),
+                                                'cordons' => [],
+                                                'visa' => signatureVisa($db, $utilisateur),
                                                 'valider' => 'Valider',
                                                 'valider_aide' => 'L’avancement du plan prendra ce chiffre.',
                                                 'refuser' => true,
                                             ])) ?>
+                                        <?php endif; ?>
                                         <?php endif; ?>
                                         <?php // Un chiffre déclaré n'est pas un fait : il ne sort pas d'entre la
                                               // personne affectée et son chef avant d'être reconnu. Le reste de
@@ -292,8 +312,10 @@ $avancementsAValider = avancementEnAttentePlusieurs($db, $affectationsActives);
                             }, planDocuments($db, $elementIso));
                             ?>
 
+                            <?php // Le titre « Feuilles ISO » est celui du lecteur, avec « Déposer un plan » à
+                                  // sa droite (vue/plan_viewer.php) : la section en posait un second
+                                  // au-dessus, et le volet disait deux fois « Feuilles ISO ». ?>
                             <section class="plan-volet-section">
-                                <h4 class="atelier-plan-titre-section">Feuilles ISO</h4>
                                 <?= planViewerRendu($elementIso, $plansIso, $couleesDisponibles, $modifiableIso) ?>
                             </section>
 
@@ -412,8 +434,14 @@ $avancementsAValider = avancementEnAttentePlusieurs($db, $affectationsActives);
                     <input type="hidden" name="element">
                     <input type="hidden" name="operation" value="update_element">
                     <div class="fenetre-corps">
-                        <input class="fenetre-champ" name="reference" maxlength="80" required autocomplete="off" aria-label="Nom du plan" placeholder="Nom du plan">
-                        <textarea class="fenetre-champ" name="libelle" maxlength="180" rows="3" required aria-label="Description" placeholder="Description"></textarea>
+                        <label class="fenetre-bloc">
+                            <span class="fenetre-etiquette">Nom du plan</span>
+                            <input class="fenetre-champ" name="reference" maxlength="80" required autocomplete="off">
+                        </label>
+                        <label class="fenetre-bloc">
+                            <span class="fenetre-etiquette">Description (facultative)</span>
+                            <textarea class="fenetre-champ" name="libelle" maxlength="180" rows="3"></textarea>
+                        </label>
                         <span class="atelier-message fenetre-message" role="status" aria-live="polite"></span>
                     </div>
                     <div class="fenetre-pied">

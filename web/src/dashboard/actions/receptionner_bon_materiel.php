@@ -21,17 +21,9 @@ $stmt = $db->prepare('SELECT doc.id FROM demande_materiel_documents doc
 $stmt->execute([$idDocument]);
 if (!$stmt->fetchColumn()) prefaError(404, 'Bon introuvable ou inaccessible.');
 
-$recu = json_decode((string) ($_POST['lignes'] ?? '[]'), true);
-if (!is_array($recu)) prefaError(400, 'Pointage illisible.');
-
-// { identifiant de ligne : reçu ou non }. Les identifiants sont vérifiés par la requête
-// elle-même, qui exige que la ligne appartienne à ce bon.
-$pointages = [];
-foreach ($recu as $idLigne => $estRecu) {
-    $idLigne = filter_var($idLigne, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-    if (!$idLigne) prefaError(400, 'Pointage illisible.');
-    $pointages[$idLigne] = (bool) $estRecu;
-}
+// { identifiant de ligne : reçu ou non } (materielPointagesPostes()).
+$pointages = materielPointagesPostes($_POST['lignes'] ?? '[]');
+if ($pointages === null) prefaError(400, 'Pointage illisible.');
 if (count($pointages) > MATERIEL_LIGNES_MAX) prefaError(400, 'Trop de lignes pointées d’un coup.');
 
 try {

@@ -24,9 +24,9 @@ personne s'il le faut : voir [Les métiers](/fonctionnalites/atelier#les-metiers
 
 | Rôle | Accueil | Affaires & demandes | Atelier | Administration |
 | --- | --- | --- | --- | --- |
-| **Chargé de production** | ✓ | Affaires · Demandes de préfa | Soudures · Plans / ISO & Affectations · Planning · Commande matériel · PV de préfabrication | Utilisateurs |
-| **Chef d'atelier** | ✓ | Suivi des demandes | Soudures · Plans / ISO & Affectations · Planning · Commande matériel · PV de préfabrication | — |
-| **Personnel atelier** | ✓ | Mes plans | Mes soudures & Suivi matériel | — |
+| **Chargé de production** | ✓ | Affaires · Demandes de préfa | Soudures · Validation des soudures · Plans & équipes · Planning · Commande matériel · PV de préfabrication | Utilisateurs |
+| **Chef d'atelier** | ✓ | Suivi des demandes | Soudures · Validation des soudures · Plans & équipes · Planning · Commande matériel · PV de préfabrication | — |
+| **Personnel atelier** | ✓ | Mes plans | — | — |
 | **Chargé d'affaire** | ✓ | Mes affaires · Mes demandes | PV de préfabrication | — |
 
 Tout le monde a, en plus, les [paramètres](/fonctionnalites/interface#parametres) au
@@ -80,7 +80,7 @@ liste, la fiche, les fichiers, l'accueil, l'API et le flux en temps réel :
 | Personnel atelier | Aucune par cette règle : elle ne lui ouvre que les demandes validées **qu'il a déposées**, et il n'en dépose pas |
 
 Le personnel d'atelier n'entre donc pas par les demandes : **ses plans lui arrivent par ses
-affectations et ses métiers** (« Mes plans », « Mes soudures »), qui ne lui ouvrent que les
+affectations et ses métiers** (« Mes plans », où se renseignent aussi ses soudures), qui ne lui ouvrent que les
 documents rattachés à ces plans — pas le reste de la demande. Son journal « Aujourd'hui », sur l'accueil, reste vide
 pour la même raison.
 

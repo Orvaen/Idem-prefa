@@ -162,8 +162,9 @@ function atelierChangeElement(PDO $db, int $requestId, int $elementId, string $o
     if (!is_string($reference) || !is_string($description)) throw new InvalidArgumentException('Saisissez un nom et une description valides.');
     $reference = trim($reference);
     $description = trim($description);
-    if ($reference === '' || mb_strlen($reference) > 80 || $description === '' || mb_strlen($description) > 180) {
-        throw new InvalidArgumentException('Le nom est obligatoire (80 caractères maximum), ainsi que la description (180 caractères maximum).');
+    // La description est facultative : le nom suffit à reconnaître un plan.
+    if ($reference === '' || mb_strlen($reference) > 80 || mb_strlen($description) > 180) {
+        throw new InvalidArgumentException('Le nom est obligatoire (80 caractères maximum) ; la description, facultative, tient en 180.');
     }
     $save = $db->prepare('UPDATE element_atelier SET reference = ?, libelle = ? WHERE id = ? AND id_demande = ?');
     $save->execute([$reference, $description, $elementId, $requestId]);

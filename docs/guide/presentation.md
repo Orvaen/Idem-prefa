@@ -61,13 +61,13 @@ Le détail, écran par écran, est dans [Rôles et droits](/fonctionnalites/role
 | **Affectation** | Le fait de confier un élément à une personne, pour un type de travail : plan, montage ou soudage. |
 | **Avancement** | Le pourcentage fait d'une affectation. Il se calcule (étapes faites, soudures remplies) et n'est écrit que quand le chef d'atelier valide. |
 | **Déclaration** | Un avancement proposé par l'atelier, en attente de la validation du chef. |
-| **Soudure** | Une ligne de la liste soudure imprimée sur le plan — un cordon. L'écran ne dit que « soudure ». Le soudeur la remplit dans « Mes soudures ». |
+| **Soudure** | Une ligne de la liste soudure imprimée sur le plan — un cordon. L'écran ne dit que « soudure ». Le soudeur la remplit dans « Mes plans », sur le dessin de la feuille. |
 | **Coulée** | Le numéro de fabrication d'un lot de tube ou d'acier, porté par le certificat matière. C'est une donnée de traçabilité. |
 | **CCPU** | Le certificat matière du fournisseur (EN 10204 type 3.1), qui porte les numéros de coulée. |
 | **Nomenclature** | La liste des pièces d'un plan, avec leurs coulées. |
 | **PV** | Procès-verbal d'une étape de fabrication, avec ses documents et ses photos. |
 | **Bon de commande, bon de livraison** | Ce qu'IDEM commande au fournisseur, et ce qui arrive réellement. |
-| **Manque** | Un matériel qui manque à l'atelier, signalé par le soudeur depuis « Mes soudures ». |
+| **Manque** | Un matériel qui manque à l'atelier, signalé par le soudeur depuis « Mes plans ». |
 | **Passivation** | Le traitement de surface de l'inox après fabrication (décapage, acide citrique…). |
 | **RT, VT, PT** | Les contrôles de soudure : radiographie, contrôle visuel, ressuage. Le chef les coche en validant les soudures ; une croix sur le plan veut dire OK. |
 | **QMOS, DMOS** | La qualification et le descriptif du mode opératoire de soudage. |

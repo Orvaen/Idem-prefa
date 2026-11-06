@@ -15,7 +15,23 @@ if ($operation === 'add') {
     $password = (string) ($_POST['password'] ?? '');
     if ($login === '' || $password === '') prefaError(400, 'Renseignez l’identifiant et le mot de passe.');
     $precedent = (string) Session::identifiant();
-    if (!$user->login($login, $password)) prefaError(401, 'Identifiants incorrects.');
+    if (!$user->login($login, $password)) prefaError(401, 'Identifiant ou mot de passe incorrect.');
+    comptesRemember($precedent);
+    comptesRemember((string) Session::identifiant());
+    session_regenerate_id(true);
+} elseif ($operation === 'creer') {
+    // Un compte qui attend son premier mot de passe — tout juste créé, ou réinitialisé : comme
+    // à l'écran de connexion, son code d'accès et le mot de passe choisi
+    // (User::creerMotDePasse()), puis il rejoint les comptes de l'appareil.
+    $login = trim((string) ($_POST['login'] ?? ''));
+    $code = (string) ($_POST['code'] ?? '');
+    $nouveau = (string) ($_POST['nouveau'] ?? '');
+    if ($login === '' || trim($code) === '') prefaError(400, 'Renseignez l’identifiant et le code reçu.');
+    $refus = User::motDePasseRefus($nouveau, (string) ($_POST['confirmation'] ?? ''));
+    if ($refus !== null) prefaError(400, $refus);
+    $precedent = (string) Session::identifiant();
+    $refus = $user->creerMotDePasse($login, $code, $nouveau);
+    if ($refus !== null) prefaError(403, $refus);
     comptesRemember($precedent);
     comptesRemember((string) Session::identifiant());
     session_regenerate_id(true);

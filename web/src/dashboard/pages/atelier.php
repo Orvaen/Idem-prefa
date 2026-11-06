@@ -4,6 +4,9 @@ require_once __DIR__ . '/../includes/vue/liste.php';
 require_once __DIR__ . '/../includes/demande/prefa_attachments.php';
 require_once __DIR__ . '/../includes/atelier/atelier.php';
 require_once __DIR__ . '/../includes/atelier/avancement.php';
+require_once __DIR__ . '/../includes/atelier/soudure_atelier.php';
+require_once __DIR__ . '/../includes/vue/soudures.php';
+require_once __DIR__ . '/../includes/vue/manques.php';
 if (!$isWorkshopPersonnel) prefaError(403, 'Cette page est réservée au personnel atelier.');
 
 /*
@@ -14,7 +17,7 @@ if (!$isWorkshopPersonnel) prefaError(403, 'Cette page est réservée au personn
 | L'écran avait sa grammaire à lui : une ligne par affectation, un détail en pleine page,
 | des onglets « Étapes / Avancement », sept listes déroulantes et des boutons bleus. Il
 | suit maintenant la DA (docs/direction-artistique.md) et la forme des écrans déjà repris
-| — « Plans / ISO & Affectations », « Soudures », les PV : une recherche, des onglets
+| — « Plans & équipes », « Soudures », les PV : une recherche, des onglets
 | comptés, un tableau groupé, et un volet flottant par plan.
 |
 | Une ligne par plan, et non par affectation : c'est le plan qu'on ouvre, et ses travaux
@@ -86,6 +89,33 @@ unset($plan);
 $affectationIds = [];
 foreach ($plans as $plan) foreach ($plan['travaux'] as $travail) $affectationIds[] = (int) $travail['id'];
 $enAttente = avancementEnAttentePlusieurs($db, $affectationIds);
+
+/*
+| Les soudures, ici depuis le 6 novembre 2026 : « Mes soudures » était un second écran, que
+| le client voulait voir réuni à celui-ci. Un plan se déplie d'un toucher sur ses feuilles,
+| en vignettes ; toucher une feuille ouvre son dessin, où l'on renseigne ses soudures
+| (soudures.js). Le matériel manquant suit, sous les plans.
+|
+| Les feuilles de chaque plan, dans l'ordre de son cahier. Rien n'est relu des PDF : le
+| compte des soudures vient du repère de l'indexation (soudureAtelierFeuilles()).
+*/
+$feuillesParPlan = [];
+foreach (soudureAtelierFeuilles($db, (int) $actor['id']) as $feuille) {
+    $feuillesParPlan[$feuille['element']][] = $feuille;
+}
+
+// Le matériel : ce que la personne a signalé, et les articles des bons de commande de
+// chacun de ses plans, à proposer quand elle en signale un autre.
+$manques = manquesDuSoudeur($db, (int) $actor['id']);
+$articlesParPlan = [];
+$articlesParDemande = [];
+foreach ($plans as $plan) {
+    $articlesParDemande[$plan['demande']] ??= manquesArticlesProposes($db, $plan['demande']);
+    $articlesParPlan[$plan['element']] = $articlesParDemande[$plan['demande']];
+}
+
+// Un seul plan : il arrive déplié — il n'y a rien à choisir.
+$deplierDOffice = count($plans) === 1;
 
 // Les fichiers de chaque plan : les feuilles ISO, et ce qui les accompagne (QMOS, DMOS).
 $documentsDuPlan = [];
@@ -180,36 +210,50 @@ $stmt->execute([$actor['id']]);
 $anciennes = $stmt->fetchAll();
 ?>
 <section class="page prefa-page prefa-list atelier-page mes-plans-page" id="mes-plans-page" aria-labelledby="mes-plans-titre" data-densite="confortable">
-    <div class="prefa-shell">
+    <?php // « soudures-page » sur la coque : soudures.js, qui ouvre les dessins et renseigne
+          // les soudures, travaille dans cet écran depuis qu'il porte les feuilles. ?>
+    <div class="prefa-shell" id="soudures-page">
         <header class="prefa-heading prefa-list-heading">
             <div>
                 <h1 id="mes-plans-titre">Mes plans</h1>
-                <p>Les plans qui vous sont confiés, et où en sont vos travaux.</p>
+                <p>Vos plans, leurs feuilles à souder, et le matériel qui vous manque.</p>
             </div>
 
-            <?php // Les mêmes outils de vue que les autres listes, au même endroit. ?>
+            <?php // Actualiser, et l'action de l'écran : un manque se signale sans ouvrir de
+                  // feuille. La densité des lignes est partie : un réglage de moins à
+                  // comprendre. ?>
             <div class="prefa-vue-outils">
-                <?= listeDensite() ?>
-
                 <button type="button" class="atelier-refresh mes-plans-actualiser">
                     <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-2l2 3M4 16l2 3a7 7 0 0 1 12-2" />
+                        <path d="M21 12a9 9 0 1 1-2.64-6.36L21 8" /><path d="M21 3v5h-5" />
                     </svg>
-                    Actualiser
+                    <span class="outil-libelle">Actualiser</span>
                 </button>
+                <?php if ($plans): ?>
+                    <button type="button" class="prefa-nouvelle-demande" data-signaler-manque>
+                        <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5M12 16.5v.01" /><path d="M10.3 3.9 2.6 17.4A2 2 0 0 0 4.3 20.4h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /></svg>
+                        Signaler un manque
+                    </button>
+                <?php endif; ?>
             </div>
         </header>
 
         <?php // La recherche de la maison : un champ à loupe à la hauteur des pastilles. Tous les
-              // plans confiés sont déjà dans la page, elle filtre sur place. ?>
+              // plans confiés sont déjà dans la page, elle filtre sur place — jusqu'au numéro de
+              // ligne d'une feuille : le plan qui la porte se déplie dessus. ?>
         <div class="prefa-filters" role="search">
             <div class="filtres-recherche">
                 <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                      stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
                 <input id="mes-plans-recherche" type="search" autocomplete="off"
-                       aria-label="Rechercher un plan" placeholder="Plan, demande, affaire…">
+                       aria-label="Rechercher un plan ou une feuille" placeholder="Plan, n° de ligne, affaire…">
             </div>
         </div>
+
+        <?php if ($plans): ?>
+            <?php // Ce qu'on fait ici, en une phrase : deux gestes. ?>
+            <p class="soudures-consigne">Touchez un plan pour voir ses feuilles, puis la feuille que vous avez en main.</p>
+        <?php endif; ?>
 
         <?php if (!$plans): ?>
             <p class="prefa-table-empty mes-plans-vide">Aucun plan ne vous est confié pour le moment.</p>
@@ -239,10 +283,10 @@ $anciennes = $stmt->fetchAll();
                 <table class="prefa-table mes-plans-table">
                     <thead><tr>
                         <th scope="col">Plan</th>
-                        <th scope="col">Demande n°</th>
-                        <th scope="col" class="prefa-affaire">Affaire</th>
+                        <th scope="col" class="mes-plans-col-demande">Demande n°</th>
+                        <th scope="col" class="prefa-affaire mes-plans-col-affaire">Affaire</th>
                         <th scope="col">Travaux</th>
-                        <th scope="col" class="prefa-nombre">Feuilles</th>
+                        <th scope="col" class="prefa-nombre mes-plans-col-feuilles">Feuilles</th>
                         <th scope="col"><span class="atelier-sr-only">Actions</span></th>
                     </tr></thead>
 
@@ -294,19 +338,39 @@ $anciennes = $stmt->fetchAll();
                             WHERE h.id_element = ? ORDER BY h.revision DESC");
                         $lireEtapes->execute([$element]);
                         $historiqueEtapes = $lireEtapes->fetchAll();
-                        $cherche = mb_strtolower($plan['reference'] . ' ' . $plan['libelle'] . ' ' . prefaReference($plan['demande']) . ' ' . $plan['affaire']);
+                        // Ses feuilles : la recherche les trouve aussi par leur numéro de ligne.
+                        $feuillesPlan = $feuillesParPlan[$element] ?? [];
+                        $cherche = mb_strtolower($plan['reference'] . ' ' . $plan['libelle'] . ' ' . prefaReference($plan['demande']) . ' ' . $plan['affaire']
+                            . ' ' . implode(' ', array_map('souduresNomFeuille', $feuillesPlan)));
+                        $feuillesId = 'mes-plans-feuilles-' . $element;
                     ?>
-                        <tbody class="mes-plans-plan" data-groupe="<?= $cleGroupe ?>" data-cherche="<?= prefaEscape($cherche) ?>">
+                        <tbody class="mes-plans-plan<?= $deplierDOffice ? ' est-deplie' : '' ?>" data-groupe="<?= $cleGroupe ?>" data-cherche="<?= prefaEscape($cherche) ?>">
                             <tr>
-                                <?php // L'urgence de la demande ouvre la ligne, à la place que les listes
-                                      // de la maison lui réservent — vide ou non, c'est elle qui aligne
-                                      // la colonne sur son en-tête. ?>
+                                <?php // La flèche dit que la ligne se déplie : toute la ligne le fait, d'un
+                                      // toucher (soudures.js) ; la flèche est le bouton, pour le clavier.
+                                      // Puis l'urgence de la demande, à la place que les listes de la
+                                      // maison lui réservent, et le nom avec sa description, sur une
+                                      // ligne. Le tout se centre d'un bloc sur la hauteur de la ligne :
+                                      // la description passait dessous, et le nom montait au-dessus du
+                                      // reste de la ligne.
+                                      //
+                                      // « mes-plans-situe » : la demande et l'affaire, sous le nom — elles
+                                      // n'y paraissent que sur une tablette en portrait, où leurs
+                                      // colonnes se retirent (soudures.css). ?>
                                 <td class="mes-plans-nom">
-                                    <span class="prefa-urgence"><?php if ($plan['urgent']): ?><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Demande urgente"><title>Demande urgente</title><path d="M13 3 4.5 13.5H11l-1 7.5 8.5-10.5H12z" /></svg><?php endif; ?></span><strong><?= prefaEscape($plan['reference']) ?></strong>
-                                    <?php if ($plan['libelle'] !== ''): ?><span class="atelier-row-description"><?= prefaEscape($plan['libelle']) ?></span><?php endif; ?>
+                                    <span class="mes-plans-nom-bloc">
+                                        <button type="button" class="mes-plans-deplier" aria-controls="<?= $feuillesId ?>" aria-expanded="<?= $deplierDOffice ? 'true' : 'false' ?>"
+                                                aria-label="Feuilles du plan <?= prefaEscape($plan['reference']) ?>">
+                                            <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m6 4 4 4-4 4" /></svg>
+                                        </button><span class="prefa-urgence"><?php if ($plan['urgent']): ?><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Demande urgente"><title>Demande urgente</title><path d="M13 3 4.5 13.5H11l-1 7.5 8.5-10.5H12z" /></svg><?php endif; ?></span>
+                                        <span class="mes-plans-nom-texte">
+                                            <span class="mes-plans-nom-ligne"><strong><?= prefaEscape($plan['reference']) ?></strong><?php if ($plan['libelle'] !== ''): ?><span class="atelier-row-description"><?= prefaEscape($plan['libelle']) ?></span><?php endif; ?></span>
+                                            <span class="mes-plans-situe"><?= prefaEscape(implode(' · ', array_filter([prefaReference($plan['demande']), $plan['affaire']]))) ?></span>
+                                        </span>
+                                    </span>
                                 </td>
-                                <td class="prefa-reference"><?= prefaEscape(prefaReference($plan['demande'])) ?></td>
-                                <td class="prefa-affaire"><?= prefaEscape($plan['affaire'] ?: '—') ?></td>
+                                <td class="prefa-reference mes-plans-col-demande"><?= prefaEscape(prefaReference($plan['demande'])) ?></td>
+                                <td class="prefa-affaire mes-plans-col-affaire"><?= prefaEscape($plan['affaire'] ?: '—') ?></td>
                                 <td class="mes-plans-travaux-cellule">
                                     <?php // Un travail, une pastille : son nom et où il en est. Le détail —
                                           // déclarations, étapes, fichiers — est dans le volet. ?>
@@ -323,8 +387,25 @@ $anciennes = $stmt->fetchAll();
                                         <?php endforeach; ?>
                                     </span>
                                 </td>
-                                <td class="prefa-nombre"><?= $feuilles ?: '<span class="mes-plans-aucun">—</span>' ?></td>
-                                <td class="mes-plans-commande"><button type="button" class="prefa-toggle" aria-controls="<?= $voletId ?>" aria-expanded="false">Mettre à jour</button></td>
+                                <td class="prefa-nombre mes-plans-col-feuilles"><?= $feuilles ?: '<span class="mes-plans-aucun">—</span>' ?></td>
+                                <?php // « Étapes » : le volet du plan — ses travaux, les étapes OK / RAS,
+                                      // ses fichiers, son historique. Il s'appelait « Mettre à jour » ; les
+                                      // soudures, elles, se renseignent dans les feuilles dépliées. ?>
+                                <td class="mes-plans-commande"><button type="button" class="prefa-toggle" aria-controls="<?= $voletId ?>" aria-expanded="false">Étapes</button></td>
+                            </tr>
+
+                            <?php // Les feuilles du plan, en vignettes, sous sa ligne : le menu qui se
+                                  // déplie. Toucher une feuille ouvre son dessin, à sa page. ?>
+                            <tr id="<?= $feuillesId ?>" class="mes-plans-feuilles"<?= $deplierDOffice ? '' : ' hidden' ?>>
+                                <td colspan="6">
+                                    <?php if ($feuillesPlan): ?>
+                                        <div class="soudures-cartes">
+                                            <?php foreach ($feuillesPlan as $feuille) echo souduresCarteRendu($feuille, $plan); ?>
+                                        </div>
+                                    <?php else: ?>
+                                        <p class="soudures-plan-vide">Pas encore de feuilles : demandez-les au chef d’atelier.</p>
+                                    <?php endif; ?>
+                                </td>
                             </tr>
 
                             <tr id="<?= $voletId ?>" class="prefa-detail-row mes-plans-detail" hidden>
@@ -522,10 +603,27 @@ $anciennes = $stmt->fetchAll();
                 <?php endforeach; ?>
 
                     <tbody class="mes-plans-aucun-resultat" hidden>
-                        <tr><td class="prefa-table-empty" colspan="6">Aucun plan ne correspond à cette recherche.</td></tr>
+                        <tr><td class="prefa-table-empty" colspan="6">Aucun plan ni aucune feuille ne correspond à cette recherche.</td></tr>
                     </tbody>
                 </table>
             </div>
+
+            <?php // La fenêtre du plan de chaque plan, posée ici à la première feuille qu'on en
+                  // ouvre (actions/soudures_lecteur.php) : c'est là qu'on renseigne ses
+                  // soudures, en touchant une ligne de la liste soudure imprimée — ou le numéro
+                  // de la soudure sur le tube. Une ligne de la nomenclature ouvre « Signaler un
+                  // manque » sur son article. ?>
+            <div class="soudures-lecteurs" data-lecteurs></div>
+
+            <?php // Le matériel manquant : ce que la personne a signalé, et où en est chaque manque. ?>
+            <section class="soudures-materiel" aria-labelledby="soudures-materiel-titre">
+                <h2 class="prefa-section-titre" id="soudures-materiel-titre">Matériel manquant
+                    <span class="prefa-onglet-compte"><?= count($manques) ?></span></h2>
+                <div data-manques><?= manquesSoudeurRendu($manques) ?></div>
+            </section>
+
+            <?= manqueFenetreRendu($plans, $articlesParPlan, unitesMateriel($db)) ?>
+            <?= souduresCordonFenetre() ?>
 
         <?php endif; ?>
 

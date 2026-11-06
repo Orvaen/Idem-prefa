@@ -196,8 +196,8 @@ function parametresRendu(PDO $db, Utilisateur $utilisateur): void
 
                         <?php // Chacun a la sienne, quel que soit son rôle : elle vise les cordons
                               // qu'on valide (includes/atelier/signature.php). Le bloc la montre
-                              // comme au bas d'un document ; le cadre où l'on signe a sa forme et
-                              // prend sa place (parametres.js). ?>
+                              // comme au bas d'un document ; on la trace en grand, dans sa
+                              // fenêtre à elle (signatureFenetreRendu(), sous celle-ci). ?>
                         <?php // data-validation-definitive : parametres.js demande confirmation
                               // avant de valider, à qui ne pourra plus la changer lui-même. ?>
                         <section class="parametres-section signature-section" data-cherche="signature visa soudure cordon valider plan" data-csrf="<?= $jeton ?>"<?= $administrateur ? '' : ' data-validation-definitive' ?>>
@@ -205,25 +205,9 @@ function parametresRendu(PDO $db, Utilisateur $utilisateur): void
                             <?php if (!$signaturesPretes): ?>
                                 <p class="parametres-section-aide">Les signatures arrivent avec la migration <code>2026-10-29_signatures</code>, pas encore passée sur ce serveur : vos visas portent votre nom.</p>
                             <?php else: ?>
-                                <p class="parametres-section-aide">Elle vise les soudures que vous validez.</p>
+                                <p class="parametres-section-aide">Elle vise les soudures que vous validez : sans elle, pas de validation.</p>
                                 <div class="parametre signature-zone" data-cherche="tracer valider refaire supprimer">
                                     <div id="signature-actuelle"><?= signatureParametreRendu($signature, $utilisateur->nomComplet(), $administrateur) ?></div>
-                                    <div class="signature-pave" hidden>
-                                        <div class="signature-cadre est-a-signer est-vide">
-                                            <canvas role="img" aria-label="Cadre de signature : signez à la souris, au doigt ou au stylet"></canvas>
-                                            <div class="signature-trace"><span class="signature-invite">Signez ici</span></div>
-                                            <div class="signature-ligne" aria-hidden="true"></div>
-                                            <div class="signature-pied" aria-hidden="true"><span><?= prefaEscape($utilisateur->nomComplet()) ?></span><span>Aujourd’hui</span></div>
-                                            <div class="signature-outils">
-                                                <button type="button" class="signature-outil" data-signature-defaire title="Annuler le dernier trait" aria-label="Annuler le dernier trait" disabled><?= signatureIcone('defaire') ?></button>
-                                                <button type="button" class="signature-outil" data-signature-effacer title="Tout effacer" aria-label="Tout effacer" disabled><?= signatureIcone('effacer') ?></button>
-                                            </div>
-                                        </div>
-                                        <div class="signature-pave-actions">
-                                            <button type="button" class="parametres-bouton" data-signature-annuler>Annuler</button>
-                                            <button type="button" class="parametres-bouton est-plein" data-signature-enregistrer disabled>Valider</button>
-                                        </div>
-                                    </div>
                                     <p class="prefa-message signature-message" role="status" aria-live="polite"></p>
                                 </div>
                             <?php endif; ?>
@@ -346,5 +330,9 @@ function parametresRendu(PDO $db, Utilisateur $utilisateur): void
             </div>
         </div>
     </dialog>
+    <?php // La fenêtre où l'on trace sa signature : à côté des paramètres, et non dedans — elle
+          // s'ouvre aussi du pied d'une décision, et d'elle-même à l'arrivée pour qui valide des
+          // soudures sans en avoir (signatureObligatoire()). ?>
+    <?php if ($signaturesPretes) echo signatureFenetreRendu($utilisateur, $administrateur, signatureObligatoire($db, $utilisateur)); ?>
     <?php
 }

@@ -89,7 +89,7 @@
         "courriel=",
         "mdp="
       ],
-      "description": "Crée un compte. Sans mot de passe, il en tire un au sort et le montre une fois. Rôle : charge-production, chef-atelier, personnel-atelier, charge-affaire — ou le métier (\"chef d'atelier\"), ou le libellé de la base (\"Gestionnaire\")"
+      "description": "Crée un compte. Sans mot de passe, il montre une fois un code d'accès : la personne choisit le sien à sa première connexion, avec ce code. Rôle : charge-production, chef-atelier, personnel-atelier, charge-affaire — ou le métier (\"chef d'atelier\"), ou le libellé de la base (\"Gestionnaire\")"
     },
     "migration": {
       "run": "docker compose exec -T -w / web php",

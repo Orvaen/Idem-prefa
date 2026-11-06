@@ -85,7 +85,7 @@
     function poserDessin(viewer) {
         const scene = viewer.querySelector('.plan-viewer-scene');
         if (!scene) return;
-        scene.querySelectorAll('.plan-cordon, .plan-ligne-soudure, .plan-ligne-materiel').forEach(bouton => bouton.remove());
+        scene.querySelectorAll('.plan-cordon, .plan-ligne-soudure, .plan-ligne-materiel, .plan-ligne-coulee').forEach(bouton => bouton.remove());
         const donnees = viewer.cordons;
         ecrireEnAttente(viewer);
         if (!donnees) {
@@ -118,18 +118,54 @@
             donnees.cliquables.add(repere.numero);
         });
 
-        // Les lignes de la nomenclature, d'un bord du tableau à l'autre : on clique celle du
-        // matériel qui manque, comme on la montrerait du doigt sur le tirage.
+        // Les lignes de la nomenclature : on clique celle du matériel qui manque, comme on la
+        // montrerait du doigt sur le tirage. Sa dernière case, « N° COULÉE », se touche à
+        // part : elle ouvre le choix de la coulée de la ligne. Les deux se gênaient — la ligne
+        // couvrait le tableau d'un bord à l'autre, et le choix de la coulée avait disparu
+        // dessous. Une lecture qui n'a pas trouvé la colonne laisse la ligne entière au
+        // signalement.
         const nomenclature = donnees.nomenclature;
         if (nomenclature && nomenclature.lignes) {
+            const coulee = nomenclature.coulee;
+            const finMateriel = coulee ? coulee.gauche : nomenclature.droite;
             nomenclature.lignes.forEach((ligne, rang) => {
                 const bouton = boutonSurLeDessin(scene, 'plan-ligne-materiel', ligne.repere, nomenclature.gauche, ligne.y,
-                    nomenclature.droite - nomenclature.gauche, ligne.h);
+                    finMateriel - nomenclature.gauche, ligne.h);
                 bouton.dataset.rang = rang;
                 marquerMateriel(bouton, ligne);
+                if (coulee) {
+                    const caseCoulee = boutonSurLeDessin(scene, 'plan-ligne-coulee', ligne.repere, coulee.gauche, ligne.y,
+                        coulee.droite - coulee.gauche, ligne.h);
+                    caseCoulee.dataset.rang = rang;
+                    marquerCoulee(caseCoulee, ligne, couleeDeLigne(donnees, ligne));
+                }
             });
         }
         majNumeros(viewer);
+    }
+
+    /**
+     * La coulée déjà posée sur une ligne : la case dont le milieu tombe dans la bande de la
+     * ligne — la même règle que le serveur (nomenclatureCouleeDeLigne()).
+     */
+    function couleeDeLigne(donnees, ligne) {
+        const posee = (donnees.reponse?.coulees_posees || []).find(caseCoulee => {
+            const milieu = caseCoulee.y + caseCoulee.h / 2;
+            return milieu >= ligne.y && milieu <= ligne.y + ligne.h;
+        });
+        return posee ? posee.coulee : '';
+    }
+
+    /** La case « N° COULÉE » d'une ligne : le numéro posé, et ce qu'elle dit au lecteur d'écran. */
+    function marquerCoulee(bouton, ligne, coulee) {
+        bouton.replaceChildren();
+        const valeur = document.createElement('span');
+        valeur.textContent = coulee;
+        bouton.append(valeur);
+        bouton.classList.toggle('est-vide', !coulee);
+        const article = 'Repère ' + ligne.repere + (ligne.designation ? ' · ' + ligne.designation : '');
+        bouton.setAttribute('aria-label', article + (coulee ? ' — coulée ' + coulee + ', la changer' : ' — choisir la coulée'));
+        bouton.title = coulee ? 'Coulée ' + coulee + ' — toucher pour la changer' : 'Choisir la coulée de cette ligne';
     }
 
     /** Ce que dit une ligne de nomenclature au survol, et sa couleur quand son manque est signalé. */
@@ -440,69 +476,30 @@
     }
 
     /**
-     * La ligne d'une feuille suit ce que le serveur vient de dire : son compte de cordons,
-     * le point de son état et sa barre. Les onglets recomptent, et le résumé du plan suit.
+     * La carte d'une feuille suit ce que le serveur vient de dire : son compte de soudures,
+     * sa barre, et son état — la couleur de la barre, la coche d'une feuille finie, le mot
+     * pour les lecteurs d'écran. Elle reste à sa place, dans l'ordre du cahier.
      *
      * Ils viennent du serveur et non de ce script : une feuille jamais ouverte ignorait son
      * total et vient de l'apprendre, et le libellé de l'état est celui de l'écran du chef.
      */
     function majFeuille(repere, reponse) {
-        const ligne = [...document.querySelectorAll('#soudures-page .soudures-feuille')]
+        const carte = [...document.querySelectorAll('#soudures-page .soudures-feuille')]
             .find(candidate => candidate.dataset.repere === repere);
         const feuille = reponse.feuille;
-        if (!ligne || !feuille) return;
+        if (!carte || !feuille) return;
 
-        const compte = ligne.querySelector('[data-cordons]');
+        const compte = carte.querySelector('[data-cordons]');
         if (compte && feuille.compte) compte.textContent = feuille.compte;
-        const point = ligne.querySelector('[data-etat-point]');
-        if (point && feuille.etat) {
-            point.className = 'prefa-point soudures-point est-' + feuille.etat.cle;
-            point.title = feuille.etat.libelle;
-            point.setAttribute('aria-label', feuille.etat.libelle);
+        if (feuille.etat) {
+            const libelle = carte.querySelector('[data-etat-libelle]');
+            if (libelle) libelle.textContent = feuille.etat.libelle;
+            carte.dataset.etat = feuille.etat.cle;
         }
-        // Les onglets lisent la ligne : elle doit dire son état.
-        if (feuille.etat) ligne.dataset.etat = feuille.etat.cle;
-
-        if (compte && typeof feuille.part === 'number' && feuille.imprimees) {
-            let barre = ligne.querySelector('.soudures-barre');
-            if (!barre) {
-                barre = document.createElement('span');
-                barre.className = 'soudures-barre';
-                barre.setAttribute('aria-hidden', 'true');
-                barre.appendChild(document.createElement('span'));
-                compte.after(barre);
-            }
+        const barre = carte.querySelector('.soudures-barre');
+        if (barre && typeof feuille.part === 'number') {
             barre.firstElementChild.style.setProperty('--part', feuille.part + '%');
         }
-        majResume(repere.split(':')[0], reponse.plan);
-        filtrer();
-    }
-
-    /**
-     * Les comptes de soudures : celui du plan, en tête de ses feuilles — « 7 / 69 », comme une
-     * feuille —, puis celui de tous les plans à droite des onglets, « 12 soudures faites sur
-     * 58 » : la phrase de la page, refaite ici sur la somme des plans.
-     */
-    function majResume(element, plan) {
-        const racine = page();
-        if (!racine) return;
-        const compte = racine.querySelector('.soudures-plan[data-element="' + element + '"] [data-plan-cordons]');
-        if (compte && plan) {
-            compte.dataset.faites = Number(plan.faites) || 0;
-            compte.dataset.prevues = Number(plan.prevues) || 0;
-            compte.textContent = compte.dataset.faites + ' / ' + (Number(compte.dataset.prevues) > 0 ? compte.dataset.prevues : '—');
-        }
-        let faites = 0;
-        let prevues = 0;
-        racine.querySelectorAll('[data-plan-cordons]').forEach(cellule => {
-            faites += Number(cellule.dataset.faites) || 0;
-            prevues += Number(cellule.dataset.prevues) || 0;
-        });
-        const faits = racine.querySelector('[data-cordons-faits]');
-        const libelle = racine.querySelector('[data-cordons-libelle]');
-        if (!faits || !libelle) return;
-        faits.textContent = faites;
-        libelle.textContent = (faites > 1 ? 'soudures faites' : 'soudure faite') + (prevues > 0 ? ' sur ' + prevues : '');
     }
 
     // ===== La fenêtre d'un cordon =====
@@ -679,14 +676,6 @@
         majNumeros(viewer);
     }, true);
 
-    // Cliquer la ligne d'une feuille ouvre son dessin : c'est le geste qu'on a dans une liste.
-    // Le nom est un bouton, pour le clavier ; c'est lui que la ligne actionne.
-    document.addEventListener('click', evenement => {
-        const ligne = evenement.target.closest('#soudures-page .soudures-feuille');
-        if (!ligne || evenement.target.closest('button, a, input, label')) return;
-        ligne.querySelector('.soudures-ouvrir-plan')?.click();
-    });
-
     // ===== La fenêtre du plan =====
     //
     // Une par plan, rendue à la première feuille qu'on en ouvre (actions/soudures_lecteur.php)
@@ -725,32 +714,53 @@
         return zone.demandes.get(element);
     }
 
-    // Le survol d'une feuille, ou le clavier sur son bouton : la fenêtre de son plan se
-    // prépare. Un échec ne dit rien ici ; le clic le dira.
-    ['pointerover', 'focusin'].forEach(type => document.addEventListener(type, evenement => {
-        const ligne = evenement.target.closest('#soudures-page .soudures-feuille');
-        if (ligne) lecteurDe(ligne.dataset.element).catch(() => {});
+    // Le doigt posé sur une feuille, le pointeur qui la survole, ou le clavier sur elle : la
+    // fenêtre de son plan se prépare. Au doigt, il n'y a pas de survol : « pointerdown » gagne
+    // le temps du toucher. Un échec ne dit rien ici ; le toucher le dira.
+    ['pointerover', 'pointerdown', 'focusin'].forEach(type => document.addEventListener(type, evenement => {
+        const carte = evenement.target.closest('#soudures-page .soudures-feuille');
+        if (carte) lecteurDe(carte.dataset.element).catch(() => {});
     }));
 
-    // « Renseigner » — ou toute la ligne, qui l'actionne : la fenêtre du plan s'ouvre sur la
-    // feuille désignée, l'élément, le cahier ET la page, pas sur la première page du cahier. La
-    // page est donnée à l'ouverture (pageVoulue, plan-viewer.js) : une seule image, une seule
-    // lecture des tableaux.
+    // La carte d'une feuille, touchée : la fenêtre du plan s'ouvre sur la feuille désignée,
+    // l'élément, le cahier ET la page, pas sur la première page du cahier. La page est donnée
+    // à l'ouverture (pageVoulue, plan-viewer.js) : une seule image, une seule lecture des
+    // tableaux.
+    //
+    // La carte répond tout de suite — « Ouverture… » sur sa vignette : la fenêtre du plan peut
+    // mettre une seconde à arriver la première fois, et une carte qui ne bouge pas sous le
+    // doigt, c'est « il ne se passe rien ». Rien n'échoue plus en silence : un dessin
+    // introuvable le dit, au lieu de laisser la carte sans réponse.
     document.addEventListener('click', async evenement => {
         const bouton = evenement.target.closest('#soudures-page .soudures-ouvrir-plan');
-        if (!bouton) return;
+        if (!bouton || bouton.classList.contains('est-en-ouverture')) return;
         const [element, feuille, numeroPage] = String(bouton.dataset.repere || '').split(':');
         if (!element) return;
+        bouton.classList.add('est-en-ouverture');
+        bouton.setAttribute('aria-busy', 'true');
+        const fini = () => {
+            bouton.classList.remove('est-en-ouverture');
+            bouton.removeAttribute('aria-busy');
+        };
         let bloc;
         try {
             bloc = await lecteurDe(element);
         } catch (erreur) {
+            fini();
             window.toast?.(erreur.message || 'Le plan n’a pas pu s’ouvrir. Réessayez.', { erreur: true });
             return;
         }
         const lecteur = bloc && bloc.querySelector('.plan-viewer[data-document="' + feuille + '"]');
-        // Deux clics pendant que la fenêtre arrive : elle ne s'ouvre qu'une fois.
-        if (!lecteur || lecteur.querySelector('.plan-dialog')?.open) return;
+        if (!lecteur) {
+            fini();
+            window.toast?.('Le dessin de cette feuille est introuvable. Touchez « Actualiser » ; si cela recommence, prévenez le chef d’atelier.', { erreur: true });
+            return;
+        }
+        // Deux touchers pendant que la fenêtre arrive : elle ne s'ouvre qu'une fois.
+        if (lecteur.querySelector('.plan-dialog')?.open) {
+            fini();
+            return;
+        }
         bloc.hidden = false;
         // Ce qui se pose sur le dessin suit la feuille avant que la fenêtre paraisse : sa
         // dernière lecture si on l'a déjà ouverte, rien sinon — jamais les lignes de la
@@ -763,229 +773,74 @@
         }
         lecteur.dataset.pageVoulue = page;
         lecteur.querySelector('.plan-viewer-ouvrir').click();
+        fini();
     });
 
-    // ===== Les plans, repliés ou déroulés =====
+    // ===== Dans « Mes plans » : un plan se déplie sur ses feuilles =====
     //
-    // Chaque plan arrive replié : sa ligne, son avancement, et ses feuilles se déroulent
-    // dessous d'un clic. Une recherche ou un onglet déroule de lui-même les plans où il trouve
-    // des feuilles — on cherche la feuille qu'on a en main sans savoir de quel plan elle est —,
-    // et les vider rend les plans comme on les avait laissés.
+    // « Mes soudures » vit dans « Mes plans » depuis le 6 novembre 2026 : chaque plan se
+    // déplie d'un toucher — n'importe où sur sa ligne — sur ses feuilles en vignettes, et
+    // toucher une feuille ouvre son dessin (plus haut). La flèche devant le nom est le
+    // bouton, pour le clavier ; « Étapes » ouvre toujours le volet du plan.
 
-    /** Les plans déroulés, par leur élément. */
-    const plansDeroules = racine => new Set([...racine.querySelectorAll('.soudures-plan')]
-        .filter(groupe => groupe.querySelector('.soudures-plan-bascule')?.getAttribute('aria-expanded') === 'true')
-        .map(groupe => groupe.dataset.element));
-
-    /** Déroule ou replie un plan. Sa flèche le dit ; filtrer() montre ou cache ses feuilles. */
-    function derouler(groupe, ouvert) {
-        groupe.querySelector('.soudures-plan-bascule')?.setAttribute('aria-expanded', String(ouvert));
+    /** Déplie ou replie les feuilles d'un plan. Déplié, son dessin se prépare. */
+    function deplier(plan, ouvert) {
+        const bouton = plan.querySelector('.mes-plans-deplier');
+        const feuilles = plan.querySelector('.mes-plans-feuilles');
+        if (!bouton || !feuilles) return;
+        bouton.setAttribute('aria-expanded', String(ouvert));
+        feuilles.hidden = !ouvert;
+        plan.classList.toggle('est-deplie', ouvert);
+        const carte = ouvert && feuilles.querySelector('.soudures-feuille');
+        if (carte) lecteurDe(carte.dataset.element).catch(() => {});
     }
 
-    // Le mouvement. Dérouler fait entrer les feuilles l'une après l'autre, et ce qui est
-    // dessous descend au lieu de sauter ; replier les efface, puis le dessous remonte. Un
-    // tableau ne sait pas animer sa hauteur : on note où était chaque ligne avant le
-    // changement, puis on la fait glisser de là à sa nouvelle place. Rien ne bouge quand le
-    // système demande moins d'animations, ni quand c'est la recherche qui déroule : la liste
-    // ne danse pas à chaque lettre tapée.
-    const MOUVEMENT = { duration: 220, easing: 'cubic-bezier(.2, .8, .2, 1)' };
-    const sansMouvement = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    /** Les lignes montrées d'un plan : ses feuilles, ou sa ligne d'attente. */
-    const lignesDuPlan = groupe => [...page().querySelectorAll(
-        '.soudures-feuille[data-element="' + groupe.dataset.element + '"]:not([hidden]) > tr,'
-        + ' .soudures-plan-vide[data-element="' + groupe.dataset.element + '"]:not([hidden]) > tr')];
-
-    /** Ce qui est sous un plan — les lignes des plans suivants, le matériel —, et où c'est. */
-    function placesDessous(groupe) {
-        const places = new Map();
-        for (let corps = groupe.nextElementSibling; corps; corps = corps.nextElementSibling) {
-            if (corps.hidden || corps.dataset.element === groupe.dataset.element) continue;
-            [...corps.rows].forEach(ligne => places.set(ligne, ligne.getBoundingClientRect().top));
-        }
-        const materiel = page()?.querySelector('.soudures-materiel');
-        if (materiel) places.set(materiel, materiel.getBoundingClientRect().top);
-        return places;
-    }
-
-    /** Chacun glisse de sa place d'avant à la sienne. Sous l'écran, personne ne le verrait. */
-    function glisser(places) {
-        places.forEach((avant, element) => {
-            // Un glissement pas fini s'arrête : le suivant part d'où l'on voyait la ligne.
-            element.getAnimations().forEach(animation => animation.cancel());
-            const apres = element.getBoundingClientRect().top;
-            if (avant === apres || Math.min(avant, apres) > window.innerHeight) return;
-            element.animate([{ transform: 'translateY(' + (avant - apres) + 'px)' }, { transform: 'none' }], MOUVEMENT);
-        });
-    }
-
-    /** Déroule ou replie un plan sous les yeux de qui a cliqué. */
-    function basculer(groupe, ouvert) {
-        // Un repli en cours s'arrête : on rouvre avant qu'il ait fini.
-        groupe.sortie?.forEach(animation => animation.cancel());
-        groupe.sortie = null;
-        derouler(groupe, ouvert);
-        if (sansMouvement()) {
-            filtrer();
-            return;
-        }
-
-        if (ouvert) {
-            const places = placesDessous(groupe);
-            filtrer();
-            glisser(places);
-            // Les feuilles entrent l'une après l'autre ; passé la dixième, d'un bloc.
-            lignesDuPlan(groupe).forEach((ligne, rang) => ligne.animate(
-                [{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'none' }],
-                { ...MOUVEMENT, delay: Math.min(rang, 10) * 16, fill: 'backwards' }));
-            return;
-        }
-
-        // Les feuilles s'effacent d'abord, à leur place ; puis elles disparaissent, et le
-        // dessous remonte d'où il était.
-        const sortie = lignesDuPlan(groupe).map(ligne => ligne.animate(
-            [{ opacity: 1 }, { opacity: 0, transform: 'translateY(-4px)' }],
-            { duration: 120, easing: 'ease-in', fill: 'forwards' }));
-        groupe.sortie = sortie;
-        Promise.all(sortie.map(animation => animation.finished)).then(() => {
-            if (groupe.sortie !== sortie) return;
-            groupe.sortie = null;
-            const places = placesDessous(groupe);
-            filtrer();
-            sortie.forEach(animation => animation.cancel());
-            glisser(places);
-        }, () => {});
-    }
-
-    // Un clic sur la ligne d'un plan — sa flèche, son nom, n'importe où — le déroule ou le
-    // replie. Déroulé, la fenêtre de son plan se prépare : on va ouvrir l'une de ses feuilles.
     document.addEventListener('click', evenement => {
-        const groupe = evenement.target.closest('#soudures-page .soudures-plan');
-        if (!groupe) return;
-        const ouvert = groupe.querySelector('.soudures-plan-bascule')?.getAttribute('aria-expanded') !== 'true';
-        basculer(groupe, ouvert);
-        if (ouvert && page()?.querySelector('.soudures-feuille[data-element="' + groupe.dataset.element + '"]')) {
-            lecteurDe(groupe.dataset.element).catch(() => {});
-        }
+        const plan = evenement.target.closest('#mes-plans-page .mes-plans-plan');
+        // Sa ligne seulement — pas celle de ses feuilles, ni son volet —, et pas ses boutons.
+        if (!plan || evenement.target.closest('tr') !== plan.rows[0]) return;
+        if (evenement.target.closest('a, input, label, button:not(.mes-plans-deplier)')) return;
+        deplier(plan, plan.querySelector('.mes-plans-deplier')?.getAttribute('aria-expanded') !== 'true');
     });
 
-    // « Actualiser », comme sur les autres listes : l'écran se recharge, sa recherche, son
-    // onglet et ses plans déroulés avec.
+    // « Renseigner mes soudures », dans le volet d'un plan : le volet se ferme, et le plan se
+    // déplie sur ses feuilles. Il ouvrait un autre écran ; les feuilles sont ici, maintenant.
     document.addEventListener('click', evenement => {
-        if (!evenement.target.closest('.soudures-actualiser')) return;
-        const racine = page();
-        const recherche = racine?.querySelector('#soudures-recherche')?.value || '';
-        const etat = racine?.querySelector('.soudures-onglet[aria-pressed="true"]')?.dataset.etat || '';
-        const deroules = racine ? plansDeroules(racine) : new Set();
-        const avantFiltre = racine?.deroulesAvantFiltre || null;
-        const contenu = document.getElementById('content');
-        if (!contenu) return;
-        window.chargerDans(contenu, 'pages/soudures.php').then(({ ok }) => {
-            if (!ok) {
-                contenu.textContent = 'Impossible de recharger cet écran. Actualisez la page.';
-                return;
-            }
-            const champ = document.getElementById('soudures-recherche');
-            if (champ) champ.value = recherche;
-            document.querySelectorAll('.soudures-onglet').forEach(o => o.setAttribute('aria-pressed', String(o.dataset.etat === etat)));
-            if (!document.querySelector('.soudures-onglet[aria-pressed="true"]')) {
-                document.querySelector('.soudures-onglet[data-etat=""]')?.setAttribute('aria-pressed', 'true');
-            }
-            const rechargee = page();
-            if (rechargee) {
-                rechargee.querySelectorAll('.soudures-plan').forEach(groupe => derouler(groupe, deroules.has(groupe.dataset.element)));
-                rechargee.deroulesAvantFiltre = avantFiltre;
-            }
-            filtrer();
-        });
+        const bouton = evenement.target.closest('#mes-plans-page .atelier-vers-soudures');
+        if (!bouton) return;
+        const plan = bouton.closest('.mes-plans-plan');
+        bouton.closest('.prefa-detail-row')?.querySelector('.prefa-detail-close')?.click();
+        if (!plan) return;
+        deplier(plan, true);
+        plan.rows[0].scrollIntoView({ block: 'start', behavior: 'smooth' });
     });
 
-    // Le filtrage : tout est déjà rendu, on se contente de cacher ce qui ne correspond
-    // pas. Un cahier porte quinze feuilles et on en a souvent trois : quarante lignes se
-    // parcourent mal à l'œil, et un rechargement serveur à chaque frappe coûterait plus
-    // qu'il ne rapporte. C'est la mécanique de « Commande matériel » : la recherche et
-    // l'onglet se combinent, et les comptes des onglets suivent la recherche.
-    //
-    // « deroulerTrouves » : la recherche ou l'onglet vient de changer, et les plans suivent —
-    // ceux où ils trouvent se déroulent, les autres se replient. Le premier filtre retient
-    // comment on les avait laissés, et le dernier qu'on vide le rend.
-    function filtrer({ deroulerTrouves = false } = {}) {
-        const racine = page();
-        if (!racine) return;
-        const texte = (racine.querySelector('#soudures-recherche')?.value || '').trim().toLowerCase();
-        const etat = racine.querySelector('.soudures-onglet[aria-pressed="true"]')?.dataset.etat || '';
-        const filtre = Boolean(texte || etat);
-
-        // Ce que la recherche et l'onglet retiennent, et les plans où ils le trouvent.
-        const parEtat = {};
-        const retenues = new Map();
-        const plansTrouves = new Set();
-        racine.querySelectorAll('.soudures-feuille').forEach(ligne => {
-            const trouvee = !texte || (ligne.dataset.cherche || '').includes(texte);
-            if (trouvee) parEtat[ligne.dataset.etat] = (parEtat[ligne.dataset.etat] || 0) + 1;
-            const retenue = trouvee && (!etat || ligne.dataset.etat === etat);
-            retenues.set(ligne, retenue);
-            if (retenue) plansTrouves.add(ligne.dataset.element);
-        });
-        // Un plan sans feuille garde sa ligne d'attente tant qu'aucun état n'est choisi : c'est
-        // là qu'on apprend qu'il attend son dessin. Elle ne compte dans aucun onglet.
-        racine.querySelectorAll('.soudures-plan-vide').forEach(vide => {
-            const retenue = !etat && (!texte || (vide.dataset.cherche || '').includes(texte));
-            retenues.set(vide, retenue);
-            if (retenue) plansTrouves.add(vide.dataset.element);
-        });
-
-        if (deroulerTrouves && filtre) {
-            racine.deroulesAvantFiltre ??= plansDeroules(racine);
-            racine.querySelectorAll('.soudures-plan').forEach(groupe => derouler(groupe, plansTrouves.has(groupe.dataset.element)));
-        } else if (deroulerTrouves && racine.deroulesAvantFiltre) {
-            const avant = racine.deroulesAvantFiltre;
-            racine.querySelectorAll('.soudures-plan').forEach(groupe => derouler(groupe, avant.has(groupe.dataset.element)));
-            racine.deroulesAvantFiltre = null;
-        }
-
-        // Une feuille paraît si elle est retenue et que son plan est déroulé. La ligne d'un plan
-        // reste sans filtre, repliée ou non ; avec un filtre, seulement s'il y trouve quelque
-        // chose.
-        const deroules = plansDeroules(racine);
-        retenues.forEach((retenue, ligne) => { ligne.hidden = !(retenue && deroules.has(ligne.dataset.element)); });
-        let plans = 0;
-        racine.querySelectorAll('.soudures-plan').forEach(groupe => {
-            groupe.hidden = filtre && !plansTrouves.has(groupe.dataset.element);
-            if (!groupe.hidden) plans++;
-        });
-
-        racine.querySelectorAll('.soudures-onglet').forEach(onglet => {
-            const compte = onglet.querySelector('.prefa-onglet-compte');
-            if (!compte) return;
-            compte.textContent = onglet.dataset.etat
-                ? (parEtat[onglet.dataset.etat] || 0)
-                : Object.values(parEtat).reduce((a, b) => a + b, 0);
-        });
-
-        // Un filtre peut tout cacher : un mot le dit plutôt que de laisser un tableau sans
-        // lignes sous ses en-têtes.
-        const aucune = racine.querySelector('[data-aucune]');
-        if (aucune) {
-            aucune.hidden = plans > 0;
-            aucune.querySelector('td').textContent = texte
-                ? 'Aucune feuille ne correspond à cette recherche.'
-                : 'Aucune feuille dans cet état.';
-        }
-    }
-
+    // La recherche de « Mes plans » trouve aussi les feuilles, par leur numéro de ligne :
+    // atelier.js cache les plans qui n'ont rien ; ici, les plans qui gardent des feuilles se
+    // déplient dessus, et seules celles qui répondent restent. Vider la recherche rend les
+    // plans comme on les avait laissés.
     document.addEventListener('input', evenement => {
-        if (evenement.target.closest('#soudures-recherche')) filtrer({ deroulerTrouves: true });
-    });
-    document.addEventListener('click', evenement => {
-        const onglet = evenement.target.closest('.soudures-onglet');
-        if (!onglet) return;
-        document.querySelectorAll('.soudures-onglet').forEach(o => o.setAttribute('aria-pressed', String(o === onglet)));
-        filtrer({ deroulerTrouves: true });
-    });
-    // Entrée dans la recherche n'envoie rien : tout est déjà là.
-    document.addEventListener('submit', evenement => {
-        if (evenement.target.closest('.soudures-filtres')) evenement.preventDefault();
+        if (!evenement.target.closest('#mes-plans-recherche')) return;
+        const racine = document.getElementById('mes-plans-page');
+        if (!racine) return;
+        const texte = evenement.target.value.trim().toLowerCase();
+        if (texte && !racine.deplisAvantRecherche) {
+            racine.deplisAvantRecherche = new Set(racine.querySelectorAll('.mes-plans-plan.est-deplie'));
+        }
+        racine.querySelectorAll('.mes-plans-plan').forEach(plan => {
+            const cartes = [...plan.querySelectorAll('.soudures-feuille')];
+            let gardees = 0;
+            cartes.forEach(carte => {
+                carte.hidden = Boolean(texte) && !(carte.dataset.cherche || '').includes(texte);
+                if (!carte.hidden) gardees++;
+            });
+            if (texte && cartes.length) deplier(plan, gardees > 0);
+        });
+        if (!texte && racine.deplisAvantRecherche) {
+            const avant = racine.deplisAvantRecherche;
+            racine.querySelectorAll('.mes-plans-plan').forEach(plan => deplier(plan, avant.has(plan)));
+            racine.deplisAvantRecherche = null;
+        }
     });
 
     // ===== Signaler un manque =====
@@ -1109,6 +964,320 @@
             auPlan: ligne.quantite || '',
             precision: 'Repère ' + ligne.repere + (feuille ? ' · ' + feuille : ''),
         });
+    });
+
+    // ===== La coulée d'une ligne de nomenclature =====
+    //
+    // La case « N° COULÉE » d'une ligne, sur le dessin, ouvre le choix de sa coulée : celles
+    // lues sur les certificats de la demande, en gros boutons — un toucher suffit —, ou un
+    // numéro tapé quand le certificat n'a pas été lu. L'enregistrement ne touche que cette
+    // ligne (actions/coulee_soudeur.php) ; l'encadrement le voit dans sa visionneuse.
+    //
+    // Deux gestes, deux endroits — un seul champ qui faisait les deux (« Chercher dans la liste,
+    // ou taper le numéro ») se comprenait mal, la liste étant déjà sous les yeux :
+    //  - on touche une coulée de la liste. Longue — plus de douze —, la liste a un champ pour
+    //    la chercher, en haut, qui ne fait que ça : trois chiffres tapés, elle se réduit aux
+    //    coulées qui les contiennent ;
+    //  - « Pas dans la liste ? », en bas : on tape le numéro, « Enregistrer » le garde mot pour
+    //    mot — jamais la coulée qui lui ressemble : remplacer « 4681 » par « 468189 » serait une
+    //    erreur de traçabilité (même règle que la visionneuse de l'encadrement). Une recherche
+    //    qui ne trouve rien y reporte ce qu'on a tapé.
+    //
+    // Les coulées se rangent sous leur certificat, qui dit ses dimensions et sa nuance : on les
+    // compare à la désignation de la ligne, écrite sous le titre. Celles déjà posées sur la
+    // feuille viennent en tête quand la liste est longue, ou qu'elles n'y sont pas — un numéro
+    // tapé à la main : le même tube revient d'une ligne à l'autre. La liste défile seule ; la
+    // recherche, le bas et les boutons restent en place. Sur tablette, le clavier ne s'ouvre
+    // pas de lui-même : on touche d'abord, on tape si besoin.
+    let choixCoulee = null;
+    // Au-delà, la liste ne se lit plus d'un coup d'œil (trois rangées) : elle se cherche.
+    const LISTE_LONGUE = 12;
+    // « 4681-B », « 4681 B » et « 4681b » se cherchent pareil.
+    const normeCoulee = texte => String(texte).toUpperCase().replace(/[^0-9A-Z]/g, '');
+
+    function fenetreCoulee() {
+        if (choixCoulee) return choixCoulee;
+        choixCoulee = document.createElement('dialog');
+        choixCoulee.className = 'fenetre soudures-coulee';
+        choixCoulee.setAttribute('aria-labelledby', 'soudures-coulee-titre');
+        choixCoulee.innerHTML = `
+            <form method="dialog" class="soudures-coulee-form">
+                <div class="fenetre-entete">
+                    <h2 id="soudures-coulee-titre">Coulée</h2>
+                    <button type="button" class="modal-close" data-coulee-fermer aria-label="Fermer">
+                        <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg>
+                    </button>
+                </div>
+                <p class="fenetre-sous-titre soudures-coulee-article"></p>
+                <div class="soudures-coulee-recherche" hidden>
+                    <div class="soudures-coulee-chercher">
+                        <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+                        <input class="fenetre-champ" name="cherche" type="search" autocomplete="off" spellcheck="false"
+                               autocapitalize="characters" enterkeyhint="search" aria-label="Chercher une coulée dans la liste"
+                               placeholder="Chercher dans la liste…">
+                    </div>
+                    <p class="fenetre-aide soudures-coulee-compte"></p>
+                </div>
+                <div class="fenetre-corps soudures-coulee-liste"></div>
+                <div class="soudures-coulee-autre">
+                    <label class="fenetre-etiquette" for="soudures-coulee-autre">Pas dans la liste ? Tapez le numéro</label>
+                    <div class="soudures-coulee-autre-ligne">
+                        <input id="soudures-coulee-autre" class="fenetre-champ" name="coulee" maxlength="20" autocomplete="off"
+                               spellcheck="false" autocapitalize="characters" enterkeyhint="done" placeholder="N° de coulée">
+                        <button type="submit" class="fenetre-valider">Enregistrer</button>
+                    </div>
+                    <p class="fenetre-message" role="status" aria-live="polite"></p>
+                </div>
+                <div class="fenetre-pied">
+                    <button type="button" class="fenetre-annuler soudures-coulee-retirer" hidden>Retirer la coulée</button>
+                    <button type="button" class="fenetre-annuler" data-coulee-fermer>Annuler</button>
+                </div>
+            </form>`;
+        document.body.append(choixCoulee);
+
+        choixCoulee.addEventListener('click', evenement => {
+            if (evenement.target.closest('[data-coulee-fermer]')) choixCoulee.close();
+            const option = evenement.target.closest('.soudures-coulee-option');
+            if (option) enregistrerCoulee(option.dataset.numero);
+            if (evenement.target.closest('.soudures-coulee-retirer')) enregistrerCoulee('');
+        });
+        const cherche = choixCoulee.querySelector('[name="cherche"]');
+        cherche.addEventListener('input', () => filtrerCoulees(choixCoulee));
+        // Entrée dans la recherche n'enregistre rien d'office : une seule coulée trouvée se
+        // choisit, aucune passe la main au champ du bas, où le numéro tapé attend.
+        cherche.addEventListener('keydown', evenement => {
+            if (evenement.key !== 'Enter') return;
+            evenement.preventDefault();
+            const trouvees = [...choixCoulee.querySelectorAll('.soudures-coulee-groupe:not([hidden]):not([data-sorte]) .soudures-coulee-option:not([hidden])')];
+            if (trouvees.length === 1) enregistrerCoulee(trouvees[0].dataset.numero);
+            else if (!trouvees.length) choixCoulee.querySelector('[name="coulee"]').focus();
+        });
+        choixCoulee.querySelector('form').addEventListener('submit', evenement => {
+            evenement.preventDefault();
+            const saisie = choixCoulee.querySelector('[name="coulee"]').value.trim();
+            if (!saisie) {
+                choixCoulee.querySelector('.fenetre-message').textContent = 'Touchez une coulée de la liste, ou tapez son numéro.';
+                return;
+            }
+            enregistrerCoulee(saisie);
+        });
+        return choixCoulee;
+    }
+
+    /** Un bouton de coulée : son numéro en gros, « à vérifier » dessous s'il le faut. */
+    function boutonCoulee(numero, confirmee, actuelle) {
+        const option = document.createElement('button');
+        option.type = 'button';
+        option.className = 'soudures-coulee-option';
+        option.dataset.numero = numero;
+        option.dataset.cherche = normeCoulee(numero);
+        option.setAttribute('aria-pressed', String(numero === actuelle));
+        option.textContent = numero;
+        if (!confirmee) {
+            // Lue une seule fois, ou avec peu de certitude : à vérifier sur le certificat.
+            const doute = document.createElement('small');
+            doute.textContent = 'à vérifier';
+            option.append(doute);
+        }
+        return option;
+    }
+
+    /** Un groupe de boutons sous son titre : un certificat, ou « Déjà sur cette feuille ». */
+    function groupeCoulees(titre, boutons, sorte) {
+        const groupe = document.createElement('section');
+        groupe.className = 'soudures-coulee-groupe';
+        if (sorte) groupe.dataset.sorte = sorte;
+        const entete = document.createElement('h3');
+        entete.className = 'soudures-coulee-groupe-titre';
+        entete.textContent = titre;
+        const options = document.createElement('div');
+        options.className = 'soudures-coulee-options';
+        options.setAttribute('role', 'group');
+        options.setAttribute('aria-label', titre);
+        options.append(...boutons);
+        groupe.append(entete, options);
+        return groupe;
+    }
+
+    /**
+     * Ce que la recherche trouve : les boutons qui contiennent ce qu'on tape, les groupes qui en
+     * gardent un, et une ligne qui dit combien. En cherchant, « Déjà sur cette feuille » se
+     * retire : ses coulées sont aussi sous leur certificat, on les verrait deux fois. Rien de
+     * trouvé : ce qu'on a tapé descend dans « Pas dans la liste ? », prêt à enregistrer.
+     */
+    function filtrerCoulees(fenetre) {
+        const saisie = fenetre.querySelector('[name="cherche"]').value.trim();
+        const cherche = normeCoulee(saisie);
+        const liste = fenetre.querySelector('.soudures-coulee-liste');
+        const total = Number(liste.dataset.total || 0);
+        let visibles = 0;
+        liste.querySelectorAll('.soudures-coulee-groupe').forEach(groupe => {
+            if (groupe.dataset.sorte === 'feuille') {
+                groupe.hidden = cherche !== '';
+                return;
+            }
+            let gardes = 0;
+            groupe.querySelectorAll('.soudures-coulee-option').forEach(option => {
+                option.hidden = cherche !== '' && !option.dataset.cherche.includes(cherche);
+                if (!option.hidden) gardes++;
+            });
+            groupe.hidden = gardes === 0;
+            visibles += gardes;
+        });
+
+        const compte = fenetre.querySelector('.soudures-coulee-compte');
+        const aucune = liste.querySelector('.soudures-coulee-aucune');
+        const autre = fenetre.querySelector('[name="coulee"]');
+        if (!total) {
+            aucune.textContent = 'Aucune coulée n’a été lue sur les certificats de cette demande : tapez le numéro en bas.';
+            aucune.hidden = false;
+        } else if (!cherche) {
+            compte.textContent = total + (total > 1 ? ' coulées lues' : ' coulée lue') + ' sur les certificats';
+            aucune.hidden = true;
+        } else {
+            compte.textContent = visibles + ' sur ' + total;
+            aucune.textContent = 'Aucune coulée de la liste ne contient « ' + saisie + ' ». Si c’est le bon numéro, touchez « Enregistrer » en bas.';
+            aucune.hidden = visibles > 0;
+        }
+        // Ce qu'on a cherché sans le trouver descend en bas — sauf si l'on y a déjà tapé autre
+        // chose soi-même.
+        if (total && cherche && !visibles && (!autre.value || autre.dataset.repris === '1')) {
+            autre.value = saisie;
+            autre.dataset.repris = '1';
+        } else if (autre.dataset.repris === '1' && (visibles || !cherche)) {
+            autre.value = '';
+            autre.dataset.repris = '';
+        }
+        fenetre.querySelector('.fenetre-message').textContent = '';
+    }
+
+    function ouvrirChoixCoulee(viewer, bouton) {
+        const donnees = viewer.cordons;
+        const nomenclature = donnees?.nomenclature;
+        const ligne = nomenclature?.lignes?.[Number(bouton.dataset.rang)];
+        if (!ligne || !nomenclature.coulee) return;
+        const actuelle = couleeDeLigne(donnees, ligne);
+        const fenetre = fenetreCoulee();
+        fenetre.contexte = { viewer, bouton, ligne, page: donnees.page, coulee: nomenclature.coulee };
+
+        fenetre.querySelector('#soudures-coulee-titre').textContent = 'Coulée du repère ' + ligne.repere;
+        // La désignation, à comparer aux certificats ; et la coulée que porte déjà la ligne.
+        fenetre.querySelector('.soudures-coulee-article').textContent =
+            [ligne.designation || '', actuelle ? 'actuelle : ' + actuelle : ''].filter(Boolean).join(' · ');
+
+        const coulees = donnees.reponse?.coulees || [];
+        const connues = new Map(coulees.map(coulee => [coulee.numero, coulee]));
+        const groupes = [];
+
+        // Celles déjà posées sur la feuille, les plus posées d'abord.
+        const posees = new Map();
+        (donnees.reponse?.coulees_posees || []).forEach(caseCoulee => {
+            const numero = String(caseCoulee.coulee || '').trim();
+            if (numero) posees.set(numero, (posees.get(numero) || 0) + 1);
+        });
+        const dejaPosees = [...posees.entries()].sort((a, b) => b[1] - a[1]).map(([numero]) => numero);
+        if (dejaPosees.length && (coulees.length > LISTE_LONGUE || dejaPosees.some(numero => !connues.has(numero)))) {
+            groupes.push(groupeCoulees('Déjà sur cette feuille', dejaPosees.map(numero =>
+                boutonCoulee(numero, connues.get(numero)?.confirmee ?? true, actuelle)), 'feuille'));
+        }
+
+        // Puis sous leur certificat, dans l'ordre où les certificats arrivent.
+        const parCertificat = new Map();
+        coulees.forEach(coulee => {
+            const titre = coulee.certificat || 'Certificats';
+            if (!parCertificat.has(titre)) parCertificat.set(titre, []);
+            parCertificat.get(titre).push(boutonCoulee(coulee.numero, coulee.confirmee, actuelle));
+        });
+        parCertificat.forEach((boutons, titre) => groupes.push(groupeCoulees(titre, boutons)));
+
+        const aucune = document.createElement('p');
+        aucune.className = 'fenetre-aide soudures-coulee-aucune';
+        aucune.hidden = true;
+        const liste = fenetre.querySelector('.soudures-coulee-liste');
+        liste.dataset.total = String(coulees.length);
+        liste.replaceChildren(...groupes, aucune);
+        const longue = coulees.length > LISTE_LONGUE;
+        fenetre.classList.toggle('est-longue', longue);
+        fenetre.classList.toggle('est-vide', coulees.length === 0);
+
+        // La recherche n'existe que pour une longue liste ; le champ du bas, toujours. Une
+        // coulée tapée à la main, absente des certificats, y revient pour qu'on la corrige.
+        const recherche = fenetre.querySelector('.soudures-coulee-recherche');
+        recherche.hidden = !longue;
+        const cherche = fenetre.querySelector('[name="cherche"]');
+        cherche.value = '';
+        const autre = fenetre.querySelector('[name="coulee"]');
+        autre.value = actuelle && !connues.has(actuelle) ? actuelle : '';
+        autre.dataset.repris = '';
+        filtrerCoulees(fenetre);
+        fenetre.querySelector('.soudures-coulee-retirer').hidden = !actuelle;
+        fenetre.showModal();
+        liste.scrollTop = 0;
+        // À la souris, une longue liste se cherche en tapant : la recherche prend la main. Au
+        // doigt, le clavier couvrirait la moitié de la liste avant qu'on ait regardé : rien ne
+        // s'ouvre, et la coulée actuelle est montrée.
+        const choisie = liste.querySelector('.soudures-coulee-option[aria-pressed="true"]');
+        if (!matchMedia('(pointer: coarse)').matches) (longue ? cherche : (coulees.length ? null : autre))?.focus();
+        else if (choisie) choisie.scrollIntoView({ block: 'nearest' });
+    }
+
+    async function enregistrerCoulee(numero) {
+        const fenetre = fenetreCoulee();
+        const { viewer, bouton, ligne, page, coulee } = fenetre.contexte || {};
+        const bloc = viewer?.closest('.soudures-lecteur');
+        if (!bloc) return;
+        const message = fenetre.querySelector('.fenetre-message');
+        message.textContent = 'Enregistrement…';
+        fenetre.querySelectorAll('button').forEach(b => { b.disabled = true; });
+
+        const corps = new URLSearchParams();
+        corps.set('csrf', bloc.dataset.csrf);
+        corps.set('element', viewer.dataset.plan);
+        corps.set('document', viewer.dataset.document);
+        corps.set('page', page);
+        corps.set('x', coulee.gauche);
+        corps.set('y', ligne.y);
+        corps.set('w', coulee.droite - coulee.gauche);
+        corps.set('h', ligne.h);
+        corps.set('coulee', numero);
+        corps.set('description', ligne.designation || '');
+        // Toutes les lignes de la page : sur une page encore sans case, le serveur en pose une
+        // à chacune, comme la pose d'office de l'encadrement.
+        const lignes = (viewer.lectures?.[page] || viewer.cordons)?.nomenclature?.lignes || [];
+        corps.set('lignes', JSON.stringify(lignes.map(l => ({ y: l.y, h: l.h }))));
+        try {
+            const reponse = await fetch('actions/coulee_soudeur.php', {
+                method: 'POST', body: corps,
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            });
+            const retour = await reponse.json().catch(() => null);
+            if (!reponse.ok || !retour?.success) {
+                message.textContent = retour?.message || 'Enregistrement impossible. Réessayez.';
+                return;
+            }
+            // La case de la ligne prend son numéro tout de suite, et la page le retient : la
+            // relire n'est pas nécessaire pour le voir.
+            const donnees = viewer.lectures?.[page] || viewer.cordons;
+            const posees = (donnees.reponse.coulees_posees ||= []).filter(caseCoulee => {
+                const milieu = caseCoulee.y + caseCoulee.h / 2;
+                return !(milieu >= ligne.y && milieu <= ligne.y + ligne.h);
+            });
+            posees.push({ y: ligne.y, h: ligne.h, coulee: retour.coulee });
+            donnees.reponse.coulees_posees = posees;
+            if (bouton.isConnected) marquerCoulee(bouton, ligne, retour.coulee);
+            fenetre.close();
+            window.toast?.(retour.message);
+        } catch {
+            message.textContent = 'Le serveur ne répond pas. Réessayez.';
+        } finally {
+            fenetre.querySelectorAll('button').forEach(b => { b.disabled = false; });
+        }
+    }
+
+    document.addEventListener('click', evenement => {
+        const bouton = evenement.target.closest('.plan-ligne-coulee');
+        const viewer = bouton && bouton.closest('.plan-viewer');
+        if (duSoudeur(viewer)) ouvrirChoixCoulee(viewer, bouton);
     });
 
     /** La date du jour comme le serveur l'écrit : « 02/11/2026 ». */

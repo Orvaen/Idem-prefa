@@ -275,22 +275,33 @@
 
     // ---------------------------------------------------------------- la signature
     //
-    // Tracée une fois, elle vise les cordons que la personne valide
-    // (includes/atelier/signature.php). Le bloc la montre comme au bas d'un document ; le
-    // cadre où l'on signe a sa forme et prend sa place. C'est celui de signature_pad, chargé à
-    // la première ouverture seulement : on ouvre ses paramètres pour bien d'autres choses. Les
+    // Tracée une fois, elle vise les soudures que la personne valide
+    // (includes/atelier/signature.php) : sans elle, pas de validation. Elle se trace en grand,
+    // dans sa fenêtre à elle — tout l'écran sur une tablette : on signait au doigt dans un
+    // cadre de quatre centimètres. La fenêtre s'ouvre de partout où l'on voit « Tracer ma
+    // signature » ([data-signature-tracer]) : ses paramètres, le pied d'une décision. Et
+    // d'elle-même à l'arrivée, pour qui valide des soudures sans en avoir
+    // (signatureObligatoire()) : elle ne se referme pas sans signature.
+    //
+    // Le cadre est celui de signature_pad, chargé à la première ouverture seulement. Les
     // points partent en fractions du cadre ; le serveur recadre sur l'encre et range.
 
     const SIGNATURE_PAD = 'https://cdn.jsdelivr.net/npm/signature_pad@5.1.4/dist/signature_pad.umd.min.js';
     const SIGNATURE_PAD_EMPREINTE = 'sha384-tDSOCzVljSggNbjPF/Hz+FRfFWI/03Gp04+9fEFbNzsT1CI/tk1WBY2QG4dlmevX';
+    // Ce que le pied d'une décision annonce une fois la signature tracée (SIGNATURE_ANNONCE,
+    // includes/atelier/signature.php).
+    const SIGNATURE_ANNONCE = 'Valider les vise de votre signature.';
     const sectionSignature = fenetre.querySelector('.signature-section');
     const actuelle = fenetre.querySelector('#signature-actuelle');
-    const pave = sectionSignature?.querySelector('.signature-pave');
-    const cadreASigner = pave?.querySelector('.signature-cadre');
-    const canevas = pave?.querySelector('canvas');
+    const fenetreSignature = document.getElementById('signature-fenetre');
+    const cadreASigner = fenetreSignature?.querySelector('.signature-cadre');
+    const canevas = cadreASigner?.querySelector('canvas');
+    const messageSignature = fenetreSignature?.querySelector('.signature-fenetre-message');
     let chargementPad = null;
     let signaturePad = null;
-    let largeurCadre = 0;
+    let tailleCadre = null;
+    // Ce qui a ouvert la fenêtre : signée, le focus passe au « Valider » de sa décision.
+    let declencheur = null;
 
     function chargerSignaturePad() {
         chargementPad ??= new Promise((resoudre, rejeter) => {
@@ -304,10 +315,10 @@
             script.crossOrigin = 'anonymous';
             script.onload = () => resoudre(window.SignaturePad);
             script.onerror = () => {
-                // L'échec n'est pas retenu : le prochain clic retente.
+                // L'échec n'est pas retenu : toucher le cadre retente.
                 chargementPad = null;
                 script.remove();
-                rejeter(new Error('Le cadre de signature ne se charge pas. Vérifiez la connexion, puis réessayez.'));
+                rejeter(new Error('Le cadre de signature ne se charge pas. Vérifiez la connexion, puis touchez le cadre pour réessayer.'));
             };
             document.head.appendChild(script);
         });
@@ -316,47 +327,48 @@
 
     /**
      * Le canevas à la taille du cadre, en pixels de l'écran : sans cela le trait sort flou, ou
-     * décalé du doigt. Ce qui est déjà tracé suit le cadre quand il change de taille — élargir
-     * la fenêtre ne doit pas effacer une signature à moitié faite.
+     * décalé du doigt. Ce qui est déjà tracé suit le cadre quand il change de taille, sans se
+     * déformer ni en sortir : tourner la tablette en pleine signature ne l'efface pas.
      */
     function ajusterCadre() {
         const largeur = canevas.offsetWidth;
-        if (!signaturePad || !largeur || largeur === largeurCadre) return;
+        const hauteur = canevas.offsetHeight;
+        if (!signaturePad || !largeur || !hauteur) return;
+        if (tailleCadre && tailleCadre.largeur === largeur && tailleCadre.hauteur === hauteur) return;
         const ratio = Math.max(window.devicePixelRatio || 1, 1);
-        const facteur = largeurCadre ? largeur / largeurCadre : 1;
+        const facteur = tailleCadre ? Math.min(largeur / tailleCadre.largeur, hauteur / tailleCadre.hauteur) : 1;
         const traits = signaturePad.toData();
         canevas.width = largeur * ratio;
-        canevas.height = canevas.offsetHeight * ratio;
+        canevas.height = hauteur * ratio;
         canevas.getContext('2d').scale(ratio, ratio);
         signaturePad.fromData(traits.map(groupe => ({
             ...groupe,
             points: groupe.points.map(point => ({ ...point, x: point.x * facteur, y: point.y * facteur })),
         })));
-        largeurCadre = largeur;
+        tailleCadre = { largeur, hauteur };
     }
 
     /**
-     * Les outils suivent le cadre : défaire, effacer et enregistrer n'ont rien à faire sur un
-     * cadre vide, et l'invite « Signez ici » ne reste que tant qu'il l'est.
+     * Les outils suivent le cadre : retirer un trait, effacer et valider n'ont rien à faire sur
+     * un cadre vide, et l'invite « Signez ici » ne reste que tant qu'il l'est.
      */
     function suivreLeCadre() {
         const vide = !signaturePad || signaturePad.isEmpty();
-        const outils = pave.querySelectorAll('[data-signature-defaire], [data-signature-effacer], [data-signature-enregistrer]');
-        // Un bouton qui s'éteint perd le focus : sans relais, il tomberait hors du cadre, et
-        // Échap fermerait alors toute la fenêtre au lieu d'abandonner la signature.
+        const outils = fenetreSignature.querySelectorAll('[data-signature-defaire], [data-signature-effacer], [data-signature-enregistrer]');
+        // Un bouton qui s'éteint perd le focus : il revient au cadre, pas au fond de la page.
         const focusPerdu = vide && [...outils].includes(document.activeElement);
         cadreASigner.classList.toggle('est-vide', vide);
         outils.forEach(bouton => { bouton.disabled = vide; });
-        if (focusPerdu) pave.querySelector('[data-signature-annuler]').focus();
+        if (focusPerdu) cadreASigner.focus();
     }
 
     function direSignature(texte, erreur) {
-        const message = sectionSignature.querySelector('.signature-message');
-        message.textContent = texte;
-        message.classList.toggle('error', Boolean(erreur));
+        messageSignature.textContent = texte;
+        messageSignature.classList.toggle('error', Boolean(erreur));
     }
 
-    async function ouvrirCadre() {
+    /** Un cadre vide et à la taille, la bibliothèque chargée s'il le faut. */
+    async function preparerCadre() {
         direSignature('');
         let SignaturePad;
         try {
@@ -365,13 +377,13 @@
             direSignature(erreur.message, true);
             return;
         }
-        actuelle.hidden = true;
-        pave.hidden = false;
+        if (!fenetreSignature.open) return;
         // L'encre prend la couleur du texte : la signature est rangée sans couleur, et se
         // redessine dans celle de ce qui l'entoure.
         const encre = getComputedStyle(cadreASigner).color;
         if (!signaturePad) {
-            signaturePad = new SignaturePad(canevas, { penColor: encre, minWidth: 0.8, maxWidth: 2.4 });
+            // La plume d'un grand cadre : plus large que celle d'une case de quatre centimètres.
+            signaturePad = new SignaturePad(canevas, { penColor: encre, minWidth: 1.2, maxWidth: 3.6 });
             // L'invite s'efface dès que la plume touche, sans attendre la fin du trait.
             signaturePad.addEventListener('beginStroke', () => cadreASigner.classList.remove('est-vide'));
             signaturePad.addEventListener('endStroke', suivreLeCadre);
@@ -380,20 +392,16 @@
         signaturePad.penColor = encre;
         signaturePad.clear();
         signaturePad.on();
-        largeurCadre = 0;
+        tailleCadre = null;
         ajusterCadre();
         suivreLeCadre();
-        // Le focus dans le cadre : Échap l'abandonne plutôt que de fermer la fenêtre.
-        pave.querySelector('[data-signature-annuler]').focus();
     }
 
-    function fermerCadre(rendreLeFocus = true) {
-        if (!pave || pave.hidden) return;
-        pave.hidden = true;
-        actuelle.hidden = false;
-        signaturePad?.clear();
-        signaturePad?.off();
-        if (rendreLeFocus) actuelle.querySelector('button')?.focus();
+    function ouvrirCadre(bouton = null) {
+        if (!fenetreSignature) return;
+        declencheur = bouton;
+        if (!fenetreSignature.open) fenetreSignature.showModal();
+        preparerCadre();
     }
 
     function defaireLeDernierTrait() {
@@ -403,17 +411,39 @@
         suivreLeCadre();
     }
 
+    /**
+     * La page suit la signature tracée, sans recharger : le pied des décisions ouvertes dit ce
+     * que « Valider » visera, et le rallume. Le focus passe à celui de la décision d'où l'on
+     * venait — le bouton « Tracer ma signature » qui l'avait n'est plus là.
+     */
+    function signatureTracee() {
+        const formulaire = declencheur?.closest('form');
+        document.querySelectorAll('[data-signature-requise]').forEach(bloc => {
+            const visa = document.createElement('p');
+            visa.className = 'decision-visa';
+            visa.textContent = SIGNATURE_ANNONCE;
+            bloc.replaceWith(visa);
+        });
+        document.querySelectorAll('[data-attend-signature]').forEach(bouton => {
+            bouton.removeAttribute('data-attend-signature');
+            bouton.disabled = false;
+        });
+        const suite = formulaire?.querySelector('.decision-valider')
+            || (fenetre.open ? actuelle?.querySelector('button, figure') : null);
+        if (suite && !suite.matches('button')) suite.tabIndex = -1;
+        suite?.focus();
+        declencheur = null;
+    }
+
     async function enregistrerSignature() {
         if (!signaturePad || signaturePad.isEmpty()) return;
 
-
         // Validée, elle ne se change plus de soi-même : seul un administrateur la réinitialise
         // (actions/ma_signature.php). On le dit avant, pas après.
-        if (sectionSignature.hasAttribute('data-validation-definitive') && !await window.confirmer('Valider votre signature ?', {
+        if (fenetreSignature.hasAttribute('data-validation-definitive') && !await window.confirmer('Valider votre signature ?', {
             texte: 'Elle visera les soudures que vous validez. Une fois validée, vous ne pourrez plus la changer vous-même : seul un administrateur le pourra.',
             action: 'Valider',
         })) return;
-
 
         // Les points en fractions du cadre, au dix-millième : le serveur n'a pas à connaître
         // la taille de l'écran.
@@ -421,19 +451,25 @@
         const fraction = (valeur, total) => Math.round(valeur / total * 10000) / 10000;
         const traits = signaturePad.toData()
             .map(groupe => groupe.points.map(point => [fraction(point.x, largeur), fraction(point.y, hauteur)]));
+        const valider = fenetreSignature.querySelector('[data-signature-enregistrer]');
+        valider.disabled = true;
         const corps = await envoyer('actions/ma_signature.php', {
-            csrf: sectionSignature.dataset.csrf,
+            csrf: fenetreSignature.dataset.csrf,
             operation: 'enregistrer',
             dessin: JSON.stringify({ proportion: largeur / hauteur, traits }),
-        }, sectionSignature.querySelector('.signature-message'));
+        }, messageSignature);
+        valider.disabled = false;
         if (!corps) return;
-        actuelle.innerHTML = corps.html;
-        fermerCadre();
+        if (actuelle) actuelle.innerHTML = corps.html;
+        // Tracée, elle n'est plus obligatoire : la fenêtre peut se refermer.
+        fenetreSignature.removeAttribute('data-obligatoire');
+        fenetreSignature.close();
+        signatureTracee();
     }
 
     async function supprimerSignature() {
         if (!await window.confirmer('Supprimer votre signature ?', {
-            texte: 'Vos prochains visas porteront votre nom. Les soudures déjà visées gardent leur signature.',
+            texte: 'Sans signature, vous ne pourrez plus valider de soudures. Celles déjà visées gardent la leur.',
             action: 'Supprimer',
             ton: 'danger',
         })) return;
@@ -445,40 +481,58 @@
     }
 
     sectionSignature?.addEventListener('click', evenement => {
+        if (evenement.target.closest('[data-signature-supprimer]')) supprimerSignature();
+    });
+
+    // « Tracer ma signature », d'où qu'il soit : le bloc des paramètres, l'outil « Refaire »,
+    // le pied d'une décision.
+    document.addEventListener('click', evenement => {
+        const bouton = evenement.target.closest('[data-signature-tracer]');
+        if (!bouton || !fenetreSignature) return;
+        evenement.preventDefault();
+        ouvrirCadre(bouton);
+    });
+
+    fenetreSignature?.addEventListener('click', evenement => {
         const bouton = evenement.target.closest('button');
-        if (!bouton) return;
-        if (bouton.hasAttribute('data-signature-tracer')) ouvrirCadre();
-        else if (bouton.hasAttribute('data-signature-supprimer')) supprimerSignature();
-        else if (bouton.hasAttribute('data-signature-defaire')) defaireLeDernierTrait();
+        if (!bouton || bouton.disabled) return;
+        if (bouton.hasAttribute('data-signature-defaire')) defaireLeDernierTrait();
         else if (bouton.hasAttribute('data-signature-effacer')) {
             signaturePad?.clear();
             suivreLeCadre();
-        } else if (bouton.hasAttribute('data-signature-annuler')) fermerCadre();
+        } else if (bouton.hasAttribute('data-signature-annuler')) fenetreSignature.close();
         else if (bouton.hasAttribute('data-signature-enregistrer')) enregistrerSignature();
     });
 
-    pave?.addEventListener('keydown', evenement => {
-        if (evenement.key !== 'Escape') return;
-        evenement.preventDefault();
-        fermerCadre();
+    // La bibliothèque n'a pas pu venir : toucher le cadre retente, comme le message le dit.
+    cadreASigner?.addEventListener('pointerdown', () => {
+        if (!signaturePad) preparerCadre();
     });
 
-    // Le focus peut aussi être ailleurs — sur la page, après un trait à la souris. Échap
-    // abandonne alors la signature, et seulement elle : la fenêtre reste ouverte.
-    fenetre.addEventListener('cancel', evenement => {
-        if (!pave || pave.hidden) return;
-        evenement.preventDefault();
-        fermerCadre();
+    // Obligatoire, Échap ne la referme pas : il n'y a rien d'autre à faire avant de signer.
+    fenetreSignature?.addEventListener('cancel', evenement => {
+        if (fenetreSignature.hasAttribute('data-obligatoire')) evenement.preventDefault();
     });
 
-    // Refermée en pleine signature, la fenêtre se rouvre sans le cadre.
-    fenetre.addEventListener('close', () => fermerCadre(false));
+    // Refermée — « Annuler », la croix, Échap —, elle se rouvre vide la fois suivante. Si elle
+    // était obligatoire, elle se rouvre aussitôt : un navigateur passe outre au refus d'Échap
+    // quand on insiste.
+    fenetreSignature?.addEventListener('close', () => {
+        signaturePad?.clear();
+        signaturePad?.off();
+        direSignature('');
+        if (fenetreSignature.hasAttribute('data-obligatoire')) ouvrirCadre();
+    });
+
+    // Qui valide des soudures sans signature la trace en arrivant (signatureObligatoire()).
+    if (fenetreSignature?.hasAttribute('data-obligatoire')) ouvrirCadre();
 
     // ---------------------------------------------------------------- le mot de passe
     //
     // Il ne se change pas d'ici. « Demander » prévient le chargé de production, et la ligne
-    // dit que c'est parti ; lui « Réinitialiser » le sien, et la page repart à l'écran de
-    // connexion, où il choisit le nouveau (actions/mon_mot_de_passe.php).
+    // dit que c'est parti ; lui « Réinitialiser » le sien : la page montre son code d'accès,
+    // puis repart à l'écran de connexion, où il choisit le nouveau avec ce code
+    // (actions/mon_mot_de_passe.php).
 
     const sectionMotDePasse = fenetre.querySelector('.mot-de-passe-section');
 
@@ -487,7 +541,7 @@
         if (!bouton || bouton.disabled) return;
         const operation = bouton.dataset.mdp;
         if (operation === 'reinitialiser' && !await window.confirmer('Réinitialiser votre mot de passe ?', {
-            texte: 'Vous serez déconnecté de cet appareil, et choisirez le nouveau en vous reconnectant.',
+            texte: 'Un code s’affichera : notez-le. Vous serez ensuite déconnecté de cet appareil, et choisirez le nouveau avec ce code en vous reconnectant.',
             action: 'Réinitialiser',
         })) return;
         bouton.disabled = true;
@@ -498,6 +552,9 @@
             return;
         }
         if (corps.connexion) {
+            // La session est déjà fermée : le code se lit avant de partir, sinon il est perdu.
+            fenetre.close();
+            await window.montrerCodeAcces?.(corps.codeAcces || {});
             location.href = corps.connexion;
             return;
         }

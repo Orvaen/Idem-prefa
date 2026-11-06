@@ -2,43 +2,8 @@
    COMPTES : PIED DE LA BARRE LATÉRALE, MENU DE BASCULE ET AJOUT DE COMPTE
    ========================================================================== */
 
-/* ===== DÉCLENCHEUR DANS LE PIED DE LA SIDEBAR ===== */
-
-.account-trigger {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex: 1;
-    min-width: 0;
-    padding: 0;
-    border: 0;
-    border-radius: 4px;
-    background: transparent;
-    color: inherit;
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
-}
-
-.account-trigger .nav-subfooter .title {
-    display: block;
-    margin: 0;
-}
-
-.account-trigger:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-}
-
-.account-chevron {
-    margin-left: auto;
-    color: var(--text-muted);
-    transition: transform 0.15s ease;
-}
-
-.account-trigger[aria-expanded="true"] .account-chevron {
-    transform: rotate(180deg);
-}
+/* Le déclencheur — l'initiale, dans la barre du haut — a la boîte des autres commandes de
+   la barre : elle est décrite avec elles, dans dashboard-base.css. */
 
 /* ===== MENU DES COMPTES ===== */
 
@@ -125,12 +90,6 @@
     transition: background 0.12s ease;
 }
 
-/* Les entrées du menu Thème n'ont qu'une ligne : elles gardent la hauteur d'un menu. */
-.theme-option.account-item {
-    min-height: 30px;
-    padding: 0 8px;
-}
-
 .account-item:hover {
     background: var(--hover);
 }
@@ -157,10 +116,11 @@
     font-weight: 600;
 }
 
-/* Le même monogramme que le demandeur d'une liste : petit, gris, sans couleur. */
+/* Le même monogramme que le demandeur d'une liste : petit, gris, sans couleur. Il est seul
+   dans la barre du haut depuis qu'elle est réduite : il prend la taille d'une icône pleine. */
 .toolbar-compte .user-avatar {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     border: 0;
     border-radius: 999px;
     background: var(--active);
@@ -357,6 +317,15 @@
     margin: 0;
 }
 
+/* L'étape d'un compte qui attend son premier mot de passe : sa phrase et ses trois champs
+   gardent l'espacement du formulaire. Groupés dans un bloc, ils le perdaient — la phrase
+   passait sous l'étiquette du premier champ, et les champs se touchaient. */
+.account-etape-creation {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
 .account-dialog-heading {
     display: flex;
     align-items: center;
@@ -460,34 +429,49 @@
     }
 }
 
-/* ===== BOUTON ET MENU DE THÈME ===== */
+/* ===== LE THÈME, DANS LE MENU DU COMPTE =====
+   Il avait son bouton dans la barre du haut et son propre menu. Réduite, la barre ne garde
+   que la loupe et le compte : le thème tient ici, en trois choix côte à côte — un contrôle
+   segmenté, l'échantillon au-dessus du mot. */
 
-.nav-theme {
-    flex-shrink: 0;
+.account-theme-choix {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    padding: 0 4px 4px;
+}
+
+.account-theme-choix .theme-option {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    padding: 4px;
-    border: 0;
-    border-radius: 4px;
+    gap: 6px;
+    min-width: 0;
+    padding: 8px 4px 6px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
     background: transparent;
     color: var(--text-muted);
     font: inherit;
+    font-size: 12px;
     cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
 
-.nav-theme:hover,
-.nav-theme[aria-expanded="true"] {
+.account-theme-choix .theme-option:hover {
     background: var(--hover);
     color: var(--text);
 }
 
-.nav-theme:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
+.account-theme-choix .theme-option[aria-checked="true"] {
+    border-color: var(--accent);
+    color: var(--text);
+    font-weight: 500;
 }
 
-.theme-menu {
-    width: 216px;
+.account-theme-choix .theme-option:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
 }
 
 .theme-swatch {
@@ -509,11 +493,6 @@
 /* Les deux à la fois : c'est l'un ou l'autre selon ce que dit le système. */
 .theme-swatch-auto {
     background: linear-gradient(135deg, #ffffff 50%, #141820 50%);
-}
-
-.nav-subfooter .subtitle-metier {
-    color: var(--text-muted);
-    opacity: 0.8;
 }
 
 /* ==========================================================================
@@ -572,4 +551,11 @@
     padding: 0 12px;
     color: var(--text-muted);
     font-size: 11px;
+}
+
+/* Le code d’accès d’un compte qui attend son premier mot de passe : en majuscules et un peu
+   espacé, comme l’administrateur l’a lu. Le serveur ne tient compte ni de la casse ni du tiret. */
+#account-code {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
 }

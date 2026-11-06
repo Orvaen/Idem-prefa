@@ -1,5 +1,5 @@
 <?php
-// Le résumé d'un plan, pour le volet de « Plans / ISO & Affectations » : ce qui lui manque,
+// Le résumé d'un plan, pour le volet de « Plans & équipes » : ce qui lui manque,
 // feuille ISO par feuille ISO (atelier/plan_resume.php). Rendu au clic sur « Résumé du
 // plan », pas avec le volet : il parcourt toutes les pages des cahiers du plan.
 require_once __DIR__ . '/../includes/prefa_context.php';

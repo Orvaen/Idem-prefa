@@ -18,12 +18,23 @@ header('Content-Type: application/json; charset=utf-8');
 
 if ($operation === 'reinitialiser') {
     if (!$isAdmin) prefaError(403, 'Demandez-le au chargé de production : il le réinitialisera.');
-    $user->reinitialiserMotDePasse($utilisateur->id);
+    $code = $user->reinitialiserMotDePasse($utilisateur->id);
     Journal::noter('mot de passe réinitialisé par son titulaire');
-    // Tout de suite à l'écran de connexion : laissée ouverte, la session laisserait le compte
-    // sans mot de passe pendant qu'on travaille, à qui connaît l'identifiant.
+    // Tout de suite à l'écran de connexion : la session ne reste pas ouverte sur un compte qui
+    // attend son mot de passe. Le code part avec la réponse : la page le montre avant de
+    // quitter, et c'est avec lui qu'on choisit le nouveau.
     Session::fermer();
-    echo json_encode(['success' => true, 'message' => 'Mot de passe réinitialisé.', 'connexion' => '../']);
+    echo json_encode([
+        'success' => true,
+        'message' => 'Mot de passe réinitialisé.',
+        'connexion' => '../',
+        'codeAcces' => [
+            'soi' => true,
+            'identifiant' => $utilisateur->identifiant,
+            'code' => $code['code'],
+            'jusqua' => prefaFormatDate(gmdate('Y-m-d H:i:s', $code['jusqua'])),
+        ],
+    ]);
     exit;
 }
 

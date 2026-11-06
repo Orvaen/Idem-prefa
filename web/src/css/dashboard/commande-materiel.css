@@ -129,11 +129,6 @@
     text-decoration-color: currentColor;
 }
 
-.pv-puce-echec {
-    background: color-mix(in srgb, var(--danger-texte) 12%, transparent);
-    color: var(--danger-texte);
-}
-
 /* Les outils de la liste, à droite de son titre : des boutons encadrés de 28 px. */
 .materiel-volet-outils {
     display: flex;
@@ -142,8 +137,194 @@
     flex-wrap: wrap;
 }
 
+/* ----- L'en-tête : « Exporter en Excel » à côté de la croix ----- */
+
+.materiel-volet-tete-outils {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Un bouton encadré, à la hauteur du cadre de la croix (pv.css). L'icône prend le vert du
+   tableur : on reconnaît le fichier qu'on va recevoir. */
+.materiel-exporter:not([hidden]) {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 30px;
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 12.5px;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.materiel-exporter:hover {
+    background: var(--hover);
+}
+
+.materiel-exporter:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.materiel-exporter .icon {
+    width: 15px;
+    height: 15px;
+    color: var(--succes-texte);
+}
+
+/* ----- Les trois étapes : où en est la commande -----
+
+   Un rond par étape, relié au suivant par un trait — plein derrière une étape faite. Le
+   rond coché est fait, le rond cerné d'un halo est en cours, le rond gris est à venir. */
+
+.materiel-etapes {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 0;
+    padding: 16px 20px;
+    border-bottom: 1px dashed var(--border);
+    list-style: none;
+}
+
+.materiel-etape {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    min-width: 0;
+    padding-right: 12px;
+}
+
+.materiel-etape:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    top: 13px;
+    left: 38px;
+    right: 10px;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--border);
+}
+
+.materiel-etape.est-faite:not(:last-child)::after {
+    background: var(--accent);
+}
+
+.materiel-etape-rond {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    box-sizing: border-box;
+    border: 1.5px solid var(--border-fort);
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.materiel-etape-rond > * {
+    grid-area: 1 / 1;
+}
+
+.materiel-etape-coche {
+    display: none;
+    width: 14px;
+    height: 14px;
+}
+
+/* Le blanc sur l'accent, comme la coche des cases de la liste. */
+.materiel-etape.est-faite .materiel-etape-rond {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #ffffff;
+}
+
+.materiel-etape.est-faite .materiel-etape-numero {
+    display: none;
+}
+
+.materiel-etape.est-faite .materiel-etape-coche {
+    display: block;
+}
+
+.materiel-etape.est-en-cours .materiel-etape-rond {
+    border: 2px solid var(--accent);
+    color: var(--accent-texte);
+    box-shadow: 0 0 0 4px var(--accent-fond);
+}
+
+.materiel-etape.est-en-echec .materiel-etape-rond {
+    border-color: var(--danger-texte);
+    color: var(--danger-texte);
+}
+
+.materiel-etape-texte {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.materiel-etape-libelle {
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.materiel-etape.est-faite .materiel-etape-libelle,
+.materiel-etape.est-en-cours .materiel-etape-libelle {
+    color: var(--text);
+}
+
+.materiel-etape.est-en-cours .materiel-etape-libelle {
+    font-weight: 600;
+}
+
+.materiel-etape-detail {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
+.materiel-etape.est-en-cours .materiel-etape-detail {
+    color: var(--accent-texte);
+}
+
+.materiel-etape.est-en-echec .materiel-etape-detail {
+    color: var(--danger-texte);
+}
+
+/* ----- Les propriétés, en deux colonnes : la hauteur du volet va aux articles ----- */
+
+.materiel-volet-rang .pv-volet .materiel-proprietes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 24px;
+}
+
+/* La consigne : une phrase sous le titre des articles, ce qu'on attend de vous. */
+.materiel-volet-rang .materiel-consigne {
+    margin: -4px 0 0;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+/* ----- Les boutons ----- */
+
 html .materiel-volet-rang .materiel-volet-outils button,
-html .materiel-volet-rang .materiel-volet-pied .materiel-enregistrer {
+html .materiel-volet-rang .materiel-volet-pied .materiel-quitter-correction,
+html .materiel-volet-rang .materiel-volet-pied .materiel-annuler-reception {
     display: inline-flex;
     align-items: center;
     width: auto;
@@ -161,14 +342,16 @@ html .materiel-volet-rang .materiel-volet-pied .materiel-enregistrer {
     cursor: pointer;
 }
 
-html .materiel-volet-rang .materiel-volet-pied .materiel-enregistrer {
+html .materiel-volet-rang .materiel-volet-pied .materiel-quitter-correction,
+html .materiel-volet-rang .materiel-volet-pied .materiel-annuler-reception {
     height: var(--h-lg);
     padding: 0 12px;
     font-size: 13px;
 }
 
 html .materiel-volet-rang .materiel-volet-outils button:hover:not(:disabled),
-html .materiel-volet-rang .materiel-volet-pied .materiel-enregistrer:hover:not(:disabled) {
+html .materiel-volet-rang .materiel-volet-pied .materiel-quitter-correction:hover:not(:disabled),
+html .materiel-volet-rang .materiel-volet-pied .materiel-annuler-reception:hover:not(:disabled) {
     background: var(--hover);
 }
 
@@ -191,31 +374,105 @@ html .materiel-volet-rang .materiel-volet-outils button:disabled {
     background: var(--surface);
 }
 
+/* « 3 articles cochés » : à la couleur de ce qui attend, comme les coches qu'il compte. */
+html .materiel-volet-rang .materiel-message.est-a-valider {
+    color: var(--attente-texte) !important;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* Un bouton plein qui attend qu'on coche : grisé, sans le sablier de l'envoi. */
+.materiel-volet-rang .materiel-valider-reception:disabled,
+.materiel-volet-rang .materiel-valider-commande:disabled {
+    cursor: default;
+}
+
+/* Sur une tablette : les boutons discrets du pied à la hauteur des pleins (pv.css, 44 px),
+   l'export à celle du cadre de la croix. */
+@media (max-width: 1100px), (pointer: coarse) {
+    html .materiel-volet-rang .materiel-volet-pied .materiel-quitter-correction,
+    html .materiel-volet-rang .materiel-volet-pied .materiel-annuler-reception {
+        height: 44px;
+        padding: 0 16px;
+    }
+
+    .materiel-exporter:not([hidden]) {
+        height: 42px;
+        padding: 0 14px;
+    }
+}
+
+/* Sur un téléphone : l'export en icône seule (son titre le dit), une colonne de propriétés,
+   les segments au-dessus de la recherche, et la liste sans la colonne des références — la
+   désignation suffit à reconnaître l'article, et la liste tient dans la largeur. */
+@media (max-width: 560px) {
+    .materiel-exporter span {
+        display: none;
+    }
+
+    .materiel-volet-rang .pv-volet .materiel-proprietes {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .materiel-reception-barre {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .materiel-reception-recherche {
+        flex: none;
+    }
+
+    .materiel-recevoir .materiel-col-ref {
+        display: none;
+    }
+}
+
 /* ==========================================================================
-   LES ARTICLES : RELIRE, PUIS RECEVOIR
+   LES ARTICLES : LA LISTE À COCHER, ET LA CORRECTION
    ==========================================================================
 
-   Deux vues, et le volet n'en montre qu'une : avant la validation on relit le bon, après
-   on le reçoit. « est-figee » fait la bascule. */
+   La liste à cocher est la vue de toutes les étapes ; « en-correction » montre à sa place
+   le tableau du bon, case par case. Les outils, la consigne et le pied suivent la vue. */
 
-.materiel-volet-rang .materiel-reception,
-.materiel-volet-rang.est-figee .materiel-relecture {
+.materiel-volet-rang .materiel-relecture,
+.materiel-volet-rang.en-correction .materiel-reception {
     display: none;
 }
 
-.materiel-volet-rang.est-figee .materiel-reception {
+.materiel-volet-rang.en-correction .materiel-relecture {
     display: block;
 }
 
-/* Les outils de la relecture n'ont rien à faire sur une commande validée, et le bouton de
-   lot de la réception rien sur une commande qu'on relit. Le compte du titre se tait quand
+/* Les outils de la vue ouverte : tout cocher et corriger dans la liste, relire et ajouter
+   dans la correction — rien pendant que le bon se lit. Le compte du titre se tait quand
    les segments le disent. */
-html .materiel-volet-rang.est-figee .materiel-relire,
-html .materiel-volet-rang.est-figee .materiel-ajouter,
-html .materiel-volet-rang.est-figee .materiel-volet-pied,
-html .materiel-volet-rang:not(.est-figee) .materiel-tout-recu,
-.materiel-volet-rang.est-figee .materiel-volet-compte {
+html .materiel-volet-rang:not(.en-correction) .materiel-relire,
+html .materiel-volet-rang:not(.en-correction) .materiel-ajouter,
+html .materiel-volet-rang.en-correction .materiel-corriger,
+html .materiel-volet-rang.en-correction .materiel-tout-recu,
+html .materiel-volet-rang[data-etat="a_lire"] .materiel-volet-outils button,
+.materiel-volet-rang:not(.en-correction) .materiel-volet-compte {
     display: none;
+}
+
+/* Le pied : le bouton plein de la vue ouverte — « Valider la commande » tant qu'elle est à
+   valider, « Valider la réception » ensuite, « Enregistrer les corrections » pendant qu'on
+   corrige —, et « Annuler » quand il y a quelque chose à défaire. */
+html .materiel-volet-rang .materiel-volet-pied .materiel-enregistrer,
+html .materiel-volet-rang .materiel-volet-pied .materiel-quitter-correction,
+html .materiel-volet-rang.en-correction .materiel-volet-pied .materiel-valider-commande,
+html .materiel-volet-rang.en-correction .materiel-volet-pied .materiel-valider-reception,
+html .materiel-volet-rang.en-correction .materiel-volet-pied .materiel-annuler-reception,
+html .materiel-volet-rang.est-figee .materiel-volet-pied .materiel-valider-commande,
+html .materiel-volet-rang:not(.est-figee) .materiel-volet-pied .materiel-valider-reception,
+html .materiel-volet-rang:not(.a-valider) .materiel-volet-pied .materiel-annuler-reception {
+    display: none;
+}
+
+html .materiel-volet-rang.en-correction .materiel-volet-pied .materiel-enregistrer,
+html .materiel-volet-rang.en-correction .materiel-volet-pied .materiel-quitter-correction {
+    display: inline-flex;
 }
 
 /* ----- Relire : le tableau du bon, case par case ----- */
@@ -446,26 +703,6 @@ html .materiel-volet-rang .materiel-groupe.est-complete .materiel-groupe-titre {
     color: var(--text-muted);
 }
 
-html .materiel-volet-rang .materiel-groupe-tout {
-    display: inline-flex;
-    align-items: center;
-    height: var(--h-sm);
-    margin: 0;
-    padding: 0 8px;
-    border: 1px solid var(--border) !important;
-    border-radius: var(--r-md);
-    background: var(--surface) !important;
-    color: var(--text) !important;
-    font: inherit;
-    font-size: 12px;
-    font-weight: 450;
-    cursor: pointer;
-}
-
-html .materiel-volet-rang .materiel-groupe-tout:hover {
-    background: var(--hover) !important;
-}
-
 /* Les lignes : 36 px, filets fins, toute la ligne se coche. */
 html .materiel-volet-rang .materiel-article td {
     height: 36px;
@@ -506,6 +743,13 @@ html .materiel-volet-rang .materiel-article .materiel-col-recu {
    ce qui manque. */
 html .materiel-volet-rang .materiel-article.est-recue td {
     color: var(--text-muted) !important;
+}
+
+/* Une coche pas encore validée : « à valider » à la place de la date, à la couleur de ce
+   qui attend, comme sa case. Validée, elle reprend l'accent et sa date. */
+html .materiel-volet-rang .materiel-article.est-a-valider .materiel-col-recu {
+    color: var(--attente-texte) !important;
+    font-weight: 500;
 }
 
 /* La case : 16 px dans une cible de 36, rayon 4 (DA, § 3). Pleine d'accent quand
@@ -554,6 +798,14 @@ html .materiel-volet-rang .materiel-article.est-recue td {
 
 .materiel-case[aria-checked="true"] .icon {
     opacity: 1;
+}
+
+.materiel-article.est-a-valider .materiel-case::before {
+    border-color: var(--attente-texte);
+}
+
+.materiel-article.est-a-valider .materiel-case[aria-checked="true"]::before {
+    background: var(--attente-texte);
 }
 
 .materiel-case:focus-visible {

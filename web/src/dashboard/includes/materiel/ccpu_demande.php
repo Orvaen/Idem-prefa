@@ -103,70 +103,93 @@ function ccpuLireDocument(PDO $db, int $idDocument): void
  * Trois états : pas encore lu (la lecture se lance d'elle-même à l'ouverture de la
  * fiche), lu, ou lecture impossible. Ce qui a été lu est toujours présenté comme une
  * lecture automatique à vérifier : rien ici ne vaut validation.
+ *
+ * La fonction rend une chaîne et non du HTML écrit directement : actions/lire_ccpu.php
+ * renvoie ce bloc en JSON, et le navigateur remplace celui qui attendait la lecture. Le
+ * balisage est pourtant écrit en HTML, dans un tampon (ob_start) : concaténé morceau par
+ * morceau, il se lisait mal, et une balise oubliée en fin de chaîne laissait la grille
+ * ouverte — tout le reste de la fiche tombait dedans.
  */
 function ccpuRendu(array $document, string $csrf): string
 {
     $id = (int) $document['id'];
-    $jeton = prefaEscape($csrf);
 
-    if (empty($document['date_lecture'])) {
-        return '<div class="ccpu-lecture is-en-attente" data-ccpu-lire="' . $id . '" data-csrf="' . $jeton . '" role="status">Lecture des coulées…</div>';
-    }
-
-    if ($document['lecture'] === 'echec') {
-        return '<div class="ccpu-lecture is-echec"><p>Lecture impossible : '
-            . prefaEscape($document['erreur'] ?: 'raison inconnue') . '</p>'
-            . '<button type="button" class="ccpu-relire" data-ccpu-document="' . $id
-            . '" data-csrf="' . $jeton . '">Réessayer</button></div>';
-    }
-
-    // Une lecture qui n'a rien reconnu se dit en une phrase, pas en une grille de champs vides.
-    if (!$document['certificat'] && !$document['dimensions'] && !$document['nuances'] && !$document['coulees']) {
-        return '<div class="ccpu-lecture"><p>Rien n’a pu être lu automatiquement : les coulées sont à relever sur le certificat.</p></div>';
-    }
+    // Une coulée est nette si sa confiance est haute et qu'une seconde lecture l'a confirmée.
+    // Celle qui ne l'est pas porte la marque « à vérifier », et son infobulle dit sa confiance.
+    //
+    // La note qui suivait la grille — « Certificat scanné : lu par reconnaissance d'image… »
+    // et ses variantes — a été retirée le 6 novembre 2026, à la demande du client : elle se
+    // répétait sous chaque certificat.
+    $coulees = array_map(static function (array $coulee): array {
+        $confirmee = (int) $coulee['confirmee'] === 1;
+        return [
+            'numero' => (string) $coulee['numero'],
+            'nette' => (int) $coulee['confiance'] >= CCPU_CONFIANCE_NETTE && $confirmee,
+            'detail' => 'Confiance ' . (int) $coulee['confiance'] . ' % · '
+                . ($confirmee ? 'confirmée par une seconde lecture' : 'lue une seule fois'),
+        ];
+    }, $document['coulees'] ?? []);
 
     // Même vocabulaire que la grille d'informations de la fiche : un libellé discret,
     // la valeur dessous. Un champ non reconnu reste affiché, pour qu'on sache qu'il a
-    // été cherché et pas trouvé. La valeur arrive déjà échappée.
-    $champ = static fn (string $libelle, string $valeur): string =>
-        '<div><dt>' . $libelle . '</dt><dd' . ($valeur !== '' ? '>' . $valeur : ' class="est-vide">Non reconnu') . '</dd></div>';
+    // été cherché et pas trouvé. Une dimension par ligne : à la suite, le retour à la
+    // ligne couperait une cote en deux.
+    $champs = [
+        'Certificat n°' => [(string) ($document['certificat'] ?? '')],
+        'Dimensions' => array_values(array_filter(explode(CCPU_SEPARATEUR_DIMENSIONS, (string) ($document['dimensions'] ?? '')), 'strlen')),
+        'Nuance' => [(string) ($document['nuances'] ?? '')],
+    ];
 
-    $html = '<div class="ccpu-lecture"><dl class="ccpu-fiche">'
-        . $champ('Certificat n°', prefaEscape($document['certificat']))
-        // Une dimension par ligne : à la suite, le retour à la ligne couperait une cote en deux.
-        . $champ('Dimensions', str_replace(CCPU_SEPARATEUR_DIMENSIONS, '<br>', prefaEscape($document['dimensions'])))
-        . $champ('Nuance', prefaEscape($document['nuances']))
-        . '<div class="ccpu-fiche-coulees"><dt>Coulées</dt><dd';
+    ob_start();
 
-    // D'où viennent ces numéros. Les deux chemins n'ont pas la même valeur : la couche
-    // texte rend les caractères mêmes du fichier du fournisseur, exacts, tandis qu'un
-    // scan passe par la reconnaissance d'image, qui confond un 8 et un B. Demander la
-    // même vigilance dans les deux cas, sans dire lequel, c'est n'en obtenir aucune.
-    $note = match ($document['lecture']) {
-        'texte' => 'Lu dans le texte du PDF : ce sont les caractères du fichier du fournisseur, non une reconnaissance d’image. À confirmer sur le certificat.',
-        'ocr' => 'Certificat scanné : lu par reconnaissance d’image, donc à vérifier chiffre par chiffre sur le certificat.',
-        'mixte' => 'Lu dans le texte du PDF, sauf les pages scannées, reconnues à l’image. À vérifier sur le certificat.',
-        default => 'Lecture automatique, à vérifier sur le certificat.',
-    };
-    if ($document['coulees']) {
-        $aVerifier = false;
-        $html .= '><ul class="ccpu-coulees">';
-        foreach ($document['coulees'] as $coulee) {
-            $nette = (int) $coulee['confiance'] >= CCPU_CONFIANCE_NETTE && (int) $coulee['confirmee'] === 1;
-            $aVerifier = $aVerifier || !$nette;
-            $detail = 'Confiance ' . (int) $coulee['confiance'] . ' % · '
-                . ((int) $coulee['confirmee'] === 1 ? 'confirmée par une seconde lecture' : 'lue une seule fois');
-            $html .= '<li class="ccpu-coulee' . ($nette ? '' : ' is-a-verifier') . '" title="' . prefaEscape($detail) . '">'
-                . prefaEscape($coulee['numero']) . '</li>';
-        }
-        $html .= '</ul>';
-        if ($aVerifier) $note .= ' Les coulées marquées « ? » ont été lues avec moins de certitude.';
-    } else {
-        $html .= ' class="est-vide">Aucune reconnue, à relever sur le certificat';
-    }
+    if (empty($document['date_lecture'])): ?>
+        <div class="ccpu-lecture is-en-attente" data-ccpu-lire="<?= $id ?>" data-csrf="<?= prefaEscape($csrf) ?>" role="status">Lecture des coulées…</div>
+    <?php elseif ($document['lecture'] === 'echec'): ?>
+        <div class="ccpu-lecture is-echec">
+            <p>Lecture impossible : <?= prefaEscape($document['erreur'] ?: 'raison inconnue') ?></p>
+            <button type="button" class="ccpu-relire" data-ccpu-document="<?= $id ?>" data-csrf="<?= prefaEscape($csrf) ?>">Réessayer</button>
+        </div>
+    <?php elseif (!$document['certificat'] && !$document['dimensions'] && !$document['nuances'] && !$coulees): ?>
+        <?php // Une lecture qui n'a rien reconnu se dit en une phrase, pas en une grille de champs vides. ?>
+        <div class="ccpu-lecture">
+            <p>Rien n’a pu être lu automatiquement : les coulées sont à relever sur le certificat.</p>
+        </div>
+    <?php else: ?>
+        <div class="ccpu-lecture">
+            <dl class="ccpu-fiche">
+                <?php foreach ($champs as $libelle => $valeurs): ?>
+                    <?php $valeurs = array_filter($valeurs, 'strlen'); ?>
+                    <div>
+                        <dt><?= $libelle ?></dt>
+                        <?php if ($valeurs): ?>
+                            <dd><?= implode('<br>', array_map('prefaEscape', $valeurs)) ?></dd>
+                        <?php else: ?>
+                            <dd class="est-vide">Non reconnu</dd>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
 
-    // Une lecture réussie ne se relance pas : le lecteur est déterministe, et la relire
-    // ne changerait rien tant que le certificat n'a pas bougé. Un certificat remplacé se
-    // dépose à nouveau dans la demande, et c'est son dépôt qui déclenche la lecture.
-    return $html . '</dd></div></dl><p class="ccpu-note">' . prefaEscape($note) . '</p></div>';
+                <div class="ccpu-fiche-coulees">
+                    <dt>Coulées</dt>
+                    <?php if ($coulees): ?>
+                        <dd>
+                            <ul class="ccpu-coulees">
+                                <?php foreach ($coulees as $coulee): ?>
+                                    <li class="ccpu-coulee<?= $coulee['nette'] ? '' : ' is-a-verifier' ?>" title="<?= prefaEscape($coulee['detail']) ?>"><?= prefaEscape($coulee['numero']) ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </dd>
+                    <?php else: ?>
+                        <dd class="est-vide">Aucune reconnue, à relever sur le certificat</dd>
+                    <?php endif; ?>
+                </div>
+            </dl>
+            <?php // Une lecture réussie ne se relance pas : le lecteur est déterministe, et la
+                  // relire ne changerait rien tant que le certificat n'a pas bougé. Un
+                  // certificat remplacé se dépose à nouveau dans la demande, et c'est son
+                  // dépôt qui déclenche la lecture. ?>
+        </div>
+    <?php endif;
+
+    return trim((string) ob_get_clean());
 }

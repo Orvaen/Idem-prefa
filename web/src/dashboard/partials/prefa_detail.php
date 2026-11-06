@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../includes/atelier/validation_soudures.php';
 
 /** @var array<string, mixed> $row */
 /** @var bool $canViewAllPrefa */
@@ -160,9 +161,16 @@ $decisionComment = trim((string) ($row['commentaire_validation'] ?? ''));
 
     <div class="prefa-detail-actions">
         <span class="prefa-status status-<?= $statut ?>"><?= prefaEscape($row['libelle']) ?></span>
-        <?php if ($estValidee && $canManageWorkshop): ?>
-            <button type="button" class="btn-goto-plans-iso" data-request-id="<?= $requestId ?>">
-                Voir les affectations ↗
+        <?php // Ce que le bouton fait, pas où il mène : sans plan, il n'y a aucune affectation à
+              // voir — « Voir les affectations » menait à créer un plan, et « ça fait
+              // bizarre » (6 novembre 2026). Sans plan, il ouvre donc la création d'un plan ;
+              // avec, le volet « Plans & équipes », sous son nom (prefa-interactions.js). ?>
+        <?php if ($estValidee && $canManageWorkshop):
+            $plansDeLaDemande = $db->prepare('SELECT COUNT(*) FROM element_atelier WHERE id_demande = ?');
+            $plansDeLaDemande->execute([$requestId]);
+            $sansPlan = (int) $plansDeLaDemande->fetchColumn() === 0; ?>
+            <button type="button" class="btn-goto-plans-iso" data-request-id="<?= $requestId ?>"<?= $sansPlan ? ' data-ajouter-plan' : '' ?>>
+                <?= $sansPlan ? 'Ajouter un plan ↗' : 'Plans &amp; équipes ↗' ?>
             </button>
         <?php endif; ?>
         <button type="button" class="prefa-detail-close" data-close-target="prefa-detail-<?= $requestId ?>" aria-label="Fermer le volet" title="Fermer">
@@ -176,6 +184,13 @@ $decisionComment = trim((string) ($row['commentaire_validation'] ?? ''));
           // ne fait que raconter. Les travaux d'un même plan se suivent, un bloc chacun. ?>
     <section class="fiche-a-valider" aria-label="Avancements déclarés par l’atelier">
         <?php foreach ($avancementsAValider as $declaration) {
+            // Des soudures à valider : elles se valident dans « Validation des soudures »
+            // (6 novembre 2026). La fiche en garde une ligne par plan, qui y mène.
+            $cordonsDeclares = avancementCordonsAValider($db, (int) $declaration['id_element'], (int) $declaration['id_titulaire']);
+            if ($cordonsDeclares) {
+                echo validationSouduresRenvoi((int) $declaration['id_element'], count($cordonsDeclares), (string) $declaration['reference']);
+                continue;
+            }
             // La fiche couvre tous les plans de la demande : le bloc dit duquel il parle,
             // et de quel travail.
             echo avancementDecisionRendu([
@@ -190,8 +205,8 @@ $decisionComment = trim((string) ($row['commentaire_validation'] ?? ''));
             ], avancementDecisionFormulaire([
                 'champs' => ['id' => $requestId, 'operation' => 'valider',
                     'affectation' => (int) $declaration['id_affectation'], 'declaration' => (int) $declaration['id']],
-                'cordons' => avancementCordonsAValider($db, (int) $declaration['id_element'], (int) $declaration['id_titulaire']),
-                'visa' => signatureAnnonceVisa($db, $utilisateur),
+                'cordons' => [],
+                'visa' => signatureVisa($db, $utilisateur),
                 'valider' => 'Valider',
                 'valider_aide' => 'L’avancement du plan prendra ce chiffre.',
                 'refuser' => true,

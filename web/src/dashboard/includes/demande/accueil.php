@@ -119,7 +119,7 @@ function accueilTuiles(PDO $db, Utilisateur $utilisateur): array
         return [
             $tuile((int) $actives->fetchColumn(), 'Mes plans', 'plans qui me sont confiés', 'btn-list-prefa'),
             $tuile((int) $aFinir->fetchColumn(), 'À terminer', 'travaux sous les 100 %', 'btn-list-prefa'),
-            $tuile((int) $cordons->fetchColumn(), 'Mes soudures', 'soudures que j’ai renseignées', 'btn-soudures'),
+            $tuile((int) $cordons->fetchColumn(), 'Mes soudures', 'soudures que j’ai renseignées', 'btn-list-prefa'),
         ];
     }
 

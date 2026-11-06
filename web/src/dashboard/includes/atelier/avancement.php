@@ -385,8 +385,9 @@ function avancementCordonsAValider(PDO $db, int $elementId, int $soudeurId): arr
  * l'ait vu, avec des contrôles qu'il n'a pas choisis et sous son nom.
  *
  * Valider, c'est viser : le visa est celui qui valide, tiré de son compte, et la date. La
- * case VISA du plan porte sa signature, tracée une fois dans ses paramètres
- * (signature.php) — ou son nom, écrit comme une signature, s'il n'en a pas tracé.
+ * case VISA du plan porte sa signature, tracée une fois (signature.php). Sans signature, pas
+ * de visa : la validation est refusée — sauf sur un serveur sans la migration des
+ * signatures, où le nom en tient lieu.
  *
  * Les lignes sont mises à jour sur place, sans être réécrites : leur date de saisie est ce
  * qui les range sous une validation, et la toucher les ferait retomber en attente.
@@ -412,6 +413,12 @@ function avancementViserCordons(PDO $db, int $elementId, int $soudeurId, int $ac
     }
 
     if (!$attendus) return;
+
+    // Pas de visa sans signature : un nom écrit par l'application ne vaut pas signature. Le
+    // pied de la décision le dit déjà et éteint « Valider » ; ceci tient pour une page restée
+    // ouverte, ou pour qui contournerait le bouton (includes/atelier/signature.php).
+    require_once __DIR__ . '/signature.php';
+    if (signaturesEnBase($db) && !signatureEnCours($db, $acteurId)) throw new DomainException(SIGNATURE_REQUISE);
 
     $controles = is_array($controles) ? $controles : [];
     $coches = [];

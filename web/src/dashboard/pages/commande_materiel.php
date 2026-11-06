@@ -71,9 +71,9 @@ $iconesManque = '<svg class="pv-etat-icone materiel-manque-signe-nouvelle" viewB
                 <?= listeDensite() ?>
                 <button type="button" class="materiel-refresh pv-outil">
                     <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-2l2 3M4 16l2 3a7 7 0 0 1 12-2" />
+                        <path d="M21 12a9 9 0 1 1-2.64-6.36L21 8" /><path d="M21 3v5h-5" />
                     </svg>
-                    Actualiser
+                    <span class="outil-libelle">Actualiser</span>
                 </button>
             </div>
         </header>
@@ -293,11 +293,18 @@ $iconesManque = '<svg class="pv-etat-icone materiel-manque-signe-nouvelle" viewB
     </div>
 
     <?php // Le volet d'un bon : le même panneau flottant que les PV, le planning et la fiche
-          // d'une demande. C'était une fenêtre pleine page à part, avec sa propre typographie.
-          // Un seul volet pour l'écran, rempli par commande-materiel.js : quarante lignes par
-          // bon, et un volet par bon dans le balisage, c'était la page chargée deux fois. ?>
+          // d'une demande. Un seul volet pour l'écran, rempli par commande-materiel.js :
+          // quarante lignes par bon, et un volet par bon dans le balisage, c'était la page
+          // chargée deux fois.
+          //
+          // Refait le 6 novembre 2026 : « pourquoi j'ai le bouton Valider la commande, alors
+          // que je ne peux pas cocher puis valider ? ». Avant sa validation, une commande ne
+          // montrait que la relecture — des cases qui s'ouvrent au clic —, et rien ne s'y
+          // cochait. Le volet montre maintenant, à toutes les étapes, la même liste à cocher ;
+          // trois étapes en tête disent où en est la commande et ce qu'il reste à faire ;
+          // corriger les articles est un mode à part, « Corriger les articles ». ?>
     <div id="materiel-volet" class="prefa-detail-row materiel-volet-rang" hidden>
-        <form class="pv-volet" id="materiel-form" role="dialog" aria-labelledby="materiel-volet-titre">
+        <form class="pv-volet" id="materiel-form" role="dialog" aria-labelledby="materiel-volet-titre" novalidate>
             <input type="hidden" name="csrf" value="<?= prefaEscape(Session::jeton()) ?>">
             <input type="hidden" name="document" value="">
 
@@ -307,49 +314,69 @@ $iconesManque = '<svg class="pv-etat-icone materiel-manque-signe-nouvelle" viewB
                     <h2 id="materiel-volet-titre">Bon de commande</h2>
                     <p class="materiel-volet-sous-titre"></p>
                 </div>
-                <div class="pv-volet-outils">
-                    <button type="button" class="prefa-detail-close" data-close-target="materiel-volet" aria-label="Fermer le volet" title="Fermer">
-                        <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 6 12 12M18 6 6 18" /></svg>
-                    </button>
+                <div class="materiel-volet-tete-outils">
+                    <?php // La commande en fichier Excel, aux couleurs de la maison : pour
+                          // l'envoyer, l'imprimer, la pointer ailleurs (export_bon_materiel.php). ?>
+                    <a class="materiel-exporter" href="#" download hidden title="Télécharger la commande en fichier Excel">
+                        <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="4" y="3" width="16" height="18" rx="2" /><path d="M4 9h16M4 15h16M10 3v18" />
+                        </svg>
+                        <span>Exporter en Excel</span>
+                    </a>
+                    <div class="pv-volet-outils">
+                        <button type="button" class="prefa-detail-close" data-close-target="materiel-volet" aria-label="Fermer le volet" title="Fermer">
+                            <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 6 12 12M18 6 6 18" /></svg>
+                        </button>
+                    </div>
                 </div>
             </header>
 
-            <section class="pv-volet-section">
-                <div class="pv-volet-titre-rang">
-                    <h3 class="pv-volet-titre">Commande</h3>
-                    <span class="pv-puce materiel-volet-etat"></span>
-                </div>
-                <dl class="pv-proprietes">
-                    <div><dt>Demande</dt><dd class="materiel-volet-demande"></dd></div>
+            <?php // Où en est la commande, en trois étapes : chacune est faite, en cours ou à
+                  // venir, et dit en quelques mots ce qui la concerne. C'est ce qui manquait pour
+                  // comprendre qu'une commande se valide, puis se reçoit. ?>
+            <ol class="materiel-etapes" aria-label="Où en est la commande">
+                <?php foreach ([1 => ['lu', 'Bon lu'], 2 => ['valide', 'Commande validée'], 3 => ['recu', 'Matériel reçu']] as $numero => [$cle, $libelle]): ?>
+                    <li class="materiel-etape est-a-venir" data-etape="<?= $cle ?>">
+                        <span class="materiel-etape-rond" aria-hidden="true">
+                            <span class="materiel-etape-numero"><?= $numero ?></span>
+                            <svg class="materiel-etape-coche" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m3.5 8.5 3 3 6-6.5" /></svg>
+                        </span>
+                        <span class="materiel-etape-texte">
+                            <span class="materiel-etape-libelle"><?= $libelle ?></span>
+                            <span class="materiel-etape-detail"></span>
+                        </span>
+                    </li>
+                <?php endforeach; ?>
+            </ol>
+
+            <section class="pv-volet-section materiel-commande">
+                <?php // Deux colonnes de propriétés : le volet garde sa hauteur pour les articles. ?>
+                <dl class="pv-proprietes materiel-proprietes">
                     <div><dt>Bon déposé</dt><dd><a class="prefa-pdf-link materiel-volet-fichier" href="#" data-lecteur="pages" aria-haspopup="dialog"></a></dd></div>
                     <div><dt>Date de commande</dt><dd class="materiel-volet-date"></dd></div>
                     <div><dt>Livraison</dt><dd class="materiel-volet-livraison"></dd></div>
-                    <div><dt>Réception</dt><dd class="materiel-volet-reception"></dd></div>
                 </dl>
-                <?php // Ce qu'on attend de vous, ou pourquoi la lecture a échoué. Vide devant une
-                      // liste lue : elle n'apprendrait rien. ?>
+                <?php // Pourquoi la lecture a échoué, ou qu'elle est en cours. ?>
                 <p class="pv-volet-note materiel-volet-note" role="status" aria-live="polite" hidden></p>
             </section>
 
-            <?php // Les articles servent deux tâches qui ne se ressemblent pas, et le volet
-                  // les sépare. Avant la validation, on RELIT : le tableau du bon, dans son
-                  // ordre, case par case contre le PDF. Après, on REÇOIT : une liste à cocher,
-                  // rangée par livraison, où ce qui manque ressort et ce qui est arrivé
-                  // s'efface. Un seul tableau faisait les deux — on y pointait des réceptions
-                  // sur une commande pas encore validée, et la date se répétait seize fois. ?>
             <section class="pv-volet-section materiel-articles">
                 <div class="pv-volet-titre-rang">
                     <h3 class="pv-volet-titre">Articles <span class="materiel-volet-compte"></span></h3>
                     <div class="materiel-volet-outils">
-                        <?php // Le bon se lit de lui-même, au dépôt ou à l'ouverture : ce bouton
-                              // ne sert plus qu'à repartir de zéro. ?>
+                        <?php // La liste : on coche, et l'on corrige au besoin. La correction : on
+                              // ajoute un article, ou l'on relit le bon — il se lit de lui-même au
+                              // dépôt ou à l'ouverture, ce bouton ne sert qu'à repartir de zéro. ?>
+                        <button type="button" class="materiel-corriger bouton-discret">Corriger les articles</button>
+                        <button type="button" class="materiel-tout-recu bouton-discret">Tout marquer reçu</button>
                         <button type="button" class="materiel-relire bouton-discret">Relire le bon</button>
                         <button type="button" class="materiel-ajouter bouton-discret">Ajouter un article</button>
-                        <button type="button" class="materiel-tout-recu bouton-discret">Tout marquer reçu</button>
                     </div>
                 </div>
+                <?php // Ce qu'on attend de vous, en une phrase, selon l'étape et la vue. ?>
+                <p class="materiel-consigne" hidden></p>
 
-                <?php // ----- Relire : le bon tel qu'il est imprimé ----- ?>
+                <?php // ----- Corriger : le bon tel qu'il est imprimé, case par case ----- ?>
                 <div class="materiel-relecture">
                     <div class="materiel-dialog-scroll">
                         <table class="materiel-edition">
@@ -369,7 +396,7 @@ $iconesManque = '<svg class="pv-etat-icone materiel-manque-signe-nouvelle" viewB
                     <p class="materiel-edition-vide" hidden>Aucun article. Relisez le bon déposé, ou ajoutez-les à la main.</p>
                 </div>
 
-                <?php // ----- Recevoir : une liste à cocher, par livraison ----- ?>
+                <?php // ----- La liste à cocher, par livraison : la vue de toutes les étapes ----- ?>
                 <div class="materiel-reception">
                     <div class="materiel-reception-barre">
                         <?php // Le choix en trois segments, comme l'état d'un PV : de vrais boutons
@@ -403,14 +430,18 @@ $iconesManque = '<svg class="pv-etat-icone materiel-manque-signe-nouvelle" viewB
                 </div>
             </section>
 
-            <?php // Deux gestes, et non plus un : « Enregistrer » validait la commande, et une
-                  // commande validée est figée. Un clic pour garder une correction la figeait,
-                  // sans un mot. Enregistrer garde le travail ; Valider engage la commande, et
-                  // le demande avant. « Modifier », sur la ligne, la rouvre. ?>
+            <?php // Le pied ne montre que l'action de la vue ouverte — la feuille choisit :
+                  // « Valider la commande » tant qu'elle est à valider, les coches partent avec ;
+                  // « Valider la réception » une fois validée ; « Enregistrer les corrections »
+                  // pendant qu'on corrige. « Annuler » défait ce qui n'est pas encore enregistré.
+                  // Rien ne s'enregistre en touchant une ligne : le client voulait un bouton. ?>
             <footer class="materiel-volet-pied">
                 <span class="pv-message materiel-message" role="status" aria-live="polite"></span>
-                <button type="submit" name="valider" value="0" class="materiel-enregistrer bouton-discret">Enregistrer</button>
-                <button type="submit" name="valider" value="1" class="pv-enregistrer materiel-valider">Valider la commande</button>
+                <button type="button" class="materiel-annuler-reception bouton-discret">Annuler</button>
+                <button type="button" class="pv-enregistrer materiel-valider-commande">Valider la commande</button>
+                <button type="button" class="pv-enregistrer materiel-valider-reception" disabled>Valider la réception</button>
+                <button type="button" class="materiel-quitter-correction bouton-discret">Annuler</button>
+                <button type="submit" class="pv-enregistrer materiel-enregistrer">Enregistrer les corrections</button>
             </footer>
         </form>
     </div>

@@ -158,7 +158,17 @@ $affairesOuvertes = Affaire::pour($db, $utilisateur);
 
             <!-- À gauche : de quoi il s'agit — l'affaire et ses documents. -->
             <div class="nd-colonne">
-                <?php if ($affairesOuvertes): ?>
+                <?php if ($editing && (int) $request['id_statut'] === Demande::VALIDEE): ?>
+                    <!-- Une demande validée garde son affaire, donc son nom : le champ est figé,
+                         et l'enregistrement refuserait tout autre choix
+                         (actions/create_prefa.php). -->
+                    <div class="form-group nd-affaire-figee">
+                        <label>Affaire</label>
+                        <p class="nd-affaire-figee-nom"><?= prefaEscape($request['nom_affaire']) ?></p>
+                        <p class="prefa-aide">Demande validée : son affaire ne se change plus.</p>
+                        <input type="hidden" name="id_affaire" value="<?= (int) $request['id_affaire'] ?>">
+                    </div>
+                <?php elseif ($affairesOuvertes): ?>
                     <?= listeFiltrableRendu('affaire', 'Affaire',
                         array_map(static fn (Affaire $a): array => ['id' => $a->id, 'libelle' => $a->nom], $affairesOuvertes),
                         $request['id_affaire'] ?? null,

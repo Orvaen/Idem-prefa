@@ -165,24 +165,6 @@ body[data-theme="light"],
     font-weight: 700;
 }
 
-[data-theme="light"] .nav-subfooter .title {
-    color: var(--text) !important;
-    font-weight: 600;
-}
-
-[data-theme="light"] .nav-subfooter .subtitle {
-    color: var(--text-muted) !important;
-}
-
-[data-theme="light"] .nav-logout {
-    color: var(--text-muted) !important;
-}
-
-[data-theme="light"] .nav-logout:hover {
-    background: #fee2e2 !important;
-    color: #b91c1c !important;
-}
-
 /* ===== BARRE D'OUTILS & HEADER ===== */
 
 /* ===== CARTES & SECTIONS ===== */
@@ -420,8 +402,10 @@ body[data-theme="light"],
     background-color: #ffffff !important;
 }
 
-[data-theme="light"] .affaire-carte:hover input:not([type="checkbox"]),
-[data-theme="light"] .affaire-carte:focus-within input:not([type="checkbox"]),
+/* Le nom d'une affaire au repos est en lecture seule : un titre, pas un champ qui
+   s'encadre au survol. */
+[data-theme="light"] .affaire-carte:hover input:not([type="checkbox"]):not([readonly]),
+[data-theme="light"] .affaire-carte:focus-within input:not([type="checkbox"]):not([readonly]),
 [data-theme="light"] .commande-ligne:hover input:not([type="checkbox"]),
 [data-theme="light"] .commande-ligne:hover select,
 [data-theme="light"] .commande-ligne:focus-within input:not([type="checkbox"]),
@@ -432,7 +416,7 @@ body[data-theme="light"],
     background-color: #ffffff !important;
 }
 
-[data-theme="light"] .affaire-carte input:not([type="checkbox"]):focus,
+[data-theme="light"] .affaire-carte input:not([type="checkbox"]):not([readonly]):focus,
 [data-theme="light"] .commande-ligne input:not([type="checkbox"]):focus,
 [data-theme="light"] .commande-ligne select:focus,
 [data-theme="light"] .commande-articles-table tbody tr input:not([type="checkbox"]):focus {
@@ -735,10 +719,6 @@ body[data-theme="light"],
    COMPTES : MENU DE BASCULE ET AJOUT DE COMPTE
    ========================================================================== */
 
-[data-theme="light"] .account-chevron {
-    color: var(--text-muted) !important;
-}
-
 [data-theme="light"] .account-menu {
     background: #ffffff !important;
     box-shadow:
@@ -849,16 +829,6 @@ body[data-theme="light"],
 [data-theme="light"] .atelier-page .atelier-detail-panel {
     background: #ffffff !important;
     border-color: var(--border-subtle) !important;
-}
-
-[data-theme="light"] .nav-theme {
-    color: var(--text-muted) !important;
-}
-
-[data-theme="light"] .nav-theme:hover,
-[data-theme="light"] .nav-theme[aria-expanded="true"] {
-    background: #efeff0 !important;
-    color: var(--text) !important;
 }
 
 [data-theme="light"] .theme-swatch {

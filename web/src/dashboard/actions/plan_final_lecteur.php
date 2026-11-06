@@ -60,6 +60,40 @@ $fenetre = planViewerRendu($elementId, [$document + [
     'cordons' => soudureCompte($db, $elementId, $document['id']),
 ]], [], false, false);
 
+// Une soudure à montrer — depuis sa validation, « N° 1 » ne disait pas où elle était
+// (6 novembre 2026) : la page, et où son numéro est écrit sur le dessin — le long du tube, et
+// sa ligne dans la liste imprimée —, en fractions de la page, comme le soudeur les touche
+// (soudureAtelierDessin()). La fenêtre l'y cercle.
+$cible = null;
+$pageCible = filter_var($_GET['page'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => max(1, (int) $document['pages'])]]);
+if ($pageCible) {
+    $numeroCible = trim((string) ($_GET['numero'] ?? ''));
+    $cible = ['page' => $pageCible, 'numero' => $numeroCible, 'repere' => null, 'ligne' => null];
+    if ($numeroCible !== '' && is_file($choisi['chemin'])) {
+        require_once __DIR__ . '/../includes/atelier/soudure_atelier.php';
+        $dessin = soudureAtelierDessin($choisi, $pageCible);
+        foreach ($dessin['reperes'] as $repere) {
+            if ($repere['numero'] === $numeroCible) {
+                $cible['repere'] = $repere;
+                break;
+            }
+        }
+        // Sa ligne dans la liste imprimée : la n-ième, d'un bord du tableau à l'autre.
+        $tableau = $dessin['tableau'];
+        $rang = ctype_digit($numeroCible) ? (int) $numeroCible - 1 : -1;
+        if ($rang >= 0 && isset($tableau['lignes'][$rang], $tableau['bords'], $tableau['pas']) && count($tableau['bords']) >= 2) {
+            $gauche = (float) $tableau['bords'][0];
+            $ligne = $tableau['lignes'][$rang];
+            $cible['ligne'] = [
+                'x' => $gauche,
+                'y' => (float) $ligne['y'] - ((float) $tableau['pas'] - (float) $ligne['h']) / 2,
+                'w' => (float) end($tableau['bords']) - $gauche,
+                'h' => (float) $tableau['pas'],
+            ];
+        }
+    }
+}
+
 // Les ressources avec la même empreinte que celles du tableau de bord : un navigateur qui
 // les a déjà ne les recharge pas.
 $racine = __DIR__ . '/../..';
@@ -67,6 +101,7 @@ header('Content-Type: application/json; charset=utf-8');
 echo json_encode([
     'success' => true,
     'html' => $fenetre,
+    'cible' => $cible,
     'styles' => ['../css/dashboard/plan-viewer.css?v=' . filemtime($racine . '/css/dashboard/plan-viewer.css')],
     'scripts' => ['../js/ecrans/plan-viewer.js?v=' . hash_file('sha256', $racine . '/js/ecrans/plan-viewer.js')],
 ]);

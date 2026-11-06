@@ -235,6 +235,111 @@ html[data-theme="light"] #left-panel .nav-btn .nav-urgent-badge[data-compteur="a
     color: var(--accent-texte) !important;
 }
 
+/* ===== LE RAIL =====
+   Demandé le 6 novembre 2026 : un menu « minimal ». Sur grand écran, replié, il ne garde
+   que ses icônes, sur 56 px ; le libellé paraît en infobulle (dashboard-sidebar.js), et le
+   bouton du haut le déplie. Les rayons ne s'annoncent plus que par un filet.
+
+   Le libellé reste dans le bouton, masqué à l'œil seulement : c'est lui qui donne son nom
+   au bouton pour un lecteur d'écran. Un display: none l'aurait laissé muet.
+
+   « html » en tête : les règles des entrées, plus haut, sont doublées pour le thème clair
+   et pèsent un attribut de plus. Sous 1081 px le menu est un tiroir, et le rail n'existe
+   pas. */
+@media (min-width: 1081px) {
+    html .menu-rail #left-panel {
+        width: 56px !important;
+        min-width: 56px;
+        overflow-x: hidden;
+    }
+
+    html .menu-rail #left-panel .nav-header {
+        padding: 6px 8px 12px;
+    }
+
+    html .menu-rail #left-panel .nav-pied {
+        padding: 6px 8px 12px;
+    }
+
+    html .menu-rail #left-panel .nav-btn {
+        position: relative;
+        justify-content: center;
+        width: 40px;
+        height: 36px;
+        min-height: 36px;
+        margin: 0 auto;
+        padding: 0;
+        gap: 0;
+    }
+
+    html .menu-rail #left-panel .nav-btn .icon {
+        width: 18px;
+        height: 18px;
+    }
+
+    html .menu-rail #left-panel .nav-btn > span:not(.nav-urgent-badge) {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+
+    /* Les rubriques : plus d'intitulé, un filet entre elles. Une rubrique repliée se
+       déplie sur le rail — sans son intitulé, on ne pourrait plus la rouvrir. */
+    html .menu-rail #left-panel .nav-rayon {
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid var(--border-faint);
+    }
+
+    html .menu-rail #left-panel .nav-rayon-titre {
+        display: none;
+    }
+
+    html .menu-rail #left-panel .nav-rayon-titre[aria-expanded="false"] + .nav-rayon-corps {
+        display: flex;
+    }
+
+    /* Un compteur devient une pastille posée sur le coin de l'icône. Le nombre reste
+       lisible ; la bulle le redit en toutes lettres. */
+    html .menu-rail #left-panel .nav-btn .nav-urgent-badge {
+        position: absolute;
+        top: 1px;
+        right: 0;
+        min-width: 16px;
+        height: 16px;
+        margin: 0;
+        padding: 0 4px;
+        font-size: 10px;
+        line-height: 16px;
+    }
+
+    /* Replié, le menu n'a plus de largeur à régler : la poignée ne garde que la gouttière. */
+    .menu-rail #drag {
+        pointer-events: none;
+    }
+}
+
+/* La bulle du rail : le libellé de l'entrée survolée, à côté d'elle. Le registre des
+   infobulles de la maison — fond inversé, rayon 6, corps 12. */
+.menu-bulle {
+    position: fixed;
+    z-index: 70;
+    padding: 5px 8px;
+    border-radius: 6px;
+    background: var(--text);
+    color: var(--surface);
+    font-family: "Inter", var(--font);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.3;
+    white-space: nowrap;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgb(0 0 0 / 16%);
+}
+
 /* ===== SUR TÉLÉPHONE =====
    La barre s'ouvre par-dessus la page : la carte garde ses marges et ses coins. */
 

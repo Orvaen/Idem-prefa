@@ -6,7 +6,7 @@ répartit entre le personnel, et valide l'avancement qu'on lui déclare.
 Il n'y a plus d'étape de « prise en charge » : plusieurs chefs peuvent travailler sur la même
 demande. L'ancienne opération répond `410`.
 
-## Plans / ISO & Affectations
+## Plans & équipes
 
 **Écran :** section « Atelier » — chargé de production et chef d'atelier.
 
@@ -15,9 +15,13 @@ couleur — le code de la liste des demandes : **À préparer** (aucun plan enco
 l'attente) puis **En préparation** (point de l'accent). Chaque ligne s'ouvre sur le point de
 son état ; les onglets en sont la légende. Le volet d'une demande porte un onglet par plan.
 
+**Toute la ligne** ouvre le volet « Plans & équipes », comme la liste des demandes ouvre la
+fiche — le 6 novembre 2026 : « quand je clique sur un plan, rien ne se passe », seul le bouton de
+la ligne l'ouvrait. Les boutons de la ligne gardent leur geste.
+
 ### Ajouter un plan
 
-« Ajouter un plan » : un nom (80 caractères), une description (180), et les documents de la
+« Ajouter un plan » : un nom (80 caractères), une description facultative (180), et les documents de la
 demande à lui rattacher — au moins un plan ou ISO. Le nom est unique dans la demande. Un plan se
 renomme ou se supprime ; le supprimer efface ses affectations et leur suivi, mais garde les
 fichiers joints à la demande.
@@ -45,7 +49,7 @@ d'atelier, depuis le même menu, où chaque nom se coche ou se décoche.
 | Plusieurs par métier | Deux soudeurs sur un plan, c'est deux noms sur la même ligne. |
 | Seulement par plan | Le métier ne se pose pas sur le compte : on peut être soudeur sur un plan et passiveur sur un autre. |
 | En plus des postes | Les trois postes ne changent pas, et l'avancement reste à eux : un métier n'en porte pas. |
-| Ce que le métier ouvre | Le plan, comme un poste : il paraît dans « Mes plans » et « Mes soudures », ses fichiers s'ouvrent, ses soudures se renseignent, ses étapes s'enregistrent. |
+| Ce que le métier ouvre | Le plan, comme un poste : il paraît dans « Mes plans », ses fichiers s'ouvrent, ses soudures se renseignent, ses étapes s'enregistrent. |
 
 Les métiers arrivent avec la migration `2026-11-02_metiers` ; tant qu'elle n'est pas passée sur
 un serveur, la rangée ne s'affiche pas.
@@ -110,17 +114,26 @@ figé au jour où elle est faite. Le modèle complet est dans
 
 ## Mes plans — le personnel d'atelier
 
-**Écran :** « Mes plans », section « Affaires & demandes » — personnel d'atelier.
+**Écran :** « Mes plans », section « Affaires & demandes » — personnel d'atelier. Depuis le
+6 novembre 2026, c'est aussi là qu'il **renseigne ses soudures** : l'écran « Mes soudures » y a
+été réuni ([le détail](/fonctionnalites/soudures)).
 
 - **Une ligne par plan affecté** — par un poste ou par un métier —, sur une demande validée :
-  le plan, la demande, l'affaire, une pastille par travail (« Montage · 40 % »), puis une par
-  métier (« Soudeur »), le nombre de feuilles.
+  une flèche, le plan, la demande, l'affaire, une pastille par travail (« Montage · 40 % »),
+  puis une par métier (« Soudeur »), le nombre de feuilles.
+- **Toucher la ligne déplie le plan** sur ses feuilles, en vignettes — le menu qui se déplie —,
+  et un autre toucher le replie ; un plan seul arrive déplié. Toucher une feuille ouvre son
+  dessin, où l'on renseigne ses soudures.
+- **La recherche** trouve un plan, une demande, une affaire — ou le numéro de ligne d'une
+  feuille : le plan qui la porte se déplie, et seules les feuilles qui répondent restent.
 - **Onglets** Tous, En cours, À commencer, Terminés — calculés sur l'avancement validé ; un plan
   où l'on ne tient qu'un métier se range selon ses étapes —, et le nombre de déclarations en
   attente.
-- **« Mettre à jour »** ouvre le volet du plan : ses travaux et d'où vient leur chiffre, les
-  soudures « x sur y » avec « Renseigner mes soudures », les sept étapes et « Enregistrer les
-  étapes », les fichiers du plan et l'historique.
+- **« Étapes »** — il s'appelait « Mettre à jour » — ouvre le volet du plan : ses travaux et
+  d'où vient leur chiffre, les soudures « x sur y » avec « Renseigner mes soudures » — qui
+  referme le volet et déplie le plan —, les sept étapes et « Enregistrer les étapes », les
+  fichiers du plan et l'historique.
+- **« Signaler un manque »** en haut, et **« Matériel manquant »** sous les plans.
 - **« Mes saisies sur des plans qui ne me sont plus confiés »** garde les cent dernières, après
   une réaffectation.
 
@@ -131,7 +144,7 @@ affectation, ou, pour qui n'y tient qu'un métier, au titre du plan lui-même.
 
 | Fichier | Rôle |
 | --- | --- |
-| `src/dashboard/pages/plans_iso.php`, `src/dashboard/partials/atelier_request.php` | Plans / ISO & Affectations |
+| `src/dashboard/pages/plans_iso.php`, `src/dashboard/partials/atelier_request.php` | Plans & équipes |
 | `src/dashboard/pages/atelier.php` | Mes plans |
 | `src/dashboard/includes/atelier/avancement.php` | Le calcul de l'avancement |
 | `src/dashboard/includes/atelier/plan_resume.php`, `src/dashboard/actions/plan_resume.php` | Le résumé du plan : ce qui manque, feuille par feuille (`planResume()`), et sa fenêtre (`iso.js`) |

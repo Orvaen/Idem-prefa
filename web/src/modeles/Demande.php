@@ -155,17 +155,23 @@ final class Demande
     /**
      * Supprime la demande, et les fichiers déposés avec elle.
      *
-     * Le chargé de production efface n'importe laquelle ; le chargé d'affaire seulement
-     * les siennes, et seulement tant qu'elles attendent — une demande validée est déjà
-     * partie à l'atelier, qui a commencé à travailler dessus.
+     * Une demande validée ne se supprime plus, par personne : elle est partie à l'atelier,
+     * qui a commencé à travailler dessus. Le chargé de production efface les autres ; le
+     * chargé d'affaire seulement les siennes, et seulement tant qu'elles attendent.
      *
-     * @throws DomainException cette personne n'a pas à supprimer celle-ci
+     * Le chargé de production effaçait jusqu'au 6 novembre 2026 n'importe laquelle,
+     * validée comprise.
+     *
+     * @throws DomainException cette personne n'a pas à supprimer celle-ci, ou elle est validée
      * @return bool false si elle n'était déjà plus là, ou plus en attente
      */
     public function supprimer(PDO $db, Utilisateur $utilisateur): bool
     {
         if (!$utilisateur->deposeDesDemandes()) {
             throw new DomainException('La suppression est réservée aux demandeurs.');
+        }
+        if ($this->idStatut === self::VALIDEE) {
+            throw new DomainException('Cette demande est validée : elle ne peut plus être supprimée.');
         }
 
         $sienne = $db->prepare('SELECT idUsers FROM demande_prefabrication WHERE id = ?');
@@ -185,7 +191,9 @@ final class Demande
         // Une seule instruction, donc pas de transaction à ouvrir : si elle n'efface rien,
         // rien n'a changé, et il n'y a rien à annuler. Les tables liées partent avec, par
         // leurs clés étrangères.
-        $effacer = $db->prepare('DELETE FROM demande_prefabrication WHERE id = ?'
+        // Le statut se revérifie dans l'instruction même : validée entre la lecture et
+        // l'effacement, la demande n'est pas touchée.
+        $effacer = $db->prepare('DELETE FROM demande_prefabrication WHERE id = ? AND id_statut <> ' . self::VALIDEE
             . ($tout ? '' : ' AND idUsers = ? AND id_statut = ' . self::EN_ATTENTE));
         $effacer->execute($tout ? [$this->id] : [$this->id, $utilisateur->id]);
         if ($effacer->rowCount() !== 1) return false;

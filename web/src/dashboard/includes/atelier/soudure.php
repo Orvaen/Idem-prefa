@@ -130,7 +130,7 @@ function soudureRelevees(PDO $db, int $elementId): array
     $stmt = $db->prepare("SELECT s.*,
             TRIM(CONCAT(u.prenom, ' ', u.name)) AS soudeur_nom,
             TRIM(CONCAT(v.prenom, ' ', v.name)) AS visa_nom,
-            d.cle_document, d.pages
+            d.cle_document, d.pages, d.numeros_ligne
         FROM plan_soudure s
         LEFT JOIN Utilisateur u ON u.id = s.id_soudeur
         LEFT JOIN Utilisateur v ON v.id = s.vise_par
@@ -139,6 +139,46 @@ function soudureRelevees(PDO $db, int $elementId): array
         ORDER BY d.id, s.page, LENGTH(s.numero), s.numero");
     $stmt->execute([$elementId]);
     return $stmt->fetchAll();
+}
+
+/**
+ * La feuille d'un cordon, dite comme le chef la lit sur le dessin : le numéro de ligne ISO
+ * de sa page quand le cahier le porte (« YU-PRE-101 »), le nom du fichier sinon ; et la
+ * page, quand la feuille en a plusieurs.
+ *
+ * Les tableaux de cordons écrivaient « CAHIER_ISO · p. 1 » sur chaque ligne : un nom de
+ * fichier que personne ne lit sur le plan, et des numéros 1, 2, 3 qui revenaient d'une page
+ * à l'autre sans dire de quelle ligne on parlait. Ils se rangent maintenant sous cette
+ * feuille, une fois (« cle » change quand on passe à la suivante).
+ *
+ * @param array<string, mixed> $cordon une ligne de soudureRelevees()
+ * @return array{cle: string, ligne: string, page: ?int}
+ */
+function soudureFeuille(array $cordon): array
+{
+    require_once __DIR__ . '/plan_document.php';
+    $page = max(1, (int) ($cordon['page'] ?? 1));
+    $fichier = preg_replace('/\.pdf$/i', '', preg_replace('/^[a-f0-9]{32}-/', '', (string) ($cordon['cle_document'] ?? '')));
+    $ligne = planDocumentNumeros($cordon['numeros_ligne'] ?? null)[$page] ?? ($fichier !== '' ? $fichier : 'Feuille sans nom');
+    return [
+        'cle' => (int) ($cordon['id_document'] ?? 0) . ':' . $page,
+        'ligne' => $ligne,
+        'page' => (int) ($cordon['pages'] ?? 1) > 1 ? $page : null,
+    ];
+}
+
+/**
+ * L'en-tête d'un groupe de cordons, dans un tableau qui les range par feuille : une
+ * cellule qui couvre la ligne, le numéro de ligne ISO, la page en plus sourd.
+ *
+ * @param array{ligne: string, page: ?int} $feuille soudureFeuille()
+ */
+function soudureFeuilleEntete(array $feuille, int $colonnes): string
+{
+    return '<tr class="soudure-feuille"><th colspan="' . $colonnes . '" scope="rowgroup">'
+        . prefaEscape($feuille['ligne'])
+        . ($feuille['page'] !== null ? '<span class="soudure-feuille-page">page ' . $feuille['page'] . '</span>' : '')
+        . '</th></tr>';
 }
 
 /**
@@ -481,74 +521,120 @@ function soudureLigneRendu(array $ligne, array $soudeurs, bool $modifiable): str
 }
 
 /**
- * Les contrôles à poser en validant : un cordon par ligne, une croix par contrôle.
+ * Les contrôles à poser en validant : une soudure par ligne, et ses trois contrôles en
+ * boutons côte à côte — RT, VT, PT — qu'on touche pour dire « OK ».
  *
  * Il s'écrit dans le formulaire de validation lui-même : les cases partent avec « Valider »,
  * et seulement avec lui — refuser ne pose rien. Le champ « controles_vus » dit au serveur
  * que le chef a eu la liste sous les yeux, même vide ; c'est ce qui l'autorise à exiger
  * qu'elle n'ait pas changé (avancementViserCordons()).
  *
- * Une case cochée est une croix sur le plan : le contrôle est OK. Une case vide n'écrit
- * rien. Les cases arrivent cochées si l'encadrement les avait déjà posées dans la fenêtre
- * du plan.
+ * Un contrôle coché est une croix sur le plan : il est OK. Un contrôle laissé n'écrit rien.
+ * Ils arrivent cochés si l'encadrement les avait déjà posés dans la fenêtre du plan.
  *
- * Valider ces cordons, c'est aussi les viser : leur case VISA recevra la signature de celui
- * qui valide, ou son nom s'il n'en a pas tracé. On le dit ici, avant le clic.
+ * Valider ces soudures, c'est aussi les viser : le pied du formulaire le dit, au-dessus du
+ * bouton qui le fait (avancementDecisionFormulaire()).
+ *
+ * Refait le 6 novembre 2026, deux fois. Un tableau étalé sur toute la carte laissait un vide
+ * de mille pixels entre le numéro et ses cases ; serré, il gardait une grammaire à lui —
+ * en-têtes de colonnes, cases à cocher, bandeau d'en-tête — que rien d'autre n'a dans les
+ * volets. Ce sont maintenant les lignes libellé / valeur et les boutons côte à côte des
+ * « Étapes du plan », que l'atelier coche déjà : les soudures rangées sous leur feuille
+ * (soudureFeuille()), le numéro et son procédé à gauche, RT · VT · PT à droite.
+ *
+ * Les cases restent des cases à cocher dans le balisage — le clavier et les lecteurs d'écran
+ * les lisent comme telles — ; seul leur dessin change.
  *
  * @param list<array<string, mixed>> $cordons ce que rend avancementCordonsAValider()
- * @param string $visa comment « Valider » visera, en HTML : signatureAnnonceVisa()
  */
-function soudureControlesRendu(array $cordons, string $visa): string
+function soudureControlesRendu(array $cordons): string
 {
     $html = '<input type="hidden" name="controles_vus" value="1">';
     if (!$cordons) return $html;
 
-    // Deux choses à dire, chacune à sa place : comment cocher, à gauche sous le titre ; ce
-    // que « Valider » signera, à droite. Elles tenaient en une seule phrase de trois tirets.
+    // Trois boutons côte à côte, comme l'état d'une étape. Coché, un contrôle prend le vert
+    // du succès et sa coche : c'est « OK ».
+    $coche = '<svg class="soudure-controle-coche" aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor"'
+        . ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3.5 8.5 3 3 6-7" /></svg>';
+    $boutons = static function (?int $id, array $etats, string $nom) use ($coche): string {
+        $html = '<span class="mes-plans-segments soudure-controles-boutons" role="group" aria-label="' . $nom . '">';
+        foreach (SOUDURE_CONTROLES as $cle => $libelle) {
+            // « Toutes les soudures » n'a pas de nom : elle ne part pas avec le formulaire,
+            // seules les cases des soudures comptent (atelier.js).
+            $champ = $id === null
+                ? 'class="soudure-croix soudure-controles-tout" data-controle="' . $cle . '"'
+                : 'class="soudure-croix" name="controles[' . $cle . '][]" value="' . $id . '" data-controle="' . $cle . '"';
+            $html .= '<label><input type="checkbox" ' . $champ . ($etats[$cle] ? ' checked' : '')
+                . ' aria-label="' . $nom . ' : ' . $libelle . ' OK"><span>' . $coche . $libelle . '</span></label>';
+        }
+        return $html . '</span>';
+    };
+
     $html .= '<div class="soudure-controles">'
         . '<div class="soudure-controles-entete">'
-        . '<div><h4 class="soudure-controles-titre">Contrôles</h4>'
-        . '<p class="soudure-controles-aide">Cochez ce qui est OK : une croix sur le plan.</p></div>'
-        . '<p class="soudure-controles-visa">' . $visa . '</p>'
+        . '<h4 class="soudure-controles-titre">Contrôles</h4>'
+        . '<p class="soudure-controles-aide">Touchez ce qui est OK : une croix sur le plan. Touchez un N° pour le voir sur le PDF.</p>'
         . '</div>'
-        . '<table class="atelier-soudures-table soudure-controles-table"><thead><tr>'
-        . '<th scope="col">N°</th><th scope="col">Feuille</th><th scope="col">Date</th><th scope="col">Procédé</th>';
-    foreach (SOUDURE_CONTROLES as $libelle) {
-        $html .= '<th scope="col" class="soudure-controle">' . $libelle . '</th>';
-    }
-    $html .= '</tr>';
+        . '<dl class="mes-plans-proprietes soudure-controles-lignes">';
 
-    // Un cahier compte vite vingt cordons : cocher VT sur chacun, c'est vingt clics pour
-    // dire une seule chose. Une case par colonne les coche tous ; on décoche ensuite ceux
-    // qui ne passent pas.
+    // Un cahier compte vite vingt soudures : cocher VT sur chacune, c'est vingt touchers pour
+    // dire une seule chose. Une ligne les coche toutes ; on retire ensuite celles qui ne
+    // passent pas.
     if (count($cordons) > 1) {
-        $html .= '<tr class="soudure-controles-tous"><td colspan="4">Toutes les soudures</td>';
+        $tous = [];
         foreach (SOUDURE_CONTROLES as $cle => $libelle) {
-            $tous = !array_filter($cordons, static fn (array $cordon): bool => trim((string) $cordon[$cle]) === '');
-            $html .= '<td class="soudure-controle"><input type="checkbox" class="soudure-croix soudure-controles-tout"'
-                . ' data-controle="' . $cle . '"' . ($tous ? ' checked' : '')
-                . ' aria-label="' . $libelle . ' OK sur toutes les soudures"></td>';
+            $tous[$cle] = !array_filter($cordons, static fn (array $cordon): bool => trim((string) $cordon[$cle]) === '');
         }
-        $html .= '</tr>';
+        $html .= '<div class="soudure-controles-tous"><dt>Toutes les soudures</dt><dd>'
+            . $boutons(null, $tous, 'Toutes les soudures') . '</dd></div>';
     }
-    $html .= '</thead><tbody>';
 
+    // « N° 1 » ne disait pas où était la soudure (6 novembre 2026). La feuille et le numéro se
+    // touchent : la fenêtre du plan s'ouvre sur la feuille, la soudure cerclée sur le dessin
+    // (prefa-interactions.js, [data-voir-soudure] ; actions/plan_final_lecteur.php).
+    $voir = static function (array $cordon, ?string $numero = null): string {
+        if (empty($cordon['id_document']) || empty($cordon['id_element'])) return '';
+        return ' data-voir-soudure data-element="' . (int) $cordon['id_element'] . '" data-document="' . (int) $cordon['id_document'] . '"'
+            . ' data-page="' . max(1, (int) ($cordon['page'] ?? 1)) . '"'
+            . ($numero !== null ? ' data-numero="' . prefaEscape($numero) . '"' : '');
+    };
+    $oeil = '<svg class="icon soudure-voir-oeil" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"'
+        . ' stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12s3.5-6.5 9.5-6.5S21.5 12 21.5 12s-3.5 6.5-9.5 6.5S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg>';
+
+    $groupe = null;
     foreach ($cordons as $cordon) {
+        $feuille = soudureFeuille($cordon);
+        if ($feuille['cle'] !== $groupe) {
+            // La feuille, une fois, au-dessus de ses soudures : le numéro de ligne ISO qu'on lit
+            // sur le dessin, la page en sourd. Elle se touche : la feuille s'ouvre.
+            $titre = prefaEscape($feuille['ligne'])
+                . ($feuille['page'] !== null ? '<span class="soudure-feuille-page">page ' . $feuille['page'] . '</span>' : '');
+            $attributs = $voir($cordon);
+            $html .= '<div class="soudure-controles-feuille"><dt>'
+                . ($attributs !== ''
+                    ? '<button type="button" class="soudure-voir"' . $attributs . ' title="Ouvrir le PDF de la feuille">' . $titre
+                    . '<span class="soudure-voir-libelle">' . $oeil . 'Ouvrir le PDF</span></button>'
+                    : $titre)
+                . '</dt><dd></dd></div>';
+            $groupe = $feuille['cle'];
+        }
         $id = (int) $cordon['id'];
         $numero = prefaEscape((string) $cordon['numero']);
-        $feuille = preg_replace('/\.pdf$/i', '', preg_replace('/^[a-f0-9]{32}-/', '', (string) ($cordon['cle_document'] ?? '')));
-        $html .= '<tr><td>' . $numero . '<input type="hidden" name="cordons[]" value="' . $id . '"></td>'
-            . '<td title="' . prefaEscape($feuille) . '">' . prefaEscape($feuille ?: '—')
-            . ((int) ($cordon['pages'] ?? 1) > 1 ? '<span class="suivi-soudures-sur"> · p. ' . (int) $cordon['page'] . '</span>' : '') . '</td>'
-            . '<td>' . ($cordon['date_soudure'] ? prefaEscape(date('d/m/Y', strtotime((string) $cordon['date_soudure']))) : '—') . '</td>'
-            . '<td>' . prefaEscape((string) ($cordon['type_soudure'] ?: '—')) . '</td>';
-        foreach (SOUDURE_CONTROLES as $cle => $libelle) {
-            $html .= '<td class="soudure-controle"><input type="checkbox" class="soudure-croix" name="controles[' . $cle . '][]"'
-                . ' value="' . $id . '" data-controle="' . $cle . '"'
-                . (trim((string) $cordon[$cle]) !== '' ? ' checked' : '')
-                . ' aria-label="Soudure ' . $numero . ' : ' . $libelle . ' OK"></td>';
-        }
-        $html .= '</tr>';
+        $etats = [];
+        foreach (SOUDURE_CONTROLES as $cle => $libelle) $etats[$cle] = trim((string) $cordon[$cle]) !== '';
+        $detail = implode(' · ', array_filter([
+            trim((string) ($cordon['type_soudure'] ?? '')),
+            $cordon['date_soudure'] ? date('d/m/Y', strtotime((string) $cordon['date_soudure'])) : '',
+        ], 'strlen'));
+        // Le même numéro revient d'une feuille à l'autre : le nom des cases dit laquelle.
+        $attributs = $voir($cordon, (string) $cordon['numero']);
+        $nom = '<strong>N° ' . $numero . '</strong>';
+        $html .= '<div><dt>' . ($attributs !== ''
+                ? '<button type="button" class="soudure-voir"' . $attributs . ' title="Voir la soudure N° ' . $numero . ' sur le PDF">' . $nom . $oeil . '</button>'
+                : $nom)
+            . ($detail !== '' ? '<span class="soudure-controles-detail">' . prefaEscape($detail) . '</span>' : '')
+            . '<input type="hidden" name="cordons[]" value="' . $id . '"></dt><dd>'
+            . $boutons($id, $etats, 'Soudure ' . $numero . ' (' . prefaEscape($feuille['ligne']) . ')') . '</dd></div>';
     }
-    return $html . '</tbody></table></div>';
+    return $html . '</dl></div>';
 }

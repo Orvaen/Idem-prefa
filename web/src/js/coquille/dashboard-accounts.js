@@ -106,8 +106,7 @@
         if (event.target.closest('.account-add')) {
             ouvrirMenu(false);
             form.reset();
-            message.textContent = '';
-            message.classList.remove('is-error');
+            etapeCompte('identifiant');
             dialog.showModal();
             form.elements.login.focus();
             return;
@@ -154,48 +153,125 @@
         if (event.target.closest('.account-dialog-close')) dialog.close();
     });
 
+    // ===== « Ajouter un compte » : les étapes de l'écran de connexion =====
+    // L'identifiant d'abord. « Continuer » demande au serveur si ce compte attend son premier
+    // mot de passe (auth/compte_a_creer.php) : oui, le code d'accès et le mot de passe choisi
+    // (« creer », actions/comptes.php) ; non — ou compte inconnu, la réponse est la même —,
+    // le mot de passe (« add »). Comme login.js : un mot de passe que le navigateur aurait
+    // glissé dans un champ caché ne part pas.
+    const boutonEnvoi = form.querySelector('.account-submit');
+    const LIBELLES = { identifiant: 'Continuer', 'mot-de-passe': 'Se connecter', creation: 'Choisir et ajouter' };
+
+    function dire(texte, erreur = false) {
+        message.textContent = texte;
+        message.classList.toggle('is-error', erreur);
+    }
+
+    function etapeCompte(nom) {
+        form.dataset.etape = nom;
+        form.querySelector('.account-etape-mdp').hidden = nom !== 'mot-de-passe';
+        form.querySelector('.account-etape-creation').hidden = nom !== 'creation';
+        boutonEnvoi.textContent = LIBELLES[nom];
+        form.elements.operation.value = nom === 'creation' ? 'creer' : 'add';
+        ['password', 'code', 'nouveau', 'confirmation'].forEach(champ => { form.elements[champ].value = ''; });
+        dire('');
+        if (nom === 'mot-de-passe') form.elements.password.focus();
+        if (nom === 'creation') {
+            form.querySelector('[data-account-compte]').textContent = form.elements.login.value.trim();
+            form.elements.code.focus();
+        }
+    }
+
+    // Changer d'identifiant ramène à la première étape : le compte n'est plus le même.
+    form.elements.login.addEventListener('input', () => {
+        if (form.dataset.etape !== 'identifiant') etapeCompte('identifiant');
+    });
+
+    /** Le compte attend-il son premier mot de passe ? null si le serveur ne répond pas. */
+    async function compteACreer(login) {
+        const donnees = new FormData();
+        donnees.set('csrf', form.elements.csrf.value);
+        donnees.set('login', login);
+        try {
+            const reponse = await fetch('../auth/compte_a_creer.php', { method: 'POST', body: donnees, credentials: 'same-origin' });
+            const corps = await reponse.json().catch(() => ({}));
+            return Boolean(corps.creer);
+        } catch {
+            return null;
+        }
+    }
+
     form.addEventListener('submit', async event => {
         event.preventDefault();
-        message.textContent = 'Connexion…';
-        message.classList.remove('is-error');
-        const erreur = await envoyer(new FormData(form), form.querySelector('.account-submit'));
-        if (erreur) {
-            message.textContent = erreur;
-            message.classList.add('is-error');
+        if (boutonEnvoi.disabled) return;
+        const login = form.elements.login.value.trim();
+        if (!login) {
+            dire('Tapez l’identifiant du compte.', true);
+            form.elements.login.focus();
+            return;
         }
+
+        if (form.dataset.etape === 'identifiant') {
+            boutonEnvoi.disabled = true;
+            const creer = await compteACreer(login);
+            boutonEnvoi.disabled = false;
+            etapeCompte(creer ? 'creation' : 'mot-de-passe');
+            return;
+        }
+
+        if (form.dataset.etape === 'mot-de-passe' && !form.elements.password.value) {
+            dire('Tapez son mot de passe.', true);
+            form.elements.password.focus();
+            return;
+        }
+        if (form.dataset.etape === 'creation') {
+            if (!form.elements.code.value.trim()) {
+                dire('Tapez le code que l’administrateur a donné.', true);
+                form.elements.code.focus();
+                return;
+            }
+            if (form.elements.nouveau.value !== form.elements.confirmation.value) {
+                dire('Les deux saisies ne sont pas les mêmes.', true);
+                form.elements.confirmation.focus();
+                return;
+            }
+        }
+
+        dire(form.dataset.etape === 'creation' ? 'Enregistrement…' : 'Connexion…');
+        const erreur = await envoyer(new FormData(form), boutonEnvoi);
+        if (!erreur) return;
+        dire(erreur, true);
+        // Le champ à reprendre, sélectionné : le mot de passe, ou le code.
+        const aReprendre = form.dataset.etape === 'creation' ? form.elements.code : form.elements.password;
+        aReprendre.focus();
+        aReprendre.select();
     });
 
     // ===== THÈME =====
     // La décision vit dans theme.js, chargé en tête de page : ici on ne fait que montrer
     // l'état et transmettre le choix.
-    const declencheurTheme = document.getElementById('theme-menu-button');
-    const menuTheme = document.getElementById('theme-menu');
-    if (declencheurTheme && menuTheme) {
-        const menuThemes = popover(declencheurTheme, menuTheme, '.theme-option[aria-checked="true"], .theme-option');
-
+    //
+    // Le thème avait son bouton et son menu dans la barre du haut ; il tient maintenant en
+    // trois choix dans le menu du compte. Le menu reste ouvert après le choix : l'écran
+    // change de teinte derrière lui, et c'est la réponse.
+    const choixTheme = menu.querySelector('.account-theme-choix');
+    if (choixTheme) {
         const themeActif = () => (window.Theme ? window.Theme.choix() : 'auto');
 
         function marquerActif() {
             const actuel = themeActif();
-            menuTheme.querySelectorAll('.theme-option').forEach(option => {
+            choixTheme.querySelectorAll('.theme-option').forEach(option => {
                 const choisi = option.dataset.themeVal === actuel;
                 option.classList.toggle('is-current', choisi);
                 option.setAttribute('aria-checked', String(choisi));
-                // toggleAttribute et pas .hidden : la coche est un <svg>, qui n'a pas cette propriété.
-                option.querySelector('.account-check').toggleAttribute('hidden', !choisi);
             });
         }
 
-        function appliquerTheme(nom) {
-            if (window.Theme) window.Theme.appliquer(nom);
-            marquerActif();
-        }
-
-        menuTheme.addEventListener('click', event => {
+        choixTheme.addEventListener('click', event => {
             const option = event.target.closest('.theme-option');
             if (!option) return;
-            appliquerTheme(option.dataset.themeVal);
-            menuThemes.ouvrir(false);
+            if (window.Theme) window.Theme.appliquer(option.dataset.themeVal);
+            marquerActif();
         });
 
         // Les paramètres changent aussi le thème : la coche suit.

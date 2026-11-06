@@ -25,6 +25,11 @@ import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * Le site de l'atelier, en plein écran, sans barre de navigateur.
  *
@@ -57,6 +62,7 @@ public class MainActivity extends Activity {
             Insets barres = encarts.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
             Insets clavier = encarts.getInsets(WindowInsets.Type.ime());
             v.setPadding(barres.left, barres.top, barres.right, Math.max(barres.bottom, clavier.bottom));
+            annoncerClavier(encarts.isVisible(WindowInsets.Type.ime()));
             return WindowInsets.CONSUMED;
         });
 
@@ -123,6 +129,22 @@ public class MainActivity extends Activity {
         if (etat == null || vue.restoreState(etat) == null) vue.loadUrl(site.toString());
     }
 
+    /** Le dernier état du clavier annoncé à la page : on ne le répète pas à chaque encart. */
+    private Boolean clavierAnnonce;
+
+    /**
+     * Dit à la page que le clavier s'ouvre ou se ferme (js/composants/clavier.js). Elle le
+     * devinait à la hauteur de la vue, et la barre de navigation qui revient avec le clavier
+     * pouvait fausser le calcul : la page ne rendait pas la place, et une fenêtre comme
+     * « Ajouter un plan » disparaissait sous le clavier. Android, lui, le sait.
+     */
+    private void annoncerClavier(boolean visible) {
+        if (vue == null || (clavierAnnonce != null && clavierAnnonce == visible)) return;
+        clavierAnnonce = visible;
+        vue.evaluateJavascript("window.dispatchEvent(new CustomEvent('clavier:natif', { detail: "
+                + visible + " }))", null);
+    }
+
     /**
      * Plein écran : ni barre d'état en haut, ni barre de gestes en bas. Un glissement depuis
      * le bord les rappelle un instant, par-dessus la page, sans la décaler. Elles se cachent
@@ -169,7 +191,7 @@ public class MainActivity extends Activity {
      * session, sans quoi le serveur lui répondrait par la page de connexion.
      */
     private void telecharger(String adresse, String agent, String disposition, String type) {
-        String nom = URLUtil.guessFileName(adresse, disposition, type);
+        String nom = nomDuFichier(adresse, disposition, type);
         try {
             DownloadManager.Request demande = new DownloadManager.Request(Uri.parse(adresse));
             String cookies = CookieManager.getInstance().getCookie(adresse);
@@ -185,6 +207,42 @@ public class MainActivity extends Activity {
             // Un blob: ou un data: : le gestionnaire d'Android ne sait prendre que du HTTP.
             Toast.makeText(this, "Téléchargement impossible : " + nom, Toast.LENGTH_LONG).show();
         }
+    }
+
+    private static final Pattern NOM_ETENDU = Pattern.compile("filename\\*\\s*=\\s*(?i:utf-8)''([^;]+)");
+    private static final Pattern NOM_SIMPLE = Pattern.compile("filename\\s*=\\s*\"?([^\";]+)\"?");
+
+    /**
+     * Le nom du fichier, tel que le serveur le donne : « attachment » comme « inline », et
+     * « filename* » (UTF-8, les accents) d'abord. URLUtil.guessFileName ne lit que
+     * « attachment; filename=… » : un document servi « inline », ou un lien « download » sans
+     * nom, repartait sous le nom de l'adresse — « download_prefa_attachment.php.pdf », puis
+     * « …_1.php.pdf » (6 novembre 2026). Il reste le dernier recours.
+     */
+    private static String nomDuFichier(String adresse, String disposition, String type) {
+        if (disposition != null) {
+            Matcher etendu = NOM_ETENDU.matcher(disposition);
+            if (etendu.find()) {
+                try {
+                    // « + » est un caractère du nom, pas une espace : URLDecoder le confondrait.
+                    String nom = sansChemin(URLDecoder.decode(etendu.group(1).trim().replace("+", "%2B"), "UTF-8"));
+                    if (!nom.isEmpty()) return nom;
+                } catch (UnsupportedEncodingException | IllegalArgumentException ignore) {
+                    // Mal encodé : le nom simple, ou la devinette d'Android.
+                }
+            }
+            Matcher simple = NOM_SIMPLE.matcher(disposition);
+            if (simple.find()) {
+                String nom = sansChemin(simple.group(1).trim());
+                if (!nom.isEmpty()) return nom;
+            }
+        }
+        return URLUtil.guessFileName(adresse, disposition, type);
+    }
+
+    /** Pas de dossier dans un nom de fichier : seul le dernier morceau compte. */
+    private static String sansChemin(String nom) {
+        return nom.substring(Math.max(nom.lastIndexOf('/'), nom.lastIndexOf('\\')) + 1);
     }
 
     /**

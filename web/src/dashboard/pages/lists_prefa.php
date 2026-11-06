@@ -144,10 +144,10 @@ if ($isWorkshopPersonnel) {
                         stroke-width="1.75"
                         stroke-linecap="round"
                         stroke-linejoin="round">
-                        <path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-2l2 3M4 16l2 3a7 7 0 0 1 12-2" />
+                        <path d="M21 12a9 9 0 1 1-2.64-6.36L21 8" /><path d="M21 3v5h-5" />
                     </svg>
 
-                        Actualiser
+                        <span class="outil-libelle">Actualiser</span>
 
                     </button>
 
@@ -283,8 +283,10 @@ if ($isWorkshopPersonnel) {
                 tabindex="0">
 
                 <?php // « prefa-table-points » : chaque ligne s'ouvre sur le point de son
-                      // statut, et l'en-tête de la première colonne prend le même retrait. ?>
-                <table class="prefa-table<?= $vueParAffaire ? '' : ' prefa-table-points' ?>">
+                      // statut, et l'en-tête de la première colonne prend le même retrait.
+                      // « prefa-table-demandes » : la ligne entière ouvre la fiche
+                      // (prefa-interactions.js) — sur cet écran seulement. ?>
+                <table class="prefa-table prefa-table-demandes<?= $vueParAffaire ? '' : ' prefa-table-points' ?>">
 
                     <thead>
 

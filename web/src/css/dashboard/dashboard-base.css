@@ -459,102 +459,75 @@ textarea::placeholder {
 /* ===== LA BARRE DU HAUT =====
    Posée à même le cadre, sans fond ni filet : elle fait partie du châssis, comme la
    barre de titre d'une application de bureau. Ce qui flotte, c'est la vue, et elle
-   seule. */
+   seule.
+
+   Réduite le 6 novembre 2026, à la demande du client : une ligne de 36 px, le menu et la
+   marque à gauche, la loupe et l'initiale du compte à droite. Le grand champ de recherche,
+   le nom, le thème et la déconnexion la chargeaient pour des gestes qu'on fait rarement. */
 .barre-haut {
     flex: none;
     display: flex;
     align-items: center;
     gap: 8px;
-    min-height: 44px;
-    padding: 0 4px;
+    min-height: 36px;
+    padding: 0 2px;
 }
 
-/* Trois zones de largeur égale : c'est la seule façon de poser la recherche au milieu de
-   l'écran et non au milieu de ce qui reste entre la marque et le compte. Les deux côtés
-   se rétractent sous leur contenu, le centre garde la main. */
 .barre-haut-zone {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
     flex: 1;
     min-width: 0;
-}
-
-.barre-haut-centre {
-    flex: none;
-    justify-content: center;
 }
 
 .barre-haut-droite {
     justify-content: flex-end;
 }
 
-/* La recherche. Ce n'est pas un champ mais un bouton qui en a la forme : la palette
-   s'ouvre par-dessus et porte sa propre saisie. Deux champs de recherche l'un sur l'autre
-   feraient douter de celui où l'on tape. */
-.barre-recherche {
-    display: flex;
+/* Les commandes de la barre ont toutes la même boîte : 32 px, sans cadre, l'icône sourde
+   qui s'éclaire au survol. */
+.barre-haut #btn-hide,
+.barre-recherche,
+.toolbar-compte .account-trigger {
+    display: inline-flex;
     align-items: center;
-    gap: 8px;
-    /* Large, comme la barre de Slack : c'est l'entrée de l'application, elle doit se
-       voir d'emblée. Elle garde la place des deux côtés au-delà de 1400 px. */
-    width: min(640px, 44vw);
-    height: var(--h-lg);
-    padding: 0 10px 0 12px;
-    border: 1px solid var(--border);
+    justify-content: center;
+    flex: none;
+    width: 32px;
+    height: 32px;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
     border-radius: var(--r-md);
-    background: var(--carte);
+    background: transparent;
     color: var(--text-muted);
     font: inherit;
-    font-size: 13px;
-    text-align: left;
     cursor: pointer;
-    transition: border-color 0.12s ease, background 0.12s ease;
+    transition: background 0.12s ease, color 0.12s ease;
 }
 
-.barre-recherche:hover {
-    border-color: var(--border-fort);
+.barre-haut #btn-hide:hover,
+.barre-recherche:hover,
+.toolbar-compte .account-trigger:hover,
+.toolbar-compte .account-trigger[aria-expanded="true"] {
     background: var(--hover);
+    color: var(--text);
 }
 
-.barre-recherche:focus-visible {
+.barre-haut #btn-hide:focus-visible,
+.barre-recherche:focus-visible,
+.toolbar-compte .account-trigger:focus-visible {
     outline: 2px solid var(--accent);
-    outline-offset: 2px;
+    outline-offset: 1px;
 }
 
+/* La recherche n'est plus qu'une loupe : un bouton qui ouvre la palette, laquelle porte
+   sa propre saisie. Ctrl K l'ouvre aussi, et l'infobulle le rappelle. */
 .barre-recherche .icon {
-    flex: none;
-    width: 15px;
-    height: 15px;
-}
-
-.barre-recherche-texte {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-/* Le raccourci se lit sans se crier : c'est un rappel, pas une étiquette. */
-.barre-recherche-touche {
-    flex: none;
-    padding: 1px 5px;
-    border: 1px solid var(--border);
-    border-radius: var(--r-sm);
-    color: var(--text-muted);
-    font-family: inherit;
-    font-size: 11px;
-    line-height: 1.4;
-}
-
-/* Sous 900 px, la marque et le compte prennent toute la barre : un champ de recherche
-   les écraserait. La palette reste au clavier, et la recherche de chaque écran est
-   dans l'écran. */
-@media (max-width: 900px) {
-
-    .barre-haut-centre {
-        display: none;
-    }
+    width: 16px;
+    height: 16px;
 }
 
 /* ===== LA VUE =====
@@ -651,7 +624,7 @@ textarea::placeholder {
  * le reste ne se lirait pas à cette hauteur. Le cadrage se fait au rapport, pas au pixel,
  * pour qu'il tienne si le fichier est remplacé par une version plus fine. */
 .nav-marque img {
-    height: 30px;
+    height: 24px;
     width: auto;
     flex: none;
     object-fit: cover;
@@ -845,44 +818,6 @@ textarea::placeholder {
     font-weight: 600;
 }
 
-.nav-subfooter {
-    min-width: 0;
-}
-
-.nav-subfooter .title {
-    font-size: 12px;
-    line-height: 16px;
-    color: var(--text);
-
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.nav-subfooter .subtitle {
-    display: block;
-
-    font-size: 11px;
-    line-height: 14px;
-    color: var(--text-muted);
-}
-
-.nav-logout {
-    margin-left: auto;
-    padding: 4px;
-
-    display: flex;
-    align-items: center;
-
-    border-radius: 4px;
-    color: var(--text-muted);
-}
-
-.nav-logout:hover {
-    background: var(--hover);
-    color: var(--text);
-}
-
 /* ===== RESIZE ===== */
 
 /* La poignee EST la gouttiere : large de huit pixels, elle separe le menu de la carte, et
@@ -939,31 +874,6 @@ body.est-redimensionne * {
     user-select: none;
 }
 
-/* ===== BOUTON HIDE ===== */
-
-#btn-hide {
-    position: absolute;
-    bottom: 0;
-    left: 2px;
-
-    z-index: 10;
-
-    width: 16px;
-    height: 16px;
-    padding: 4px;
-    box-sizing: content-box;
-
-    border-radius: 4px;
-    color: var(--text-muted);
-    cursor: pointer;
-    margin-bottom: 8px;
-}
-
-#btn-hide:hover {
-    background: var(--hover);
-    color: var(--text);
-}
-
 /* ===== THÈME ROSE ULTIME (100% PINK EDITION - TOUT EN ROSE !) ===== */
 
 /* Fond général et conteneur principal */
@@ -988,3 +898,55 @@ body.est-redimensionne * {
 
 /* Badges et alertes */
 
+
+/* ===== LE CLAVIER D'UNE TABLETTE =====
+   Ouvert, il prend la moitié de l'écran : la page n'a plus que l'autre. « clavier-ouvert »
+   est posé sur <html> par js/composants/clavier.js, au doigt seulement. Tout ce qui ne sert
+   pas à taper rend sa place :
+
+   - la barre du haut se retire, et le cadre perd sa marge ;
+   - les fenêtres et les volets prennent toute la hauteur qui reste, sans la marge du haut
+     ni le jour du bas — calés sur 10 % et 90 % de l'écran, ils en perdaient le quart.
+
+   « html » en tête : ces règles passent devant celles de chaque fenêtre, quelle que soit la
+   feuille qui la dessine. */
+html.clavier-ouvert .barre-haut {
+    display: none;
+}
+
+html.clavier-ouvert #contenaire {
+    gap: 0;
+    padding: 0;
+}
+
+html.clavier-ouvert #right-panel {
+    border: 0;
+    border-radius: 0;
+}
+
+/* La fenêtre garde la hauteur de ce qu'elle montre — le « fit-content » des boîtes
+   modales — et monte contre le haut. Celle des paramètres, de hauteur fixe, prend tout. */
+html.clavier-ouvert dialog.fenetre {
+    max-height: 100dvh;
+    margin: 0 auto auto;
+    border-top: 0;
+    border-radius: 0 0 var(--r-md) var(--r-md);
+}
+
+html.clavier-ouvert dialog.fenetre.parametres {
+    height: 100dvh;
+}
+
+html.clavier-ouvert dialog.prefa-edition {
+    height: 100dvh;
+    margin: 0 auto;
+    border-top: 0;
+    border-radius: 0;
+}
+
+html.clavier-ouvert .prefa-detail-row {
+    inset: 0 0 auto;
+    max-height: 100dvh;
+    border-top: 0;
+    border-radius: 0;
+}

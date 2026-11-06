@@ -368,7 +368,8 @@ sépare deux lignes visibles. Sous 720 px, plein écran, la colonne en rangée d
 - *La signature fait exception* : on la trace, puis on la valide — un trait à moitié fait
   ne doit pas partir. Son « Valider » est plein, seule action d'une saisie en cours, et
   éteint tant que le cadre est vide. Elle s'affiche en carte (`--carte`, rayon 8), comme au
-  bas d'un document, et le cadre où l'on signe a la même forme et prend sa place.
+  bas d'un document. On la trace **en grand**, dans sa fenêtre — tout l'écran sur une
+  tablette : le cadre garde le dessin du bloc (l'invite, le trait, le nom et la date).
 - *Rien d'inventé.* Une rubrique ne porte que ce que l'application sait régler. Le profil
   est en lecture : c'est le chargé de production qui le tient, dans Utilisateurs.
 - *La rubrique ouverte se marque d'un fond plein (`--active`), pas de l'azur* : on règle,
@@ -386,7 +387,7 @@ sépare deux lignes visibles. Sous 720 px, plein écran, la colonne en rangée d
 
 Décidé le 2 novembre 2026. Posés à droite à 560, 720 ou 880 px selon l'écran, les volets
 étaient « super petits » ; l'utilisateur a choisi, parmi trois formes, la **grande fenêtre
-centrée**. Tous les volets la prennent — demande, Plans & affectations, Soudures, Mes plans,
+centrée**. Tous les volets la prennent — demande, Plans & équipes, Soudures, Mes plans,
 planning, PV, commande —, écrite une seule fois (`prefa-list.css`, `.prefa-detail-row`).
 
 | Règle | Pourquoi |
@@ -398,12 +399,26 @@ planning, PV, commande —, écrite une seule fois (`prefa-list.css`, `.prefa-de
 | La fiche d'une demande en deux colonnes — ce qu'elle dit d'elle-même, ses pièces | Une seule colonne de 1200 px n'est plus une fiche, c'est une liste étirée |
 | Pas de `transform` au repos | Il ferait du volet le bloc contenant de ses enfants en position fixe — un menu ne s'ouvrirait plus où il faut |
 
-**Une décision à prendre est une carte, et une seule** (`includes/atelier/decision.php`).
-L'avancement qu'un chef valide paraît à cinq endroits ; il avait trois dessins, un par
-écran. Il n'en a plus qu'un : la pastille « À valider » en couleur d'attente, ce qui est
-déclaré, par qui et quand ; le compte en grand et une barre qui va du validé au déclaré ;
-la note de l'atelier ; les contrôles des soudures, à même la carte ; le pied, « Refuser »
-encadré et « Valider » en bouton plein.
+**Une décision à prendre a un seul dessin** (`includes/atelier/decision.php`). L'avancement
+qu'un chef valide paraît à cinq endroits ; il avait trois dessins, un par écran. Il n'en a plus
+qu'un, et c'est celui des **sections de volet** — revu le 6 novembre 2026, la carte grise qu'il
+était devenu se lisait comme « une toute autre DA » : un titre et la pastille « À valider » en
+couleur d'attente ; des lignes libellé / valeur — le travail, qui et quand, « 2 soudures sur 69 ·
+0 % → 3 % » ; la note de l'atelier ; les contrôles des soudures en boutons côte à côte, ceux des
+étapes, verts et cochés quand ils sont OK ; le pied, « Refuser » encadré et « Valider » en
+bouton plein, aligné sur les valeurs. Sans signature, le pied le dit d'un bandeau en couleur
+d'attente, avec « Tracer ma signature » en bouton plein — c'est ce qu'il faut faire d'abord —,
+et « Valider » reste éteint.
+
+**Sauf « Validation des soudures », qui est une file** (6 novembre 2026, « je déteste
+l'interface »). Les décisions de soudures n'y paraissent plus dans une grande fenêtre ouverte
+depuis une liste : les plans sont à gauche, celui qu'on vise à droite, sans volet ni carte —
+deux zones à même la surface, séparées par le filet franc (§ 2). La décision s'y dit en une
+ligne (« Karim Belkacem a déclaré 5 soudures sur 69 · … ») au lieu du titre, de la pastille et
+des lignes libellé / valeur ; les contrôles sont un **tableau** (§ 7 ter), une case carrée par
+contrôle, RT · VT · PT en tête cochant la colonne ; et le seul bouton qui engage dit ce qu'il
+vise, « Valider 5 soudures ». Le pied, le visa et la signature restent ceux de la décision.
+Ailleurs — la fiche, « Plans & équipes » —, la décision garde le dessin des volets.
 
 ---
 
@@ -419,7 +434,7 @@ Par ordre de visibilité. Rien n'est fait tant que ce document n'est pas validé
 | 5 | Les rayons : le 10px n'appartenait à aucune échelle | **fait** — `--r-lg` 8, `--r-xl` 12 |
 | 2 | La liste des demandes | en cours — la pastille « Urgente » est unifiée ; le statut passe en onglets comptés, puis en un point de couleur qui ouvre chaque ligne — les onglets en sont la légende, et les titres de groupe (« Validées 1 ouvertes à l'atelier ») disparaissent —, l'échéance n'alerte qu'en retard (« 20 j de retard »), et une demande en attente se valide ou se refuse depuis sa ligne |
 | 6 | Les autres cartes (`.settings-card`, `.prefa-section`) en blanc codé en dur | en cours — les 30 gris sourds en dur sont repris ; Paramètres est refait sur les jetons (sections empilées, un seul champ et un seul bouton, cartes sans teinte, plus aucun style en ligne) ; reste `.prefa-section` |
-| 7 | Les 14 autres écrans, un par un | à faire — Plans / ISO suit maintenant la liste des demandes (recherche, onglets « À préparer / En préparation », groupes, échéance, menu d'actions) ; « Liste des utilisateurs » et « Créer un utilisateur » ne font plus qu'un écran, « Utilisateurs », avec onglets par rôle et une fenêtre « Nouvel utilisateur » ; les PV aussi (onglets « À renseigner / Complètes », états par signe, volet en sections, état en trois boutons) ; le planning aussi (en-tête et barre d'outils des listes, Gantt à même la surface, une ligne par demande avec sa référence, barres teintées et nommées au lieu d'aplats, « À planifier » en groupe de liste, et un seul volet flottant par demande — planification, demande, avancement, commentaires — à la place de la fenêtre et des quatre cartes du bas) ; la fiche d'une demande et « Plans & affectations » s'ouvrent en volets flottants, comme celui des PV, et « Modifier » dans une fenêtre ; « Mes plans », l'écran du personnel d'atelier, aussi (recherche, onglets « En cours / À commencer / Terminés », une ligne par plan et une pastille par travail, un volet flottant par plan — ses travaux, ses étapes en boutons comme l'état des PV, ses fichiers ; l'avancement n'y est plus saisi, il se calcule sur les étapes et les soudures) ; « Mes soudures » aussi (l'en-tête des listes — densité, « Actualiser », et « Signaler un manque » en bouton plein —, la recherche seule, des onglets d'état dont les points ouvrent chaque feuille, les feuilles rangées sous leur plan — une ligne de groupe par plan, repliée à l'arrivée et déroulée d'un clic sur sa flèche, ses soudures dans la colonne des nombres ; le plan se choisissait dans une pastille de la barre —, « Renseigner » au contour en bout de ligne, la feuille renseignée sur son dessin — chaque ligne de sa liste soudure s'y clique et ouvre la fenêtre de la soudure —, et « Matériel signalé » sous les feuilles) ; « Commande matériel » enfin (volet flottant par bon, onglets par état ; depuis, l'ordre des autres listes — titre et « Actualiser », recherche, onglets, bons en groupes par état sous leur signe, « Détails » au contour —, et les manques signalés par l'atelier sous les bons, annoncés à droite des onglets, avec les commandes de ligne de la liste des demandes) |
+| 7 | Les 14 autres écrans, un par un | à faire — Plans / ISO suit maintenant la liste des demandes (recherche, onglets « À préparer / En préparation », groupes, échéance, menu d'actions) ; « Liste des utilisateurs » et « Créer un utilisateur » ne font plus qu'un écran, « Utilisateurs », avec onglets par rôle et une fenêtre « Nouvel utilisateur » ; les PV aussi (onglets « À renseigner / Complètes », états par signe, volet en sections, état en trois boutons) ; le planning aussi (en-tête et barre d'outils des listes, Gantt à même la surface, une ligne par demande avec sa référence, barres teintées et nommées au lieu d'aplats, « À planifier » en groupe de liste, et un seul volet flottant par demande — planification, demande, avancement, commentaires — à la place de la fenêtre et des quatre cartes du bas) ; la fiche d'une demande et « Plans & équipes » s'ouvrent en volets flottants, comme celui des PV, et « Modifier » dans une fenêtre ; « Mes plans », l'écran du personnel d'atelier, aussi (recherche, onglets « En cours / À commencer / Terminés », une ligne par plan et une pastille par travail, un volet flottant par plan — ses travaux, ses étapes en boutons comme l'état des PV, ses fichiers ; l'avancement n'y est plus saisi, il se calcule sur les étapes et les soudures) ; « Mes soudures » aussi (l'en-tête des listes — densité, « Actualiser », et « Signaler un manque » en bouton plein —, la recherche seule, des onglets d'état dont les points ouvrent chaque feuille, les feuilles rangées sous leur plan — une ligne de groupe par plan, repliée à l'arrivée et déroulée d'un clic sur sa flèche, ses soudures dans la colonne des nombres ; le plan se choisissait dans une pastille de la barre —, « Renseigner » au contour en bout de ligne, la feuille renseignée sur son dessin — chaque ligne de sa liste soudure s'y clique et ouvre la fenêtre de la soudure —, et « Matériel signalé » sous les feuilles) ; « Commande matériel » enfin (volet flottant par bon, onglets par état ; depuis, l'ordre des autres listes — titre et « Actualiser », recherche, onglets, bons en groupes par état sous leur signe, « Détails » au contour —, et les manques signalés par l'atelier sous les bons, annoncés à droite des onglets, avec les commandes de ligne de la liste des demandes) |
 | 8 | « Nouvelle demande » avait sa palette à elle — sépia et terre cuite | **fait** — ses jetons `--nd-*` pointent sur ceux de la DA, un seul bloc au lieu de deux |
 | 9 | L'entrée active de la barre latérale en terre cuite | **fait** — azur, 7,27:1 en clair |
 | 10 | « Nouvelle demande » charge encore Inter et Source Serif 4 | à faire — 302 Ko de polices, contre la décision « pile système » ci-dessous |

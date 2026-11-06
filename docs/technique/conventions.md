@@ -76,7 +76,7 @@ script de l'écran écoute ; il ne les invente pas.
 | `vue/liste.php` | Les pièces des écrans de liste : la densité (`listeDensite()`), « Actualiser » (`listeActualiser()`), la recherche (`listeRecherche()`), les onglets d'état et leur résumé (`listeOnglets()`) |
 | `vue/liste_filtrable.php` | Le champ « liste filtrable » des fenêtres (`listeFiltrableRendu()`) |
 | `vue/filtres.php` | Les pastilles de filtre de la barre (`filtreRendu()`, `filtresBarre()`) |
-| `vue/soudures.php`, `vue/manques.php` | « Mes soudures » : un plan et ses feuilles, la fenêtre d'une soudure, celle d'un manque |
+| `vue/soudures.php`, `vue/manques.php` | Les soudures de « Mes plans » : la carte d'une feuille, la fenêtre d'une soudure, celle d'un manque |
 
 Avant de recopier un bloc d'un écran à l'autre, en faire un composant. La densité était écrite
 à la main, à l'identique, dans huit écrans ; la sortir n'a pas changé un pixel — vérifié en

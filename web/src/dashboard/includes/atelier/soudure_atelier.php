@@ -243,7 +243,7 @@ function soudureAtelierEnregistrer(PDO $db, int $elementId, array $plan, int $pa
  * C'est le sélecteur de « Mes soudures » qui s'en sert : il peut y avoir des centaines de
  * plans, et l'écran ne lit ensuite les feuilles que de celui qu'on ouvre.
  *
- * @return list<array{element: int, reference: string, demande: int, affaire: string, feuilles: int}>
+ * @return list<array{element: int, reference: string, libelle: string, demande: int, affaire: string, feuilles: int}>
  */
 function soudureAtelierPlans(PDO $db, int $userId): array
 {
@@ -252,18 +252,19 @@ function soudureAtelierPlans(PDO $db, int $userId): array
     // « 1 feuille » sur un plan vide, et le plan ouvert d'office n'était pas toujours un
     // plan qui en a.
     // Les plans de la personne : par un travail ou par un métier (atelierPlansDeSql()).
-    $stmt = $db->prepare("SELECT e.id, e.reference, e.id_demande, d.nom_affaire,
+    $stmt = $db->prepare("SELECT e.id, e.reference, e.libelle, e.id_demande, d.nom_affaire,
             COALESCE(SUM(CASE WHEN doc.id IS NULL THEN 0 ELSE GREATEST(COALESCE(doc.pages, 1), 1) END), 0) AS feuilles
         FROM element_atelier e
         JOIN demande_prefabrication d ON d.id = e.id_demande
         LEFT JOIN element_atelier_document doc ON doc.id_element = e.id AND doc.type_document = 'plan'
         WHERE d.id_statut = 2 AND e.id IN " . atelierPlansDeSql($db) . "
-        GROUP BY e.id, e.reference, e.id_demande, d.nom_affaire
+        GROUP BY e.id, e.reference, e.libelle, e.id_demande, d.nom_affaire
         ORDER BY e.id_demande DESC, e.reference");
     $stmt->execute([$userId, $userId]);
     return array_map(static fn (array $ligne): array => [
         'element' => (int) $ligne['id'],
         'reference' => (string) $ligne['reference'],
+        'libelle' => (string) ($ligne['libelle'] ?? ''),
         'demande' => (int) $ligne['id_demande'],
         'affaire' => (string) ($ligne['nom_affaire'] ?? ''),
         'feuilles' => (int) $ligne['feuilles'],

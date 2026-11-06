@@ -14,7 +14,7 @@ Trois familles, et elles ne se lancent pas dans les mêmes circonstances.
 
 | Script | Ce qu'il fait |
 |---|---|
-| `add_user.php` | Crée un compte : nom, prénom, et au choix le rôle, le courriel, le mot de passe. Le rôle s'écrit sous l'un de ses trois noms (`chef-atelier`, « Chef d'atelier », « Gestionnaire »). Sans mot de passe, il en tire un au sort et le montre une fois. |
+| `add_user.php` | Crée un compte : nom, prénom, et au choix le rôle, le courriel, le mot de passe. Le rôle s'écrit sous l'un de ses trois noms (`chef-atelier`, « Chef d'atelier », « Gestionnaire »). Sans mot de passe, il montre une fois un code d'accès : la personne choisit le sien à sa première connexion, avec ce code. |
 | `add_test_users.php` | Pose les comptes d'essai des quatre profils. Relançable sans doublon. |
 | `add_demo_data.php` | Remplit la base de demandes et de plans de démonstration. Ne touche pas à l'existant. |
 

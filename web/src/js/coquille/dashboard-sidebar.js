@@ -39,8 +39,26 @@ const btn_hide_sidebar = document.getElementById('btn-hide');
 // ouvert par-dessus le contenu. Une requête média ne lit pas une variable CSS : si le
 // seuil bouge, il bouge ici aussi.
 const sidebarLayout = window.matchMedia('(max-width: 1080px)');
+
+// Sur grand écran, le menu replié n'est plus caché : c'est un rail d'icônes, le libellé en
+// infobulle. Demandé le 6 novembre 2026 — un menu « minimal ». Le bouton du haut le déplie,
+// et le choix tient par navigateur, comme les rayons.
+const MENU_DEPLIE = 'menu_deplie';
+
+function menuDeplieMemorise() {
+    try {
+        return localStorage.getItem(MENU_DEPLIE) === '1';
+    } catch (erreur) {
+        return false;
+    }
+}
+
 function setSidebar(open) {
-    document.getElementById('contenaire').classList.toggle('sidebar-closed', !open);
+    const contenaire = document.getElementById('contenaire');
+    // Petit écran : le tiroir, ouvert par-dessus la page ou caché. Grand écran : le menu
+    // complet ou le rail.
+    contenaire.classList.toggle('sidebar-closed', !open && sidebarLayout.matches);
+    contenaire.classList.toggle('menu-rail', !open && !sidebarLayout.matches);
     btn_hide_sidebar.setAttribute('aria-expanded', String(open));
     const overlay = open && sidebarLayout.matches;
     document.getElementById('sidebar-backdrop').hidden = !overlay;
@@ -65,10 +83,67 @@ document.addEventListener('keydown', function (event) {
     }
 });
 btn_hide_sidebar.addEventListener('click', function () {
-    setSidebar(this.getAttribute('aria-expanded') !== 'true');
+    const ouvrir = this.getAttribute('aria-expanded') !== 'true';
+    setSidebar(ouvrir);
+    // Seul le choix du grand écran se retient : le tiroir se referme à chaque navigation.
+    if (!sidebarLayout.matches) {
+        try {
+            localStorage.setItem(MENU_DEPLIE, ouvrir ? '1' : '0');
+        } catch (erreur) { /* le choix ne sera pas mémorisé */ }
+    }
 });
-sidebarLayout.addEventListener('change', function (event) { setSidebar(!event.matches); });
-setSidebar(!sidebarLayout.matches);
+sidebarLayout.addEventListener('change', function (event) {
+    setSidebar(event.matches ? false : menuDeplieMemorise());
+});
+setSidebar(sidebarLayout.matches ? false : menuDeplieMemorise());
+
+/* ---------- L'infobulle du rail ----------
+ *
+ * Replié, le menu ne montre que ses icônes : le libellé paraît à côté, au survol et au
+ * clavier. Une bulle en position fixe, posée sur le corps de la page, et non un ::after : la
+ * barre défile, et elle couperait tout ce qui dépasse de ses bords. Le libellé reste dans le
+ * bouton, masqué à l'œil seulement — c'est lui qui donne son nom au bouton.
+ */
+(function () {
+    const contenaire = document.getElementById('contenaire');
+    const panneau = document.getElementById('left-panel');
+    if (!contenaire || !panneau) return;
+
+    const bulle = document.createElement('div');
+    bulle.className = 'menu-bulle';
+    bulle.setAttribute('aria-hidden', 'true');
+    bulle.hidden = true;
+    document.body.appendChild(bulle);
+
+    function montrer(bouton) {
+        if (!contenaire.classList.contains('menu-rail')) return;
+        const libelle = bouton.querySelector(':scope > span:not(.nav-urgent-badge)')?.textContent.trim();
+        if (!libelle) return;
+        // Le compteur se lit aussi dans la bulle : sur le rail, il n'est plus qu'une pastille.
+        const compte = bouton.querySelector('.nav-urgent-badge:not([hidden])')?.textContent.trim();
+        bulle.textContent = compte ? libelle + ' · ' + compte : libelle;
+        bulle.hidden = false;
+        const repere = bouton.getBoundingClientRect();
+        bulle.style.left = (repere.right + 10) + 'px';
+        bulle.style.top = (repere.top + repere.height / 2 - bulle.offsetHeight / 2) + 'px';
+    }
+
+    const cacher = () => { bulle.hidden = true; };
+
+    panneau.addEventListener('mouseover', evenement => {
+        const bouton = evenement.target.closest('.nav-btn');
+        if (bouton) montrer(bouton);
+        else cacher();
+    });
+    panneau.addEventListener('mouseleave', cacher);
+    panneau.addEventListener('focusin', evenement => {
+        const bouton = evenement.target.closest('.nav-btn');
+        if (bouton && bouton.matches(':focus-visible')) montrer(bouton);
+    });
+    panneau.addEventListener('focusout', cacher);
+    panneau.addEventListener('click', cacher);
+    panneau.addEventListener('scroll', cacher);
+}());
 
 /* ---------- La barre se parcourt aux flèches ----------
  *

@@ -75,7 +75,11 @@ Les boutons Valider et Refuser sont sur la ligne même de la demande. Chaque dé
 | | Chargé de production | Chargé d'affaire |
 | --- | --- | --- |
 | **Modifier** | Toutes les demandes | Les siennes, **quel que soit leur statut** |
-| **Supprimer** | Toutes les demandes | Les siennes, **en attente seulement** |
+| **Supprimer** | Toutes, **sauf les validées** | Les siennes, **en attente seulement** |
+
+**Une demande validée ne se supprime plus, par personne** (`409`/`403`) : elle est partie à
+l'atelier. Elle **garde aussi son affaire**, donc son nom : à la modification, le champ
+« Affaire » est figé, et l'affaire elle-même ne se renomme plus (voir [Affaires](affaires.md)).
 
 ::: warning Modifier une demande validée la repasse en attente
 La validation et le planning sont effacés : la demande sort du circuit de l'atelier jusqu'à une
@@ -102,7 +106,7 @@ Supprimer une demande efface ses fichiers, et les lignes liées suivent en casca
 
 ## La fiche
 
-Le menu d'une ligne ouvre sa fiche, dans un volet :
+Un clic sur la ligne — ou « Détails » dans son menu ⋯ — ouvre sa fiche, dans un volet :
 
 - **Le parcours** : déposée par qui et quand, validée par qui et quand ;
 - **trois chiffres** : pouces ISO, durée estimée, livraison prévue ;

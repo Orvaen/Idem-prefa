@@ -2,6 +2,8 @@
     // L'écran « Soudures » de l'encadrement : tout est déjà rendu, on cache ce qui ne
     // correspond pas — à la recherche, et à l'onglet d'état choisi. La liste tient sur une
     // page : un rechargement serveur à chaque frappe coûterait plus qu'il ne rapporte.
+    // « Validation des soudures » partageait cette liste jusqu'au 6 novembre 2026 ; c'est une
+    // file à elle depuis (validation-soudures.js).
     const page = () => document.getElementById('suivi-soudures-page');
 
     function filtrer() {

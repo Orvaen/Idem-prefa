@@ -27,7 +27,38 @@ final class Affaire
          * Lue par pour() pour un chargé d'affaire, seulement les siennes — voir lecture().
          */
         public readonly int $demandes,
+        /**
+         * Combien de ses demandes sont validées — toutes, quel qu'en soit l'auteur. Une seule
+         * suffit : l'affaire ne se renomme plus, puisque son nom est celui de ses demandes.
+         */
+        public readonly int $validees = 0,
+        /** Combien attendent la décision du chargé de production — toutes, comme $validees. */
+        public readonly int $enAttente = 0,
+        /** Combien ont été refusées — toutes, comme $validees. */
+        public readonly int $refusees = 0,
     ) {}
+
+    public const VALIDEE = 'validee';
+    public const EN_ATTENTE = 'en_attente';
+    public const REFUSEE = 'refusee';
+    public const SANS_DEMANDE = 'sans_demande';
+
+    /**
+     * Où en est l'affaire, lu sur ses demandes. Une affaire n'a pas de statut à elle : elle
+     * est validée dès qu'une de ses demandes l'est — c'est aussi ce qui la fige (modifier(),
+     * fermer()). Sinon, ce qui attend une décision passe avant ce qui a été refusé.
+     *
+     * @return self::VALIDEE|self::EN_ATTENTE|self::REFUSEE|self::SANS_DEMANDE
+     */
+    public function etat(): string
+    {
+        return match (true) {
+            $this->validees > 0 => self::VALIDEE,
+            $this->enAttente > 0 => self::EN_ATTENTE,
+            $this->refusees > 0 => self::REFUSEE,
+            default => self::SANS_DEMANDE,
+        };
+    }
 
     /**
      * La requête de lecture.
@@ -42,7 +73,13 @@ final class Affaire
         return 'SELECT a.id, a.nom, a.id_charge_affaire,
                 TRIM(CONCAT(COALESCE(u.prenom, \'\'), \' \', COALESCE(u.name, \'\'))) AS charge,
                 (SELECT COUNT(*) FROM demande_prefabrication d WHERE d.id_affaire = a.id'
-            . ($siennes ? ' AND d.idUsers = a.id_charge_affaire' : '') . ') AS demandes
+            . ($siennes ? ' AND d.idUsers = a.id_charge_affaire' : '') . ') AS demandes,
+                (SELECT COUNT(*) FROM demande_prefabrication d WHERE d.id_affaire = a.id AND d.id_statut = '
+            . Demande::VALIDEE . ') AS validees,
+                (SELECT COUNT(*) FROM demande_prefabrication d WHERE d.id_affaire = a.id AND d.id_statut = '
+            . Demande::EN_ATTENTE . ') AS en_attente,
+                (SELECT COUNT(*) FROM demande_prefabrication d WHERE d.id_affaire = a.id AND d.id_statut = '
+            . Demande::REFUSEE . ') AS refusees
             FROM affaire a
             LEFT JOIN Utilisateur u ON u.id = a.id_charge_affaire';
     }
@@ -97,8 +134,9 @@ final class Affaire
     }
 
     /**
-     * @throws DomainException si le nouveau nom est déjà pris par une autre affaire, ou si
-     *         on change un chargé d'affaire déjà désigné
+     * @throws DomainException si le nouveau nom est déjà pris par une autre affaire, si on
+     *         change un chargé d'affaire déjà désigné, ou si on renomme une affaire dont une
+     *         demande est validée
      */
     public static function modifier(PDO $db, int $id, string $nom, ?int $chargeAffaire): void
     {
@@ -109,6 +147,13 @@ final class Affaire
         // peut alors être confiée de nouveau.
         $avant = self::parId($db, $id);
         if (!$avant) throw new DomainException('Cette affaire n’existe plus.');
+        // Renommer l'affaire renomme ses demandes. Une demande validée est partie à
+        // l'atelier sous ce nom — sur ses plans, ses PV : il ne bouge plus. La comparaison
+        // est stricte, casse et accents compris : « Bâtiment A » pour « BATIMENT A » se
+        // verrait aussi sur les documents.
+        if ($avant->validees > 0 && $nom !== $avant->nom) {
+            throw new DomainException('Une demande validée est rattachée à cette affaire : son nom ne se change plus.');
+        }
         if ($avant->idChargeAffaire !== null && $avant->idChargeAffaire !== $chargeAffaire) {
             throw new DomainException('Le chargé d’affaire de cette affaire est déjà désigné : il ne se change plus.');
         }
@@ -157,6 +202,9 @@ final class Affaire
             $ligne['id_charge_affaire'] !== null ? (int) $ligne['id_charge_affaire'] : null,
             trim((string) ($ligne['charge'] ?? '')),
             (int) $ligne['demandes'],
+            (int) ($ligne['validees'] ?? 0),
+            (int) ($ligne['en_attente'] ?? 0),
+            (int) ($ligne['refusees'] ?? 0),
         );
     }
 }

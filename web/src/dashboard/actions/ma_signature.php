@@ -1,7 +1,7 @@
 <?php
-// Sa propre signature, tracée dans les paramètres (rubrique Compte) : la valider, ou la
-// retirer. Chacun ne touche qu'à la sienne — la personne vient de la session, jamais du
-// formulaire. La réponse rend la commande de la ligne, que la fenêtre remplace.
+// Sa propre signature, tracée dans sa grande fenêtre (signatureFenetreRendu()) : la valider,
+// ou la retirer. Chacun ne touche qu'à la sienne — la personne vient de la session, jamais du
+// formulaire. La réponse rend le bloc « Signature » des paramètres, qui le remplacent.
 //
 // Validée, elle ne se change plus de soi-même : seul un administrateur la réinitialise, depuis
 // « Utilisateurs » (reinitialiser_signature.php), et garde la main sur la sienne. Les
@@ -36,7 +36,7 @@ try {
         } . $suite;
     } else {
         signatureSupprimer($db, $utilisateur->id);
-        $message = 'Signature supprimée : vos prochains visas porteront votre nom.';
+        $message = 'Signature supprimée : tracez-en une nouvelle pour valider des soudures.';
     }
 } catch (DomainException $refus) {
     prefaError(422, $refus->getMessage());

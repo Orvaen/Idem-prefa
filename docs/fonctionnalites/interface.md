@@ -6,33 +6,63 @@ Ce que tous les écrans partagent : la coquille, la navigation, les fenêtres et
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
-│ ☰ Menu  IDEM dev        [ 🔍 Rechercher un écran…   Ctrl K ]   Compte ⌄ 🎨 ⏻ │  ← la barre du haut
-├───────────────┬──────────────────────────────────────────────────────────┤
-│ Accueil       │                                                          │
-│               │                                                          │
-│ Affaires &    │                  l'écran ouvert                          │
-│ demandes  ⌄   │                  (la seule surface qui flotte)           │
-│ Atelier   ⌄   │                                                          │
-│ Admin.    ⌄   │                                                          │
-│               │                                                          │
-│ ⚙ Paramètres  │                                                          │
-└───────────────┴──────────────────────────────────────────────────────────┘
+│ ☰  IDEM dev                                                       🔍  (R) │  ← la barre du haut
+├────┬─────────────────────────────────────────────────────────────────────┤
+│ ⌂  │                                                                     │
+│────│                                                                     │
+│ ▤  │                       l'écran ouvert                                │
+│ ✓² │                       (la seule surface qui flotte)                 │
+│────│                                                                     │
+│ 〰 │                                                                     │
+│ ▦  │                                                                     │
+│ ⚙  │                                                                     │
+└────┴─────────────────────────────────────────────────────────────────────┘
 ```
+
+Réduite le 6 novembre 2026 à la demande du client : une barre du haut d'une ligne, et le menu
+replié en rail d'icônes.
 
 | Zone | Ce qu'elle porte |
 | --- | --- |
-| **La barre du haut** | Le bouton qui replie le menu, le logo — et le repère **dev** en développement —, la recherche d'écran, le compte, le thème et la déconnexion. Rien de tout cela ne dépend de l'écran ouvert. |
-| **La barre latérale** | Les écrans que le rôle peut ouvrir, rangés en sections repliables : « Affaires & demandes », « Atelier », « Administration ». Au pied, **Paramètres**, pour tout le monde. |
+| **La barre du haut** | Le bouton du menu, le logo — et le repère **dev** en développement —, puis à droite la loupe de la recherche d'écran (`Ctrl K`) et l'initiale du compte. Le nom et le rôle sont dans l'infobulle de l'initiale ; le **thème**, les **paramètres** et la **déconnexion** sont dans le menu du compte. |
+| **La barre latérale** | Les écrans que le rôle peut ouvrir. Repliée — par défaut —, un rail d'icônes de 56 px : le libellé paraît en bulle au survol, les compteurs en pastille sur l'icône, et un filet sépare les sections. Dépliée, les sections repliables : « Affaires & demandes », « Atelier », « Administration ». Au pied, **Paramètres**, pour tout le monde. |
 | **La carte de travail** | L'écran ouvert. C'est la seule surface qui flotte ; tout le reste est posé sur le cadre. |
 
 L'écran ouvert s'inscrit dans l'adresse, sous `?vue=` : un rechargement, un lien envoyé à un
 collègue ou les boutons Précédent et Suivant du navigateur ramènent au bon écran. Une adresse
 qui nomme un écran inconnu, ou interdit à ce rôle, ouvre l'accueil sans rien dire.
 
+**Précédent** — le bouton du navigateur, ou celui d'Android dans l'application :
+
+- rouvre l'écran d'avant **tel qu'on l'avait** : la liste des demandes d'une affaire revient
+  avec sa recherche ;
+- rouvrir l'écran où l'on est déjà n'ajoute pas d'entrée : Précédent ne revient jamais sur
+  place ;
+- avec une fenêtre, un volet ou le tiroir du menu ouvert, il **le ferme** et reste sur
+  l'écran — par le même chemin qu'Échap, donc avec la confirmation d'une saisie en cours ;
+- l'écran de connexion ne reste pas dans l'historique : depuis le premier écran, Précédent
+  quitte l'application au lieu d'y ramener.
+
+**Le clavier d'une tablette** prend la moitié de l'écran ; la page se réduit à l'autre moitié,
+dans l'application Android comme dans Chrome (`interactive-widget=resizes-content`). Tant
+qu'il est ouvert (`js/composants/clavier.js`, au doigt seulement) :
+
+- la barre du haut se retire, et le cadre perd sa marge ;
+- les fenêtres et les volets montent contre le haut et prennent toute la hauteur qui reste ;
+- le champ qu'on remplit revient au milieu de ce qu'on voit ;
+- sur l'écran de connexion, le logo se retire : les champs et le bouton restent au-dessus du
+  clavier.
+
+Dans Chrome, la page devine le clavier à la hauteur visible, comparée à celle de l'écran dans
+la même orientation. Dans l'application Android, c'est l'application qui le lui dit
+(`clavier:natif`, envoyé par `MainActivity`) : la barre de navigation qui revient avec le
+clavier faussait le calcul, et une fenêtre comme « Ajouter un plan » passait dessous.
+
 ### La barre latérale
 
-- **Repliable** avec le bouton « Menu » ; sous 1 080 px de large, elle passe par-dessus le
-  contenu et se referme après un choix.
+- **Repliable** avec le bouton du menu : sur grand écran, entre le rail d'icônes et le menu
+  complet — le choix se retient sur le poste ; sous 1 080 px de large, elle passe par-dessus
+  le contenu et se referme après un choix.
 - **Redimensionnable** à la souris : la poignée est le bord gauche de la carte, entre 150 et
   600 px de large. Elle est masquée sous 1 100 px.
 - **Au clavier** : un seul arrêt de tabulation, puis les flèches haut et bas pour aller d'une
@@ -69,13 +99,13 @@ menu du compte ou par `Ctrl ,` :
 | Rubrique | Pour qui | Ce qu'on y règle |
 | --- | --- | --- |
 | **Général** | tout le monde | Le thème — système, clair ou sombre —, et la liste des raccourcis clavier |
-| **Compte** | tout le monde | Son profil, en lecture : nom, identifiant, rôle, courriel. Sa **signature**, qui vise les soudures qu'on valide ([le visa](/fonctionnalites/soudures#visa)) : on la trace et on la valide, une fois — pour la changer, on demande au chargé de production, qui la réinitialise ([le détail](/fonctionnalites/utilisateurs#la-signature)) ; lui refait ou supprime la sienne. Son **mot de passe**, qui ne se change pas sur place : on en demande un nouveau au chargé de production, et on le choisit en se reconnectant — lui réinitialise le sien ([le détail](/fonctionnalites/utilisateurs#le-mot-de-passe)). La déconnexion. |
+| **Compte** | tout le monde | Son profil, en lecture : nom, identifiant, rôle, courriel. Sa **signature**, qui vise les soudures qu'on valide ([le visa](/fonctionnalites/soudures#visa)) : on la trace et on la valide, une fois — pour la changer, on demande au chargé de production, qui la réinitialise ([le détail](/fonctionnalites/utilisateurs#la-signature)) ; lui refait ou supprime la sienne. Son **mot de passe**, qui ne se change pas sur place : on en demande un nouveau au chargé de production, et on le choisit en se reconnectant, avec le code d’accès qu’il donne — lui réinitialise le sien ([le détail](/fonctionnalites/utilisateurs#le-mot-de-passe)). La déconnexion. |
 | **Fabrication** | chargé de production | Le **temps par pouce ISO**, qui sert à estimer le délai d'une demande |
 | **Passivation** | chargé de production | Les **types de passivation** proposés dans le formulaire de demande |
 | **Matériel** | chargé de production | Les **unités** proposées quand on signale un manque de matériel |
 
 Un réglage s'applique **dès qu'on le touche** : il n'y a pas de bouton « Enregistrer » — sauf
-sous le cadre de la signature, qu'on valide une fois tracée. Le temps par pouce part quand on
+pour la signature, qu'on trace en grand dans sa fenêtre à elle et qu'on valide une fois tracée. Le temps par pouce part quand on
 quitte le champ ; un refus du serveur s'écrit sous la ligne. La recherche, en haut de la colonne,
 traverse toutes les rubriques.
 
@@ -83,7 +113,24 @@ traverse toutes les rubriques.
 
 Toutes les boîtes de dialogue suivent une seule recette (`dialog.fenetre`) : un en-tête avec son
 titre et sa croix, un corps, un pied avec « Annuler » encadré et l'action en bouton plein. Échap
-les ferme ; le focus y reste enfermé tant qu'elles sont ouvertes.
+les ferme ; le focus y reste enfermé tant qu'elles sont ouvertes. Sur tablette, elles
+s'élargissent : champs de 54 px, intitulés au-dessus, cases à cocher sur des lignes de 52 px,
+boutons de 50 px.
+
+## Le lecteur PDF
+
+Tout PDF de l'application s'ouvre dans **son lecteur à elle**, jamais dans celui du navigateur :
+le serveur rend chaque page en image, à l'adresse même du document — qui vérifie le droit de le
+lire (`?pages`, `?page=N`, `?vignette=N`, `includes/lecture/pdf_pages.php`). Le lecteur du
+navigateur, dans une iframe, est banni : d'autres outils que les nôtres, et rien du tout dans
+l'application Android. Un document que le serveur ne sait pas rendre le dit, et propose de le
+télécharger.
+
+- Les pages l'une sous l'autre, un zoom « − », « + », « Ajuster » (Ctrl + molette au poste) ;
+- le sommaire, une vignette par page — une colonne au poste ; sur tablette, un volet posé sur
+  les pages, replié au départ, que « Pages » ouvre et qu'une vignette touchée referme ;
+- sur tablette, la page à la largeur de l'écran, une pastille « 3 / 15 » en bas, et des
+  commandes de 48 px — sans libellés en portrait.
 
 ## Les questions et les alertes
 
@@ -139,3 +186,16 @@ du haut ; il est **retenu par le navigateur** : chacun choisit le sien, sur chaq
 L'interface s'adapte au doigt (`pointer: coarse`) : les cibles passent à 44 px, les commandes
 qui n'apparaissent qu'au survol sur un poste restent visibles, et la barre latérale passe
 par-dessus le contenu.
+
+Le haut des listes tient sur une ligne en paysage — le titre, la recherche, les outils — et sur
+deux en portrait : le titre à gauche et les outils à droite, puis la recherche. La phrase sous
+le titre se retire dans les deux cas.
+
+La fenêtre du plan — « Mes plans » du soudeur, Plans / ISO — laisse la place au dessin : sa barre
+tient sur une ligne, sans la consigne ni la légende. En portrait, « Sommaire », « Liste des
+soudures », « Télécharger le PDF », « Imprimer » et « Signaler un manque » passent en icônes,
+« Page » se retire devant « 3 / 15 », et le nom du plan prend la place qui reste ;
+« Enregistrer » garde son mot. Le sommaire du cahier part replié ; « Sommaire » l'ouvre en
+volet sur le bord gauche du dessin, et une feuille touchée le referme. Le plan se manie comme
+une carte : un doigt le déplace dans tous les sens, deux doigts le zooment en pinçant, un
+toucher simple reste un clic (une soudure, une case).

@@ -31,7 +31,7 @@ final class Connexion
         // Le même message dans les deux cas : dire « ce compte n'existe pas » apprendrait
         // à un inconnu quels identifiants sont valides.
         if (!(new User($db))->login($identifiant, $motDePasse)) {
-            return Reponse::erreur(401, 'identifiants_incorrects', 'Identifiants incorrects.');
+            return Reponse::erreur(401, 'identifiants_incorrects', 'Identifiant ou mot de passe incorrect.');
         }
 
         // Le numéro de session change à l'ouverture : sans cela, un numéro obtenu avant la

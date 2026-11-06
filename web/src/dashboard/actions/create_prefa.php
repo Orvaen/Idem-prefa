@@ -9,6 +9,8 @@ prefaPost();
 
 // Récupérer un id si null alors erreure
 $editing = isset($_POST['id']);
+// La demande telle qu'elle est en base, en modification : son statut et son affaire.
+$existante = null;
 
 // Upload images
 
@@ -26,11 +28,12 @@ if ($editing) {
     if (!$requestId) prefaError(400, 'Demande invalide.');
 
     // Vérifier si la demande existe et si c un admin.
-    $check = $db->prepare('SELECT id FROM demande_prefabrication WHERE id = ?' . ($isAdmin ? '' : ' AND idUsers = ?'));
+    $check = $db->prepare('SELECT id, id_statut, id_affaire FROM demande_prefabrication WHERE id = ?' . ($isAdmin ? '' : ' AND idUsers = ?'));
     $check->execute($isAdmin ? [$requestId] : [$requestId, $actor['id']]);
+    $existante = $check->fetch(PDO::FETCH_ASSOC);
 
     // Sinon retourner une erreure
-    if (!$check->fetchColumn()) prefaError(404, 'Demande introuvable ou inaccessible.');
+    if (!$existante) prefaError(404, 'Demande introuvable ou inaccessible.');
 
 } elseif ($isAdmin) {
     prefaError(403, 'Un administrateur ne peut pas créer de demande de préfabrication.');
@@ -44,6 +47,14 @@ $values = [];
 // déposer sur le chantier d'un collègue.
 $idAffaire = filter_var($_POST['id_affaire'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 if (!$idAffaire) prefaError(400, 'Choisissez l’affaire à laquelle rattacher cette demande.');
+
+// Une demande validée garde son affaire, donc son nom : il est sur ses plans, ses PV et ce
+// que l'atelier a déjà en main. Le formulaire fige le champ ; ceci tient pour qui
+// l'enverrait quand même.
+if (!empty($existante) && (int) $existante['id_statut'] === Demande::VALIDEE
+    && (int) $existante['id_affaire'] !== (int) $idAffaire) {
+    prefaError(409, 'Cette demande est validée : son affaire ne se change plus.');
+}
 
 $affaire = Affaire::accessible($db, $utilisateur, $idAffaire);
 if (!$affaire) prefaError(403, 'Cette affaire ne vous est pas confiée.');

@@ -5,64 +5,23 @@ require_once __DIR__ . '/../includes/atelier/atelier.php';
 require_once __DIR__ . '/../includes/atelier/avancement.php';
 require_once __DIR__ . '/../includes/atelier/soudure.php';
 require_once __DIR__ . '/../includes/atelier/decision.php';
+require_once __DIR__ . '/../includes/atelier/validation_soudures.php';
 
 // L'écran de l'encadrement : il regarde l'atelier entier d'un coup. L'atelier, lui, a
 // « Mes soudures » et n'y voit que ses propres plans.
 if (!$canManageWorkshop) prefaError(403, 'Cet écran est réservé au chargé de production et au chef d’atelier.');
 
-$plans = soudureSuiviPlans($db);
-
-// Qui a relevé des cordons sur un plan et y est affecté, à n'importe quel travail : quand
-// le plan n'a pas encore de suivi soudage, « Valider » l'ouvre à son nom. Une affectation
-// par soudeur suffit — c'est elle qui dit que l'encadrement l'a mis sur ce plan. « Fait » se
-// lit comme partout : un procédé ou une date.
-$soudeursAffectes = $db->prepare("SELECT MIN(a.id) AS affectation, a.id_utilisateur AS soudeur, TRIM(CONCAT(u.prenom, ' ', u.name)) AS nom
-    FROM affectation_atelier a
-    JOIN Utilisateur u ON u.id = a.id_utilisateur
-    WHERE a.id_element = ? AND a.actif = 1 AND u.id_role = ?
-      AND EXISTS (SELECT 1 FROM plan_soudure s
-          WHERE s.id_element = a.id_element AND s.id_soudeur = a.id_utilisateur
-            AND (TRIM(s.type_soudure) <> '' OR s.date_soudure IS NOT NULL))
-    GROUP BY a.id_utilisateur, u.prenom, u.name
-    ORDER BY nom");
-
-// Les déclarations en attente, toutes affectations confondues : une seule lecture.
-$idsAffectations = [];
-foreach ($plans as $plan) foreach ($plan['affectations'] as $affectation) $idsAffectations[] = (int) $affectation['id'];
-$attentes = avancementEnAttentePlusieurs($db, $idsAffectations);
-
-// Ce que chaque plan porte vraiment. Un plan sans cordon ni liste reconnue n'a rien à
-// faire ici : c'est un écran sur les soudures, pas sur les plans.
-$lignes = [];
+// Les plans qui portent des soudures, lus comme dans « Validation des soudures »
+// (includes/atelier/validation_soudures.php) — et ce que chacun a de soudures à valider. Elles
+// se valident sur cet écran-là : ici, l'onglet « À valider » les trouve, et la fenêtre du plan
+// y mène.
+$lignes = soudureSuiviLignes($db);
 $aValider = 0;
-foreach ($plans as $plan) {
-    $elementId = (int) $plan['id'];
-    $prevu = avancementSouduresPrevues($db, $elementId);
-    $faites = avancementSouduresFaites($db, $elementId);
-    if ($faites === 0 && $prevu['prevues'] === 0) continue;
-
-    $enAttente = [];
-    $soudage = null;
-    foreach ($plan['affectations'] as $affectation) {
-        if ($soudage === null && $affectation['type_affectation'] === 'soudage') $soudage = $affectation;
-        if (isset($attentes[(int) $affectation['id']])) {
-            $enAttente[] = $attentes[(int) $affectation['id']] + ['affectation' => $affectation];
-        }
-    }
-    $aValider += count($enAttente);
-
-    $lignes[] = $plan + [
-        'prevues' => $prevu['prevues'],
-        'lues' => avancementFeuillesPhrase($prevu),
-        'faites' => $faites,
-        'attentes' => $enAttente,
-        // L'avancement que les cordons font bouger : celui du suivi soudage. La première
-        // affectation venue — rangées par type, c'était le Plan / ISO — restait à 0 % alors
-        // que la validation avait bien écrit 75 % sur le suivi soudage.
-        'avancement' => (int) ($soudage['avancement'] ?? 0),
-        'soudage' => $soudage,
-    ];
+foreach ($lignes as &$ligne) {
+    $ligne['validation'] = validationSouduresPlan($db, $utilisateur, $ligne);
+    if ($ligne['validation']['decisions'] !== []) $aValider++;
 }
+unset($ligne);
 
 // Les états d'un plan, dans l'ordre des onglets : ce qui attend une décision d'abord, puis
 // le travail dans l'ordre où il avance. Chacun a son point — la légende de ceux qui ouvrent
@@ -75,7 +34,7 @@ $etats = [
 ];
 foreach ($lignes as &$ligne) {
     $ligne['etat'] = match (true) {
-        (bool) $ligne['attentes'] => 'a_valider',
+        $ligne['validation']['decisions'] !== [] => 'a_valider',
         $ligne['prevues'] > 0 && $ligne['faites'] >= $ligne['prevues'] => 'complet',
         $ligne['faites'] > 0 => 'en_cours',
         default => 'a_faire',
@@ -104,9 +63,9 @@ $prevuesTotal = array_sum(array_column($lignes, 'prevues'));
                 <?= listeDensite() ?>
                 <button type="button" class="suivi-soudures-actualiser pv-outil">
                     <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-2l2 3M4 16l2 3a7 7 0 0 1 12-2" />
+                        <path d="M21 12a9 9 0 1 1-2.64-6.36L21 8" /><path d="M21 3v5h-5" />
                     </svg>
-                    Actualiser
+                    <span class="outil-libelle">Actualiser</span>
                 </button>
             </div>
         </header>
@@ -143,7 +102,7 @@ $prevuesTotal = array_sum(array_column($lignes, 'prevues'));
                   // couleur de l'attente, comme les « PV à faire ». ?>
             <p class="prefa-list-summary">
                 <?php if ($aValider): ?>
-                    <span class="suivi-soudures-a-valider"><strong><?= $aValider ?></strong> <?= $aValider === 1 ? 'avancement à valider' : 'avancements à valider' ?></span>
+                    <span class="suivi-soudures-a-valider"><strong><?= $aValider ?></strong> <?= $aValider === 1 ? 'plan à valider' : 'plans à valider' ?></span>
                 <?php endif; ?>
                 <span><strong><?= $faitesTotal ?></strong> <?= $prevuesTotal
                     ? ($faitesTotal > 1 ? 'soudures relevées' : 'soudure relevée') . ' sur ' . $prevuesTotal
@@ -247,142 +206,86 @@ $prevuesTotal = array_sum(array_column($lignes, 'prevues'));
                                         </button>
                                     </div>
 
-                                    <?php // L'avancement en lignes de propriété : ce qui est reconnu, ce que
-                                          // l'atelier a relevé, qui y travaille. La déclaration à valider vient
-                                          // dessous, à part — c'est tout l'objet de la validation. Une phrase
-                                          // disait qu'il n'y en avait pas ; l'absence de la bande le dit. ?>
+                                    <?php // Trois chiffres côte à côte, le libellé au-dessus de sa valeur : ce
+                                          // qui est reconnu, ce que l'atelier a relevé, qui y travaille. Des
+                                          // lignes de propriété les disaient, que la grande fenêtre cassait —
+                                          // « 0 » et « % » sur deux lignes, le nom du soudeur aussi. La
+                                          // déclaration à valider vient dessous, à part : c'est tout l'objet de
+                                          // la validation. Une phrase disait qu'il n'y en avait pas ; l'absence
+                                          // de la carte le dit. ?>
                                     <section class="suivi-soudures-section">
-                                        <h3 class="suivi-soudures-titre">Avancement</h3>
-                                        <dl class="suivi-soudures-proprietes">
-                                            <div><dt>Validé</dt><dd>
-                                                <span class="suivi-soudures-barre suivi-soudures-barre-large" aria-hidden="true"><span style="--part: <?= min(100, max(0, $ligne['avancement'])) ?>%"></span></span>
-                                                <strong><?= $ligne['avancement'] ?> %</strong>
-                                            </dd></div>
-                                            <div><dt>Soudures relevées</dt><dd><strong><?= $ligne['faites'] ?></strong><?= $ligne['prevues'] ? '<span class="suivi-soudures-sur"> sur ' . $ligne['prevues'] . ' prévues</span>' : '' ?></dd></div>
+                                        <dl class="suivi-soudures-chiffres">
+                                            <div><dt>Validé</dt><dd><?= $ligne['avancement'] ?> %</dd></div>
+                                            <div><dt>Soudures relevées</dt><dd><?= $ligne['faites'] ?><?= $ligne['prevues'] ? '<span class="suivi-soudures-sur"> / ' . $ligne['prevues'] . '</span>' : '' ?></dd></div>
                                             <div><dt>Atelier</dt><dd><?= $personnes ? prefaEscape(implode(', ', array_column($personnes, 'personne'))) : '<span class="suivi-soudures-sur">Non affecté</span>' ?></dd></div>
                                         </dl>
-
-                                        <?php foreach ($ligne['attentes'] as $attente) {
-                                            // Une déclaration peut venir d'un autre travail que le suivi
-                                            // soudage : le bloc dit lequel.
-                                            echo avancementDecisionRendu([
-                                                'titre' => 'Avancement déclaré',
-                                                'avancement' => (int) $attente['avancement'],
-                                                'valide' => (int) $attente['affectation']['avancement'],
-                                                'compte' => avancementCompte($attente),
-                                                'contexte' => atelierTravaux()[$attente['affectation']['type_affectation']] ?? null,
-                                                'qui' => $attente['auteur'],
-                                                'quand' => $attente['date_saisie'],
-                                                'commentaire' => $attente['commentaire'],
-                                            ], avancementDecisionFormulaire([
-                                                'champs' => ['id' => (int) $ligne['id_demande'], 'operation' => 'valider',
-                                                    'affectation' => (int) $attente['affectation']['id'], 'declaration' => (int) $attente['id']],
-                                                'cordons' => avancementCordonsAValider($db, $elementId, (int) $attente['affectation']['id_utilisateur']),
-                                                'visa' => signatureAnnonceVisa($db, $utilisateur),
-                                                'valider' => 'Valider',
-                                                'valider_aide' => 'L’avancement du plan prendra ce chiffre.',
-                                                'refuser' => true,
-                                            ]));
-                                        } ?>
-
-                                        <?php // Des cordons relevés que rien ne propose de valider : le soudeur a
-                                              // enregistré avant que la liste du plan soit lue, ou avant que le
-                                              // suivi soudage s'ouvre tout seul. Le chef n'avait alors qu'une liste
-                                              // sous les yeux, et aucun moyen de reconnaître ce qu'il voyait. Il
-                                              // pose le chiffre lui-même : il est l'autorité.
-                                              //
-                                              // Sans suivi soudage, il n'a rien à affecter avant : le soudeur l'est
-                                              // déjà, et son « Valider » ouvre le suivi à son nom (opération
-                                              // « cordons »). Il lui fallait affecter « Suivi soudage » ailleurs, et
-                                              // il ne comprenait pas pourquoi.
-                                        $calcule = $ligne['prevues'] > 0 ? avancementPourcentage(min($ligne['faites'], $ligne['prevues']), $ligne['prevues']) : null;
-                                        if (!$ligne['attentes'] && $calcule !== null && $ligne['faites'] > 0 && $calcule !== $ligne['avancement']):
-                                            $soudures = min($ligne['faites'], $ligne['prevues']);
-                                            $soudeurs = [];
-                                            if (!$ligne['soudage']) {
-                                                $soudeursAffectes->execute([$elementId, Role::PersonnelAtelier->value]);
-                                                $soudeurs = $soudeursAffectes->fetchAll(PDO::FETCH_ASSOC);
-                                            }
-                                            $formulaires = '';
-                                            if ($ligne['soudage']) {
-                                                $formulaires .= avancementDecisionFormulaire([
-                                                    'champs' => ['id' => (int) $ligne['id_demande'], 'operation' => 'progress',
-                                                        'affectation' => (int) $ligne['soudage']['id'], 'revision' => (int) $ligne['soudage']['revision'],
-                                                        'soudures' => $soudures],
-                                                    'cordons' => avancementCordonsAValider($db, $elementId, (int) $ligne['soudage']['id_utilisateur']),
-                                                    'visa' => signatureAnnonceVisa($db, $utilisateur),
-                                                    'valider' => 'Valider',
-                                                    'valider_aide' => 'L’avancement du suivi soudage prendra ce chiffre.',
-                                                ]);
-                                            }
-                                            // Un bouton par soudeur affecté, nommé seulement s'ils sont plusieurs :
-                                            // c'est à son nom que le suivi s'ouvre.
-                                            foreach ($soudeurs as $soudeur) {
-                                                $formulaires .= avancementDecisionFormulaire([
-                                                    'champs' => ['id' => (int) $ligne['id_demande'], 'operation' => 'cordons',
-                                                        'affectation' => (int) $soudeur['affectation'], 'soudures' => $soudures],
-                                                    'cordons' => avancementCordonsAValider($db, $elementId, (int) $soudeur['soudeur']),
-                                                    'visa' => signatureAnnonceVisa($db, $utilisateur),
-                                                    'valider' => 'Valider' . (count($soudeurs) > 1 ? ' · suivi par ' . $soudeur['nom'] : ''),
-                                                    'valider_aide' => 'Le suivi soudage du plan prendra ce chiffre.',
-                                                ]);
-                                            }
-                                            // Le soudeur n'est plus affecté au plan, ou les cordons viennent de
-                                            // l'encadrement : personne au nom de qui ouvrir le suivi.
-                                            if ($formulaires === '') {
-                                                $formulaires = '<div class="decision-note">Personne de l’atelier n’est affecté à ce plan : affectez « Suivi soudage »'
-                                                    . ' dans Plans / ISO &amp; Affectations pour pouvoir valider.</div>';
-                                            }
-                                            echo avancementDecisionRendu([
-                                                'titre' => 'Soudures relevées, pas encore validées',
-                                                'avancement' => $calcule,
-                                                'valide' => $ligne['avancement'],
-                                                'compte' => avancementCompte(['soudures' => $soudures, 'soudures_total' => $ligne['prevues'], 'avancement' => $calcule]),
-                                            ], $formulaires);
-                                        endif; ?>
                                     </section>
 
-                                    <section class="suivi-soudures-section atelier-soudures">
-                                        <h3 class="suivi-soudures-titre">Soudures relevées</h3>
+                                    <?php // Ce qu'il y a à valider se valide dans « Validation des soudures »
+                                          // (6 novembre 2026) : ici, une ligne y mène, dans sa propre section.
+                                          // Le gros bloc — les contrôles, la signature — était au milieu de
+                                          // ce qu'on venait regarder. ?>
+                                    <?php $carte = $ligne['validation']['decisions'] !== []; ?>
+                                    <?php if ($carte): ?>
+                                    <section class="suivi-soudures-section suivi-soudures-decision">
+                                        <?= validationSouduresRenvoi($elementId, $ligne['validation']['soudures']) ?>
+                                    </section>
+                                    <?php endif; ?>
 
+                                    <?php // Toutes les soudures du plan, validées comprises : l'historique, avec
+                                          // les contrôles et les visas posés. Quand il y a quelque chose à
+                                          // valider, il se replie : il redonnait juste dessous les mêmes soudures
+                                          // que les contrôles — on ne savait plus lesquels cocher. Rangé par
+                                          // feuille, comme les contrôles (soudureFeuille()).
+                                          //
+                                          // La note sur les contrôles « qui se cochent dans la fenêtre du plan »
+                                          // est partie : elle répondait à une question que personne ne pose ici.
+                                          // L'infobulle des colonnes la garde pour qui la cherche. ?>
+                                    <section class="suivi-soudures-section atelier-soudures">
                                         <?php if (!$relevees): ?>
+                                            <h3 class="suivi-soudures-titre">Soudures relevées</h3>
                                             <p class="suivi-soudures-vide">Aucune soudure relevée pour l’instant.</p>
                                         <?php else: ?>
-                                            <?php // La note sur les contrôles « qui se cochent dans la fenêtre du
-                                                  // plan » est partie : elle répondait à une question que personne ne
-                                                  // pose ici. L'infobulle des colonnes la garde pour qui la cherche. ?>
-                                            <table class="atelier-soudures-table">
-                                                <thead><tr>
-                                                    <th scope="col">N°</th><th scope="col">Feuille</th>
-                                                    <th scope="col">Soudeur</th><th scope="col">Date</th>
-                                                    <th scope="col">Type</th>
-                                                    <th scope="col" class="soudure-controle" title="Radiographie — se coche en validant, ou dans la fenêtre du plan">RT</th>
-                                                    <th scope="col" class="soudure-controle" title="Contrôle visuel — se coche en validant, ou dans la fenêtre du plan">VT</th>
-                                                    <th scope="col" class="soudure-controle" title="Ressuage — se coche en validant, ou dans la fenêtre du plan">PT</th>
-                                                    <th scope="col">Visa</th>
-                                                </tr></thead>
-                                                <tbody>
-                                                    <?php foreach ($relevees as $cordon):
-                                                        $feuilleNom = preg_replace('/^[a-f0-9]{32}-/', '', (string) ($cordon['cle_document'] ?? ''));
-                                                        $feuilleNom = preg_replace('/\.pdf$/i', '', $feuilleNom);
-                                                        $fait = static fn ($valeur): string => trim((string) $valeur) === ''
-                                                            ? '<span class="soudure-controle-non" aria-label="non fait">—</span>'
-                                                            : '<svg class="soudure-controle-oui" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="fait"><path d="m3.5 8.5 3 3 6-7" /></svg>';
+                                            <details class="suivi-soudures-releve"<?= $carte ? '' : ' open' ?>>
+                                                <summary class="suivi-soudures-titre">
+                                                    <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6" /></svg>
+                                                    Toutes les soudures relevées <span class="prefa-onglet-compte"><?= count($relevees) ?></span>
+                                                </summary>
+                                                <table class="atelier-soudures-table">
+                                                    <thead><tr>
+                                                        <th scope="col">N°</th><th scope="col">Soudeur</th>
+                                                        <th scope="col">Procédé</th><th scope="col">Date</th>
+                                                        <th scope="col" class="soudure-controle" title="Radiographie — se coche en validant, ou dans la fenêtre du plan">RT</th>
+                                                        <th scope="col" class="soudure-controle" title="Contrôle visuel — se coche en validant, ou dans la fenêtre du plan">VT</th>
+                                                        <th scope="col" class="soudure-controle" title="Ressuage — se coche en validant, ou dans la fenêtre du plan">PT</th>
+                                                        <th scope="col">Visa</th>
+                                                    </tr></thead>
+                                                    <?php
+                                                    $fait = static fn ($valeur): string => trim((string) $valeur) === ''
+                                                        ? '<span class="soudure-controle-non" aria-label="non fait">—</span>'
+                                                        : '<svg class="soudure-controle-oui" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="fait"><path d="m3.5 8.5 3 3 6-7" /></svg>';
+                                                    $groupe = null;
+                                                    foreach ($relevees as $cordon):
+                                                        $feuille = soudureFeuille($cordon);
+                                                        if ($feuille['cle'] !== $groupe) {
+                                                            echo ($groupe === null ? '' : '</tbody>') . '<tbody>' . soudureFeuilleEntete($feuille, 8);
+                                                            $groupe = $feuille['cle'];
+                                                        }
                                                     ?>
                                                         <tr>
                                                             <td><?= prefaEscape((string) $cordon['numero']) ?></td>
-                                                            <td title="<?= prefaEscape($feuilleNom) ?>"><?= prefaEscape($feuilleNom ?: '—') ?><?= (int) ($cordon['pages'] ?? 1) > 1 ? '<span class="suivi-soudures-sur"> · p. ' . (int) $cordon['page'] . '</span>' : '' ?></td>
                                                             <td><?= prefaEscape((string) ($cordon['soudeur_nom'] ?: '—')) ?></td>
-                                                            <td><?= $cordon['date_soudure'] ? prefaEscape(date('d/m/Y', strtotime((string) $cordon['date_soudure']))) : '—' ?></td>
                                                             <td><?= prefaEscape((string) ($cordon['type_soudure'] ?: '—')) ?></td>
+                                                            <td><?= $cordon['date_soudure'] ? prefaEscape(date('d/m/Y', strtotime((string) $cordon['date_soudure']))) : '—' ?></td>
                                                             <td class="soudure-controle"><?= $fait($cordon['rt']) ?></td>
                                                             <td class="soudure-controle"><?= $fait($cordon['vi']) ?></td>
                                                             <td class="soudure-controle"><?= $fait($cordon['pt']) ?></td>
                                                             <td><?= $cordon['visa_nom'] ? prefaEscape((string) $cordon['visa_nom']) : '<span class="suivi-soudures-sur">—</span>' ?></td>
                                                         </tr>
                                                     <?php endforeach; ?>
-                                                </tbody>
-                                            </table>
+                                                    </tbody>
+                                                </table>
+                                            </details>
                                         <?php endif; ?>
                                     </section>
                                 </div>

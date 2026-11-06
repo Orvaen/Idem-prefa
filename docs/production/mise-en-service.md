@@ -151,14 +151,17 @@ guillemets : `--nom "Le Gall"`. `--courriel` est facultatif.
 
 ```
 Compte créé : d.jean (Chargé de production), sans courriel
-Mot de passe : ****************
+Code d'accès : ****-**** — une seule fois, jusqu'au …
+À l'écran de connexion : l'identifiant, « Continuer », ce code, puis le mot de passe de son choix.
 Notez-le maintenant : il n'est écrit nulle part, et il ne se relit pas.
 ```
 
-::: warning Le mot de passe passe par l'agent
-Il est tiré au sort et montré **une seule fois** — et l'application n'a pas d'écran pour le
-changer. Le remettre à l'humain par le canal qu'il choisit, et ne le recopier dans aucun
-fichier, commit, ticket ni compte rendu. Si l'humain préfère, il tape lui-même cette commande.
+::: warning Le code d'accès passe par l'agent
+Il est montré **une seule fois**, et vaut une clé : avec l'identifiant, il fait choisir le mot
+de passe du compte. Le remettre à l'humain par le canal qu'il choisit, et ne le recopier dans
+aucun fichier, commit, ticket ni compte rendu. Si l'humain préfère, il tape lui-même cette
+commande. Il vaut sept jours, une seule fois ; perdu, un autre chargé de production en donne un
+nouveau depuis « Utilisateurs » — sinon, recréer le compte.
 :::
 
 Ce compte crée ensuite les autres depuis l'application. Voir

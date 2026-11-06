@@ -139,7 +139,7 @@
         'manque.traite': e => ({
             titre: 'Votre manque de matériel est traité',
             detail: [e.article, e.reference].filter(Boolean).join(' · '),
-            ouvre: 'btn-soudures',
+            ouvre: 'btn-list-prefa',
         }),
         // Oublié, la personne attend devant l'écran de connexion ; à changer, elle travaille
         // et le choisira à sa prochaine connexion.

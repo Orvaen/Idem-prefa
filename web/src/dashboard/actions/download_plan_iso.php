@@ -91,6 +91,12 @@ $lignesSoudure = array_map(static fn (array $ligne): array => [
 $pdf = planIsoPdf($entete, $nomenclature, $lignesSoudure);
 
 $nom = 'Plan-' . preg_replace('/[^A-Za-z0-9._-]+/', '-', (string) $plan['reference']) . '.pdf';
+// Le lecteur de l'application demande les pages en images, à cette même adresse : le droit
+// de les voir est celui du document, vérifié juste au-dessus. Il n'y a plus d'autre lecteur —
+// celui du navigateur, dans une iframe, n'affichait rien dans l'appli Android.
+require_once __DIR__ . '/../includes/lecture/pdf_pages.php';
+if (pdfPagesDemandees($_GET)) pdfPagesRepondre(pdfPagesDepuisContenu($pdf), $_GET);
+
 header('Content-Type: application/pdf');
 header('X-Content-Type-Options: nosniff');
 header('Content-Disposition: inline; filename="' . $nom . '"');

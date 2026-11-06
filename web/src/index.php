@@ -43,7 +43,9 @@ $expiree = Session::vientDExpirer();
 <head>
     <!-- Métadonnées -->
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- interactive-widget : le clavier d'une tablette réduit la page au lieu de la
+         recouvrir, comme dans l'appli Android (voir js/composants/clavier.js). -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
 
     <title>Connexion — IDEM Préfabrication</title>
     <!-- Installable sur une tablette : Chrome propose « Installer l'application », et
@@ -65,6 +67,7 @@ $expiree = Session::vientDExpirer();
 
     <script src="js/composants/floating-fields.js?v=<?= filemtime(__DIR__ . '/js/composants/floating-fields.js') ?>" defer></script>
     <script src="js/composants/mot-de-passe.js?v=<?= filemtime(__DIR__ . '/js/composants/mot-de-passe.js') ?>" defer></script>
+    <script src="js/composants/clavier.js?v=<?= filemtime(__DIR__ . '/js/composants/clavier.js') ?>" defer></script>
     <script src="js/connexion/login.js?v=<?= filemtime(__DIR__ . '/js/connexion/login.js') ?>" defer></script>
 </head>
 
@@ -79,29 +82,37 @@ $expiree = Session::vientDExpirer();
             <p class="connexion-surtitre">Atelier de préfabrication</p>
             <h1 id="connexion-titre">Connexion</h1>
 
-            <?php // Le mot de passe n'est pas exigé ici : à la première connexion — ou après
-                  // une réinitialisation —, l'identifiant suffit, et le serveur répond qu'il
-                  // faut en choisir un (auth/action.php). ?>
-            <form id="login-form" class="connexion-formulaire" method="post">
+            <?php // L'identifiant d'abord, seul. « Continuer » demande au serveur si ce compte a
+                  // un mot de passe (auth/compte_a_creer.php) : s'il n'en a pas — première
+                  // connexion, ou après une réinitialisation —, on passe à « Votre mot de
+                  // passe » pour le choisir ; s'il en a un, son champ paraît. Il était toujours
+                  // affiché, et à la première connexion on restait devant, sans savoir qu'il
+                  // fallait le laisser vide. Le comportement est dans js/connexion/login.js. ?>
+            <form id="login-form" class="connexion-formulaire" method="post" data-etape="identifiant">
                 <label for="login">Identifiant</label>
                 <input
                     name="login"
                     id="login"
                     type="text"
                     required
+                    autocapitalize="none"
+                    autocorrect="off"
+                    spellcheck="false"
                     autocomplete="username">
 
-                <label for="password">Mot de passe</label>
-                <input
-                    name="password"
-                    id="password"
-                    type="password"
-                    autocomplete="current-password">
+                <div class="connexion-mdp" hidden>
+                    <label for="password">Mot de passe</label>
+                    <input
+                        name="password"
+                        id="password"
+                        type="password"
+                        autocomplete="current-password">
+                </div>
 
                 <p id="form-message" class="connexion-message<?= $expiree ? ' est-info' : '' ?>" role="status" aria-live="polite"><?= $expiree
                     ? 'Votre connexion a pris fin au bout de ' . intdiv(Session::DUREE, 3600) . ' h : reconnectez-vous.' : '' ?></p>
 
-                <button type="submit">Se connecter</button>
+                <button type="submit">Continuer</button>
                 <button type="button" class="connexion-lien" data-etape="oubli">Mot de passe oublié ?</button>
             </form>
 
@@ -110,7 +121,15 @@ $expiree = Session::vientDExpirer();
             <form id="creation-form" class="connexion-formulaire" method="post" hidden>
                 <input type="hidden" name="csrf" value="<?= htmlspecialchars(Session::jeton(), ENT_QUOTES, 'UTF-8') ?>">
                 <input type="hidden" name="login">
-                <p class="connexion-explication"><strong data-creation-compte></strong> : choisissez votre mot de passe, d’au moins <?= User::MOT_DE_PASSE_MINI ?> caractères.</p>
+                <?php // Le code d'accès que l'administrateur a donné : sans lui, n'importe qui prenait
+                      // le compte avec son seul identifiant (api/User.php). Majuscules, tiret et
+                      // espaces indifférents. ?>
+                <p class="connexion-explication">Pas encore de mot de passe pour <strong data-creation-compte></strong> : tapez le code que l’administrateur vous a donné, puis choisissez votre mot de passe, d’au moins <?= User::MOT_DE_PASSE_MINI ?> caractères.</p>
+
+                <label for="creation-code">Code reçu</label>
+                <input name="code" id="creation-code" type="text" required maxlength="20"
+                       autocomplete="one-time-code" autocapitalize="characters" spellcheck="false"
+                       class="connexion-code">
 
                 <label for="creation-password">Nouveau mot de passe</label>
                 <input name="password" id="creation-password" type="password" required
@@ -130,7 +149,7 @@ $expiree = Session::vientDExpirer();
                   // un nouveau mot de passe en se connectant. ?>
             <form id="oubli-form" class="connexion-formulaire" method="post" hidden>
                 <input type="hidden" name="csrf" value="<?= htmlspecialchars(Session::jeton(), ENT_QUOTES, 'UTF-8') ?>">
-                <p class="connexion-explication">L’administrateur réinitialise votre mot de passe ; vous en choisirez un nouveau à votre prochaine connexion.</p>
+                <p class="connexion-explication">L’administrateur réinitialise votre mot de passe et vous donne un code : avec lui, vous en choisirez un nouveau à votre prochaine connexion.</p>
 
                 <label for="oubli-login">Identifiant</label>
                 <input name="login" id="oubli-login" type="text" required autocomplete="username">

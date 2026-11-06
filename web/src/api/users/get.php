@@ -86,7 +86,7 @@ $dernier = min($offset + $limit, $total);
                 <tr>
                     <th scope="col">Utilisateur</th>
                     <th scope="col">Rôle</th>
-                    <th scope="col">Créé le</th>
+                    <th scope="col" class="utilisateur-date">Créé le</th>
                     <th scope="col">Actions</th>
                 </tr>
             </thead>

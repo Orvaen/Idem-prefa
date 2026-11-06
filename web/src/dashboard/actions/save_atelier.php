@@ -30,9 +30,10 @@ try {
         $reference = trim((string) ($_POST['reference'] ?? ''));
         $label = trim((string) ($_POST['libelle'] ?? ''));
         $documents = $_POST['documents'] ?? [];
-        if ($reference === '' || mb_strlen($reference) > 80 || $label === '' || mb_strlen($label) > 180
+        // La description est facultative : le nom suffit à reconnaître un plan.
+        if ($reference === '' || mb_strlen($reference) > 80 || mb_strlen($label) > 180
             || !is_array($documents) || count($documents) > 100) {
-            $db->rollBack(); prefaError(400, 'Indiquez une référence et un libellé valides.');
+            $db->rollBack(); prefaError(400, 'Indiquez le nom du plan (80 caractères au plus) ; la description, facultative, tient en 180.');
         }
         $links = [];
         foreach ($documents as $token) {

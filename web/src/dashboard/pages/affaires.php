@@ -8,10 +8,28 @@
 // rien, et actions/affaires.php le lui refuse de toute façon.
 require_once __DIR__ . '/../includes/prefa_context.php';
 require_once __DIR__ . '/../includes/vue/liste_filtrable.php';
+require_once __DIR__ . '/../includes/demande/prefa_visibilite.php';
 $enLecture = $utilisateur->est(Role::ChargeDAffaire);
 if (!$isAdmin && !$enLecture) prefaError(403, 'Seul le chargé de production gère les affaires.');
 
 $affaires = Affaire::pour($db, $utilisateur);
+
+// Les demandes de chaque affaire, pour sa fiche : un clic sur la carte l'ouvre. La règle de
+// visibilité est celle de la liste des demandes — la fiche ne montre que ce que la liste
+// montrerait, et chaque ligne y mène.
+$demandesParAffaire = [];
+if ($affaires) {
+    ['where' => $visibles, 'params' => $parametres] = prefaDemandesVisibles($utilisateur);
+    $lecture = $db->prepare('SELECT d.id, d.id_affaire, d.id_statut, s.libelle, d.date_fin_prevue, d.urgent
+        FROM demande_prefabrication d JOIN statut_demande s ON s.id = d.id_statut'
+        . $visibles . ' AND d.id_affaire IS NOT NULL
+        ORDER BY d.date_creation DESC, d.id DESC');
+    foreach ($parametres as $cle => $valeur) $lecture->bindValue(':' . $cle, $valeur);
+    $lecture->execute();
+    foreach ($lecture->fetchAll(PDO::FETCH_ASSOC) as $demande) {
+        $demandesParAffaire[(int) $demande['id_affaire']][] = $demande;
+    }
+}
 $optionsCharge = [];
 if (!$enLecture) {
     $chargesDAffaire = $db->prepare('SELECT id, TRIM(CONCAT(prenom, \' \', name)) AS nom
@@ -63,6 +81,107 @@ $chargeDesigne = static fn (Affaire $affaire): string => '<span class="affaire-c
     . '<svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">'
     . '<rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>'
     . '<span class="affaire-charge-nom">' . prefaEscape($affaire->chargeAffaire) . '</span></span>';
+
+/**
+ * L'état d'une affaire, comme celui d'une demande : un point de couleur et un mot. Les mêmes
+ * couleurs que les statuts des demandes (status-1, 2, 3) — l'affaire n'a pas d'état à elle,
+ * elle prend celui de ses demandes (Affaire::etat). L'infobulle dit ce qu'il implique.
+ */
+$etatRendu = static function (Affaire $affaire): string {
+    $pluriel = static fn (int $n, string $mot): string => $n . ' ' . $mot . ($n > 1 ? 's' : '');
+    [$libelle, $classe, $aide] = match ($affaire->etat()) {
+        Affaire::VALIDEE => ['Validée', 'status-2',
+            $pluriel($affaire->validees, 'demande') . ' validée' . ($affaire->validees > 1 ? 's' : '')
+            . ' : l’affaire ne se renomme plus et ne se supprime plus.'],
+        Affaire::EN_ATTENTE => ['En attente', 'status-1',
+            $pluriel($affaire->enAttente, 'demande') . ' en attente de validation.'],
+        Affaire::REFUSEE => ['Refusée', 'status-3', 'Ses demandes ont été refusées.'],
+        default => ['Sans demande', 'est-sans-demande', 'Aucune demande n’y est encore déposée.'],
+    };
+    return '<span class="affaire-etat prefa-status ' . $classe . '" title="' . prefaEscape($aide) . '">'
+        . prefaEscape($libelle) . '</span>';
+};
+
+/**
+ * La fiche d'une affaire : ce qu'un clic sur sa carte ouvre. Le chargé d'affaire, les
+ * demandes rangées par statut en quatre chiffres, puis chaque demande — un clic l'ouvre
+ * dans la liste des demandes, sa fiche déjà dépliée.
+ *
+ * Elle est rendue dans un <template> de la carte : rien ne s'en affiche ni ne s'en cherche
+ * tant que la fenêtre ne l'a pas recopiée (affaires.js). Une seule fenêtre pour toutes.
+ *
+ * @param list<array<string, mixed>> $demandes
+ */
+$fiche = static function (Affaire $affaire, array $demandes, string $monogramme, bool $enLecture) use ($etatRendu): string {
+    $parStatut = array_count_values(array_map(static fn (array $d): int => (int) $d['id_statut'], $demandes));
+    $charge = $enLecture
+        ? 'Confiée à vous'
+        : ($affaire->chargeAffaire !== '' ? 'Chargé d’affaire : ' . $affaire->chargeAffaire : 'Aucun chargé d’affaire désigné');
+    $chiffres = [
+        'Demandes' => count($demandes),
+        'En attente' => $parStatut[1] ?? 0,
+        'Validées' => $parStatut[2] ?? 0,
+        'Refusées' => $parStatut[3] ?? 0,
+    ];
+
+    ob_start(); ?>
+    <div class="affaire-fiche-boite">
+        <div class="fenetre-entete affaire-fiche-entete">
+            <div class="affaire-fiche-identite">
+                <span class="affaire-monogramme" aria-hidden="true"><?= prefaEscape($monogramme) ?></span>
+                <div class="affaire-fiche-nom">
+                    <h2 id="affaire-fiche-titre"><?= prefaEscape($affaire->nom) ?></h2>
+                    <p><?= $etatRendu($affaire) ?><span aria-hidden="true"> · </span><?= prefaEscape($charge) ?></p>
+                </div>
+            </div>
+            <button type="button" class="affaire-fiche-fermer modal-close" aria-label="Fermer">
+                <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg>
+            </button>
+        </div>
+
+        <div class="fenetre-corps affaire-fiche-corps">
+            <dl class="affaire-fiche-chiffres">
+                <?php foreach ($chiffres as $libelle => $nombre): ?>
+                    <div><dt><?= prefaEscape($libelle) ?></dt><dd><?= (int) $nombre ?></dd></div>
+                <?php endforeach; ?>
+            </dl>
+
+            <?php if ($demandes): ?>
+                <ul class="affaire-fiche-liste" aria-label="Demandes de l’affaire">
+                    <?php foreach ($demandes as $demande): ?>
+                        <?php $reference = prefaReference((int) $demande['id']); ?>
+                        <li>
+                            <button type="button" class="affaire-fiche-demande" data-id="<?= (int) $demande['id'] ?>" data-reference="<?= prefaEscape($reference) ?>"
+                                title="Ouvrir la demande <?= prefaEscape($reference) ?>">
+                                <span class="prefa-point status-<?= (int) $demande['id_statut'] ?>" aria-hidden="true"></span>
+                                <span class="affaire-fiche-reference"><?= prefaEscape($reference) ?></span>
+                                <?php if (!empty($demande['urgent'])): ?>
+                                    <span class="prefa-urgent">Urgente</span>
+                                <?php endif; ?>
+                                <span class="affaire-fiche-statut"><?= prefaEscape($demande['libelle']) ?></span>
+                                <span class="affaire-fiche-date"><?= $demande['date_fin_prevue'] ? 'Fin prévue ' . prefaEscape(prefaFormatDate($demande['date_fin_prevue'])) : 'Sans date de fin' ?></span>
+                                <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6" /></svg>
+                            </button>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php else: ?>
+                <p class="affaire-fiche-vide">Aucune demande sur cette affaire pour l’instant.<?= $enLecture ? ' « Déposer une demande » en crée une.' : '' ?></p>
+            <?php endif; ?>
+        </div>
+
+        <div class="fenetre-pied">
+            <button type="button" class="affaire-fiche-fermer fenetre-annuler">Fermer</button>
+            <?php if ($demandes): ?>
+                <button type="button" class="affaire-fiche-toutes fenetre-annuler">Voir dans la liste des demandes</button>
+            <?php endif; ?>
+            <?php if ($enLecture): ?>
+                <button type="button" class="affaire-fiche-deposer fenetre-valider" data-nouvelle-demande data-affaire="<?= $affaire->id ?>">Déposer une demande</button>
+            <?php endif; ?>
+        </div>
+    </div>
+    <?php return (string) ob_get_clean();
+};
 ?>
 <section class="users-page affaires-page" data-csrf="<?= prefaEscape(Session::jeton()) ?>">
     <div class="header-list affaires-entete">
@@ -119,7 +238,9 @@ $chargeDesigne = static fn (Affaire $affaire): string => '<span class="affaire-c
             // nous n'avons pas d'image à poser sur une affaire, et une image prise au
             // hasard n'en dirait rien. Deux lettres suffisent à distinguer une carte d'une
             // autre dans une grille qu'on balaie.
-            $monogramme = mb_strtoupper(mb_substr(trim($affaire->nom), 0, 2));
+            // Lettres et chiffres seulement : « [TEST] Réseau » donnait « [T ».
+            $lettres = preg_replace('/[^\p{L}\p{N}]+/u', '', $affaire->nom);
+            $monogramme = mb_strtoupper(mb_substr($lettres !== '' && $lettres !== null ? $lettres : trim($affaire->nom), 0, 2));
             ?>
             <article class="affaire-carte" data-affaire="<?= $affaire->id ?>">
                 <!-- L'en-tête : le monogramme, le nom (modifiable sur place) et la corbeille,
@@ -132,13 +253,30 @@ $chargeDesigne = static fn (Affaire $affaire): string => '<span class="affaire-c
                              lisent. -->
                         <h2 class="affaire-nom" title="<?= prefaEscape($affaire->nom) ?>"><?= prefaEscape($affaire->nom) ?></h2>
                     <?php else: ?>
-                        <input class="affaire-nom" value="<?= prefaEscape($affaire->nom) ?>" maxlength="255" aria-label="Nom de l’affaire">
-                        <!-- Éteinte quand des demandes sont rattachées : son infobulle dit pourquoi. -->
-                        <button type="button" class="affaire-supprimer" aria-label="Supprimer l’affaire <?= prefaEscape($affaire->nom) ?>"<?= $affaire->demandes > 0 ? ' disabled title="Des demandes y sont rattachées."' : ' title="Supprimer l’affaire"' ?>>
-                            <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" />
-                            </svg>
-                        </button>
+                        <!-- En lecture seule au repos : un clic sur le nom ouvre les demandes,
+                             comme partout ailleurs sur la carte. Il était toujours modifiable, et
+                             cliquer sur le nom — l'endroit qu'on vise — y posait le curseur au
+                             lieu d'ouvrir l'affaire. Le crayon le rend modifiable. -->
+                        <input class="affaire-nom" value="<?= prefaEscape($affaire->nom) ?>" maxlength="255" aria-label="Nom de l’affaire" readonly tabindex="-1">
+                        <?php // Une affaire dont une demande est validée par le chargé de
+                              // production ne se renomme plus ni ne se supprime
+                              // (Affaire::modifier, Affaire::fermer) : la carte n'en offre plus
+                              // les commandes. Grisées, elles restaient en vue — en permanence
+                              // sur une tablette, qui n'a pas de survol pour les cacher. ?>
+                        <?php if ($affaire->validees === 0): ?>
+                            <button type="button" class="affaire-renommer" aria-label="Renommer l’affaire <?= prefaEscape($affaire->nom) ?>" title="Renommer">
+                                <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-4-4L4 16v4Z" />
+                                    <path d="m13.5 6.5 4 4" />
+                                </svg>
+                            </button>
+                            <!-- Éteinte quand des demandes sont rattachées : son infobulle dit pourquoi. -->
+                            <button type="button" class="affaire-supprimer" aria-label="Supprimer l’affaire <?= prefaEscape($affaire->nom) ?>"<?= $affaire->demandes > 0 ? ' disabled title="Des demandes y sont rattachées."' : ' title="Supprimer l’affaire"' ?>>
+                                <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" />
+                                </svg>
+                            </button>
+                        <?php endif; ?>
                     <?php endif; ?>
                 </div>
 
@@ -148,6 +286,12 @@ $chargeDesigne = static fn (Affaire $affaire): string => '<span class="affaire-c
                      Le chargé d'affaire n'a pas la ligne qui le nomme : sur toutes ses
                      cartes, ce serait lui. -->
                 <dl class="affaire-proprietes">
+                    <?php // L'état d'abord : c'est ce qu'on cherche en balayant la grille — et
+                          // ce qui dit pourquoi une carte n'a plus ni crayon ni corbeille. ?>
+                    <div>
+                        <dt><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5" /><path d="m8.5 12 2.5 2.5 4.5-5" /></svg>État</dt>
+                        <dd><?= $etatRendu($affaire) ?></dd>
+                    </div>
                     <?php if (!$enLecture): ?>
                         <div>
                             <dt><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.7-3.6 3.5-5.5 7-5.5s6.3 1.9 7 5.5" /></svg>Chargé d’affaire</dt>
@@ -162,21 +306,20 @@ $chargeDesigne = static fn (Affaire $affaire): string => '<span class="affaire-c
                         <dt><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z" /><path d="M14 3v5h5" /></svg>Demandes</dt>
                         <dd>
                             <?php
-                            // Le nombre dit aussi pourquoi la suppression est refusée. Quand il y
-                            // en a, il mène à ces demandes — c'est le chemin de la carte, et le
-                            // seul atteignable au clavier. À zéro, il n'y a rien à ouvrir.
+                            // Le nombre dit aussi pourquoi la suppression est refusée. Il ouvre la
+                            // fiche de l'affaire, comme la carte entière — c'est le chemin qu'on
+                            // atteint au clavier. À zéro aussi : la fiche le dit, et propose de
+                            // déposer la première.
                             ?>
-                            <?php if ($affaire->demandes > 0): ?>
-                                <button type="button" class="affaire-demandes" title="Voir les demandes de cette affaire">
-                                    <?= $affaire->demandes ?> demande<?= $affaire->demandes > 1 ? 's' : '' ?>
-                                    <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6" /></svg>
-                                </button>
-                            <?php else: ?>
-                                <span class="affaire-demandes est-vide">Aucune</span>
-                            <?php endif; ?>
+                            <button type="button" class="affaire-demandes<?= $affaire->demandes > 0 ? '' : ' est-vide' ?>" title="Voir le détail de l’affaire">
+                                <?= $affaire->demandes > 0 ? $affaire->demandes . ' demande' . ($affaire->demandes > 1 ? 's' : '') : 'Aucune' ?>
+                                <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6" /></svg>
+                            </button>
                         </dd>
                     </div>
                 </dl>
+
+                <template class="affaire-fiche-modele"><?= $fiche($affaire, $demandesParAffaire[$affaire->id] ?? [], $monogramme, $enLecture) ?></template>
 
                 <?php if ($enLecture): ?>
                     <!-- Déposer sur ce chantier : le formulaire s'ouvre l'affaire déjà choisie.
@@ -192,6 +335,7 @@ $chargeDesigne = static fn (Affaire $affaire): string => '<span class="affaire-c
                     <!-- Le pied n'existe que s'il y a quelque chose à enregistrer. -->
                     <footer class="affaire-carte-pied">
                         <span class="affaire-pied-texte">Modifications non enregistrées</span>
+                        <button type="button" class="affaire-annuler">Annuler</button>
                         <button type="button" class="affaire-enregistrer">Enregistrer</button>
                     </footer>
                 <?php endif; ?>
@@ -220,6 +364,10 @@ $chargeDesigne = static fn (Affaire $affaire): string => '<span class="affaire-c
         chargés d'affaire que le PHP vient d'écrire. Le chargé d'affaire n'ouvre pas
         d'affaire : il ne la reçoit pas.
     -->
+    <!-- La fiche d'une affaire : une seule fenêtre, remplie depuis le modèle de la carte
+         cliquée (affaires.js). -->
+    <dialog id="affaire-fiche" class="affaire-fiche fenetre" aria-labelledby="affaire-fiche-titre"></dialog>
+
     <?php if (!$enLecture): ?>
     <dialog id="affaire-dialog" class="affaire-dialog fenetre" aria-labelledby="affaire-dialog-titre">
         <form id="affaire-form" class="affaire-form" method="post">
@@ -252,15 +400,22 @@ $chargeDesigne = static fn (Affaire $affaire): string => '<span class="affaire-c
                 // composant — l'intitulé part en aria-label et le champ tient sur une ligne.
                 // C'est ce qu'il faut ici : les deux champs se ressemblent trait pour trait,
                 // une étiquette au-dessus du second aurait déparé.
-                echo $optionsCharge
-                    ? listeFiltrableRendu('charge', 'Chargé d’affaire', $optionsCharge, null, [
+                //
+                // Le champ est toujours écrit, caché tant qu'il n'a personne à proposer : le
+                // compte créé sur place (« Créer ce compte ») s'y ajoute et s'y choisit, sans
+                // recharger ni refermer la fenêtre (affaires.js).
+                echo '<div class="affaire-dialog-charge"' . ($optionsCharge ? '' : ' hidden') . '>'
+                    . listeFiltrableRendu('charge', 'Chargé d’affaire', $optionsCharge, null, [
                         'vide' => 'Aucun chargé d’affaire',
                         'aucun' => 'Aucun chargé d’affaire à ce nom.',
                         'chercher' => 'Chargé d’affaire (facultatif)',
                         'tableau' => true,
                     ])
-                    : '<p class="affaire-dialog-sans-charge">Aucun compte n’a encore le rôle <strong>Chargé d’affaire</strong> : l’affaire s’ouvrira sans lui. '
+                    . '</div>';
+                if (!$optionsCharge) {
+                    echo '<p class="affaire-dialog-sans-charge">Aucun compte n’a encore le rôle <strong>Chargé d’affaire</strong> : l’affaire s’ouvrira sans lui. '
                         . '<button type="button" class="affaires-creer-charge">Créer ce compte</button></p>';
+                }
                 ?>
 
                 <p class="prefa-message fenetre-message" role="status" aria-live="polite"></p>
@@ -269,6 +424,37 @@ $chargeDesigne = static fn (Affaire $affaire): string => '<span class="affaire-c
             <div class="affaire-dialog-pied fenetre-pied">
                 <button type="button" class="affaire-dialog-fermer fenetre-annuler">Annuler</button>
                 <button type="submit" class="affaire-ouvrir fenetre-valider">Ouvrir l’affaire</button>
+            </div>
+        </form>
+    </dialog>
+
+    <?php // « Créer ce compte », quand aucun chargé d'affaire n'existe : sur place, par-dessus
+          // ce qu'on était en train de faire. Le bouton menait à « Utilisateurs » : la fenêtre
+          // d'ouverture se refermait sur ce qu'on avait tapé, et rien ne ramenait à l'affaire
+          // (6 novembre 2026). Le compte se crée comme dans « Utilisateurs »
+          // (actions/create_users.php), rôle Chargé d'affaire ; son code d'accès s'affiche, puis
+          // on revient où l'on était, le nouveau compte choisi (affaires.js). ?>
+    <dialog id="charge-dialog" class="fenetre charge-dialog" aria-labelledby="charge-dialog-titre">
+        <form id="charge-form" method="post">
+            <input type="hidden" name="role" value="<?= Role::ChargeDAffaire->value ?>">
+            <div class="fenetre-entete">
+                <h2 id="charge-dialog-titre">Nouveau chargé d’affaire</h2>
+                <button type="button" class="modal-close" data-fermer-charge aria-label="Fermer">
+                    <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="m6 6 12 12M18 6 6 18" />
+                    </svg>
+                </button>
+            </div>
+            <p class="fenetre-sous-titre">Son compte se crée ici, sans quitter les affaires. Un code d’accès s’affichera ensuite : donnez-le-lui, il choisira son mot de passe avec.</p>
+            <div class="fenetre-corps">
+                <input class="fenetre-champ" name="prenom" required maxlength="100" autocomplete="off" aria-label="Prénom" placeholder="Prénom">
+                <input class="fenetre-champ" name="name" required maxlength="100" autocomplete="off" aria-label="Nom" placeholder="Nom">
+                <input class="fenetre-champ" name="email" type="email" maxlength="255" autocomplete="off" aria-label="Courriel (facultatif)" placeholder="Courriel (facultatif)">
+                <p class="prefa-message fenetre-message" role="status" aria-live="polite"></p>
+            </div>
+            <div class="fenetre-pied">
+                <button type="button" class="fenetre-annuler" data-fermer-charge>Annuler</button>
+                <button type="submit" class="fenetre-valider">Créer le compte</button>
             </div>
         </form>
     </dialog>

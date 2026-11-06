@@ -14,7 +14,7 @@ une anomalie.
 | --- | --- |
 | **Chargé de production** | À valider · Urgentes · PV à renseigner · Affaires |
 | **Chef d'atelier** | Avancements à valider · Sans plan · En atelier · PV à renseigner |
-| **Personnel atelier** | Mes plans · À terminer · Mes soudures |
+| **Personnel atelier** | Mes plans · À terminer · Mes soudures (ouvre « Mes plans ») |
 | **Chargé d'affaire** | Mes affaires · En attente · Validées · Refusées |
 
 ## Les nouvelles affaires

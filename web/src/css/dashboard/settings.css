@@ -528,9 +528,9 @@ dialog.fenetre.parametres .parametres-liste .unite-libelle input:focus {
 /* ---------- La signature ----------
 
    Un bloc de signature, comme au bas d'un document : la signature au-dessus d'un trait, le
-   nom et la date dessous, et dans le coin de quoi la refaire ou la supprimer. Le cadre où
-   l'on signe a exactement la même forme et prend sa place : on signe là où elle
-   s'affichera. Le trait a la couleur du texte — la signature est rangée sans couleur. */
+   nom et la date dessous, et dans le coin de quoi la refaire ou la supprimer. On la trace en
+   grand, dans sa fenêtre à elle (plus bas). Le trait a la couleur du texte — la signature est
+   rangée sans couleur. */
 
 /* Une ligne de réglage comme les autres pour la recherche, mais en bloc : le cadre prend
    toute la largeur de la section. */
@@ -712,70 +712,12 @@ dialog.fenetre.parametres .signature-vide-aide {
     font-size: 12px;
 }
 
-/* Le cadre où l'on signe. Le canevas le couvre, et tout ce qui est posé dessus — l'invite,
-   le trait, le nom — laisse passer le stylet. touch-action : au doigt, signer ne fait pas
-   défiler la fenêtre. */
-dialog.fenetre.parametres .signature-cadre.est-a-signer {
-    border-style: dashed;
-    border-color: var(--border-fort);
-    touch-action: none;
-}
-
-dialog.fenetre.parametres .signature-cadre.est-a-signer canvas {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: inherit;
-    cursor: crosshair;
-    touch-action: none;
-}
-
-dialog.fenetre.parametres .signature-cadre.est-a-signer > :not(canvas, .signature-outils) {
-    position: relative;
-    pointer-events: none;
-}
-
-dialog.fenetre.parametres .signature-invite {
-    color: var(--placeholder);
-    font-size: 13px;
-}
-
-dialog.fenetre.parametres .signature-cadre:not(.est-vide) .signature-invite {
-    visibility: hidden;
-}
-
-dialog.fenetre.parametres .signature-pave {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-dialog.fenetre.parametres .signature-pave-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-}
-
 /* Validée, la signature n'a plus d'outils pour qui n'est pas administrateur : une ligne, sous
    elle, dit à qui s'adresser pour la changer (signatureParametreRendu()). */
 dialog.fenetre.parametres .signature-verrou {
     margin-top: 8px;
     color: var(--text-muted);
     font-size: 12px;
-}
-
-/* « Valider » est plein : c'est la seule action d'une saisie en cours, et il reste éteint
-   tant que le cadre est vide. */
-dialog.fenetre.parametres .parametres-bouton.est-plein {
-    border-color: transparent;
-    background: var(--bouton-plein);
-    color: var(--bouton-plein-texte);
-    font-weight: 500;
-}
-
-dialog.fenetre.parametres .parametres-bouton.est-plein:hover:not(:disabled) {
-    background: var(--bouton-plein-hover);
 }
 
 dialog.fenetre.parametres .parametres-bouton:disabled {
@@ -785,10 +727,6 @@ dialog.fenetre.parametres .parametres-bouton:disabled {
 
 dialog.fenetre.parametres .parametres-bouton:disabled:hover {
     background: transparent;
-}
-
-dialog.fenetre.parametres .parametres-bouton.est-plein:disabled:hover {
-    background: var(--bouton-plein);
 }
 
 dialog.fenetre.parametres .signature-message {
@@ -804,6 +742,251 @@ dialog.fenetre.parametres .parametres-aucun {
     color: var(--text-muted);
     font-size: 13px;
     text-align: center;
+}
+
+/* ---------- La fenêtre où l'on signe ----------
+
+   Demandé le 6 novembre 2026 : « Tracer ma signature » ouvrait un cadre de 168 px dans les
+   paramètres, et l'on signait du bout du doigt. Elle a sa fenêtre (signatureFenetreRendu()) :
+   large et haute sur un écran de bureau, tout l'écran sur une tablette ou un téléphone.
+
+   Le cadre y prend toute la place qui reste, en largeur comme en hauteur — une tablette en
+   portrait laissait sinon deux bandes vides. Pas plus haut qu'une fois et demie sa largeur
+   pour autant : le serveur refuse un cadre plus haut que deux fois sa largeur
+   (signatureNormaliser()). Il garde le dessin du bloc de signature : l'invite au milieu, le
+   trait, le nom et la date dessous. */
+
+dialog.fenetre.signature-fenetre {
+    width: min(1040px, calc(100vw - 48px));
+    height: min(680px, calc(100dvh - 48px));
+    max-height: none;
+    margin: auto;
+}
+
+dialog.fenetre.signature-fenetre .signature-fenetre-cadre {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* La phrase sous le titre vit dans l'en-tête, à gauche de la croix, qui reste en haut. */
+dialog.fenetre.signature-fenetre .fenetre-entete {
+    align-items: flex-start;
+}
+
+dialog.fenetre.signature-fenetre .fenetre-entete .fenetre-sous-titre {
+    margin: 6px 0 0;
+}
+
+dialog.fenetre.signature-fenetre .fenetre-corps {
+    flex: 1 1 auto;
+    gap: 10px;
+    overflow: hidden;
+    padding: 16px 24px 20px;
+}
+
+/* La zone mesure la place qui reste ; le cadre s'y centre. */
+dialog.fenetre.signature-fenetre .signature-fenetre-zone {
+    display: grid;
+    flex: 1 1 auto;
+    place-items: center;
+    min-height: 0;
+    container-type: size;
+}
+
+dialog.fenetre.signature-fenetre .signature-cadre {
+    position: relative;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto auto;
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    height: min(100cqh, 150cqw);
+    padding: 24px 40px 18px;
+    border: 1.5px dashed var(--border-fort);
+    border-radius: var(--r-lg);
+    background: var(--carte);
+    color: var(--text);
+    outline: none;
+    /* Au doigt, signer ne fait pas défiler la fenêtre. */
+    touch-action: none;
+}
+
+/* Le canevas couvre le cadre ; ce qui est posé dessus — l'invite, le trait, le nom — laisse
+   passer la plume. */
+dialog.fenetre.signature-fenetre .signature-cadre canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    cursor: crosshair;
+    touch-action: none;
+}
+
+dialog.fenetre.signature-fenetre .signature-cadre > :not(canvas, .signature-outils) {
+    position: relative;
+    pointer-events: none;
+}
+
+dialog.fenetre.signature-fenetre .signature-trace {
+    display: grid;
+    place-items: center;
+    min-height: 0;
+}
+
+dialog.fenetre.signature-fenetre .signature-invite {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--placeholder);
+    font-size: 22px;
+}
+
+dialog.fenetre.signature-fenetre .signature-invite .icon {
+    width: 24px;
+    height: 24px;
+}
+
+dialog.fenetre.signature-fenetre .signature-cadre:not(.est-vide) .signature-invite {
+    visibility: hidden;
+}
+
+dialog.fenetre.signature-fenetre .signature-ligne {
+    margin: 8px 0 10px;
+    border-bottom: 1.5px solid var(--border-fort);
+}
+
+dialog.fenetre.signature-fenetre .signature-pied {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+/* Retirer le dernier trait, tout effacer : dans le coin du cadre, au-dessus de l'encre. */
+dialog.fenetre.signature-fenetre .signature-outils {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1;
+    display: flex;
+    gap: 6px;
+}
+
+dialog.fenetre.signature-fenetre .signature-outil {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: var(--h-lg);
+    height: var(--h-lg);
+    margin: 0;
+    padding: 0 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    transition: opacity 0.12s ease, background 0.12s ease;
+}
+
+dialog.fenetre.signature-fenetre .signature-outil.est-libelle {
+    padding: 0 12px 0 10px;
+}
+
+dialog.fenetre.signature-fenetre .signature-outil .icon {
+    width: 16px;
+    height: 16px;
+}
+
+dialog.fenetre.signature-fenetre .signature-outil:hover:not(:disabled) {
+    background: var(--hover);
+}
+
+dialog.fenetre.signature-fenetre .signature-outil:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+dialog.fenetre.signature-fenetre .signature-outil:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* Obligatoire, la fenêtre n'a pas d'« Annuler » : de quoi se déconnecter, à gauche, discret. */
+dialog.fenetre.signature-fenetre .signature-fenetre-sortir {
+    margin-right: auto;
+    color: var(--text-muted);
+    font-size: 13px;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+dialog.fenetre.signature-fenetre .signature-fenetre-sortir:hover {
+    color: var(--text);
+}
+
+[data-theme="light"] dialog.fenetre.signature-fenetre .fenetre-message.error {
+    color: var(--danger-texte) !important;
+}
+
+/* Sur une tablette, un téléphone : tout l'écran. */
+@media (pointer: coarse), (max-width: 719px) {
+
+    dialog.fenetre.signature-fenetre {
+        width: 100vw;
+        max-width: none;
+        height: 100dvh;
+        margin: 0;
+        border: 0;
+        border-radius: 0;
+    }
+
+    dialog.fenetre.signature-fenetre .fenetre-corps {
+        padding: 16px 28px 20px;
+    }
+
+    dialog.fenetre.signature-fenetre .signature-outil {
+        min-width: 48px;
+        height: 48px;
+        font-size: 16px;
+    }
+
+    dialog.fenetre.signature-fenetre .signature-outil.est-libelle {
+        padding: 0 16px 0 12px;
+    }
+
+    dialog.fenetre.signature-fenetre .signature-outil .icon {
+        width: 20px;
+        height: 20px;
+    }
+
+    dialog.fenetre.signature-fenetre .signature-pied {
+        font-size: 15px;
+    }
+
+    dialog.fenetre.signature-fenetre .signature-fenetre-sortir {
+        font-size: 15px;
+    }
+}
+
+@media (max-width: 719px) {
+
+    dialog.fenetre.signature-fenetre .fenetre-corps {
+        padding: 12px 16px 16px;
+    }
+
+    dialog.fenetre.signature-fenetre .signature-cadre {
+        padding: 20px 18px 14px;
+    }
+
+    dialog.fenetre.signature-fenetre .signature-invite {
+        font-size: 18px;
+    }
 }
 
 /* ---------- Le thème clair ----------

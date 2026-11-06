@@ -53,7 +53,7 @@ vides. À ne jamais lancer sur le serveur de l'atelier.
 
 | Commande | Ce qu'elle fait |
 | --- | --- |
-| `run admin <Nom> <Prénom> [rôle] [courriel]` | Crée un compte, et montre son mot de passe une fois |
+| `run admin <Nom> <Prénom> [rôle] [courriel]` | Crée un compte, et montre une fois son **code d'accès** : la personne choisit son mot de passe à sa première connexion, avec ce code |
 | `run demo` | Pose les comptes d'essai des quatre profils et un jeu de demandes |
 
 ```sh
@@ -63,6 +63,13 @@ run admin Dupont Jean "chef d'atelier"                   # le métier, entre gui
 run admin Dupont Jean --role chef-atelier --courriel jean.dupont@eitc-be.com
 run admin Dupont Jean --mdp "celui que je veux"
 ```
+
+Sans `--mdp`, le compte n'a pas de mot de passe : la commande affiche un code d'accès — huit
+caractères, ni 0 ni O, ni 1 ni I —, valable une fois et sept jours. À l'écran de connexion :
+l'identifiant, « Continuer », ce code, puis le mot de passe de son choix
+([le code d'accès](/fonctionnalites/utilisateurs#le-mot-de-passe)). Elle tirait au sort un mot de
+passe, jusqu'au 6 novembre 2026 : il mêlait des 0 et des O, des l et des 1, et recopié à la main,
+il échouait sur « Identifiants incorrects ».
 
 Le rôle s'écrit sous n'importe lequel de ses trois noms ; accents, majuscules et pluriel sont
 indifférents. Un rôle inconnu n'écrit rien et affiche ce tableau :

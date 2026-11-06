@@ -152,6 +152,69 @@
     outline-offset: -1px;
 }
 
+/* ===== La barre d'une liste, au doigt =====
+
+   Demandé le 6 novembre 2026 : « les boutons et champs ne sont pas harmonisés ». La recherche,
+   les filtres et « Actualiser » faisaient 44 px ; la densité 34, « Nouvelle demande » 32. Tout
+   passe à 44, la hauteur du doigt.
+
+   « Actualiser » n'y garde que sa flèche : le mot reste aux lecteurs d'écran (.outil-libelle,
+   caché aux yeux seulement), et l'en-tête gagne sa largeur. Au bureau, à la souris, il garde
+   son mot. Les identifiants sont nommés : leurs propres règles l'emportaient sur une classe. */
+@media (max-width: 1100px), (pointer: coarse) {
+
+    .prefa-vue-outils .prefa-densite {
+        box-sizing: border-box;
+        height: 44px;
+        padding: 3px;
+    }
+
+    .prefa-vue-outils .prefa-densite-choix {
+        width: 40px;
+        height: 36px;
+    }
+
+    .prefa-vue-outils .prefa-nouvelle-demande {
+        height: 44px;
+        padding: 0 16px;
+        font-size: 15px;
+    }
+
+    .prefa-vue-outils .prefa-nouvelle-demande .icon {
+        width: 16px;
+        height: 16px;
+    }
+
+    .prefa-vue-outils button:has(> .outil-libelle),
+    .prefa-vue-outils #refresh-prefa,
+    .prefa-vue-outils #refresh-plans-iso,
+    .prefa-vue-outils #planning-refresh {
+        box-sizing: border-box;
+        justify-content: center;
+        gap: 0;
+        width: 44px;
+        min-width: 44px;
+        height: 44px;
+        min-height: 44px;
+        padding: 0;
+    }
+
+    .prefa-vue-outils button:has(> .outil-libelle) .icon {
+        width: 20px;
+        height: 20px;
+    }
+
+    .prefa-vue-outils .outil-libelle {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+}
+
 /* L'urgence descend sous l'échéance : une largeur ajustée et « flex » la font passer à la
    ligne sans casser l'alignement vertical de la cellule, et sans colonne à elle pour une
    mention qui ne paraît qu'une fois sur quatre. */
@@ -181,6 +244,80 @@
 .prefa-list .prefa-heading p {
     margin-top: 3px;
     font-size: 13px;
+}
+
+/* ===== L'EN-TÊTE DES LISTES, SUR UNE LIGNE =====
+
+   Demandé le 6 novembre 2026 : le haut de chaque écran — « Plans & équipes »,
+   sa phrase, puis la recherche — tenait trois lignes avant les onglets. « C'est énorme. »
+
+   Le titre, la recherche et ses filtres, puis les outils de la vue tiennent maintenant sur
+   une seule ligne ; la phrase sous le titre se retire — elle disait ce que l'écran montre
+   juste en dessous. Une seule règle pour les neuf listes : elles ont toutes la même forme —
+   l'en-tête, puis « .prefa-filters », puis le reste. La coque devient une grille ; l'en-tête
+   s'y fond (display: contents) pour que son titre et ses outils encadrent la recherche, et
+   tout ce qui suit reprend la pleine largeur, ligne après ligne.
+
+   Sur grand écran seulement : sous 851 px, la ligne n'y tiendrait pas, et l'en-tête reprend
+   sa forme empilée. */
+@media (min-width: 851px) {
+    .page.prefa-list > .prefa-shell {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        column-gap: 20px;
+    }
+
+    .page.prefa-list > .prefa-shell > * {
+        grid-column: 1 / -1;
+    }
+
+    .page.prefa-list > .prefa-shell > .prefa-heading {
+        display: contents;
+    }
+
+    /* Le titre — son bloc, ou le h1 seul quand l'écran n'a pas de phrase (planning). */
+    .page.prefa-list > .prefa-shell > .prefa-heading > :first-child {
+        grid-column: 1;
+        grid-row: 1;
+        padding: 14px 0 14px 16px;
+    }
+
+    .page.prefa-list > .prefa-shell > .prefa-heading > :first-child p {
+        display: none;
+    }
+
+    .page.prefa-list > .prefa-shell > .prefa-filters {
+        grid-column: 2;
+        grid-row: 1;
+        padding: 0;
+    }
+
+    .page.prefa-list > .prefa-shell > .prefa-heading > .prefa-vue-outils {
+        grid-column: 3;
+        grid-row: 1;
+        padding: 0 16px 0 0;
+    }
+}
+
+/* En dessous — une tablette en portrait —, la même idée sur deux lignes : le titre à gauche
+   et les outils à droite, puis la recherche. L'en-tête s'empilait, et sur les écrans
+   d'atelier il se centrait (« .atelier-page .prefa-heading ») : le titre, sa phrase, les
+   boutons, puis la recherche — près de trois cents pixels avant le premier élément. La
+   phrase se retire, comme sur grand écran. */
+@media (max-width: 850px) {
+    .page.prefa-list > .prefa-shell > .prefa-heading {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px 16px;
+    }
+
+    .page.prefa-list > .prefa-shell > .prefa-heading > :first-child p {
+        display: none;
+    }
 }
 
 .prefa-table-scroll {
@@ -401,14 +538,12 @@ tbody tr:focus-within .delete-prefa {
    fiche, PV et planning, commande, soudures. Le champ date garde la largeur d'une date. */
 @media (min-width: 960px) {
     .prefa-detail-row .pv-proprietes > div,
-    .prefa-detail-row .suivi-soudures-proprietes > div,
     .prefa-detail-row .mes-plans-proprietes > div,
     .prefa-detail-row .fiche-faits > div {
         grid-template-columns: 200px minmax(0, 1fr);
     }
 
     .prefa-detail-row .pv-volet .pv-proprietes dd,
-    .prefa-detail-row .suivi-soudures-proprietes dd,
     .prefa-detail-row .mes-plans-proprietes dd,
     .prefa-detail-row .fiche-faits dd {
         justify-content: flex-start;
@@ -1122,10 +1257,6 @@ body:has(.prefa-detail-row:not([hidden]))::before {
     overflow-wrap: anywhere;
 }
 
-.ccpu-note {
-    padding-top: 10px;
-}
-
 .ccpu-coulees {
     display: flex;
     flex-wrap: wrap;
@@ -1656,6 +1787,13 @@ tbody tr:focus-within:not(.prefa-detail-row):not(:has(> .prefa-table-empty)) > t
     background: var(--ligne-survol);
 }
 
+/* Dans la liste des demandes, la ligne entière ouvre la fiche ; dans « Plans &
+   affectations », son volet (prefa-interactions.js) : le pointeur le dit. */
+.prefa-table-demandes .prefa-request > tr:first-child,
+.plans-iso-table .prefa-request > tr:first-child {
+    cursor: pointer;
+}
+
 /* Le dernier filet ne sert à rien : il double le bord du tableau. */
 tbody tr:last-child > td {
     border-bottom: 0;
@@ -2069,107 +2207,11 @@ tbody tr:last-child > td {
     display: none;
 }
 
-/* Le compte tient la droite de la barre : c'est là qu'on le cherche. */
+/* Le compte tient la droite de la barre : c'est là qu'on le cherche. Sa boîte est celle
+   des autres commandes de la barre (dashboard-base.css). */
 .toolbar-compte {
-    margin-left: auto;
     display: flex;
     align-items: center;
-    gap: 4px;
-}
-
-/* Le nom, et le rôle dessous en petit : on sait sous quel compte on travaille sans
-   ouvrir le menu. Le métier (« Soudeur »…) reste dans le menu, faute de place. */
-.toolbar-compte .nav-subfooter {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
-    text-align: left;
-}
-
-.toolbar-compte .nav-subfooter .subtitle {
-    display: block;
-    color: var(--text-muted);
-    font-size: 11px;
-    line-height: 1;
-    white-space: nowrap;
-}
-
-.toolbar-compte .nav-subfooter .subtitle-metier {
-    display: none;
-}
-
-.toolbar-compte .account-trigger {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    height: 36px;
-    padding: 0 6px 0 5px;
-    border: 0;
-    border-radius: 6px;
-    background: transparent;
-    color: var(--text);
-    font: inherit;
-    cursor: pointer;
-}
-
-.toolbar-compte .account-trigger:hover,
-.toolbar-compte .account-trigger[aria-expanded="true"],
-.toolbar-compte .nav-theme:hover,
-.toolbar-compte .nav-theme[aria-expanded="true"],
-.toolbar-compte .nav-logout:hover {
-    background: var(--hover);
-}
-
-/* La hauteur de ligne colle aux lettres. À 16 px pour un texte de 13, la boîte réservait
-   sous la ligne de base la place des jambages — que « Alan Admin » n'a pas — et le nom
-   tombait deux pixels sous la pastille et le chevron, qui sont centrés sur leur dessin. */
-.toolbar-compte .nav-subfooter .title {
-    font-size: 13px;
-    font-weight: 500;
-    line-height: 1;
-    white-space: nowrap;
-}
-
-/* Les trois commandes ont la même boîte : rien ne dépasse, rien n'est arrondi. */
-.toolbar-compte .nav-theme,
-.toolbar-compte .nav-logout {
-    display: flex;
-    align-items: center;
-    margin: 0;
-    padding: 6px;
-    border: 0;
-    border-radius: 4px;
-    background: transparent;
-    color: var(--text-muted);
-    cursor: pointer;
-}
-
-.toolbar-compte .account-chevron {
-    width: 14px;
-    height: 14px;
-}
-
-/* Sous 700 px, le nom s'efface : l'initiale suffit à savoir qui est connecté. */
-@media (max-width: 700px) {
-    .toolbar-compte .nav-subfooter {
-        display: none;
-    }
-}
-
-#btn-hide {
-    position: static;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    width: auto;
-    height: auto;
-    min-height: 24px;
-    padding: 6px 10px;
-    margin: 0;
-    border: 0;
-    background: transparent;
-    font: inherit;
 }
 
 .passivation-form {
@@ -2247,7 +2289,6 @@ summary {
 (pointer: coarse) {
 
     .nav-btn,
-    #btn-hide,
     #create-user-form button,
     .prefa-form button:not(.modal-close):not(.bouton-discret),
     #refresh-prefa,
@@ -2256,10 +2297,12 @@ summary {
         min-height: 44px;
     }
 
-    .nav-logout {
-        min-width: 44px;
-        min-height: 44px;
-        justify-content: center;
+    /* Les commandes de la barre du haut : 32 px à la souris, 40 au doigt. */
+    .barre-haut #btn-hide,
+    .barre-recherche,
+    .toolbar-compte .account-trigger {
+        width: 40px;
+        height: 40px;
     }
 
     .form-group input,
@@ -2896,8 +2939,11 @@ summary {
  * de reprendre l'empilement des conteneurs du tableau de bord, pas une ligne de CSS ici. */
 
 /* Le premier groupe suit l'en-tête des colonnes : l'écart d'un groupe à l'autre y ferait
-   un trou. */
-.prefa-list .prefa-table thead + .prefa-groupe th {
+   un trou. « [data-densite] » : la règle de la densité confortable (28 px, plus haut) la
+   battait, et le trou y était — cinquante pixels vides sous l'en-tête, relevés sur
+   « Mes plans » en tablette. */
+.prefa-list .prefa-table thead + .prefa-groupe th,
+.prefa-list[data-densite] .prefa-table thead + .prefa-groupe th {
     padding-top: 14px;
 }
 
@@ -3312,21 +3358,50 @@ summary {
     height: 14px;
 }
 
-/* Le tableau des comptes respire plus que les autres : chaque ligne porte deux étages
-   (nom et identifiant, rôle et métier) et un monogramme. À la hauteur d'une ligne de
-   demande, tout se touchait. */
+/* Un compte, une ligne. Chaque ligne portait deux étages — le nom sur l'identifiant, le rôle
+   sur le métier —, et quand la place manquait, le nom et l'identifiant se cassaient encore
+   (« d.ma / rie »). Simplifié le 6 novembre 2026 : tout tient sur une ligne, rien ne passe à
+   la ligne, et la colonne « Utilisateur » prend la largeur libre — les trois autres se
+   serrent contre le bord droit, comme les mesures de la liste des demandes. */
 .utilisateurs-page[data-densite="confortable"] {
-    --ligne-td: 64px;
+    --ligne-td: 52px;
     --ligne-th: 40px;
 }
 
 .utilisateurs-page[data-densite="compact"] {
-    --ligne-td: 48px;
+    --ligne-td: 42px;
     --ligne-th: 34px;
 }
 
 .utilisateurs-table {
     min-width: 640px;
+}
+
+.utilisateurs-page .utilisateurs-table th:first-child,
+.utilisateurs-page .utilisateurs-table td.utilisateur-cellule {
+    width: 100%;
+}
+
+.utilisateurs-page .utilisateurs-table th:not(:first-child),
+.utilisateurs-page .utilisateurs-table td:not(.utilisateur-cellule) {
+    width: 1%;
+    white-space: nowrap;
+}
+
+/* Pas de plafond pour la colonne « Utilisateur » : la règle commune des tableaux (240 px par
+   cellule, .prefa-table td) la serrait, et sur tablette la pastille du mot de passe passait
+   par-dessus le rôle — « Mot de passe à choisir », illisible juste après une
+   réinitialisation : on ne voyait pas qu'elle avait marché. */
+.utilisateurs-page .utilisateurs-table td.utilisateur-cellule {
+    max-width: none;
+}
+
+/* Tablette en portrait : la date de création cède sa place au nom, à son identifiant et à
+   l'état du mot de passe. Elle revient en paysage et sur ordinateur. */
+@media (max-width: 900px) {
+    .utilisateurs-page .utilisateurs-table .utilisateur-date {
+        display: none;
+    }
 }
 
 .utilisateurs-page .utilisateurs-table th,
@@ -3338,6 +3413,21 @@ summary {
 .utilisateurs-page .utilisateurs-table th:first-child,
 .utilisateurs-page .utilisateurs-table td:first-child {
     padding-left: 24px;
+}
+
+/* Tablette en portrait, suite : des marges plus serrées, pour que la ligne tienne sans
+   défiler de côté. Après les marges d'ordinaire, qui l'emporteraient sinon. */
+@media (max-width: 900px) {
+    .utilisateurs-page .utilisateurs-table th,
+    .utilisateurs-page .utilisateurs-table td {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .utilisateurs-page .utilisateurs-table th:first-child,
+    .utilisateurs-page .utilisateurs-table td:first-child {
+        padding-left: 16px;
+    }
 }
 
 .utilisateurs-page .utilisateurs-table .prefa-personne {
@@ -3356,31 +3446,31 @@ summary {
     font-size: 10.5px;
 }
 
-.utilisateur-identite,
-.utilisateur-role {
+/* Le nom, puis l'identifiant en plus sourd, sur la même ligne. Le nom ne se coupe jamais ;
+   l'identifiant non plus — c'est ce qu'on tape pour se connecter, une coupure au milieu le
+   rendait faux à la lecture. */
+.utilisateur-identite {
     display: inline-flex;
-    flex-direction: column;
-    gap: 3px;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
     line-height: 1.25;
+    white-space: nowrap;
 }
 
-.utilisateurs-page .utilisateurs-table td.utilisateur-role {
-    display: table-cell;
-}
-
-.utilisateur-role-nom,
-.utilisateur-role-metier {
-    display: block;
-}
-
+/* Le rôle et son métier sur une ligne : « Demandeur · Chargé d'affaire ». */
 .utilisateur-role-nom {
     color: var(--text);
 }
 
 .utilisateur-role-metier {
-    margin-top: 3px;
     color: var(--text-muted);
-    font-size: 12px;
+}
+
+/* L'espace qui précède vient du balisage : le point n'a de marge qu'à droite. */
+.utilisateur-role-metier::before {
+    content: "·";
+    margin-right: 6px;
 }
 
 .utilisateur-nom {
@@ -3392,17 +3482,6 @@ summary {
 .utilisateur-identifiant {
     color: var(--text-muted);
     font-size: 12.5px;
-}
-
-/* En compact, une ligne : le second étage se range à côté du premier. */
-.utilisateurs-page[data-densite="compact"] .utilisateur-identite {
-    flex-direction: row;
-    align-items: baseline;
-    gap: 8px;
-}
-
-.utilisateurs-page[data-densite="compact"] .utilisateur-role-metier {
-    display: none;
 }
 
 /* « vous » : sa propre ligne se reconnaît sans lire, et on comprend pourquoi elle ne se
@@ -3418,8 +3497,9 @@ summary {
 }
 
 /* L'état du mot de passe, à droite du nom, quand il y a quelque chose à en dire. « À
-   choisir » se lit sans alarme : la personne le fera en se connectant. « Demandé » prend
-   la couleur de ce qui attend l'administrateur — c'est à lui de réinitialiser. */
+   choisir » se lit sans alarme : la personne le fera en se connectant, avec son code.
+   « Demandé », « Code expiré » et « Code à donner » prennent la couleur de ce qui attend
+   l'administrateur — c'est à lui de donner un code. */
 .utilisateur-mdp {
     flex: none;
     padding: 1px 8px;
@@ -3431,7 +3511,9 @@ summary {
     white-space: nowrap;
 }
 
-.utilisateur-mdp.est-demande {
+.utilisateur-mdp.est-demande,
+.utilisateur-mdp.est-code-expire,
+.utilisateur-mdp.est-code-a-donner {
     background: var(--attente-fond);
     color: var(--attente-texte);
 }
@@ -3501,7 +3583,7 @@ summary {
 }
 
 /* La commande au contour, dans une ligne ou au pied d'une fenêtre : celle qui n'engage
-   rien (Annuler, Plans & affectations). */
+   rien (Annuler, Plans & équipes). */
 .prefa-ligne-contour {
     border: 1px solid var(--border);
     background: transparent;

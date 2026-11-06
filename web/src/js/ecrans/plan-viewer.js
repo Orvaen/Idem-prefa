@@ -199,6 +199,94 @@
             { x: evenement.clientX, y: evenement.clientY });
     }, { passive: false });
 
+    // ---------------------------------------------------------------- au doigt
+    //
+    // Sur une tablette, le plan se manie comme une carte : un doigt le déplace, dans tous les
+    // sens à la fois, deux doigts le zooment en pinçant, autour du point entre eux. Un simple
+    // toucher reste un clic — une soudure, une case.
+    //
+    // Le défilement du navigateur ne suffisait pas : il verrouille le geste sur un axe — on
+    // tire en biais, le plan ne bouge que de côté —, et le pincement ne zoomait pas le plan
+    // (l'appli Android le coupe pour toute la page). Le corps de la fenêtre refuse donc les
+    // gestes du navigateur (touch-action: none, plan-viewer.css), et ceux-ci les reprennent.
+    // La souris garde son geste à elle, plus bas.
+    const doigts = new Map();
+    let toucher = null;
+    let zoomEnAttente = null;
+
+    /** Les deux premiers doigts posés : leur écart, et le point entre eux. */
+    function pince() {
+        const [a, b] = [...doigts.values()];
+        return { ecart: Math.hypot(a.x - b.x, a.y - b.y), centre: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } };
+    }
+
+    /** Le zoom suit le pincement, une fois par image : chaque pas relit le plan entier. */
+    function zoomerAuDoigt(viewer, pourcent, ancre) {
+        const deja = zoomEnAttente;
+        zoomEnAttente = { viewer, pourcent, ancre };
+        if (deja) return;
+        requestAnimationFrame(() => {
+            const { viewer: v, pourcent: p, ancre: a } = zoomEnAttente;
+            zoomEnAttente = null;
+            appliquerZoom(v, p, a);
+        });
+    }
+
+    document.addEventListener('pointerdown', function (evenement) {
+        if (evenement.pointerType !== 'touch') return;
+        const corps = evenement.target.closest?.('.plan-dialog-corps');
+        if (!corps) return;
+        doigts.set(evenement.pointerId, { x: evenement.clientX, y: evenement.clientY });
+        const viewer = corps.closest('.plan-viewer');
+        if (doigts.size === 1) {
+            toucher = { corps, viewer, x: evenement.clientX, y: evenement.clientY,
+                gauche: corps.scrollLeft, haut: corps.scrollTop, bouge: false, pincement: null };
+        } else if (doigts.size === 2 && toucher) {
+            toucher.pincement = { ecart: pince().ecart, zoom: Number(viewer.dataset.zoom) || 100 };
+            toucher.bouge = true;
+        }
+    }, true);
+
+    document.addEventListener('pointermove', function (evenement) {
+        if (evenement.pointerType !== 'touch' || !toucher || !doigts.has(evenement.pointerId)) return;
+        doigts.set(evenement.pointerId, { x: evenement.clientX, y: evenement.clientY });
+
+        if (toucher.pincement && doigts.size >= 2) {
+            const { ecart, centre } = pince();
+            if (toucher.pincement.ecart > 0) {
+                zoomerAuDoigt(toucher.viewer, toucher.pincement.zoom * ecart / toucher.pincement.ecart, centre);
+            }
+            return;
+        }
+
+        // Quelques pixels de jeu : un doigt ne se pose jamais tout à fait immobile, et un
+        // toucher qui tremble doit rester un clic.
+        const dx = evenement.clientX - toucher.x;
+        const dy = evenement.clientY - toucher.y;
+        if (!toucher.bouge && Math.hypot(dx, dy) < 8) return;
+        toucher.bouge = true;
+        toucher.corps.scrollLeft = toucher.gauche - dx;
+        toucher.corps.scrollTop = toucher.haut - dy;
+    }, true);
+
+    function leverDoigt(evenement) {
+        if (evenement.pointerType !== 'touch' || !doigts.has(evenement.pointerId)) return;
+        doigts.delete(evenement.pointerId);
+        if (!toucher) return;
+        if (doigts.size === 1) {
+            // Un doigt levé après le pincement : l'autre reprend le déplacement d'où il est,
+            // sans que le plan saute.
+            const [reste] = [...doigts.values()];
+            Object.assign(toucher, { x: reste.x, y: reste.y, gauche: toucher.corps.scrollLeft,
+                haut: toucher.corps.scrollTop, pincement: null });
+        } else if (doigts.size === 0) {
+            toucher = null;
+        }
+    }
+
+    document.addEventListener('pointerup', leverDoigt, true);
+    document.addEventListener('pointercancel', leverDoigt, true);
+
     delegue('click', '.plan-zoom', function () {
         const viewer = this.closest('.plan-viewer');
         const actuel = Number(viewer.dataset.zoom) || 100;
@@ -220,6 +308,10 @@
             Math.max(1, Number(viewer.dataset.pages) || 1));
         delete viewer.dataset.pageVoulue;
         viewer.querySelector('.plan-dialog').showModal();
+        // Sur une tablette, le sommaire part replié : posé au-dessus du dessin, il en prenait
+        // le tiers, et le soudeur vient voir sa feuille, pas la liste des feuilles. « Sommaire »,
+        // dans la barre, le rouvre en volet par-dessus le plan (plan-viewer.css).
+        if (surTablette()) replierSommaire(viewer.querySelector('.plan-dialog'));
         if (voulue !== pageVue(viewer)) poserPage(viewer, voulue);
         // Les vignettes du sommaire ne partent qu'une fois, et après la page : quinze petites
         // images demandées en même temps qu'elle la retardaient.
@@ -476,7 +568,7 @@
             if (aller && demandee) allerPage(viewer, demandee);
             // allerPage réécrit le libellé quand la page change ; quand on retombe sur la
             // même, c'est à nous de le remettre.
-            valeur.textContent = 'Page ' + pageVue(viewer) + ' / ' + total;
+            ecrirePage(valeur, pageVue(viewer), total);
         };
 
         champ.addEventListener('keydown', evenement => {
@@ -549,8 +641,19 @@
             liste.hidden = Number(liste.dataset.page) !== demandee;
         });
         const valeur = viewer.querySelector('.plan-page-valeur');
-        if (valeur) valeur.textContent = 'Page ' + demandee + ' / ' + Math.max(1, Number(viewer.dataset.pages) || 1);
+        if (valeur) ecrirePage(valeur, demandee, Math.max(1, Number(viewer.dataset.pages) || 1));
         marquerSommaire(viewer, demandee);
+    }
+
+    /**
+     * « Page 3 / 15 », le mot dans sa propre boîte : la barre d'une tablette en portrait le
+     * retire (plan-viewer.css), « 3 / 15 » y suffit et la barre tient sur une ligne.
+     */
+    function ecrirePage(valeur, page, total) {
+        const mot = document.createElement('span');
+        mot.className = 'plan-page-mot';
+        mot.textContent = 'Page ';
+        valeur.replaceChildren(mot, page + ' / ' + total);
     }
 
     /** L'adresse de l'image d'une page, la même d'où qu'on l'ouvre : le navigateur la garde une fois. */
@@ -579,15 +682,30 @@
     }
 
     delegue('click', '.plan-sommaire-page', function () {
+        const dialogue = this.closest('.plan-dialog');
         allerPage(this.closest('.plan-viewer'), Number(this.dataset.page));
+        // Sur tablette, le volet se referme sur la feuille choisie : il la cachait.
+        if (surTablette() && dialogue) replierSommaire(dialogue);
     });
+
+    /** Au doigt : la tablette, où la fenêtre du plan se simplifie. */
+    function surTablette() {
+        return window.matchMedia('(pointer: coarse)').matches;
+    }
+
+    /** Replie le sommaire, et montre le bouton de la barre qui le rappelle. */
+    function replierSommaire(dialogue) {
+        const sommaire = dialogue?.querySelector('.plan-dialog-sommaire');
+        const rappel = dialogue?.querySelector('.plan-dialog-sommaire-ouvrir');
+        if (!sommaire || !rappel) return;
+        sommaire.hidden = true;
+        rappel.hidden = false;
+    }
 
     // Le sommaire se range comme la liste des soudures : son propre bouton le replie, et
     // celui de la barre d'outils le rappelle.
     delegue('click', '.plan-dialog-sommaire-replier', function () {
-        const dialogue = this.closest('.plan-dialog');
-        dialogue.querySelector('.plan-dialog-sommaire').hidden = true;
-        dialogue.querySelector('.plan-dialog-sommaire-ouvrir').hidden = false;
+        replierSommaire(this.closest('.plan-dialog'));
     });
 
     delegue('click', '.plan-dialog-sommaire-ouvrir', function () {
@@ -795,7 +913,7 @@
 
     /** Le volet se redessine depuis le serveur : c'est lui qui connaît la liste des ISO. */
     function rechargerVolet() {
-        const page = document.getElementById('soudures-page') ? 'pages/soudures.php'
+        const page = document.getElementById('mes-plans-page') ? 'pages/atelier.php'
             : (document.querySelector('.atelier-plan-list') ? 'pages/plans_iso.php' : null);
         if (page) window.chargerDans('#content', page);
     }
@@ -1094,7 +1212,7 @@
         const scene = evenement.target.closest('.plan-viewer-scene');
         // Les lignes de la liste soudure, les numéros des soudures et les lignes de la
         // nomenclature (« Mes soudures ») se cliquent : ils ne prennent pas le plan.
-        if (!scene || evenement.target.closest('.plan-coulee, .plan-coulee-choix, .plan-ligne-soudure, .plan-cordon, .plan-ligne-materiel')) return;
+        if (!scene || evenement.target.closest('.plan-coulee, .plan-coulee-choix, .plan-ligne-soudure, .plan-cordon, .plan-ligne-materiel, .plan-ligne-coulee')) return;
         // C'est le corps de la fenêtre qui défile : c'est donc lui qu'on pousse.
         const corps = scene.closest('.plan-dialog-corps');
         if (!corps) return;

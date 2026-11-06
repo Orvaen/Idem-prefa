@@ -180,6 +180,8 @@ document.addEventListener('submit', async evenement => {
             if (window.toast) window.toast(corps.message);
             if (window.htmx) htmx.trigger(document.body, 'usersChanged');
         }
+        // Son code d'accès, à donner à la personne : montré une fois (api/User.php).
+        if (corps.codeAcces) window.montrerCodeAcces?.(corps.codeAcces);
     } else {
         if (statut === 409) etat.disponible = null;
         ecrireMessage(message, corps?.message || 'Une erreur est survenue.', 'error');

@@ -6,11 +6,27 @@
     // validait une déclaration depuis « Suivi des soudures » se faisait recharger une page
     // réservée au personnel atelier. Le serveur répondait 403 et l'écran se vidait sur
     // « Impossible de charger vos affectations » — un message qui ne le concernait même pas.
+    // « Mes soudures » vit dans « Mes plans » (atelier.php) depuis le 6 novembre 2026 : c'est
+    // le cas par défaut.
     const pageOuverte = () => {
-        if (document.getElementById('soudures-page')) return 'pages/soudures.php';
         if (document.getElementById('suivi-soudures-page')) return 'pages/suivi_soudures.php';
+        if (document.getElementById('validation-soudures-page')) return 'pages/validation_soudures.php';
         return 'pages/atelier.php';
     };
+
+    /**
+     * La pastille de « Validation des soudures » prend le compte de l'écran, rechargé après
+     * chaque décision : un plan validé la fait baisser sans recharger la page.
+     */
+    function majPastilleValidations() {
+        const page = document.getElementById('validation-soudures-page');
+        const pastille = document.querySelector('[data-compteur="validations"]');
+        if (!page || !pastille) return;
+        const compte = Number(page.dataset.aValider) || 0;
+        pastille.textContent = String(compte);
+        pastille.hidden = compte === 0;
+        pastille.setAttribute('aria-label', compte + ' plan(s) de soudures à valider');
+    }
 
     function refreshStaff(expanded = []) {
         if (!Array.isArray(expanded)) expanded = [];
@@ -21,6 +37,7 @@
                 contenu.textContent = 'Impossible de recharger cet écran. Actualisez la page.';
                 return;
             }
+            majPastilleValidations();
             expanded.forEach(id => {
                 const row = document.getElementById(id);
                 if (row) row.hidden = false;
@@ -38,7 +55,7 @@
         if (!bouton) return;
         const dialog = document.getElementById(bouton.dataset.dialog);
         if (!dialog) return;
-        // Le dialogue est rendu dans le panneau « Plans & affectations », masqué tant qu'il est replié :
+        // Le dialogue est rendu dans le panneau « Plans & équipes », masqué tant qu'il est replié :
         // on le sort du panneau le temps de l'afficher, sinon il faudrait le déplier pour voir la fenêtre.
         dialog.atelierHome ??= dialog.parentNode;
         document.body.append(dialog);
@@ -118,11 +135,9 @@
     // Les renvois d'un écran à l'autre. Ils cliquent l'entrée du menu plutôt que de charger
     // la page eux-mêmes : elle seule tient l'onglet actif et l'historique de navigation.
     //
-    // Ils sont ici, et non dans soudures.js, parce que l'encadrement ne charge pas ce
-    // fichier-là : il n'a pas « Mes soudures », il a « Soudures ».
-    document.addEventListener('click', evenement => {
-        if (evenement.target.closest('.atelier-vers-soudures')) document.getElementById('btn-soudures')?.click();
-    });
+    // Il est ici, et non dans soudures.js, parce que l'encadrement ne charge pas ce
+    // fichier-là. « Renseigner mes soudures », dans « Mes plans », ne change plus d'écran :
+    // il déplie les feuilles du plan sur place (soudures.js).
     document.addEventListener('click', evenement => {
         if (evenement.target.closest('.atelier-vers-suivi-soudures')) document.getElementById('btn-suivi-soudures')?.click();
     });
@@ -132,7 +147,7 @@
     });
 
     // ===== « Mes plans » : la recherche et les onglets =====
-    // Sur le modèle de « Plans / ISO » (iso.js) : tous les plans confiés sont dans la page,
+    // Sur le modèle de « Plans & équipes » (iso.js) : tous les plans confiés sont dans la page,
     // on filtre sur place. Onglet et recherche se combinent ; un titre de groupe disparaît
     // avec sa dernière ligne, et chaque compte dit ce qui reste visible.
     function filtrerMesPlans() {
@@ -411,16 +426,15 @@
     // décoche dès qu'un seul ne l'est plus. Elle n'a pas de nom : elle ne part pas avec le
     // formulaire, seules les cases des cordons comptent.
     //
-    // « :scope > tbody » et non « tbody » : la liste vit dans la ligne d'un autre tableau, et
-    // le sélecteur seul trouvait aussi le tbody de celui-ci — la case « Tous » se comptait
-    // alors parmi les cordons, et ne se recochait jamais.
+    // Les contrôles ne sont plus un tableau mais des lignes (soudureControlesRendu()) : on
+    // compte les cases des soudures du bloc, toutes sauf celle de « Toutes les soudures ».
     document.addEventListener('change', evenement => {
         const croix = evenement.target.closest('.soudure-controles .soudure-croix');
         if (!croix) return;
-        const table = croix.closest('table');
+        const bloc = croix.closest('.soudure-controles');
         const controle = croix.dataset.controle;
-        const cases = table.querySelectorAll(`:scope > tbody .soudure-croix[data-controle="${controle}"]`);
-        const tout = table.querySelector(`.soudure-controles-tout[data-controle="${controle}"]`);
+        const cases = bloc.querySelectorAll(`.soudure-croix:not(.soudure-controles-tout)[data-controle="${controle}"]`);
+        const tout = bloc.querySelector(`.soudure-controles-tout[data-controle="${controle}"]`);
         if (croix === tout) cases.forEach(caseCordon => { caseCordon.checked = tout.checked; });
         else if (tout) tout.checked = Array.from(cases).every(caseCordon => caseCordon.checked);
     });
@@ -483,7 +497,9 @@
         } catch {
             reussi = false;
         }
-        buttons.forEach(bouton => { bouton.disabled = false; });
+        // Tous se rallument, sauf « Valider » s'il attend une signature — un refus envoyé sans
+        // elle ne doit pas le rallumer (includes/atelier/decision.php).
+        buttons.forEach(bouton => { bouton.disabled = bouton.hasAttribute('data-attend-signature'); });
 
         if (!reussi) {
             const texte = corps?.message || 'Enregistrement impossible. Réessayez.';
@@ -502,6 +518,10 @@
 
         form.closest('dialog')?.close();
         if (menuOuvert && menuOuvert.form === form) fermerMenuAffectation(false);
+        // Sur « Validation des soudures », le plan tranché quitte la file au rechargement et le
+        // suivant s'ouvre (validation-soudures.js) : la réponse du serveur — « Soudures
+        // validées : 5 sur 69. » — dit ce qui vient d'être fait, sans quoi rien ne le disait.
+        if (document.getElementById('validation-soudures-page') && corps?.message) window.toast?.(corps.message);
         // « Mes plans » et « Mes soudures » se rechargent elles-mêmes. Les
         // écrans de l'encadrement, non : la page Plans / ISO et la liste des demandes
         // ont chacune leur façon de se remettre à jour, plus bas. Sans cette

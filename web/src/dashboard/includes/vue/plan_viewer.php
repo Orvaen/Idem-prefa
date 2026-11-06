@@ -157,7 +157,9 @@ function planViewerRendu(int $elementId, array $plans, array $coulees, bool $mod
                                  tourne la page, tout suit. -->
                             <span class="plan-dialog-groupe plan-dialog-pages">
                                 <button type="button" class="plan-page" data-saut="-1" aria-label="Page précédente">‹</button>
-                                <span class="plan-page-valeur" title="Double-cliquez pour aller à une page">Page 1 / <?= $pagesPlan ?></span>
+                                <?php // « Page » dans sa boîte : la barre d'une tablette en
+                                      // portrait le retire, « 3 / 15 » suffit. ?>
+                                <span class="plan-page-valeur" title="Double-cliquez pour aller à une page"><span class="plan-page-mot">Page </span>1 / <?= $pagesPlan ?></span>
                                 <button type="button" class="plan-page" data-saut="1" aria-label="Page suivante">›</button>
                             </span>
                         <?php endif; ?>

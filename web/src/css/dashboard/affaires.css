@@ -103,14 +103,24 @@
 }
 
 /* ---------- LA LISTE, EN CARTES ----------
-   Une grille qui se remplit toute seule : les cartes font 260 px au minimum et se
-   partagent ce qui reste, donc trois par rangée sur un portable et cinq sur l'écran de
-   l'atelier, sans media query. */
+   Une grille qui se remplit toute seule, sans media query.
+
+   Agrandie le 6 novembre 2026 : à 260 px, avec un nom en 14 et des coins de 8, les cartes
+   étaient « trop petites et trop arrondies ». Elles font maintenant 340 px au minimum —
+   deux ou trois par rangée sur un portable —, le nom passe en 17, et les coins tombent à
+   4 px : une fiche, pas une pastille. */
 .affaires-grille {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 12px;
-    padding: 0 16px 16px;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 16px;
+    padding: 4px 24px 24px;
+}
+
+@media (max-width: 700px) {
+    .affaires-grille {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 4px 16px 16px;
+    }
 }
 
 /* ---------- La carte ----------
@@ -121,10 +131,10 @@
 .affaire-carte {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    padding: 14px 14px 12px;
+    gap: 16px;
+    padding: 20px 20px 16px;
     border: 1px solid var(--border);
-    border-radius: var(--r-lg);
+    border-radius: var(--r-sm);
     background: var(--carte);
     transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
@@ -134,9 +144,8 @@
     display: none;
 }
 
-/* Toute la carte mène aux demandes de l'affaire — sauf ses commandes. Une affaire sans
-   demande ne mène nulle part : c'est le bouton posé par le serveur qui en décide. */
-.affaire-carte:has(button.affaire-demandes) {
+/* Toute la carte ouvre la fiche de l'affaire — sauf ses commandes (affaires.js). */
+.affaire-carte {
     cursor: pointer;
 }
 
@@ -149,7 +158,7 @@
 .affaire-carte-haut {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     min-width: 0;
 }
 
@@ -158,12 +167,12 @@
     flex: none;
     display: grid;
     place-items: center;
-    width: 28px;
-    height: 28px;
-    border-radius: var(--r-md);
+    width: 40px;
+    height: 40px;
+    border-radius: var(--r-sm);
     background: var(--accent-fond);
     color: var(--accent-texte);
-    font-size: 11px;
+    font-size: 14px;
     font-weight: 600;
     letter-spacing: 0.02em;
 }
@@ -173,22 +182,28 @@
 .affaire-carte .affaire-nom {
     flex: 1;
     min-width: 0;
-    height: 30px;
+    height: 36px;
     margin: 0 -6px;
     padding: 0 6px;
     border: 1px solid transparent;
-    border-radius: var(--r-md);
+    border-radius: var(--r-sm);
     background: transparent;
     color: var(--text);
     font: inherit;
-    font-size: 14px;
+    font-size: 17px;
     font-weight: 600;
     text-overflow: ellipsis;
 }
 
-/* Le cadre au survol promet une saisie : le champ seul le prend. */
-.affaire-carte:hover input.affaire-nom {
+/* Le cadre au survol promet une saisie : le champ seul le prend, et seulement une fois le
+   crayon pressé. Au repos, le nom est en lecture seule : un titre, qui ouvre l'affaire
+   comme le reste de la carte. */
+.affaire-carte:hover input.affaire-nom:not([readonly]) {
     border-color: var(--border);
+}
+
+.affaire-carte input.affaire-nom[readonly] {
+    cursor: inherit;
 }
 
 /* En lecture — « Mes affaires » —, le nom n'est qu'un titre : la même place et la même
@@ -197,7 +212,7 @@
    et le nom monterait au-dessus du monogramme. */
 .affaire-carte h2.affaire-nom {
     overflow: hidden;
-    line-height: 28px;
+    line-height: 34px;
     white-space: nowrap;
 }
 
@@ -207,7 +222,7 @@
     display: flex;
     flex-direction: column;
     margin: 0;
-    padding-top: 8px;
+    padding-top: 10px;
     border-top: 1px solid var(--border-faint);
 }
 
@@ -216,7 +231,7 @@
     grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
     gap: 12px;
-    min-height: 32px;
+    min-height: 38px;
 }
 
 .affaire-proprietes dt {
@@ -224,14 +239,14 @@
     align-items: center;
     gap: 8px;
     color: var(--text-muted);
-    font-size: 12.5px;
+    font-size: 13.5px;
     white-space: nowrap;
 }
 
 .affaire-proprietes dt .icon {
     flex: none;
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
 }
 
 .affaire-proprietes dd {
@@ -240,7 +255,7 @@
     min-width: 0;
     margin: 0;
     color: var(--text);
-    font-size: 13px;
+    font-size: 14px;
 }
 
 /* Le choix du chargé d'affaire : la valeur de la ligne, alignée à droite, nue au repos. */
@@ -273,7 +288,7 @@
     border-color: var(--border);
 }
 
-.affaire-carte .affaire-nom:focus,
+.affaire-carte .affaire-nom:not([readonly]):focus,
 .affaire-carte .liste-filtrable-champ:focus {
     border-color: var(--accent);
     background: var(--surface);
@@ -353,20 +368,20 @@
     font-weight: 500;
 }
 
-/* Le compte des demandes : un lien discret quand il mène quelque part, un mot sourd
-   sinon. Le chevron n'avance qu'au survol de la carte. */
+/* Le compte des demandes : il ouvre la fiche, comme la carte. En accent quand il y en a,
+   sourd sinon. Le chevron n'avance qu'au survol de la carte. */
 .affaire-demandes {
     display: inline-flex;
     align-items: center;
     gap: 2px;
-    height: 24px;
+    height: 28px;
     padding: 0 4px 0 8px;
     border: 0;
-    border-radius: var(--r-md);
+    border-radius: var(--r-sm);
     background: transparent;
     color: var(--accent-texte);
     font: inherit;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 500;
     white-space: nowrap;
     cursor: pointer;
@@ -393,10 +408,12 @@
 }
 
 .affaire-demandes.est-vide {
-    padding: 0;
     color: var(--text-muted);
     font-weight: 400;
-    cursor: default;
+}
+
+.affaire-demandes.est-vide:hover {
+    background: var(--hover);
 }
 
 /* ---------- Le pied ----------
@@ -416,21 +433,45 @@
 }
 
 .affaire-pied-texte {
+    margin-right: auto;
     color: var(--attente-texte);
-    font-size: 12px;
+    font-size: 13px;
+}
+
+/* Annuler rend la carte telle qu'elle est enregistrée : sans lui, une correction commencée
+   ne se défaisait qu'en rechargeant tout le tableau de bord. */
+.affaire-annuler {
+    display: inline-flex;
+    align-items: center;
+    height: var(--h-lg);
+    padding: 0 10px;
+    border: 0;
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.affaire-annuler:hover {
+    background: var(--hover);
+    color: var(--text);
 }
 
 .affaire-enregistrer {
     display: inline-flex;
     align-items: center;
-    height: var(--h-md);
+    height: var(--h-lg);
     padding: 0 10px;
     border: 0;
-    border-radius: var(--r-md);
+    border-radius: var(--r-sm);
     background: var(--bouton-plein);
     color: var(--bouton-plein-texte);
     font: inherit;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 500;
     line-height: 1;
     cursor: pointer;
@@ -455,14 +496,14 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    height: var(--h-md);
+    height: var(--h-lg);
     padding: 0 10px;
     border: 1px solid var(--border-fort);
-    border-radius: var(--r-md);
+    border-radius: var(--r-sm);
     background: transparent;
     color: var(--text);
     font: inherit;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 500;
     line-height: 1;
     white-space: nowrap;
@@ -484,23 +525,26 @@
     color: var(--text-muted);
 }
 
-/* La corbeille ne paraît qu'au survol ; sous un doigt, toujours (pas de survol). */
+/* Le crayon et la corbeille ne paraissent qu'au survol ; sous un doigt, toujours (pas de
+   survol). */
+.affaire-renommer,
 .affaire-supprimer {
     flex: none;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     padding: 0;
     border: 0;
-    border-radius: var(--r-md);
+    border-radius: var(--r-sm);
     background: transparent;
     color: var(--text-muted);
     cursor: pointer;
     transition: opacity 0.12s ease, color 0.12s ease, background 0.12s ease;
 }
 
+.affaire-renommer .icon,
 .affaire-supprimer .icon {
     width: 15px;
     height: 15px;
@@ -508,14 +552,29 @@
 
 @media (hover: hover) {
 
+    .affaire-renommer,
     .affaire-supprimer {
         opacity: 0;
     }
 
+    .affaire-carte:hover .affaire-renommer,
+    .affaire-carte:focus-within .affaire-renommer,
     .affaire-carte:hover .affaire-supprimer,
     .affaire-carte:focus-within .affaire-supprimer {
         opacity: 1;
     }
+}
+
+/* Une affaire dont une demande est validée n'a plus ni crayon ni corbeille : le serveur ne
+   les pose pas (pages/affaires.php). */
+.affaire-renommer:hover {
+    background: var(--hover);
+    color: var(--text);
+}
+
+/* Le nom est déjà modifiable : le crayon n'a plus rien à proposer. */
+.affaire-carte:has(input.affaire-nom:not([readonly])) .affaire-renommer {
+    display: none;
 }
 
 .affaire-supprimer:hover:not([disabled]) {
@@ -523,7 +582,9 @@
     color: var(--danger-texte);
 }
 
+.affaire-renommer:focus-visible,
 .affaire-supprimer:focus-visible,
+.affaire-annuler:focus-visible,
 .affaire-enregistrer:focus-visible,
 .affaire-deposer:focus-visible {
     opacity: 1;
@@ -597,4 +658,191 @@
     .affaire-dialog .liste-filtrable-champ {
         height: 44px;
     }
+}
+
+/* ---------- LA FICHE D'UNE AFFAIRE ----------
+   Ce qu'un clic sur une carte ouvre (affaires.js) : la fenêtre commune (fenetre.css), plus
+   large — 720 px — pour que chaque demande tienne sur sa ligne, et aux coins des cartes.
+   Le chargé d'affaire sous le nom, quatre chiffres, puis les demandes : une ligne par
+   demande, qui l'ouvre. */
+dialog.fenetre.affaire-fiche {
+    width: min(720px, calc(100vw - 32px));
+    border-radius: var(--r-md);
+}
+
+/* La boîte tient le rôle du <form> des autres fenêtres : une colonne dont seul le corps
+   défile, l'en-tête et le pied restant en place. */
+dialog.fenetre.affaire-fiche .affaire-fiche-boite {
+    display: flex;
+    flex-direction: column;
+    max-height: inherit;
+}
+
+dialog.fenetre.affaire-fiche .affaire-fiche-entete {
+    align-items: flex-start;
+}
+
+.affaire-fiche-identite {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+}
+
+dialog.fenetre.affaire-fiche .affaire-fiche-nom h2 {
+    overflow: hidden;
+    font-size: 19px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.affaire-fiche-nom {
+    min-width: 0;
+}
+
+.affaire-fiche-nom p {
+    margin: 2px 0 0;
+    color: var(--text-muted);
+    font-size: 13.5px;
+}
+
+/* Les quatre chiffres : en tuiles plates, le nombre en grand et le mot dessous. */
+.affaire-fiche-chiffres {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    margin: 0;
+}
+
+.affaire-fiche-chiffres > div {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 2px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+}
+
+.affaire-fiche-chiffres dt {
+    color: var(--text-muted);
+    font-size: 12.5px;
+}
+
+.affaire-fiche-chiffres dd {
+    margin: 0;
+    color: var(--text);
+    font-size: 22px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+}
+
+@media (max-width: 560px) {
+    .affaire-fiche-chiffres {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* Les demandes : une ligne chacune, la référence en tête et le chevron au bout. Toute la
+   ligne est le bouton. */
+.affaire-fiche-liste {
+    display: flex;
+    flex-direction: column;
+    margin: 4px 0 0;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    list-style: none;
+}
+
+.affaire-fiche-liste > li + li {
+    border-top: 1px solid var(--border-faint);
+}
+
+dialog.fenetre .affaire-fiche-demande {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 48px;
+    padding: 0 14px;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 14px;
+    text-align: left;
+    cursor: pointer;
+}
+
+dialog.fenetre .affaire-fiche-demande:hover {
+    background: var(--ligne-survol, var(--hover));
+}
+
+dialog.fenetre .affaire-fiche-demande:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+}
+
+.affaire-fiche-reference {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.affaire-fiche-statut {
+    color: var(--text-muted);
+}
+
+.affaire-fiche-date {
+    margin-left: auto;
+    color: var(--text-muted);
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.affaire-fiche-demande .icon {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    color: var(--text-muted);
+}
+
+.affaire-fiche-vide {
+    margin: 4px 0 0;
+    padding: 24px 16px;
+    border: 1px dashed var(--border);
+    border-radius: var(--r-sm);
+    color: var(--text-muted);
+    font-size: 14px;
+    text-align: center;
+}
+
+@media (max-width: 560px) {
+    .affaire-fiche-statut {
+        display: none;
+    }
+}
+
+/* ---------- L'état d'une affaire ----------
+   Le point et le mot des statuts de demande (.prefa-status, prefa-form.css), à la taille des
+   valeurs de la carte. Une affaire sans demande n'a pas de couleur à porter. */
+.affaire-etat.prefa-status {
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.affaire-etat.prefa-status::before {
+    width: 8px;
+    height: 8px;
+}
+
+.affaire-etat.est-sans-demande {
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+/* Dans la fiche, l'état ouvre la ligne sous le nom, avant le chargé d'affaire. */
+.affaire-fiche-nom p .affaire-etat.prefa-status {
+    font-size: 13.5px;
 }

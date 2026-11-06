@@ -1,8 +1,8 @@
 <?php
 
 /**
- * Les morceaux de « Mes soudures » (pages/soudures.php) : un plan et ses feuilles dans le
- * tableau, et la fenêtre d'une soudure. L'écran ne fait que les ranger.
+ * Les morceaux des soudures de « Mes plans » (pages/atelier.php) : la carte d'une feuille, et la
+ * fenêtre d'une soudure. L'écran ne fait que les ranger.
  */
 
 require_once __DIR__ . '/liste_filtrable.php';
@@ -21,102 +21,60 @@ function souduresNomFeuille(array $feuille): string
 }
 
 /**
- * Un plan dans le tableau : sa ligne en tête, puis ses feuilles.
+ * Une feuille, en carte : son dessin en vignette, son numéro de ligne, et où elle en est.
  *
- * La ligne du plan est la ligne de groupe des autres listes — son nom, ses feuilles, sa
- * demande et son affaire —, et dans la colonne des soudures, le compte du plan entier.
- * soudures.js le refait après chaque enregistrement : ses deux nombres sont en attributs.
+ * Refaite deux fois le 6 novembre 2026. L'écran montrait des plans à déplier, puis leurs
+ * feuilles en tableau (« je vais dans soudures, je vois un plan ? ») ; puis des cartes de
+ * cinq lignes de texte — état, compte, barre, affaire — sans plus dire de quel plan elles
+ * étaient (« trop de détails, et je ne sais pas à quel plan c'est relié »). Le plan est
+ * maintenant la ligne qui se déplie sur ses cartes (pages/atelier.php), et la carte ne dit plus
+ * que ce qui se reconnaît d'un coup d'œil : le dessin, le numéro imprimé sur le papier, et
+ * « 3 / 5 » sur une barre — verte, avec une coche, quand la feuille est finie. L'état en
+ * toutes lettres reste pour les lecteurs d'écran.
  *
- * Elle se déroule et se replie, d'un clic n'importe où : la flèche est un bouton, pour le
- * clavier. Tous les plans arrivent repliés — le plan qu'on travaille ne se devine pas, on le
- * déroule.
+ * La carte est un seul bouton : la toucher ouvre le dessin, à sa page (soudures.js). Elle
+ * porte ce que le script relit — repère, état, de quoi la chercher — et ce qu'il récrit
+ * après chaque enregistrement (data-cordons, data-etat-libelle, la barre).
  *
- * @param array{element:int, reference:string, demande:int, affaire:string} $plan
- * @param list<array<string, mixed>> $feuilles les siennes (soudureAtelierFeuilles())
+ * @param array<string, mixed> $feuille une entrée de soudureAtelierFeuilles()
+ * @param array{element:int, reference:string, demande:int, affaire:string} $plan le sien
  */
-function souduresPlanRendu(array $plan, array $feuilles): string
+function souduresCarteRendu(array $feuille, array $plan): string
 {
-    $cherche = mb_strtolower(prefaReferenceComplete($plan['demande']) . ' ' . $plan['reference'] . ' ' . $plan['affaire']);
-    $faites = array_sum(array_column($feuilles, 'faites'));
-    $prevues = array_sum(array_map(static fn (array $feuille): int => (int) $feuille['imprimees'], $feuilles));
-    ob_start();
-    ?>
-<tbody class="prefa-groupe soudures-plan" data-element="<?= (int) $plan['element'] ?>">
-    <tr>
-        <th scope="colgroup" colspan="2">
-            <button type="button" class="soudures-plan-bascule" aria-expanded="false">
-                <svg class="soudures-plan-fleche" aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 4 4 4-4 4" /></svg>
-                <span class="prefa-groupe-nom"><?= prefaEscape($plan['reference']) ?></span>
-            </button>
-            <span class="prefa-groupe-compte"><?= count($feuilles) ?></span>
-            <span class="prefa-groupe-aide"><?= prefaEscape(prefaReference($plan['demande'])) ?><?= $plan['affaire'] !== '' ? ' · ' . prefaEscape($plan['affaire']) : '' ?></span>
-        </th>
-        <?php // Des en-têtes, comme le titre : la ligne de groupe en a toute l'allure, et le
-              // survol des lignes de données ne la touche pas. ?>
-        <th class="prefa-nombre soudures-plan-cordons" data-plan-cordons
-            data-faites="<?= $faites ?>" data-prevues="<?= $prevues ?>"><?= prefaEscape(soudureAtelierCompteFeuille($faites, $prevues > 0 ? $prevues : null)) ?></th>
-        <?php // La place d'un « Renseigner », invisible : les plans repliés, la colonne des
-              // actions se serrait sur son titre, et le compte du plan sautait de cinquante
-              // pixels au premier dépli. ?>
-        <th aria-hidden="true"><span class="prefa-decision soudures-plan-gabarit"><button type="button" class="prefa-ligne-contour" tabindex="-1">Renseigner</button></span></th>
-    </tr>
-</tbody>
-<?php if (!$feuilles): ?>
-    <?php // Le soudeur n'a pas l'écran « Plans / ISO » : lui dire où le chef clique ne
-          // l'avance à rien. Il lui faut savoir que ce n'est pas prêt, et vers qui se tourner. ?>
-    <tbody class="soudures-plan-vide" data-element="<?= (int) $plan['element'] ?>" data-cherche="<?= prefaEscape($cherche) ?>" hidden>
-        <tr><td colspan="4" class="prefa-table-empty">Ce plan n’a pas encore de feuilles. Demandez au chef d’atelier de les ajouter.</td></tr>
-    </tbody>
-<?php endif; ?>
-<?php
-    foreach ($feuilles as $feuille) echo souduresFeuilleRendu($feuille, $cherche);
-    return ob_get_clean();
-}
-
-/**
- * Une feuille, un corps de tableau à elle, comme une demande ou un bon : la ligne porte son
- * repère, son état et de quoi la chercher — le script n'a rien à recomposer.
- *
- * @param string $cherchePlan ce qu'on cherche de son plan : sa demande, son nom, son affaire
- */
-function souduresFeuilleRendu(array $feuille, string $cherchePlan): string
-{
-    // Le repère voyage d'un seul morceau — élément, feuille, page — sur la ligne comme sur ses
-    // boutons : c'est ce qu'il faut pour lire le tableau soudure et pour ouvrir le dessin.
+    // Le repère voyage d'un seul morceau — élément, feuille, page — : c'est ce qu'il faut
+    // pour lire le tableau soudure et pour ouvrir le dessin.
     $repere = $feuille['element'] . ':' . $feuille['document'] . ':' . $feuille['page'];
     $nom = souduresNomFeuille($feuille);
     $etat = soudureAtelierEtatFeuille($feuille['faites'], $feuille['imprimees']);
+    // On la cherche par son numéro de ligne d'abord ; son plan, sa demande et son affaire
+    // aussi, pour qui ne l'a pas sous les yeux.
+    $cherche = mb_strtolower($nom . ' ' . $plan['reference'] . ' ' . $plan['libelle'] . ' '
+        . prefaReferenceComplete($plan['demande']) . ' ' . $plan['affaire']);
+    $part = soudureAtelierPartFeuille($feuille['faites'], $feuille['imprimees']);
+    // La vignette du sommaire de la fenêtre du plan : rastérisée au dépôt, gardée en cache,
+    // et demandée seulement quand la carte arrive à l'écran (loading="lazy").
+    $vignette = 'actions/plan_image.php?plan=' . (int) $feuille['element'] . '&document=' . (int) $feuille['document']
+        . '&page=' . (int) $feuille['page'] . '&vignette=1';
     ob_start();
     ?>
-<tbody class="prefa-request soudures-feuille"
-       data-repere="<?= prefaEscape($repere) ?>"
-       data-feuille="<?= prefaEscape($nom) ?>"
-       data-element="<?= (int) $feuille['element'] ?>"
-       data-etat="<?= $etat['cle'] ?>"
-       data-cherche="<?= prefaEscape($cherchePlan . ' ' . mb_strtolower($nom)) ?>" hidden>
-    <tr>
-        <?php // Le point de l'état ouvre la ligne, puis le numéro de ligne imprimé sur le
-              // tirage — c'est par lui qu'on la cherche. ?>
-        <td class="prefa-reference soudures-feuille-nom">
-            <span class="prefa-point soudures-point est-<?= $etat['cle'] ?>" role="img" data-etat-point
-                  aria-label="<?= prefaEscape($etat['libelle']) ?>" title="<?= prefaEscape($etat['libelle']) ?>"></span><?= prefaEscape($feuille['numero'] !== '' ? $feuille['numero'] : $feuille['nom']) ?>
-        </td>
-        <td class="prefa-secondaire soudures-feuille-page"><?= $feuille['page'] ?> / <?= $feuille['pages'] ?></td>
-        <td class="prefa-nombre soudures-feuille-cordons">
-            <span data-cordons><?= prefaEscape(soudureAtelierCompteFeuille($feuille['faites'], $feuille['imprimees'])) ?></span>
-            <?php if ($feuille['imprimees']): ?><span class="soudures-barre" aria-hidden="true"><span style="--part: <?= soudureAtelierPartFeuille($feuille['faites'], $feuille['imprimees']) ?>%"></span></span><?php endif; ?>
-        </td>
-        <?php // La feuille s'ouvre sur son dessin, et c'est là qu'on la remplit : on clique une
-              // ligne de sa liste soudure. Le bouton au contour des lignes de la maison —
-              // « Détails » d'un bon. Toute la ligne l'actionne. ?>
-        <td class="prefa-actions">
-            <span class="prefa-decision">
-                <button type="button" class="prefa-ligne-contour soudures-ouvrir-plan" data-repere="<?= prefaEscape($repere) ?>"
-                        aria-haspopup="dialog" title="Ouvrir le dessin et renseigner ses soudures">Renseigner</button>
-            </span>
-        </td>
-    </tr>
-</tbody>
+<button type="button" class="soudures-feuille soudures-ouvrir-plan"
+        data-repere="<?= prefaEscape($repere) ?>"
+        data-feuille="<?= prefaEscape($nom) ?>"
+        data-element="<?= (int) $feuille['element'] ?>"
+        data-etat="<?= $etat['cle'] ?>"
+        data-cherche="<?= prefaEscape($cherche) ?>"
+        aria-haspopup="dialog">
+    <span class="soudures-carte-image">
+        <img src="<?= prefaEscape($vignette) ?>" alt="" loading="lazy" decoding="async">
+        <svg class="soudures-carte-coche" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
+    </span>
+    <span class="soudures-carte-nom"><?= prefaEscape($nom) ?></span>
+    <span class="soudures-carte-avancement">
+        <span class="soudures-barre" aria-hidden="true"><span style="--part: <?= $part ?>%"></span></span>
+        <span class="soudures-carte-compte" data-cordons><?= prefaEscape(soudureAtelierCompteFeuille($feuille['faites'], $feuille['imprimees'])) ?></span>
+    </span>
+    <span class="sr-only" data-etat-libelle><?= prefaEscape($etat['libelle']) ?></span>
+</button>
 <?php
     return ob_get_clean();
 }

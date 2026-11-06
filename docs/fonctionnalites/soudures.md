@@ -7,35 +7,36 @@ L'application dit « soudure » partout, jamais « cordon » : c'est le mot de l
 imprimée sur le plan. Le code, lui, garde « cordon » dans ses noms (`plan-cordon`,
 `avancementCordonsAValider()`…).
 
-## Mes soudures — le personnel d'atelier
+## Les soudures dans « Mes plans » — le personnel d'atelier
 
-**Écran :** « Mes soudures & Suivi matériel », section « Atelier » — personnel d'atelier.
+**Écran :** « Mes plans » — personnel d'atelier ([l'écran](/fonctionnalites/atelier#mes-plans-le-personnel-d-atelier)).
+« Mes soudures » y a été réuni le 6 novembre 2026 : il n'a plus d'entrée dans le menu, et son
+ancienne adresse ouvre « Mes plans ».
 
-L'écran a la forme des autres listes : en haut, la densité des lignes, « Actualiser » et
-« Signaler un manque » ; dessous, la recherche ; puis les onglets d'état et le tableau des
-feuilles, **rangées sous leur plan**.
+Chaque plan confié est une ligne, précédée d'une flèche : **la toucher déplie le plan sur ses
+feuilles**, en vignettes — le menu qui se déplie —, et un autre toucher le replie. Un plan seul
+arrive déplié. En haut, « Actualiser » et « Signaler un manque », la recherche, puis une phrase :
+« Touchez un plan pour voir ses feuilles, puis la feuille que vous avez en main ».
 
-1. **Trouver la feuille** — tous les plans confiés sont là, **repliés** : une ligne par plan,
-   la ligne de groupe des autres listes, avec une flèche devant son nom, son nombre de
-   feuilles, sa demande et son affaire, et dans la colonne des soudures, celles du plan entier.
-   Un clic sur la ligne — ou Entrée sur sa flèche — **déroule ses feuilles** dessous, un autre
-   les replie. La ligne s'éclaire au survol ; ses feuilles entrent l'une après l'autre, et ce qui
-   est dessous glisse au lieu de sauter. Rien ne bouge quand le système demande moins
-   d'animations, ni quand c'est la recherche qui déroule. Une ligne par page du cahier ISO : le point de son état, son numéro de ligne, sa
-   page, ses soudures faites sur les soudures prévues au plan avec une barre, et
-   « Renseigner ». Les **onglets** — Toutes, À faire, En cours, Soudées, et Pas encore lues ou
-   Sans liste quand il y en a — filtrent par état, et leurs points sont la légende de ceux des
-   lignes : **cercle vide** à faire, **azur** en cours, **vert** soudée. À droite des onglets,
-   les soudures faites de tous les plans sur celles qu'ils prévoient. La recherche trouve un
-   numéro de ligne, un plan, une demande ou une affaire, dans tous les plans à la fois : on
-   cherche la feuille qu'on a en main sans savoir de quel plan elle est. Une recherche ou un
-   onglet **déroule de lui-même** les plans où il trouve des feuilles ; les vider rend les plans
-   comme on les avait laissés, et « Actualiser » les garde. Un plan sans feuille le dit sous son
-   nom, déroulé — c'est au chef d'atelier de les ajouter. Cliquer la ligne d'une feuille — ou
-   « Renseigner » — **ouvre son dessin**, à sa page. Rouverte, une feuille déjà vue revient
-   aussitôt telle qu'on l'a laissée, et se relit sans bruit derrière ; une autre reste blanche
-   le temps que son image arrive, plutôt que de montrer la précédente. Rien n'est déroulé ni
-   ouvert d'office : on arrive avec son papier en main, le logiciel ne devine pas.
+1. **Toucher la feuille** — une **carte** par page de cahier ISO, dans l'ordre du cahier : la
+   **vignette de son dessin** — on reconnaît sa feuille d'un coup d'œil —, son **numéro de
+   ligne** (« YU-PRE-101 »), et ses soudures faites sur prévues, « 3 / 5 », sur une barre —
+   **azur** en cours, **verte avec une coche** sur le dessin quand elle est finie. L'état en
+   toutes lettres n'est lu que par les lecteurs d'écran. Toucher une carte affiche aussitôt
+   « Ouverture… » sur sa vignette, puis **ouvre son dessin**, à sa page ; la carte reste marquée
+   en refermant. Si le dessin ne peut pas s'ouvrir, un message le dit — la carte ne reste jamais
+   sans réponse. La recherche de « Mes plans » trouve aussi un numéro de ligne : le plan qui
+   porte la feuille se déplie, et seules les feuilles qui répondent restent ; la vider rend les
+   plans comme on les avait laissés. Un plan confié sans feuille le dit sous sa ligne : c'est au
+   chef d'atelier de les ajouter. Rouverte, une feuille déjà vue revient aussitôt telle qu'on
+   l'a laissée, et se relit sans bruit derrière ; une autre reste blanche le temps que son image
+   arrive, plutôt que de montrer la précédente. Rien n'est ouvert d'office : on arrive avec son
+   papier en main, le logiciel ne devine pas.
+
+   Refait trois fois le 6 novembre 2026 : des plans repliés au-dessus d'un tableau à colonnes
+   (« je vais dans soudures, je vois un plan ? ») ; des cartes de cinq lignes sans plan (« trop
+   de détails, et je ne sais pas à quel plan c'est relié ») ; des plans en titre, toujours
+   ouverts. Le client voulait garder le menu qui se déplie, et tout réunir dans « Mes plans ».
 2. **Cliquer une ligne de la LISTE SOUDURE, sur le dessin** — le tableau imprimé du plan, comme
    on le remplirait sur le tirage. Le numéro de la soudure le long du tube se clique aussi :
    c'est la même soudure, et la ligne et le numéro s'allument ensemble. La **fenêtre de la
@@ -85,6 +86,24 @@ de commande de la demande, ou saisi librement —, la quantité et l'unité, le 
 de livraison, casse ou rebut, autre) et une précision. Le chef d'atelier et le chargé de
 production sont prévenus aussitôt, nommément.
 
+**La coulée d'une ligne.** Dans la **NOMENCLATURE DE MATÉRIEL** du dessin, la dernière case
+de chaque ligne — « N° COULÉE », soulignée d'un trait — se touche à part : elle ouvre le
+**choix de la coulée** de la ligne, parmi celles lues sur les certificats CCPU de la demande
+(un toucher suffit ; « à vérifier » marque une coulée lue une seule fois), ou un numéro tapé.
+« Retirer la coulée » l'efface. Le numéro s'écrit dans la case, et l'encadrement le voit dans
+sa visionneuse. Sur une page qui n'a encore aucune case, une case est posée pour chaque ligne —
+comme la pose d'office de l'encadrement. Le reste de la ligne signale un manque (plus bas).
+
+La fenêtre tient avec beaucoup de coulées — une demande en compte vite trente ou cinquante :
+
+| | |
+| --- | --- |
+| Toucher, ou taper | Deux gestes, deux endroits : on **touche** une coulée de la liste ; sinon, en bas, **« Pas dans la liste ? Tapez le numéro »** et son « Enregistrer » gardent ce qui est tapé, **mot pour mot** — jamais une coulée qui lui ressemble. Un seul champ faisait les deux (« Chercher dans la liste, ou taper le numéro ») et se comprenait mal, la liste étant déjà sous les yeux. |
+| La recherche, en haut | Seulement pour une longue liste (plus de douze) : un champ à loupe qui **ne fait que chercher** — quelques chiffres tapés, la liste se réduit aux coulées qui les contiennent (« 2 sur 26 »), sans tenir compte des espaces ni des tirets. Une seule trouvée : Entrée la choisit. Aucune : ce qui est tapé descend dans le champ du bas, prêt à enregistrer. Sur tablette, le clavier ne s'ouvre pas de lui-même ; à la souris, la recherche a la main. |
+| Par certificat | Les coulées se rangent sous leur certificat : son numéro (ou le nom du fichier), ses dimensions et sa nuance, à comparer à la désignation de la ligne, écrite sous le titre avec la coulée actuelle. |
+| Déjà sur cette feuille | En tête quand la liste est longue (plus de douze), ou qu'une coulée de la feuille n'est sur aucun certificat — un numéro tapé : le même tube revient d'une ligne à l'autre. |
+| La hauteur | Seule la liste défile ; la recherche, le champ du bas et les boutons restent en place, et la fenêtre ne rétrécit pas pendant qu'on cherche. |
+
 **Depuis le dessin**, on clique la ligne de la **NOMENCLATURE DE MATÉRIEL** du matériel qui
 manque, comme on la montrerait sur le tirage. La même fenêtre s'ouvre avec :
 - l'**article** de la ligne, tel que le plan l'imprime, avec son DN et son épaisseur —
@@ -109,7 +128,7 @@ liste la connaît, sans égard aux majuscules (« pce » retient « PCE »). Le 
 hors de la liste. Tant que la liste n'existe pas sur un serveur (migration
 `2026-10-29_unites_materiel` pas encore passée), l'unité reste un champ libre.
 
-Le tableau **« Matériel signalé »** suit ses manques : ceux en cours, et ceux traités depuis moins
+Le tableau **« Matériel manquant »**, sous les feuilles, suit ses manques : ceux en cours, et ceux traités depuis moins
 de trente jours. Voir [Commande matériel](/fonctionnalites/commande-materiel#les-manques).
 
 ## Soudures — le suivi de l'encadrement
@@ -128,28 +147,87 @@ onglet par état avec son compte.
   pour ce qui est relevé et attend encore —, et l'avancement validé, suivi de « → y % »
   quand une déclaration du suivi soudage l'attend.
 - **La recherche** porte sur le plan, la demande, l'affaire et les personnes ; à droite des
-  onglets, les soudures relevées sur le total prévu, et les avancements à valider.
+  onglets, les soudures relevées sur le total prévu, et les plans à valider.
 - **« Examiner »** — ou un clic n'importe où sur la ligne — ouvre le plan :
-  - les **déclarations** à valider ou refuser ;
+  - **trois chiffres** côte à côte : l'avancement validé, les soudures relevées sur le total
+    prévu, qui y travaille ;
+  - s'il a des soudures à valider, **une ligne** « N soudures à valider · Valider → », qui
+    ouvre [Validation des soudures](#validation) sur ce plan ;
+  - **« Toutes les soudures relevées »**, en lecture — numéro, soudeur, procédé, date, RT, VT,
+    PT, visa —, rangées par ligne ISO comme les contrôles. Repliée quand il y a quelque
+    chose « À valider » : elle redonnait juste dessous les mêmes soudures que les contrôles. Ouverte
+    sinon.
+
+## Validation des soudures — la décision de l'encadrement {#validation}
+
+**Écran :** « Validation des soudures », section « Atelier » — chargé de production et chef
+d'atelier. Une **pastille** sur son entrée compte les plans qui attendent ; elle baisse à
+chaque décision, sans recharger.
+
+Demandé le 6 novembre 2026 : « la validation de soudure dans un autre onglet ». Elle était
+répétée à trois endroits — la fiche d'une demande, le volet « Plans & équipes », la fenêtre
+d'un plan dans « Soudures » —, au milieu de ce qu'on y venait faire. Elle a son écran, et ces
+trois endroits n'en gardent qu'**une ligne** : « N soudures à valider · Valider → », qui ouvre
+cet écran sur le bon plan.
+
+**Une file, pas une liste** — refait le même jour : « je déteste l'interface ». C'était la liste
+de « Soudures » trait pour trait : un onglet « À valider » seul, qu'on ne pouvait pas changer ; un
+tableau ; un bouton « Valider » qui ne validait rien et ouvrait une grande fenêtre, où le plan se
+redisait deux fois — en titre, puis en trois chiffres — avant les contrôles ; et, validé, on
+refermait, on revenait à la liste et on rouvrait le plan suivant.
+
+- **À gauche, la file** : « 3 plans · 12 soudures à viser », puis un plan par ligne — son nom
+  (l'éclair s'il est urgent) et ce qu'il a de soudures à valider en pastille, sa description, la
+  demande, qui y travaille et le jour de la déclaration. **L'urgent d'abord, puis ce qui attend
+  depuis le plus longtemps** ; les soudures relevées sans déclaration ferment la marche. La
+  recherche, en tête, porte sur le plan, la demande, l'affaire et les personnes. Les **flèches**
+  passent d'un plan à l'autre, Début et Fin vont aux bouts.
+- **À droite, le plan qu'on vise** — le premier de la file à l'arrivée : son nom, la demande,
+  l'affaire et l'atelier, une fois, en tête, qui reste en vue ; puis **ses soudures tout de suite**.
+- Dedans, **ce qui attend** :
+  - une **déclaration** de l'atelier qui vise des soudures, à valider ou refuser, dite en une
+    ligne — « Karim Belkacem a déclaré 5 soudures sur 69 · 06/11/2026 à 09:12 » — et la **note de
+    l'atelier** s'il en a laissé une ;
   - des soudures relevées **sans déclaration** — enregistrées avant que la liste du plan soit
-    lue, ou avant que le suivi soudage s'ouvre tout seul — : un bouton « Valider » pose le
-    chiffre calculé. Sans suivi soudage, le chef n'a **rien à affecter** avant : « Valider »
-    l'ouvre au nom du soudeur, déjà affecté au plan (un bouton par soudeur s'ils sont
-    plusieurs). Seul cas sans bouton : plus personne de l'atelier n'est affecté au plan ;
-  - le tableau des soudures — numéro, feuille, soudeur, date, type, RT, VT, PT, visa —, en
-    lecture.
+    lue, ou avant que le suivi soudage s'ouvre tout seul — : « Valider » pose le chiffre calculé.
+    Sans suivi soudage, le chef n'a **rien à affecter** avant : « Valider » l'ouvre au nom du
+    soudeur, déjà affecté au plan (un formulaire par soudeur s'ils sont plusieurs, « Valider 2
+    soudures de Sophie Durand »). Seul cas sans bouton : plus personne de l'atelier n'est affecté
+    au plan — la décision le dit, et la file ne lui met pas de pastille.
+- **Un seul bouton engage**, au pied, et il dit ce qu'il vise : **« Valider 5 soudures »**. Le pied
+  reste collé au bas de l'écran pendant qu'on coche ; l'avancement que la validation pose y est
+  dit en sourd, à gauche — « Avancement 3 % → 10 % » : le chef vise des soudures, le pourcentage
+  n'en est que la suite.
+- Validé ou refusé, un message le dit (« Soudures validées : 5 sur 69. »), le plan **quitte la
+  file** et **le suivant s'ouvre** ; après le dernier, le précédent. Plus rien : « Rien à valider
+  pour l'instant ». « Actualiser » garde le plan ouvert et la recherche.
+- **Sous 851 px**, une colonne à la fois : la file, puis le plan qu'on touche, avec « ‹ Plans à
+  valider » pour revenir.
+- **Voir une soudure sur le plan** : dans les contrôles, « N° 1 » et le nom de sa feuille portent un
+  œil et se touchent. La fenêtre du plan s'ouvre sur la bonne feuille, la soudure **cerclée** sur le
+  dessin — son numéro le long du tube, et sa ligne dans la liste imprimée —, la vue centrée dessus.
+  « N° 1 » seul ne disait pas où elle était (6 novembre 2026).
+
+Ce qui ne vise **aucune soudure** — un avancement aux étapes — n'y vient pas : il se tranche là
+où il est, dans la fiche et dans « Plans & équipes », d'un clic, sans contrôle ni signature.
 
 ### Les contrôles, posés en validant
 
 Chaque « Valider » qui fait passer des soudures sur le plan les montre d'abord : celles du
-soudeur concerné, saisies depuis sa dernière validation. Une ligne par soudure, une case par
-contrôle — **RT**, **VT**, **PT** — et, s'il y en a plusieurs, une ligne « Toutes les soudures »
-qui coche une colonne entière. Une case cochée est une **croix** sur le plan : le contrôle est OK. Une case
-vide n'écrit rien.
+soudeur concerné, saisies depuis sa dernière validation. Un **tableau**, une ligne par soudure —
+son numéro, son procédé et sa date —, et ses trois contrôles **RT**, **VT**, **PT** en **cases**
+qu'on touche. Une case touchée passe au **vert, avec sa coche** : c'est une **croix** sur le plan,
+le contrôle est OK. Une case laissée n'écrit rien. S'il y a plusieurs soudures, **RT, VT et PT en
+tête de colonne** cochent la colonne entière ; décocher une soudure décoche l'en-tête.
+
+Les soudures se rangent sous leur **ligne ISO** — le numéro de ligne que le cahier porte pour la
+page (« YU-PRE-101 »), sinon le nom de la feuille —, avec la page quand la feuille en a
+plusieurs : les numéros 1, 2, 3 reviennent d'une page à l'autre, l'en-tête dit de laquelle on
+parle. Sur tablette, les cases sont à la taille du doigt (44 px).
 
 | Règle | Détail |
 | --- | --- |
-| Où | La carte « À valider » — la même partout (`includes/atelier/decision.php`) : volet Soudures, fiche d'une demande, Plans / ISO, et « Soudures relevées, pas encore validées ». |
+| Où | Sur cet écran seulement (`validationSouduresDecisionRendu()`). Ailleurs, la décision garde le dessin des volets (`includes/atelier/decision.php`) pour ce qui ne vise aucune soudure. |
 | Refuser | Ne pose rien. |
 | Une liste périmée | Une soudure saisie entre l'affichage et le clic fait refuser la validation (`409`) : on ne valide pas une soudure qu'on n'a pas vue. |
 | Les soudures déjà validées | N'y reviennent pas. Leurs contrôles se corrigent dans la visionneuse. |
@@ -161,21 +239,32 @@ colonne garde son nom en base, `plan_soudure.vi`.
 ### Le visa, posé en validant {#visa}
 
 Valider des soudures, c'est les **viser**. La case **VISA** de chacun reçoit la **signature de
-celui qui valide** — tracée une fois dans ses paramètres (rubrique **Compte**, section
-**Signature**) —, sur le plan final comme dans la fenêtre du plan. Qui n'en a pas tracé vise de
-son **prénom et son nom**, tirés de son compte, écrits dans une écriture manuscrite — jusqu'à ce
-qu'il en trace une : elle remplace alors son nom sur ces soudures. Le bloc des contrôles le dit
-avant le clic : « Valider » les vise de votre signature, ou à votre nom — avec alors un lien pour
-tracer la sienne.
+celui qui valide**, sur le plan final comme dans la fenêtre du plan.
+
+**Pas de signature, pas de visa** — décidé le 6 novembre 2026 : un nom écrit par l'application
+ne vaut pas signature.
+
+- Qui valide des soudures — chef d'atelier, chargé de production — et n'en a pas la trace **dès
+  son arrivée** : la grande fenêtre de signature s'ouvre sur le tableau de bord, sans croix ni
+  « Annuler », avec seulement « Se déconnecter », et ne se referme qu'une fois la signature
+  validée. Échap ne la ferme pas.
+- Si l'on tombe quand même sur une décision sans signature — une page restée ouverte, une
+  signature réinitialisée entre-temps —, son pied le dit à la place du visa, en couleur
+  d'attente : « Il vous faut une signature pour valider », avec **Tracer ma signature**.
+  « Valider » reste éteint ; une fois la signature tracée, il se rallume sans recharger, et le
+  pied dit « Valider les vise de votre signature. ».
+- Le serveur refuse de toute façon une validation qui viserait des soudures sans signature
+  (409, `avancementViserCordons()`). « Refuser » reste possible : il ne vise rien.
 
 | Règle | Détail |
 | --- | --- |
 | Qui vise | Celui qui valide : chef d'atelier ou chargé de production. |
-| Ce qui est rangé | `plan_soudure.vise_par` et `date_visa` : qui, et quand ; `plan_soudure.id_signature` : la signature posée ce jour-là, s'il en avait une. Le nom s'écrit à l'affichage, depuis le compte. |
-| Les visas posés au nom | Ceux d'avant la signature — ou d'une période sans — prennent la première que la personne trace, puis la gardent. La validation dit combien de soudures elle vient de signer. |
+| Ce qui est rangé | `plan_soudure.vise_par` et `date_visa` : qui, et quand ; `plan_soudure.id_signature` : la signature posée ce jour-là. |
+| Les visas posés au nom | Ceux d'avant les signatures gardent le **prénom et le nom** de leur auteur, écrits dans une écriture manuscrite, jusqu'à ce qu'il en trace une : elle les remplace alors. La validation dit combien de soudures elle vient de signer. |
 | Validée une fois | Tracée et validée, la signature ne se change plus de soi-même : une signature qu'on referait à sa guise ne vaudrait pas visa. Seul le **chargé de production** la réinitialise, depuis « Utilisateurs » ([le détail](/fonctionnalites/utilisateurs#la-signature)) ; la personne en trace alors une nouvelle, qu'elle valide à son tour. Lui garde la main sur la sienne : il la refait ou la supprime dans ses paramètres. |
 | Une signature remplacée | Les soudures déjà signées gardent celle du jour : comme sur le papier, changer de signature ne retouche pas ce qui est signé. Seuls les visas suivants prennent la nouvelle. |
-| Une signature retirée | Réinitialisée, ou supprimée par le chargé de production pour la sienne : les visas suivants reprennent le nom jusqu'à la nouvelle. Les soudures déjà visées gardent leur signature ; une signature qui ne vise aucune soudure est effacée. |
+| Une signature retirée | Réinitialisée, ou supprimée par le chargé de production pour la sienne : plus de validation de soudures jusqu'à la nouvelle, que la fenêtre demande dès l'arrivée suivante. Les soudures déjà visées gardent leur signature ; une signature qui ne vise aucune soudure est effacée. |
+| Sans la migration | Avant `2026-10-29_signatures`, il n'y a pas où ranger une signature : les visas restent au nom, et rien n'est bloqué. |
 | Refuser | Ne vise rien. |
 | Les soudures validées autrement | « Saisir l'avancement » et les étapes couvrent des soudures sans les viser : leur case VISA reste vide. |
 | Sur le plan final | La signature est faite de **traits** du PDF, le nom de **texte** : ni l'un ni l'autre n'est une image, tous deux restent nets à tous les zooms. Le visa occupe la ligne à une fine marge près, et rétrécit pour tenir dans la case. |
@@ -183,15 +272,23 @@ tracer la sienne.
 Dans les paramètres, la signature s'affiche comme au bas d'un document : au-dessus d'un trait,
 le nom et « Validée le … » dessous, et en dessous du cadre « Pour la changer, demandez à un
 administrateur. » — le chargé de production, lui, a « Refaire » et « Supprimer » au survol.
-Elle se trace à la souris, au doigt ou au stylet, dans un cadre de la même forme qui prend sa
-place — on signe là où elle s'affichera —, avec de quoi défaire le dernier trait ou tout
-effacer ([signature_pad](https://github.com/szimek/signature_pad), chargé à l'ouverture du
-cadre). « Valider » reste éteint tant que le cadre est vide, et Échap abandonne sans fermer la
-fenêtre. La règle se lit avant : sur le cadre vide (« Une fois validée, seul un administrateur
-pourra la changer »), puis dans la confirmation que « Valider » demande ; Annuler laisse le
-tracé en place. Elle est rangée en points, recadrée sur l'encre (`signature_utilisateur.dessin`), et
-se redessine lissée, dans la couleur du texte qui l'entoure. Avant la migration
-`2026-10-29_signatures`, la section le dit et les visas restent au nom.
+Elle se trace **en grand**, dans sa fenêtre à elle — demandé le 6 novembre 2026 : le cadre des
+paramètres faisait quatre centimètres de haut. Tout l'écran sur une tablette ou un téléphone,
+une grande fenêtre sur un écran de bureau ; le cadre y prend toute la place, sans être plus haut
+qu'une fois et demie sa largeur. Il garde le dessin du bloc : « Signez ici » au milieu, le trait,
+le nom et « Aujourd'hui » dessous, et dans son coin de quoi retirer le dernier trait ou tout
+**Effacer** ([signature_pad](https://github.com/szimek/signature_pad), chargé à la première
+ouverture ; s'il ne vient pas, toucher le cadre retente). On signe à la souris, au doigt ou au
+stylet. « Valider ma signature » reste éteint tant que le cadre est vide ; Annuler, la croix ou
+Échap referment sans rien garder.
+
+La fenêtre s'ouvre de **Tracer ma signature** (la zone à pointillés des paramètres, l'outil
+« Refaire »), du pied d'une décision, et d'elle-même à l'arrivée pour qui doit la tracer. La règle
+se lit avant : sous le titre (« Une fois validée, seul un administrateur pourra la changer »),
+puis dans la confirmation que « Valider ma signature » demande. Elle est rangée en points,
+recadrée sur l'encre (`signature_utilisateur.dessin`), et se redessine lissée, dans la couleur du
+texte qui l'entoure. Avant la migration `2026-10-29_signatures`, la section le dit et les visas
+restent au nom.
 
 L'écriture du nom est **Great Vibes** (licence OFL, `src/assets/fonts/`), réduite aux caractères latins
 d'Europe de l'Ouest : 36 Ko en `.ttf`, que le plan final **embarque une fois** pour tout le
@@ -202,7 +299,7 @@ c'est remplacer ces deux fichiers (voir l'en-tête de `ecriture_visa.php`).
 
 ## La visionneuse
 
-Dans « Plans / ISO & Affectations », la visionneuse plein écran d'une feuille porte deux choses
+Dans « Plans & équipes », la visionneuse plein écran d'une feuille porte deux choses
 de plus que le dessin.
 
 ### Les cases de coulée
@@ -252,18 +349,23 @@ condition dans `prefa_list_data.php`.
 
 | Fichier | Rôle |
 | --- | --- |
-| `src/dashboard/pages/soudures.php`, `src/js/ecrans/soudures.js` | Mes soudures : les lignes et les numéros cliquables sur le dessin, la fenêtre d'une soudure, la fenêtre « Signaler un manque » |
+| `src/dashboard/pages/atelier.php`, `src/js/ecrans/soudures.js` | Les soudures de « Mes plans » : le plan qui se déplie sur ses feuilles, les lignes et les numéros cliquables sur le dessin, la fenêtre d'une soudure, la fenêtre « Signaler un manque » |
 | `src/dashboard/includes/lecture/plan_reperes.php`, `soudureAtelierDessin()` | Où chaque numéro de soudure est dessiné, et la géométrie de la liste soudure de la page |
 | `src/dashboard/pages/suivi_soudures.php`, `src/js/ecrans/suivi-soudures.js` | Le suivi de l'encadrement |
 | `src/dashboard/includes/atelier/soudure_atelier.php` | Les règles de saisie du soudeur |
 | `src/dashboard/actions/soudures_feuille.php`, `save_soudures_atelier.php` | La feuille et son enregistrement — personnel affecté au plan |
 | `src/dashboard/actions/save_soudure.php`, `save_nomenclature.php` | La liste des soudures et les cases de coulée — encadrement |
+| `src/dashboard/actions/coulee_soudeur.php`, `nomenclatureCouleeDeLigne()` | La coulée d'une ligne de nomenclature, choisie par le soudeur — personnel affecté au plan |
 | `src/dashboard/actions/detecter_lignes.php` | La reconnaissance du tableau sur le PDF |
 | `src/dashboard/actions/download_plan_final.php` | Le plan final |
 | `planFinalParDemandes()` dans `src/dashboard/includes/atelier/plan_document.php`, `src/dashboard/partials/prefa_list_row.php` | Le sous-menu « Plan final » de la liste des demandes |
 | `src/dashboard/actions/plan_final_lecteur.php`, `ouvrirLecteurPlanFinal()` dans `src/js/ecrans/prefa-interactions.js` | La visionneuse en consultation, servie à la demande pour le sous-menu |
-| `src/js/ecrans/plan-viewer.js` | La visionneuse et ses cases ; elle annonce chaque page affichée (`plan:page`), où « Mes soudures » pose ses lignes et ses numéros, et lui prête `planEcrireEnAttente()` et `planRelireSoudures()` |
+| `src/js/ecrans/plan-viewer.js` | La visionneuse et ses cases ; elle annonce chaque page affichée (`plan:page`), où les soudures de « Mes plans » posent leurs lignes et leurs numéros, et lui prête `planEcrireEnAttente()` et `planRelireSoudures()` |
 | `avancementViserCordons()` dans `src/dashboard/includes/atelier/avancement.php` | Les contrôles et le visa posés en validant |
+| `src/dashboard/includes/atelier/decision.php`, `soudureControlesRendu()` dans `soudure.php` | La décision « À valider » des volets — fiche d'une demande, « Plans & équipes » — et ses contrôles en lignes |
+| `soudureFeuille()` dans `src/dashboard/includes/atelier/soudure.php` | La ligne ISO d'une soudure, sous laquelle les tableaux la rangent |
+| `src/dashboard/pages/validation_soudures.php`, `src/dashboard/includes/atelier/validation_soudures.php` | « Validation des soudures » : la file des plans et le plan qu'on vise ; les décisions de chaque plan, en données (`validationSouduresPlan()`), lues comme dans « Soudures » (`soudureSuiviLignes()`), et leur dessin — la décision, son formulaire, le tableau des contrôles (`validationSouduresDecisionRendu()`, `validationSouduresFormulaire()`, `validationSouduresControles()`) ; la pastille du menu (`validationSouduresCompte()`) ; la ligne qui y renvoie (`validationSouduresRenvoi()`) |
+| `src/js/ecrans/validation-soudures.js`, `src/css/dashboard/validation-soudures.css` | La file : choisir un plan, les flèches, la recherche, le plan suivant après une décision, la colonne montrée sous 851 px ; `window.validationSouduresOuvrir()`, qu'appellent les renvois (`prefa-interactions.js`) |
 | `src/dashboard/includes/atelier/signature.php`, `src/dashboard/actions/ma_signature.php` | La signature de chacun : la vérifier, la ranger, la poser en visa, la tracer en SVG — et qui peut la changer, une fois validée (`signatureModifiable()`) |
 | `src/dashboard/actions/reinitialiser_signature.php` | Sa réinitialisation par le chargé de production, depuis « Utilisateurs » |
 | `planFinalSignature()` dans `plan_final.php`, `dessinerSignature()` dans `src/js/ecrans/plan-viewer.js` | La signature dans la case VISA, sur le plan final et dans la fenêtre du plan |

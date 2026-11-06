@@ -14,6 +14,8 @@
 
     const CROCHET = '<path d="m4 12.5 5 5 11-11" />';
     const ALERTE = '<path d="M12 7v6M12 17h.01" /><circle cx="12" cy="12" r="9" />';
+    // Une information n'est ni un succès ni un refus : un « i », sans le rouge.
+    const INFO = '<path d="M12 11v6M12 7.5h.01" /><circle cx="12" cy="12" r="9" />';
 
     /** La pile, créée au premier message et gardée ensuite. */
     function pile() {
@@ -34,8 +36,10 @@
      *
      * @param {string} texte      Ce qu'on annonce. Vide, rien ne paraît.
      * @param {boolean} erreur    Un refus : il reste plus longtemps et se lit en rouge.
+     * @param {boolean} info      Une information — rien n'a réussi ni échoué : un « i » au
+     *                            lieu de la coche.
      */
-    window.toast = function (texte, { erreur = false, duree = null } = {}) {
+    window.toast = function (texte, { erreur = false, info = false, duree = null } = {}) {
         texte = (texte || '').trim();
         if (!texte) return null;
 
@@ -47,7 +51,7 @@
 
         boite.innerHTML = '<svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"'
             + ' stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
-            + (erreur ? ALERTE : CROCHET) + '</svg>';
+            + (erreur ? ALERTE : info ? INFO : CROCHET) + '</svg>';
 
         const mot = document.createElement('span');
         mot.textContent = texte;

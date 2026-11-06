@@ -1,160 +1,378 @@
 /* ==========================================================================
-   MES SOUDURES & SUIVI MATÉRIEL
+   LES SOUDURES DU SOUDEUR, DANS « MES PLANS »
    ==========================================================================
 
-   L'écran du soudeur suit la grammaire des autres listes (docs/direction-artistique.md) :
-   l'en-tête et ses outils de vue, la barre de recherche, les onglets d'état avec leur
-   point, un tableau à même la surface et l'action au contour au bout de la ligne. La
-   feuille se renseigne sur son dessin, dans la fenêtre du plan.
+   « Mes soudures » vit dans « Mes plans » (pages/atelier.php) depuis le 6 novembre 2026 :
+   chaque plan se déplie d'un toucher sur ses feuilles en vignettes, et toucher une feuille
+   ouvre son dessin, où l'on renseigne ses soudures. Le matériel manquant suit, sous les
+   plans. La coque de l'écran porte « #soudures-page » : soudures.js et ces règles y
+   travaillent.
 
-   Ne reste ici que ce qui est propre à l'écran : le compte du plan en tête de ses feuilles,
-   les colonnes des feuilles, les couleurs de leurs états, et ce qu'on pose sur le dessin. */
+   L'écran avait été refait deux fois le même jour : des plans à déplier et un tableau à
+   colonnes, puis des cartes de cinq lignes sans plan. Il reste le menu qui se déplie, et des
+   cartes qui ne disent que le dessin, le numéro de ligne et « 3 / 5 ». */
 
-/* ----- Le plan, en tête de ses feuilles ----- */
+/* ----- La consigne ----- */
 
-/* La ligne de groupe des autres listes (prefa-list.css, « La liste rangée par groupes ») : le
-   nom du plan, ses feuilles, sa demande et son affaire. Dans la colonne des soudures, le
-   compte du plan entier, à l'aplomb de ceux des feuilles qu'il additionne.
-
-   Le plan se choisissait dans une pastille de la barre, à côté de la recherche, et ses
-   feuilles venaient dessous sans rappeler de quel plan elles étaient. */
-html #soudures-page .soudures-plan .soudures-plan-cordons {
-    text-align: right;
-    white-space: nowrap;
+/* Sous la ligne du titre et de la recherche : ce qu'on fait ici, en une phrase. */
+html #soudures-page .soudures-consigne {
+    margin: 0;
+    padding: 2px 16px 14px;
+    color: var(--text) !important;
+    font-size: 14px;
 }
 
-/* Le plan se déroule et se replie : toute sa ligne répond au clic, et la flèche devant son
-   nom — un bouton, pour le clavier — garde l'allure du titre de groupe.
+/* ----- Un plan se déplie sur ses feuilles ----- */
 
-   C'est une ligne qu'on clique, plus un titre posé au-dessus des autres : elle prend leur
-   hauteur, son texte au milieu, et perd l'air que le titre de groupe prend au-dessus de lui.
-   Le survol l'éclaire comme une ligne de données, le clavier aussi. */
-#soudures-page .soudures-plan > tr {
+/* Toute la ligne d'un plan se touche pour le déplier : la main le dit. */
+#mes-plans-page .mes-plans-plan > tr:first-child {
     cursor: pointer;
 }
 
-html #soudures-page .soudures-plan > tr > th {
-    height: var(--ligne-td);
-    padding-top: 0;
-    padding-bottom: 0;
-    vertical-align: middle;
-    transition: background-color .12s ease;
-}
-
-html #soudures-page .soudures-plan:hover > tr > th,
-html #soudures-page .soudures-plan:focus-within > tr > th {
-    background: var(--ligne-survol);
-}
-
-/* La pastille du compte a la teinte du survol : sur la ligne éclairée, elle s'y fondait. */
-#soudures-page .soudures-plan:hover .prefa-groupe-compte,
-#soudures-page .soudures-plan:focus-within .prefa-groupe-compte {
-    background: var(--surface);
-}
-
-/* Le même fondu au survol des feuilles, pour que les deux sortes de lignes répondent pareil. */
-#soudures-page .soudures-feuille > tr > td {
-    transition: background-color .12s ease;
-}
-
-html #soudures-page .soudures-plan-bascule {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    margin: 0;
+/* La flèche devant le nom : vers lui, replié ; vers les feuilles, déplié. C'est le bouton,
+   pour le clavier ; le toucher marche sur toute la ligne. */
+html #mes-plans-page .mes-plans-deplier {
+    display: inline-grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    margin: 0 4px 0 -8px;
     padding: 0;
     border: 0 !important;
+    border-radius: var(--r-sm);
     background: none !important;
-    color: inherit !important;
-    font: inherit;
+    color: var(--text-muted) !important;
+    vertical-align: middle;
     cursor: pointer;
 }
 
-#soudures-page .soudures-plan-bascule:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 3px;
-    border-radius: var(--r-sm);
+.mes-plans-deplier svg {
+    width: 16px;
+    height: 16px;
+    transition: transform .2s cubic-bezier(.2, .8, .2, 1);
 }
 
-/* Pointée vers le nom, repliée ; vers les feuilles, déroulée. Elle tourne au rythme des
-   feuilles qui entrent (soudures.js, « MOUVEMENT »). */
-.soudures-plan-fleche {
-    flex: none;
-    width: 14px;
-    height: 14px;
-    color: var(--text-muted);
-    transition: transform .22s cubic-bezier(.2, .8, .2, 1), color .12s ease;
-}
-
-.soudures-plan-bascule[aria-expanded="true"] .soudures-plan-fleche {
+.mes-plans-deplier[aria-expanded="true"] svg {
     transform: rotate(90deg);
 }
 
-#soudures-page .soudures-plan:hover .soudures-plan-fleche {
-    color: var(--text);
+html #mes-plans-page .mes-plans-plan:hover .mes-plans-deplier {
+    color: var(--text) !important;
+}
+
+.mes-plans-deplier:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .soudures-plan-fleche {
+    .mes-plans-deplier svg {
         transition: none;
     }
 }
 
-/* Ne tient que la largeur d'un « Renseigner » (soudures.php) : rien à voir, rien à cliquer. */
-#soudures-page .soudures-plan-gabarit {
-    visibility: hidden;
+/* « Matériel manquant » suit les plans de près : sous la dernière rangée de feuilles, trois
+   marges s'additionnaient en un vide de cent pixels. */
+#mes-plans-page .soudures-materiel {
+    margin-top: 4px;
 }
 
-/* Déplier un plan allonge assez la page pour faire paraître la barre de défilement, et sa
-   largeur décalait de huit pixels les colonnes de droite à chaque dépli : sa place est
-   gardée. C'est « .page » qui défile, et cette section en est une. */
-#soudures-page {
-    scrollbar-gutter: stable;
+#mes-plans-page .prefa-table-scroll {
+    padding-bottom: 6px;
 }
 
-/* ----- Les feuilles ----- */
-
-/* Rangées sous le nom de leur plan : leur point s'aligne sur lui, après la flèche — 12 px de
-   cellule, 14 de flèche, 8 d'écart. */
-html #soudures-page .soudures-feuille td.soudures-feuille-nom {
-    padding-left: 34px;
+/* L'en-tête « Plan » suit le nom, décalé de la largeur de la flèche. */
+html #mes-plans-page .mes-plans-table thead th:first-child {
+    text-indent: 24px;
 }
 
-/* La page porte la largeur libre, comme l'affaire sur les autres listes : le numéro de
-   ligne et sa page se rassemblent à gauche, les cordons et l'action se serrent contre le
-   bord droit. Trois colonnes partagées à parts égales laissaient un désert au milieu. */
-html #soudures-page .soudures-feuilles th.soudures-feuille-page,
-html #soudures-page .soudures-feuilles td.soudures-feuille-page {
+/* La flèche, l'urgence et le nom : un bloc, centré d'un coup sur la hauteur de la ligne
+   comme ses voisines. Le nom et sa description tiennent sur une ligne ; la description
+   passait dessous, sous la flèche, et faisait monter le nom au-dessus du reste. */
+#mes-plans-page .mes-plans-nom-bloc {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+}
+
+#mes-plans-page .mes-plans-nom-bloc .prefa-urgence {
+    flex: none;
+    vertical-align: baseline;
+}
+
+#mes-plans-page .mes-plans-nom-texte {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+#mes-plans-page .mes-plans-nom-ligne {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+    white-space: nowrap;
+}
+
+html #mes-plans-page .mes-plans-nom-ligne .atelier-row-description {
+    display: inline;
+    margin: 0;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Les pastilles des travaux se centrent sur la ligne, comme le reste : posées sur la ligne
+   de base, elles descendaient de deux pixels. */
+#mes-plans-page .mes-plans-travaux {
+    vertical-align: middle;
+}
+
+/* La demande et l'affaire sous le nom : seulement là où leurs colonnes se retirent. */
+#mes-plans-page .mes-plans-situe {
+    display: none;
+    overflow: hidden;
+    color: var(--text-muted);
+    font-size: 12.5px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* Une tablette en portrait : trois colonnes de trop. La demande et l'affaire passent sous
+   le nom du plan — l'affaire s'y cassait sur trois lignes —, le nombre de feuilles se lit
+   en dépliant. Il reste le plan, ses travaux et « Étapes ». */
+@media (max-width: 900px) {
+    html #mes-plans-page .mes-plans-col-demande,
+    html #mes-plans-page .mes-plans-col-affaire,
+    html #mes-plans-page .mes-plans-col-feuilles {
+        display: none;
+    }
+
+    #mes-plans-page .mes-plans-situe {
+        display: block;
+    }
+
+    html #mes-plans-page .mes-plans-travaux-cellule {
+        width: 1%;
+    }
+}
+
+/* Les feuilles, sous la ligne du plan : une cellule qui prend toute la largeur — la règle
+   commune des cellules (240 px au plus) la ramenait à une carte par rangée. */
+html #mes-plans-page .mes-plans-feuilles > td {
+    max-width: none;
+    height: auto;
+    /* Les vignettes s'alignent sur le nom du plan : la flèche et l'urgence le décalent de
+       58 px (66 au doigt, où la flèche grandit). */
+    padding: 4px 16px 22px 58px;
+    white-space: normal;
+    background: transparent !important;
+    vertical-align: top;
+}
+
+html #mes-plans-page .mes-plans-feuilles:hover > td {
+    background: transparent !important;
+}
+
+/* Déplié, la ligne du plan et ses feuilles ne font qu'un : pas de filet entre eux. */
+html #mes-plans-page .mes-plans-plan.est-deplie > tr:first-child > td {
+    border-bottom-color: transparent !important;
+}
+
+@media (pointer: coarse) {
+    html #mes-plans-page .mes-plans-deplier {
+        width: 40px;
+        height: 40px;
+        margin-left: -12px;
+    }
+
+    html #mes-plans-page .mes-plans-table thead th:first-child {
+        text-indent: 32px;
+    }
+
+    html #mes-plans-page .mes-plans-feuilles > td {
+        padding-left: 66px;
+    }
+
+    .mes-plans-deplier svg {
+        width: 18px;
+        height: 18px;
+    }
+}
+
+/* Autant de feuilles par rangée que la largeur en tient : six sur une tablette en paysage,
+   quatre en portrait. */
+.soudures-cartes {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(176px, 1fr));
+    gap: 12px;
+}
+
+/* ----- La carte d'une feuille ----- */
+
+/* Un seul bouton : le dessin en vignette, le numéro de ligne, et « 3 / 5 » sur sa barre.
+   La toucher ouvre le dessin. */
+html #soudures-page .soudures-feuille {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    min-width: 0;
+    margin: 0;
+    padding: 8px 8px 12px;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--r-lg);
+    background: var(--surface) !important;
+    color: var(--text) !important;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .12s ease, background-color .12s ease, box-shadow .12s ease, transform .08s ease;
+}
+
+html #soudures-page .soudures-feuille:hover {
+    border-color: var(--border-fort) !important;
+    background: var(--ligne-survol) !important;
+}
+
+/* Le doigt posé : la carte s'enfonce, tout de suite. */
+html #soudures-page .soudures-feuille:active {
+    transform: scale(.98);
+}
+
+#soudures-page .soudures-feuille:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* La feuille dont le dessin est ouvert — ou l'a été en dernier — reste marquée : en
+   refermant le dessin, on sait d'où l'on vient. */
+html #soudures-page .soudures-feuille.est-choisie {
+    border-color: var(--accent) !important;
+    box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+/* La vignette : la feuille telle qu'on l'a en main, au format d'un A3 couché. Fond blanc
+   dans les deux thèmes : c'est du papier. */
+.soudures-carte-image {
+    position: relative;
+    display: block;
+    aspect-ratio: 1.414;
+    overflow: hidden;
+    border: 1px solid var(--border-faint);
+    border-radius: var(--r-md);
+    background: #fff;
+}
+
+.soudures-carte-image img {
+    display: block;
     width: 100%;
+    height: 100%;
+    object-fit: contain;
 }
 
-/* L'en-tête de la première colonne suit les numéros : les 34 px des feuilles, et 16 pour le
-   point (prefa-list.css, « .prefa-reference .prefa-point »). */
-html #soudures-page .soudures-feuilles thead th:first-child {
-    padding-left: 50px;
+/* Finie : une coche verte sur le dessin. */
+.soudures-carte-coche {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    display: none;
+    width: 26px;
+    height: 26px;
+    padding: 4px;
+    border-radius: 50%;
+    background: var(--succes-texte);
+    color: #fff;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 25%);
 }
 
-#soudures-page .soudures-feuille-page,
-#soudures-page .soudures-feuille-cordons {
+.soudures-feuille[data-etat="soudee"] .soudures-carte-coche {
+    display: block;
+}
+
+/* Touchée : « Ouverture… » sur le dessin, le temps que la fenêtre du plan arrive. */
+.soudures-feuille.est-en-ouverture .soudures-carte-image::after {
+    content: "Ouverture…";
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: rgb(255 255 255 / 72%);
+    color: #1c1c1e;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.soudures-carte-nom {
+    min-width: 0;
+    padding: 0 4px;
+    overflow: hidden;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.25;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* L'avancement sur une ligne : la barre, puis « 3 / 5 », de la couleur de l'état. */
+.soudures-carte-avancement {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 4px;
+}
+
+.soudures-carte-avancement .soudures-barre {
+    flex: 1;
+}
+
+.soudures-carte-compte {
+    flex: none;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 600;
     font-variant-numeric: tabular-nums;
 }
 
-/* Toute la ligne ouvre le dessin ; « Renseigner » est là pour le clavier. */
-#soudures-page .soudures-feuille > tr {
-    cursor: pointer;
+.soudures-feuille[data-etat="en_cours"] .soudures-carte-compte {
+    color: var(--accent-texte);
 }
 
-/* La feuille dont le dessin est ouvert — ou l'a été en dernier — reste marquée dans la
-   liste : en refermant le dessin, on sait d'où l'on vient. */
-html #soudures-page .soudures-feuille.est-choisie > tr > td {
-    background: var(--selection-fond) !important;
+.soudures-feuille[data-etat="soudee"] .soudures-carte-compte {
+    color: var(--succes-texte);
 }
 
-html #soudures-page .soudures-feuille.est-choisie > tr > td:first-child {
-    box-shadow: inset 2px 0 0 var(--accent);
+/* Un plan confié sans feuille : une note, pas une carte — il n'y a rien à toucher. */
+html #soudures-page .soudures-plan-vide {
+    margin: 0;
+    padding: 12px 14px;
+    border: 1px dashed var(--border);
+    border-radius: var(--r-md);
+    color: var(--text-muted) !important;
+    font-size: 13px;
 }
 
-/* L'état d'une feuille, dans le point qui ouvre sa ligne et dans celui de son onglet : les
+/* Au doigt : un numéro plus grand. */
+@media (pointer: coarse) {
+    .soudures-cartes {
+        gap: 14px;
+    }
+
+    .soudures-carte-nom {
+        font-size: 17px;
+    }
+
+    .soudures-carte-compte {
+        font-size: 14px;
+    }
+
+    html #soudures-page .soudures-consigne {
+        font-size: 15px;
+    }
+}
+
+/* L'état d'une feuille, dans le point de sa carte : les
    couleurs de l'écran « Soudures » du chef. Rien de soudé, un cercle vide ; en cours, le
    point plein de l'accent ; soudée, celui du vert. Le cercle vide garde la liste calme —
    c'est l'état de la plupart des feuilles — et ce qui avance s'y voit d'un coup d'œil.
@@ -185,9 +403,9 @@ html #soudures-page .soudures-feuille.est-choisie > tr > td:first-child {
 
 .soudures-barre {
     display: block;
-    width: 48px;
-    height: 3px;
-    margin: 4px 0 0 auto;
+    width: 100%;
+    height: 4px;
+    margin: 0;
     overflow: hidden;
     border-radius: 999px;
     background: var(--hover);
@@ -200,6 +418,11 @@ html #soudures-page .soudures-feuille.est-choisie > tr > td:first-child {
     height: 100%;
     border-radius: inherit;
     background: var(--accent);
+}
+
+/* Finie : la barre pleine prend le vert de son point. */
+.soudures-feuille[data-etat="soudee"] .soudures-barre > span {
+    background: var(--succes-texte);
 }
 
 /* ----- Le matériel signalé ----- */
@@ -377,6 +600,252 @@ html #soudures-page .soudures-materiel-article span {
     background: color-mix(in srgb, var(--manque) 12%, transparent);
     box-shadow: inset 0 0 0 2px var(--manque);
     outline: none;
+}
+
+/* La case « N° COULÉE » d'une ligne : elle se touche pour choisir la coulée (soudures.js).
+   Elle porte le numéro posé, et un trait dessous — on voit qu'on y écrit, comme sur le
+   tirage. Le numéro suit le zoom : il prend une part de la hauteur de la case (cqh). */
+.plan-ligne-coulee {
+    position: absolute;
+    z-index: 4;
+    box-sizing: border-box;
+    container-type: size;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-bottom: 2px dashed color-mix(in srgb, var(--accent) 70%, transparent);
+    border-radius: 0;
+    background: transparent;
+    color: #0f172a;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.plan-ligne-coulee span {
+    font-size: 62cqh;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.plan-ligne-coulee:hover,
+.plan-ligne-coulee:focus-visible {
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    box-shadow: inset 0 0 0 2px var(--accent);
+    outline: none;
+}
+
+/* La case porte le numéro : celle, figée, que l'encadrement a posée au même endroit ne le
+   répète pas par-dessus. */
+.plan-viewer-scene:has(.plan-ligne-coulee) .plan-coulee.is-figee {
+    display: none;
+}
+
+/* Le choix : les coulées lues sur les certificats, en gros boutons qu'on touche, rangées
+   sous leur certificat. Le champ qui cherche reste en haut, hors de ce qui défile : à
+   cinquante coulées, seule la liste bouge, entre lui et les boutons du pied. */
+dialog.fenetre.soudures-coulee {
+    width: min(560px, calc(100vw - 32px));
+}
+
+.soudures-coulee-recherche {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 16px 24px 12px;
+    border-bottom: 1px solid var(--border-faint);
+}
+
+dialog.fenetre .soudures-coulee-compte {
+    margin: 0;
+}
+
+/* La recherche : un champ à loupe, qui ne fait que chercher dans la liste — la loupe le
+   dit, et rien ne s'y enregistre. */
+.soudures-coulee-chercher {
+    position: relative;
+}
+
+.soudures-coulee-chercher .icon {
+    position: absolute;
+    top: 50%;
+    left: 12px;
+    width: 16px;
+    height: 16px;
+    color: var(--text-muted);
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+dialog.fenetre .soudures-coulee-chercher .fenetre-champ {
+    padding-left: 38px;
+}
+
+/* « Pas dans la liste ? » : en bas, hors de ce qui défile, toujours à portée — le numéro
+   et son « Enregistrer » sur une ligne. */
+.soudures-coulee-autre {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 24px 4px;
+    border-top: 1px solid var(--border-faint);
+}
+
+.soudures-coulee-autre-ligne {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.soudures-coulee-autre-ligne .fenetre-champ {
+    flex: 1;
+    min-width: 0;
+}
+
+/* « Enregistrer », à côté de son champ : le bouton plein des fenêtres, à la hauteur du
+   champ — la règle de la maison ne le dessine que dans le pied. */
+dialog.fenetre .soudures-coulee-autre-ligne .fenetre-valider {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: var(--h-2xl);
+    margin: 0;
+    padding: 0 16px;
+    border: 1px solid var(--bouton-plein);
+    border-radius: var(--r-md);
+    background: var(--bouton-plein);
+    color: var(--bouton-plein-texte);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+dialog.fenetre .soudures-coulee-autre-ligne .fenetre-valider:hover:not(:disabled) {
+    background: var(--bouton-plein-hover);
+}
+
+dialog.fenetre .soudures-coulee-autre-ligne .fenetre-valider:disabled {
+    opacity: 0.55;
+    cursor: progress;
+}
+
+@media (pointer: coarse) {
+    dialog.fenetre .soudures-coulee-autre-ligne .fenetre-valider {
+        height: 54px;
+        padding: 0 22px;
+        font-size: 16px;
+    }
+}
+
+/* Sans aucune coulée lue, le bas est tout ce qui reste : pas de filet au-dessus d'une liste
+   vide. */
+dialog.fenetre.soudures-coulee.est-vide .soudures-coulee-autre {
+    border-top: 0;
+}
+
+dialog.fenetre .soudures-coulee-compte:empty {
+    display: none;
+}
+
+dialog.fenetre .soudures-coulee-liste {
+    gap: 18px;
+    padding-top: 16px;
+}
+
+.soudures-coulee-groupe {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+}
+
+.soudures-coulee-groupe[hidden],
+.soudures-coulee-option[hidden] {
+    display: none;
+}
+
+/* Le titre d'un groupe : le certificat, ses dimensions, sa nuance — ou « Déjà sur cette
+   feuille ». Sourd : ce sont les numéros qu'on lit. */
+dialog.fenetre .soudures-coulee-groupe-titre {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+dialog.fenetre .soudures-coulee-aucune {
+    margin: 0;
+}
+
+.soudures-coulee-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+}
+
+/* Une longue liste garde sa hauteur pendant qu'on cherche : la fenêtre ne rétrécit pas à
+   chaque chiffre tapé, et les boutons ne remontent pas sous le doigt. Assez bas pour que la
+   recherche, le champ du bas et le pied tiennent avec elle sur une tablette en paysage. « dvh » : quand le
+   clavier de la tablette s'ouvre, la page rapetisse (interactive-widget), la liste aussi. */
+dialog.fenetre.soudures-coulee.est-longue .soudures-coulee-liste {
+    min-height: min(220px, 26dvh);
+}
+
+/* Une longue liste se serre un peu : plus de numéros à l'écran, toujours à la taille du doigt. */
+dialog.fenetre.soudures-coulee.est-longue .soudures-coulee-options {
+    grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+}
+
+dialog.fenetre.soudures-coulee.est-longue .soudures-coulee-option {
+    min-height: 46px;
+    font-size: 15px;
+}
+
+.soudures-coulee-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-height: 52px;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+}
+
+.soudures-coulee-option:hover {
+    background: var(--hover);
+}
+
+.soudures-coulee-option[aria-pressed="true"] {
+    border-color: var(--accent);
+    box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.soudures-coulee-option small {
+    color: var(--attente-texte);
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.soudures-coulee-option:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
 }
 
 .plan-ligne-materiel.est-signale {

@@ -8,6 +8,7 @@
 //   window.alerte(titre, {texte, ton})                       → Promise, à la fermeture
 //   window.confirmer(titre, {texte, action, annuler, ton})   → Promise<boolean>
 //   window.choisir(titre, libelles, {texte, tous})           → Promise<rang | 'tous' | null>
+//   window.montrerCodeAcces({nom, identifiant, code, jusqua, soi}) → Promise, à la fermeture
 //
 // Une promesse et non une réponse : la boîte du navigateur arrêtait le script jusqu'au
 // clic, celle-ci le laisse courir. Une confirmation s'écrit donc
@@ -40,10 +41,11 @@
      * @param {string}   texte    Ce que la réponse emporte. Vide, rien ne paraît.
      * @param {string}   ton      danger | attention | info : la pastille. Vide, pas de pastille.
      * @param {string[]} choix    Des lignes à cliquer ; la réponse d'une ligne est son rang.
+     * @param {string}   code     Un code à lire ou à dicter, en grand sous le titre. Facultatif.
      * @param {Array}    boutons  Le pied, dans l'ordre : [libellé, réponse, classe].
      * @returns {Promise<string>} La réponse du bouton pris ; '' pour Annuler comme pour Échap.
      */
-    function ouvrir({ titre, texte = '', ton = '', choix = [], boutons }) {
+    function ouvrir({ titre, texte = '', ton = '', choix = [], code = '', boutons }) {
         const id = 'alerte-' + (++numero);
         const boite = document.createElement('dialog');
         boite.className = 'fenetre alerte';
@@ -65,6 +67,30 @@
             phrase.textContent = texte;
             boite.querySelector('.alerte-intro').appendChild(phrase);
             boite.setAttribute('aria-describedby', phrase.id);
+        }
+
+        // Un code d'accès (window.montrerCodeAcces) : en grand, juste sous le titre, avec de
+        // quoi le copier quand le navigateur le permet — il ne le permet qu'en HTTPS.
+        if (code) {
+            const bloc = document.createElement('div');
+            bloc.className = 'alerte-code';
+            const valeur = document.createElement('output');
+            valeur.className = 'alerte-code-valeur';
+            valeur.textContent = code;
+            bloc.appendChild(valeur);
+            if (navigator.clipboard?.writeText) {
+                const copier = document.createElement('button');
+                copier.type = 'button';
+                copier.className = 'alerte-code-copier';
+                copier.textContent = 'Copier';
+                copier.addEventListener('click', () => {
+                    navigator.clipboard.writeText(code).then(
+                        () => { copier.textContent = 'Copié'; },
+                        () => { copier.textContent = 'Copie impossible'; });
+                });
+                bloc.appendChild(copier);
+            }
+            boite.querySelector('.alerte-intro h2').after(bloc);
         }
 
         if (choix.length) {
@@ -176,6 +202,38 @@
         return ouvrir({ titre, texte, choix: libelles, boutons }).then(reponse =>
             reponse === '' ? null : reponse === 'tous' ? 'tous' : Number(reponse));
     };
+
+    /**
+     * Le code d'accès qu'un administrateur donne à une personne, à la création de son compte
+     * ou en réinitialisant son mot de passe : avec lui, elle choisit le sien à l'écran de
+     * connexion (api/User.php). Montré une fois, en grand ; il n'est écrit nulle part ailleurs.
+     *
+     * @param {string}  nom          Qui le reçoit.
+     * @param {string}  identifiant  Ce qu'elle tapera avec.
+     * @param {string}  code         « K7P4-QX9M ».
+     * @param {string}  jusqua       Son échéance, écrite par le serveur.
+     * @param {boolean} soi          Le sien : l'administrateur qui réinitialise le sien, avant
+     *                               d'être déconnecté.
+     */
+    window.montrerCodeAcces = function ({ nom = '', identifiant = '', code = '', jusqua = '', soi = false } = {}) {
+        if (!code) return Promise.resolve();
+        const usage = soi
+            ? 'Notez-le maintenant : à l’écran de connexion, avec votre identifiant, ' + identifiant
+                + ', il vous servira à choisir votre nouveau mot de passe.'
+            : 'Donnez-le à ' + nom + ' : à l’écran de connexion, avec l’identifiant ' + identifiant
+                + ', il servira à choisir son mot de passe.';
+        return ouvrir({
+            titre: soi ? 'Votre code d’accès' : 'Code d’accès de ' + nom,
+            code,
+            texte: usage + ' Une seule fois, jusqu’au ' + jusqua + '. Il ne sera plus montré.',
+            ton: 'info',
+            boutons: [['J’ai noté le code', 'ok', 'fenetre-valider']],
+        }).then(() => {});
+    };
+
+    // Une réinitialisation faite par htmx l'annonce par son en-tête — HX-Trigger:
+    // {"codeAcces": {…}} (actions/reinitialiser_mot_de_passe.php).
+    document.addEventListener('codeAcces', evenement => window.montrerCodeAcces(evenement.detail || {}));
 
     // hx-confirm : htmx pose sa question avec window.confirm, sauf si on la lui reprend.
     // L'élément qui la porte dit le reste — data-confirmer-texte pour la conséquence,

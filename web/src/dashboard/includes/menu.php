@@ -17,6 +17,21 @@ require_once __DIR__ . '/../../modeles/autoload.php';
  */
 
 /**
+ * L'outillage des écrans du plan ISO : le visualiseur, les tableaux qu'on y lit, la liste
+ * des affectations. C'est le plus lourd du tableau de bord.
+ *
+ * @return array{styles: list<string>, scripts: list<string>}
+ */
+function dashboardRessourcesIso(): array
+{
+    return [
+        // pv.css : le volet « Plans & équipes » reprend la grammaire des volets des PV.
+        'styles' => ['dashboard/atelier.css', 'dashboard/plan-viewer.css', 'dashboard/pv.css'],
+        'scripts' => ['ecrans/atelier.js', 'ecrans/plan-viewer.js', 'ecrans/tableaux-plan.js'],
+    ];
+}
+
+/**
  * « defaut » marque l'écran déjà affiché au chargement : son entrée arrive active, sans
  * que la barre ait à deviner lequel c'est.
  *
@@ -27,13 +42,7 @@ require_once __DIR__ . '/../../modeles/autoload.php';
  */
 function dashboardMenu(): array
 {
-    // Les écrans du plan ISO partagent leur outillage : le visualiseur, les tableaux
-    // qu'on y lit, la liste des affectations. C'est le plus lourd du tableau de bord.
-    $ressourcesIso = [
-        // pv.css : le volet « Plans & affectations » reprend la grammaire des volets des PV.
-        'styles' => ['dashboard/atelier.css', 'dashboard/plan-viewer.css', 'dashboard/pv.css'],
-        'scripts' => ['ecrans/atelier.js', 'ecrans/plan-viewer.js', 'ecrans/tableaux-plan.js'],
-    ];
+    $ressourcesIso = dashboardRessourcesIso();
 
     return [
         [
@@ -108,27 +117,6 @@ function dashboardMenu(): array
             'scripts' => [],
         ],
         [
-            // Pour le personnel d'atelier, « Mes plans » rend en réalité atelier.php :
-            // c'est donc par cette entrée-là qu'il reçoit l'outillage du plan ISO.
-            //
-            // L'entrée porte le nom de ce qu'on vient y faire. Elle s'est appelée « Mes
-            // affaires » le temps d'un essai : le mot ne dit pas ce qu'il y a derrière, et
-            // un soudeur qui ouvre la barre cherche ses soudures, pas ses affaires.
-            //
-            // Le suivi matériel suit les soudures : c'est le même plan qu'on y travaille,
-            // et la barre le dit plutôt que d'ouvrir une deuxième entrée pour le même
-            // écran.
-            'id' => 'soudures',
-            'rayon' => 'atelier',
-            'libelle' => 'Mes soudures & Suivi matériel',
-            'page' => 'pages/soudures.php',
-            'pour' => [Role::PersonnelAtelier],
-            // Un cordon, et son repère.
-            'icone' => '<path d="M3.5 16c1.4 0 1.4-2 2.8-2s1.4 2 2.8 2 1.4-2 2.8-2 1.4 2 2.8 2 1.4-2 2.8-2 1.4 2 2.5 2"/><path d="M3.5 20h17"/><path d="M8 9.5 6.5 6M12 8.5V4.5M16 9.5 17.5 6"/>',
-            'styles' => [...$ressourcesIso['styles'], 'dashboard/soudures.css'],
-            'scripts' => [...$ressourcesIso['scripts'], 'ecrans/soudures.js'],
-        ],
-        [
             // Le pendant de « Mes soudures » côté encadrement : l'atelier entier d'un coup,
             // au lieu d'ouvrir une demande après l'autre pour savoir où en sont les cordons.
             'id' => 'suivi-soudures',
@@ -141,9 +129,27 @@ function dashboardMenu(): array
             'scripts' => ['ecrans/atelier.js', 'ecrans/suivi-soudures.js'],
         ],
         [
+            // Ce que l'atelier a soudé et déclaré, et qui attend la décision de l'encadrement,
+            // à un seul endroit — demandé le 6 novembre 2026. La validation était répétée dans
+            // la fiche d'une demande, « Plans & équipes » et « Soudures », au milieu du reste ;
+            // ils n'en gardent qu'une ligne, qui mène ici (validation_soudures.php).
+            'id' => 'validation-soudures',
+            'rayon' => 'atelier',
+            'libelle' => 'Validation des soudures',
+            'page' => 'pages/validation_soudures.php',
+            'pour' => [Role::ChargeDeProduction, Role::ChefDAtelier],
+            'icone' => '<circle cx="12" cy="12" r="8.5"/><path d="m8.5 12.2 2.4 2.4 4.6-4.8"/>',
+            // Une file à elle, plus la liste de « Soudures » (6 novembre 2026) : sa feuille et
+            // son script. atelier.css garde la décision — le pied, le visa, la signature —, et
+            // atelier.js poste les décisions ; il est chargé avant le script de l'écran, qui
+            // retient le plan ouvert juste après lui.
+            'styles' => ['dashboard/atelier.css', 'dashboard/validation-soudures.css'],
+            'scripts' => ['ecrans/atelier.js', 'ecrans/validation-soudures.js'],
+        ],
+        [
             'id' => 'plans-iso',
             'rayon' => 'atelier',
-            'libelle' => 'Plans / ISO & Affectations',
+            'libelle' => 'Plans & équipes',
             'page' => 'pages/plans_iso.php',
             'pour' => [Role::ChargeDeProduction, Role::ChefDAtelier],
             'icone' => '<path d="M3.5 8.5H10a6.5 6.5 0 0 1 6.5 6.5v5.5"/><path d="M3.5 13H10a2 2 0 0 1 2 2v5.5"/><path d="M3.5 7v7.5M10.5 20.5h7.5"/>',
@@ -201,7 +207,7 @@ function dashboardMenu(): array
  * nav-urgent-badge, et la mise à jour des urgentes les repeignait toutes : les PV restant
  * à renseigner tombaient au nombre de demandes urgentes à chaque rafraîchissement.
  */
-function dashboardBadge(string $id, Utilisateur $utilisateur, int $urgentes, int $pvAFaire, int $manques = 0, int $motsDePasse = 0): string
+function dashboardBadge(string $id, Utilisateur $utilisateur, int $urgentes, int $pvAFaire, int $manques = 0, int $motsDePasse = 0, int $validations = 0): string
 {
     $pastille = static fn (string $quoi, string $attributs, int $compte): string =>
         '<span class="nav-urgent-badge" data-compteur="' . $quoi . '" ' . $attributs
@@ -223,6 +229,9 @@ function dashboardBadge(string $id, Utilisateur $utilisateur, int $urgentes, int
         // l'administrateur.
         'list-users' => $pastille('mots-de-passe', 'aria-label="' . $motsDePasse . ' mot(s) de passe à réinitialiser"'
             . ' title="Nouveaux mots de passe demandés, à réinitialiser"', $motsDePasse),
+        // Toujours posée : l'écran la remet à son compte après chaque décision (atelier.js).
+        'validation-soudures' => $pastille('validations', 'aria-label="' . $validations . ' plan(s) de soudures à valider"'
+            . ' title="Soudures déclarées par l’atelier, à valider"', $validations),
         default => '',
     };
 }
@@ -259,7 +268,8 @@ function dashboardVueDemandee(Utilisateur $utilisateur, ?string $vue): array
     $entrees = dashboardMenuVisible($utilisateur);
 
     // Les écrans fusionnés gardent leur adresse : un lien vers l'ancien ouvre le nouveau.
-    $vue = ['create-user' => 'list-users', 'urgent-prefa' => 'list-prefa'][$vue ?? ''] ?? $vue;
+    // « Mes soudures » vit dans « Mes plans » depuis le 6 novembre 2026.
+    $vue = ['create-user' => 'list-users', 'urgent-prefa' => 'list-prefa', 'soudures' => 'list-prefa'][$vue ?? ''] ?? $vue;
 
     foreach ($entrees as $entree) {
         if ($entree['id'] === $vue) return $entree;
@@ -381,6 +391,8 @@ function dashboardRessources(Utilisateur $utilisateur): array
         // L'anneau de focus au clavier seulement : un clic puis Échap allumait celui du
         // navigateur autour du tableau cliqué.
         'js/composants/focus.js',
+        // Le clavier d'une tablette : la page sait qu'il est ouvert, et rend la place.
+        'js/composants/clavier.js',
         // Les paramètres : une fenêtre et non plus un écran, que chacun ouvre depuis le
         // pied de la barre, le menu du compte ou Ctrl+, (includes/vue/parametres.php).
         'js/coquille/parametres.js',
@@ -402,6 +414,15 @@ function dashboardRessources(Utilisateur $utilisateur): array
     foreach (dashboardMenuVisible($utilisateur) as $entree) {
         foreach ($entree['styles'] as $feuille) $styles[] = 'css/' . $feuille;
         foreach ($entree['scripts'] as $script) $scripts[] = 'js/' . $script;
+    }
+
+    // « Mes plans » de l'atelier (atelier.php, sous l'entrée « list-prefa ») porte ses
+    // feuilles, leur dessin et le matériel manquant — ce qu'était « Mes soudures » jusqu'au
+    // 6 novembre 2026. L'entrée est celle de tout le monde : ses ressources ne vont qu'à lui.
+    if ($utilisateur->est(Role::PersonnelAtelier)) {
+        $iso = dashboardRessourcesIso();
+        foreach ([...$iso['styles'], 'dashboard/soudures.css'] as $feuille) $styles[] = 'css/' . $feuille;
+        foreach ([...$iso['scripts'], 'ecrans/soudures.js'] as $script) $scripts[] = 'js/' . $script;
     }
 
     // Le thème clair en dernier : il redéfinit ce que les autres ont posé.

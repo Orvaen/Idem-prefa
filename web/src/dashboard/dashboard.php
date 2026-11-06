@@ -111,6 +111,10 @@ $manquesNouveaux = ($isAdmin || $isWorkshopChief) ? manquesNouveauxCompte($db) :
 // encore réinitialisés.
 require_once __DIR__ . '/../api/User.php';
 $reinitialisationsEnAttente = $isAdmin ? User::reinitialisationsEnAttente($db) : 0;
+
+// Les plans dont les soudures attendent une décision : la pastille de « Validation des soudures ».
+require_once __DIR__ . '/includes/atelier/validation_soudures.php';
+$validationsSoudures = ($isAdmin || $isWorkshopChief) ? validationSouduresCompte($db) : 0;
 ?>
 
 <!DOCTYPE html>
@@ -118,7 +122,10 @@ $reinitialisationsEnAttente = $isAdmin ? User::reinitialisationsEnAttente($db) :
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- interactive-widget : dans Chrome, le clavier d'une tablette réduit la page à ce qui
+         reste, comme dans l'appli Android. Sans lui, il la recouvrait, et la moitié du bas
+         passait dessous. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
     <title>Dashboard</title>
     <!-- L'application s'installe aussi d'ici, une fois connecté : même manifest que
          l'écran de connexion. -->
@@ -141,20 +148,26 @@ $reinitialisationsEnAttente = $isAdmin ? User::reinitialisationsEnAttente($db) :
 <?php // Les secondes qui restent à la connexion : à l'heure dite, la page repart vers l'écran
       // de connexion (js/coquille/connexion.js). ?>
 <body data-reste-connexion="<?= Session::reste() ?>">
-    <div id="contenaire">
+    <?php // « menu-rail » dès le rendu : le menu arrive replié en icônes sans se resserrer sous
+          // les yeux. dashboard-sidebar.js le déplie si la personne l'a laissé déplié. ?>
+    <div id="contenaire" class="menu-rail">
         <!-- La barre du haut, posée sur le cadre et non dans la vue : elle tient toute la
              largeur de l'écran, au-dessus de la carte de travail. C'est la forme des outils
              de suivi modernes, et elle a une raison — la marque, le compte et le thème ne
              dépendent pas de l'écran ouvert, ils ne doivent donc pas vivre dans le panneau
              qui, lui, change à chaque navigation. -->
+        <!-- La barre du haut, réduite le 6 novembre 2026 à la demande du client : le menu, la
+             marque, et à droite la loupe et le compte. Le thème et la déconnexion sont passés
+             dans le menu du compte ; le nom et le rôle s'y lisent aussi. -->
         <header class="barre-haut">
             <div class="barre-haut-zone barre-haut-gauche">
-                <button id="btn-hide" type="button" aria-label="Afficher ou masquer le menu" aria-controls="left-panel" aria-expanded="true">
+                <!-- Sur grand écran, il déplie le rail d'icônes en menu complet ; sur petit
+                     écran, il ouvre le tiroir. aria-expanded est posé par dashboard-sidebar.js. -->
+                <button id="btn-hide" type="button" aria-label="Déplier ou replier le menu" title="Menu" aria-controls="left-panel" aria-expanded="false">
                     <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="3" width="18" height="18" rx="2" />
                         <path d="M9 3v18" />
                     </svg>
-                    <span>Menu</span>
                 </button>
 
                 <?php
@@ -170,7 +183,7 @@ $reinitialisationsEnAttente = $isAdmin ? User::reinitialisationsEnAttente($db) :
                     }
                 }
                 ?>
-                <div class="nav-marque">
+                <div class="nav-marque" onclick="">
                     <?php if ($logo):
                         // Une version pour le thème sombre, à côté de l'autre : le dessin est fait
                         // pour du papier blanc, et ses contours noirs disparaissent sur fond sombre.
@@ -192,58 +205,24 @@ $reinitialisationsEnAttente = $isAdmin ? User::reinitialisationsEnAttente($db) :
                 </div>
             </div>
 
-            <div class="barre-haut-zone barre-haut-centre">
-            <!-- La recherche, au centre, comme chez les outils de suivi. Ce n'est pas un
-                 champ : c'est le déclencheur de la palette, qui existait déjà et ne
-                 s'ouvrait qu'au clavier — un raccourci que personne ne devine. Il en porte
-                 la forme pour qu'on sache où cliquer, et la touche pour qu'on l'apprenne. -->
-            <button type="button" id="barre-recherche" class="barre-recherche" aria-label="Rechercher un écran">
-                <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round">
-                    <circle cx="11" cy="11" r="7" />
-                    <path d="m20 20-3.6-3.6" />
-                </svg>
-                <span class="barre-recherche-texte">Rechercher un écran…</span>
-                <kbd class="barre-recherche-touche">Ctrl K</kbd>
-            </button>
-            </div>
-
             <div class="barre-haut-zone barre-haut-droite">
-                <!-- Le compte, le thème et la déconnexion : en haut à droite, là où on les
-                     cherche, et non au pied de la barre de navigation où ils se confondaient
-                     avec les rubriques. -->
+                <!-- La recherche n'est plus qu'une loupe : c'est le déclencheur de la palette,
+                     et Ctrl K l'ouvre toujours. L'infobulle donne la touche. -->
+                <button type="button" id="barre-recherche" class="barre-recherche" aria-label="Rechercher un écran (Ctrl K)" title="Rechercher un écran (Ctrl K)">
+                    <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round">
+                        <circle cx="11" cy="11" r="7" />
+                        <path d="m20 20-3.6-3.6" />
+                    </svg>
+                </button>
+
+                <!-- Le compte : l'initiale seule. Le nom et le rôle sont dans l'infobulle, et
+                     en tête du menu qu'elle ouvre. -->
+                <?php $quiEstConnecte = trim($name . ' ' . $prenom) . ' — ' . $role . (($complement = roleComplement($roleId)) ? ' · ' . $complement : ''); ?>
                 <div class="toolbar-compte">
-                    <button type="button" id="account-menu-button" class="account-trigger" aria-haspopup="menu" aria-expanded="false" aria-controls="account-menu">
-                        <span class="user-avatar"><?= htmlspecialchars($initial) ?></span>
-
-                        <span class="nav-subfooter">
-                            <span class="title"><?= htmlspecialchars($name . ' ' . $prenom) ?></span>
-                            <span class="subtitle"><?= htmlspecialchars($role) ?></span>
-                            <?php if ($complement = roleComplement($roleId)): ?>
-                                <span class="subtitle subtitle-metier"><?= htmlspecialchars($complement) ?></span>
-                            <?php endif; ?>
-                        </span>
-
-                        <svg class="icon account-chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="m6 9 6 6 6-6" />
-                        </svg>
+                    <button type="button" id="account-menu-button" class="account-trigger" aria-haspopup="menu" aria-expanded="false" aria-controls="account-menu"
+                        aria-label="Compte : <?= htmlspecialchars($quiEstConnecte) ?>" title="<?= htmlspecialchars($quiEstConnecte) ?>">
+                        <span class="user-avatar" aria-hidden="true"><?= htmlspecialchars($initial) ?></span>
                     </button>
-
-                    <button type="button" id="theme-menu-button" class="nav-theme" aria-haspopup="menu" aria-expanded="false" aria-controls="theme-menu" title="Thème" aria-label="Changer de thème">
-                        <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="13.5" cy="6.5" r=".75" fill="currentColor" />
-                            <circle cx="17.5" cy="10.5" r=".75" fill="currentColor" />
-                            <circle cx="8.5" cy="7.5" r=".75" fill="currentColor" />
-                            <circle cx="6.5" cy="12.5" r=".75" fill="currentColor" />
-                            <path d="M12 2a10 10 0 0 0 0 20 2 2 0 0 0 2-2v-1a2 2 0 0 1 2-2h2a4 4 0 0 0 4-4 10 10 0 0 0-10-11Z" />
-                        </svg>
-                    </button>
-
-                    <a class="nav-logout" href="../auth/logout.php" title="Se déconnecter" aria-label="Se déconnecter">
-                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                            <path d="M16 17l5-5-5-5M21 12H9" />
-                        </svg>
-                    </a>
                 </div>
             </div>
         </header>
@@ -297,7 +276,7 @@ $reinitialisationsEnAttente = $isAdmin ? User::reinitialisationsEnAttente($db) :
                                     <button id="btn-<?= $entree['id'] ?>" class="nav-btn<?= $entree['id'] === $vue['id'] ? ' is-active' : '' ?>" type="button" data-page="<?= htmlspecialchars($entree['page'], ENT_QUOTES, 'UTF-8') ?>" <?= $entree['id'] === $vue['id'] ? ' aria-current="page"' : '' ?>>
                                         <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><?= $entree['icone'] ?></svg>
                                         <span><?= htmlspecialchars($libelle, ENT_QUOTES, 'UTF-8') ?></span>
-                                        <?= dashboardBadge($entree['id'], $utilisateur, $urgentPending, $pvAFaire, $manquesNouveaux, $reinitialisationsEnAttente) ?>
+                                        <?= dashboardBadge($entree['id'], $utilisateur, $urgentPending, $pvAFaire, $manquesNouveaux, $reinitialisationsEnAttente, $validationsSoudures) ?>
                                     </button>
                                 <?php endforeach; ?>
                             </div>
@@ -423,6 +402,30 @@ $reinitialisationsEnAttente = $isAdmin ? User::reinitialisationsEnAttente($db) :
 
         <div class="account-menu-separator"></div>
 
+        <!-- Le thème : il avait son bouton dans la barre du haut, il tient maintenant ici, en
+             trois choix côte à côte. « Système » d'abord : c'est l'état de départ, et le seul
+             moyen d'y revenir une fois qu'on a tranché. La coche est relue au chargement
+             (dashboard-accounts.js). -->
+        <div class="account-menu-group account-theme">
+            <p class="account-menu-title" id="account-theme-titre">Thème</p>
+            <div class="account-theme-choix" role="group" aria-labelledby="account-theme-titre">
+                <button type="button" class="theme-option" role="menuitemradio" aria-checked="false" data-theme-val="auto">
+                    <span class="theme-swatch theme-swatch-auto" aria-hidden="true"></span>
+                    Système
+                </button>
+                <button type="button" class="theme-option" role="menuitemradio" aria-checked="false" data-theme-val="dark">
+                    <span class="theme-swatch theme-swatch-default" aria-hidden="true"></span>
+                    Sombre
+                </button>
+                <button type="button" class="theme-option" role="menuitemradio" aria-checked="false" data-theme-val="light">
+                    <span class="theme-swatch theme-swatch-light" aria-hidden="true"></span>
+                    Clair
+                </button>
+            </div>
+        </div>
+
+        <div class="account-menu-separator"></div>
+
         <div class="account-menu-group">
             <!-- Les paramètres, là où Claude les range : dans le menu du compte. -->
             <button type="button" class="account-parametres" role="menuitem">
@@ -451,41 +454,13 @@ $reinitialisationsEnAttente = $isAdmin ? User::reinitialisationsEnAttente($db) :
         </div>
     </div>
 
-    <!-- Choix du thème : la valeur active est relue de localStorage au chargement -->
-    <div id="theme-menu" class="account-menu theme-menu" role="menu" aria-labelledby="theme-menu-button" hidden>
-        <div class="account-menu-group">
-            <p class="account-menu-title">Thème</p>
-
-            <!-- « Système » d'abord : c'est l'état de départ, et le seul moyen d'y revenir
-             une fois qu'on a tranché. -->
-            <button type="button" class="account-item theme-option" role="menuitemradio" aria-checked="false" data-theme-val="auto">
-                <span class="theme-swatch theme-swatch-auto" aria-hidden="true"></span>
-                <span class="account-identity"><strong>Système</strong></span>
-                <svg class="icon account-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" hidden>
-                    <path d="m5 13 4 4 10-10" />
-                </svg>
-            </button>
-
-            <button type="button" class="account-item theme-option" role="menuitemradio" aria-checked="false" data-theme-val="dark">
-                <span class="theme-swatch theme-swatch-default" aria-hidden="true"></span>
-                <span class="account-identity"><strong>Sombre</strong></span>
-                <svg class="icon account-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" hidden>
-                    <path d="m5 13 4 4 10-10" />
-                </svg>
-            </button>
-
-            <button type="button" class="account-item theme-option" role="menuitemradio" aria-checked="false" data-theme-val="light">
-                <span class="theme-swatch theme-swatch-light" aria-hidden="true"></span>
-                <span class="account-identity"><strong>Clair</strong></span>
-                <svg class="icon account-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" hidden>
-                    <path d="m5 13 4 4 10-10" />
-                </svg>
-            </button>
-        </div>
-    </div>
-
+    <?php // Les étapes de l'écran de connexion (js/connexion/login.js) : l'identifiant d'abord,
+          // puis son mot de passe — ou, pour un compte qui attend le sien, le code d'accès et le
+          // mot de passe choisi. La fenêtre demandait les deux champs d'un coup, et un compte
+          // neuf n'y entrait pas : « Identifiant ou mot de passe incorrect » (6 novembre 2026).
+          // « novalidate » : les champs des étapes cachées ne bloquent pas l'envoi. ?>
     <dialog id="account-dialog" class="account-dialog" aria-labelledby="account-dialog-title">
-        <form id="account-form" method="post">
+        <form id="account-form" method="post" novalidate data-etape="identifiant">
             <div class="account-dialog-heading">
                 <h2 id="account-dialog-title">Ajouter un compte</h2>
                 <button type="button" class="account-dialog-close modal-close" aria-label="Fermer"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -500,19 +475,36 @@ $reinitialisationsEnAttente = $isAdmin ? User::reinitialisationsEnAttente($db) :
 
             <div class="form-group">
                 <label for="account-login">Identifiant</label>
-                <input id="account-login" name="login" type="text" required autocomplete="username">
+                <input id="account-login" name="login" type="text" autocomplete="username">
             </div>
 
-            <div class="form-group">
+            <div class="form-group account-etape-mdp" hidden>
                 <label for="account-password">Mot de passe</label>
-                <input id="account-password" name="password" type="password" required autocomplete="current-password">
+                <input id="account-password" name="password" type="password" autocomplete="current-password">
+            </div>
+
+            <div class="account-etape-creation" hidden>
+                <p class="account-dialog-intro">Pas encore de mot de passe pour <strong data-account-compte></strong> : tapez le code que l’administrateur a donné, puis choisissez le mot de passe, d’au moins <?= User::MOT_DE_PASSE_MINI ?> caractères.</p>
+                <div class="form-group">
+                    <label for="account-code">Code reçu</label>
+                    <input id="account-code" name="code" type="text" maxlength="20" autocomplete="one-time-code"
+                           autocapitalize="characters" spellcheck="false" class="connexion-code">
+                </div>
+                <div class="form-group">
+                    <label for="account-nouveau">Nouveau mot de passe</label>
+                    <input id="account-nouveau" name="nouveau" type="password" maxlength="72" autocomplete="new-password">
+                </div>
+                <div class="form-group">
+                    <label for="account-confirmation">Le même, encore une fois</label>
+                    <input id="account-confirmation" name="confirmation" type="password" maxlength="72" autocomplete="new-password">
+                </div>
             </div>
 
             <p class="account-message" role="status" aria-live="polite"></p>
 
             <div class="account-dialog-footer">
                 <button type="button" class="account-dialog-close">Annuler</button>
-                <button type="submit" class="account-submit">Se connecter</button>
+                <button type="submit" class="account-submit">Continuer</button>
             </div>
         </form>
     </dialog>

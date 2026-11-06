@@ -161,7 +161,9 @@ $pointStatut = $vueParAffaire ? '' : '<span class="prefa-point status-' . (int) 
                 <?php if ($canEditPrefa): ?>
                     <button type="button" role="menuitem" class="edit-prefa" data-id="<?= $requestId ?>">Modifier</button>
                 <?php endif; ?>
-                <?php if ($canEditPrefa && ($isAdmin || ($isPending && (int) $row['idUsers'] === (int) $actor['id']))): ?>
+                <?php // Une demande validée ne se supprime plus, par personne (Demande::supprimer). ?>
+                <?php if ($canEditPrefa && (int) $row['id_statut'] !== Demande::VALIDEE
+                    && ($isAdmin || ($isPending && (int) $row['idUsers'] === (int) $actor['id']))): ?>
                     <button type="button" role="menuitem" class="delete-prefa est-destructrice" data-id="<?= $requestId ?>" data-csrf="<?= prefaEscape(Session::jeton()) ?>">Supprimer</button>
                 <?php endif; ?>
             </div>

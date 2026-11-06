@@ -81,6 +81,16 @@
     };
 
     /**
+     * Le nom tel qu'il est enregistré — celui que portent les demandes. C'est lui qui ouvre la
+     * liste : un renommage en cours, pas encore enregistré, la filtrait sur un nom que
+     * personne ne porte, et l'affaire s'ouvrait sur une liste vide.
+     */
+    const nomEnregistre = (carte) => {
+        const nom = carte?.querySelector('.affaire-nom');
+        return (nom ? nom.defaultValue ?? nom.textContent : '').trim();
+    };
+
+    /**
      * Filtre les cartes sur le nom de l'affaire et sur son chargé d'affaire.
      *
      * Les deux se lisent dans la valeur d'un champ et non dans le texte de la page : ils
@@ -183,31 +193,137 @@
      * Les demandes portent le *nom* de l'affaire et non son identifiant (d.nom_affaire) :
      * la recherche est donc exactement le bon outil, pas un pis-aller.
      */
-    function ouvrirLesDemandes(nom) {
+    /**
+     * La liste des demandes sur une recherche, depuis la fiche. Rend la promesse de
+     * ouvrirVue : vrai une fois la liste posée.
+     */
+    function ouvrirLaListe(q) {
         const bouton = document.getElementById('btn-list-prefa');
-        if (!bouton || !nom) return;
+        if (!bouton || !q) return Promise.resolve(false);
 
         const page = bouton.dataset.page;
-        ouvrirVue(bouton, { page: page + (page.includes('?') ? '&' : '?') + 'q=' + encodeURIComponent(nom) });
+        return ouvrirVue(bouton, { page: page + (page.includes('?') ? '&' : '?') + 'q=' + encodeURIComponent(q) });
+    }
+
+    const ouvrirLesDemandes = (nom) => ouvrirLaListe(nom);
+
+    /**
+     * Une demande de l'affaire : la liste, resserrée sur sa référence, et sa fiche dépliée
+     * — c'est elle qu'on a cliquée, pas la liste.
+     */
+    function ouvrirUneDemande(reference, id) {
+        ouvrirLaListe(reference).then(ok => {
+            if (!ok) return;
+            const bascule = document.querySelector('.prefa-table-demandes .prefa-toggle[aria-controls="prefa-detail-' + id + '"]');
+            if (bascule && bascule.getAttribute('aria-expanded') !== 'true') bascule.click();
+        });
+    }
+
+    // ---------- La fiche d'une affaire ----------
+    //
+    // Un clic sur une carte ouvre sa fiche : le chargé d'affaire, les demandes par statut, et
+    // chaque demande. Le clic menait directement à la liste des demandes, et seulement quand
+    // il y en avait : sur une affaire vide, ou sur le nom — un champ —, il ne se passait rien.
+    const fiche = () => document.getElementById('affaire-fiche');
+
+    function ouvrirFiche(carte) {
+        const boite = fiche();
+        const modele = carte?.querySelector('template.affaire-fiche-modele');
+        if (!boite || !modele) return;
+        boite.replaceChildren(modele.content.cloneNode(true));
+        boite.carte = carte;
+        boite.showModal();
+        // Le focus va à la première demande, à défaut au pied : la croix d'en-tête n'est pas
+        // ce qu'on vient chercher.
+        (boite.querySelector('.affaire-fiche-demande')
+            || boite.querySelector('.fenetre-pied button:last-child'))?.focus();
     }
 
     document.addEventListener('click', evenement => {
         const carte = evenement.target.closest('.affaire-carte');
         if (!carte) return;
         // Les commandes de la carte gardent leur geste : on ne quitte pas l'écran en
-        // cliquant dans le champ qu'on vient corriger, ni sur la corbeille.
-        if (evenement.target.closest('input, button, a, .liste-filtrable')) return;
-        // Une affaire sans demande ne mène nulle part : on n'ouvre pas une liste vide.
-        // Le serveur ne pose le bouton que s'il y en a, c'est lui qui fait foi.
-        if (!carte.querySelector('button.affaire-demandes')) return;
-        ouvrirLesDemandes(nomDeLaCarte(carte));
+        // cliquant dans le champ qu'on vient corriger, ni sur la corbeille. Le nom au repos,
+        // en lecture seule, n'en est pas une : c'est le titre de la carte, et il l'ouvre.
+        // Le compte des demandes l'ouvre aussi, par son propre gestionnaire.
+        if (evenement.target.closest('input:not([readonly]), button, a, .liste-filtrable')) return;
+
+        // Une correction en cours : la fiche montrerait le nom enregistré à côté de celui
+        // qu'on tape. On le dit plutôt que de ne rien faire.
+        if (carte.classList.contains('est-modifiee')) {
+            window.toast?.('Enregistrez ou annulez la modification de cette affaire avant de l’ouvrir.', { info: true });
+            return;
+        }
+        ouvrirFiche(carte);
     });
 
     // Le compte des demandes est le chemin annoncé : c'est lui qu'on atteint au clavier.
     document.addEventListener('click', evenement => {
         const bouton = evenement.target.closest('button.affaire-demandes');
+        if (bouton) ouvrirFiche(bouton.closest('.affaire-carte'));
+    });
+
+    document.addEventListener('click', evenement => {
+        const boite = evenement.target.closest('#affaire-fiche');
+        if (!boite) return;
+
+        // Un clic sur le voile — la fenêtre elle-même, hors de sa boîte — la referme.
+        if (evenement.target === boite || evenement.target.closest('.affaire-fiche-fermer')) {
+            boite.close();
+            return;
+        }
+
+        const demande = evenement.target.closest('.affaire-fiche-demande');
+        if (demande) {
+            boite.close();
+            ouvrirUneDemande(demande.dataset.reference, demande.dataset.id);
+            return;
+        }
+
+        if (evenement.target.closest('.affaire-fiche-toutes')) {
+            boite.close();
+            ouvrirLesDemandes(nomEnregistre(boite.carte));
+            return;
+        }
+
+        // « Déposer une demande » : prefa-interactions.js ouvre le formulaire sur ce même
+        // clic. La fiche s'efface pour ne pas rester dessous.
+        if (evenement.target.closest('.affaire-fiche-deposer')) boite.close();
+    });
+
+    // ---------- Renommer ----------
+
+    // Le crayon rend le nom modifiable, le curseur dedans et le texte sélectionné : on tape
+    // le nouveau nom par-dessus l'ancien.
+    document.addEventListener('click', evenement => {
+        const bouton = evenement.target.closest('.affaire-renommer');
         if (!bouton) return;
-        ouvrirLesDemandes(nomDeLaCarte(bouton.closest('.affaire-carte')));
+        const champ = bouton.closest('[data-affaire]')?.querySelector('input.affaire-nom');
+        if (!champ) return;
+        champ.readOnly = false;
+        champ.tabIndex = 0;
+        champ.focus();
+        champ.select();
+    });
+
+    // Annuler rend la carte telle qu'elle est enregistrée. L'écran est relu plutôt que la
+    // carte remise à la main : le champ filtrable range son choix dans un champ caché dont
+    // la valeur par défaut a déjà changé — on ne saurait plus la rétablir.
+    document.addEventListener('click', evenement => {
+        if (evenement.target.closest('.affaire-annuler')) recharger();
+    });
+
+    // Au clavier, dans le nom : Entrée enregistre, Échap annule.
+    document.addEventListener('keydown', evenement => {
+        const champ = evenement.target.closest?.('.affaire-carte input.affaire-nom:not([readonly])');
+        if (!champ) return;
+        if (evenement.key === 'Enter') {
+            evenement.preventDefault();
+            champ.closest('[data-affaire]')?.querySelector('.affaire-enregistrer')?.click();
+        } else if (evenement.key === 'Escape') {
+            evenement.preventDefault();
+            recharger();
+        }
     });
 
     // Une demande déposée depuis une carte change son compte : l'écran se recharge derrière
@@ -280,27 +396,91 @@
         }).catch(() => dire('Suppression impossible. Réessayez.', true));
     });
 
-    // ===== Aucun chargé d'affaire : créer le compte =====
-    // Le bouton mène à « Utilisateurs » et y ouvre « Nouvel utilisateur », rôle « Chargé
-    // d'affaire » déjà choisi : sans cela, il fallait savoir quel rôle donner, et où.
-    // L'écran arrive par AJAX : on guette sa fenêtre avant de l'ouvrir.
-    const ROLE_CHARGE_AFFAIRE = '5';
+    // ===== Aucun chargé d'affaire : créer le compte, sur place =====
+    // Une petite fenêtre par-dessus ce qu'on faisait (pages/affaires.php, #charge-dialog). Le
+    // bouton menait à « Utilisateurs » : la fenêtre d'ouverture se refermait sur ce qu'on avait
+    // tapé, et rien ne ramenait à l'affaire (6 novembre 2026). Créé, le compte montre son code
+    // d'accès, puis :
+    //  - depuis la fenêtre d'ouverture, il s'ajoute à son champ et s'y choisit — l'affaire
+    //    reste telle qu'on l'avait tapée ;
+    //  - depuis une carte, l'écran se recharge : chaque affaire sans chargé le propose.
+    const fenetreCharge = () => document.getElementById('charge-dialog');
+    let origineCharge = null;
+
     document.addEventListener('click', evenement => {
-        if (!evenement.target.closest('.affaires-creer-charge')) return;
-        fenetre()?.close();
-        document.getElementById('btn-list-users')?.click();
-        const debut = Date.now();
-        const guetter = setInterval(() => {
-            const bouton = document.querySelector('.utilisateurs-nouveau');
-            const dialogue = document.getElementById('utilisateur-dialogue');
-            if (bouton && dialogue) {
-                clearInterval(guetter);
-                bouton.click();
-                dialogue.querySelector('[role="option"][data-value="' + ROLE_CHARGE_AFFAIRE + '"]')?.click();
-                dialogue.querySelector('[name="prenom"]')?.focus();
-            } else if (Date.now() - debut > 5000) {
-                clearInterval(guetter);
-            }
-        }, 100);
+        const bouton = evenement.target.closest('.affaires-creer-charge');
+        const boite = fenetreCharge();
+        if (!bouton || !boite) return;
+        origineCharge = bouton;
+        const form = boite.querySelector('form');
+        form.reset();
+        const message = form.querySelector('.fenetre-message');
+        message.textContent = '';
+        message.classList.remove('is-error');
+        boite.showModal();
+        form.elements.prenom.focus();
+    });
+
+    document.addEventListener('click', evenement => {
+        if (evenement.target.closest('[data-fermer-charge]')) fenetreCharge()?.close();
+    });
+
+    /** Le compte créé rejoint le champ de la fenêtre d'ouverture, et s'y choisit. */
+    function choisirNouveauCharge(compte) {
+        const boite = fenetre();
+        const champ = boite?.querySelector('.affaire-dialog-charge');
+        const liste = champ?.querySelector('[role="listbox"]');
+        if (!liste || !compte) return;
+        const option = document.createElement('div');
+        option.id = 'charge-option-' + compte.id;
+        option.setAttribute('role', 'option');
+        option.setAttribute('aria-selected', 'false');
+        option.dataset.value = String(compte.id);
+        option.textContent = compte.libelle;
+        liste.insertBefore(option, liste.querySelector('.liste-filtrable-vide'));
+        champ.hidden = false;
+        boite.querySelector('.affaire-dialog-sans-charge')?.remove();
+        // Le composant choisit au clic (liste-filtrable.js) : le texte, le champ caché, la marque.
+        option.click();
+        // Le focus sur « Ouvrir l’affaire » : posé sur le champ, il en rouvrait la liste.
+        boite.querySelector('.affaire-ouvrir')?.focus();
+    }
+
+    document.addEventListener('submit', async evenement => {
+        const form = evenement.target.closest('#charge-form');
+        if (!form) return;
+        evenement.preventDefault();
+        const message = form.querySelector('.fenetre-message');
+        const bouton = form.querySelector('[type="submit"]');
+        const donnees = new FormData(form);
+        donnees.set('csrf', jeton());
+        bouton.disabled = true;
+        message.textContent = '';
+        message.classList.remove('is-error');
+        let corps = null;
+        let ok = false;
+        try {
+            const reponse = await fetch('actions/create_users.php', { method: 'POST', body: donnees });
+            corps = await reponse.json().catch(() => null);
+            ok = reponse.ok && Boolean(corps?.success);
+        } catch {
+            ok = false;
+        }
+        bouton.disabled = false;
+        if (!ok) {
+            message.textContent = corps?.message || 'Création impossible. Réessayez.';
+            message.classList.add('is-error');
+            return;
+        }
+
+        fenetreCharge().close();
+        // Son code d'abord : il n'est montré qu'une fois, et la personne en a besoin pour entrer.
+        await window.montrerCodeAcces?.(corps.codeAcces);
+        if (origineCharge?.closest('#affaire-dialog') && fenetre()?.open) {
+            choisirNouveauCharge(corps.compte);
+        } else {
+            recharger(() => window.toast?.('Compte créé : choisissez-le sur l’affaire.'));
+        }
+        origineCharge = null;
     });
 })();

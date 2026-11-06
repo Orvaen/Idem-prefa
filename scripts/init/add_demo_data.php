@@ -3,9 +3,9 @@
 if (PHP_SAPI !== 'cli') exit(1);
 chdir('/var/www/html');
 require_once 'db.php';
-require_once 'dashboard/includes/planning.php';
-require_once 'dashboard/includes/prefa_attachments.php';
-require_once 'dashboard/includes/prefa_references.php';
+require_once 'dashboard/includes/atelier/planning.php';
+require_once 'dashboard/includes/demande/prefa_attachments.php';
+require_once 'dashboard/includes/demande/prefa_references.php';
 $db = new MyPDO();
 $today = new DateTimeImmutable('today', new DateTimeZone('Europe/Paris'));
 $monday = $today->modify('monday this week');

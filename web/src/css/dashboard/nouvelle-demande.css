@@ -1031,3 +1031,12 @@
         padding: 20px 16px 0;
     }
 }
+
+/* L'affaire d'une demande validée : figée, elle se lit comme une valeur et non comme un
+   champ (pages/create_prefa.php). */
+.prefa-nouvelle .nd-affaire-figee-nom {
+    margin: 0;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 600;
+}

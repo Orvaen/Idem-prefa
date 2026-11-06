@@ -95,13 +95,14 @@ Personne ne change le sien sur place : un mot de passe ne se tape qu'à l'écran
 en demande un nouveau — oublié, sans être connecté (`auth/mot_de_passe_oublie.php`, jeton CSRF de
 la page, même réponse que le compte existe ou non) ; à changer, depuis les paramètres
 (`dashboard/actions/mon_mot_de_passe.php`, le compte lu dans la session, jamais dans le
-formulaire). Le chargé de production réinitialise, et l'on choisit le nouveau en se reconnectant.
+formulaire). Le chargé de production réinitialise, et l'on choisit le nouveau en se reconnectant,
+avec le code d'accès qu'il donne.
 
 | Règle | Détail |
 | --- | --- |
 | Longueur | 8 caractères au moins (`User::MOT_DE_PASSE_MINI`), 72 octets au plus — au-delà, bcrypt ne lit plus rien |
 | Changer le sien | Il se demande ; l'ancien marche jusqu'à la réinitialisation. Le chargé de production réinitialise le sien lui-même, et sa session se ferme aussitôt : ouverte, elle laisserait le compte sans mot de passe pendant qu'il travaille. Réinitialiser sa propre ligne depuis « Utilisateurs » est refusé pour la même raison. |
-| La fenêtre sans mot de passe | Entre la création — ou la réinitialisation — et la première connexion, qui connaît l'identifiant peut choisir le mot de passe : voir [Utilisateurs](/fonctionnalites/utilisateurs#le-mot-de-passe) |
+| Le code d'accès | Choisir son mot de passe — compte neuf ou réinitialisé — demande le code que le chargé de production a reçu, une fois, en créant ou en réinitialisant le compte (`User::creerMotDePasse()`). Huit caractères sans ambiguïté (40 bits), haché en bcrypt dans la colonne du mot de passe, derrière la marque `!échéance!` ; sept jours, une seule fois ; un code faux est noté au journal. Avant le 6 novembre 2026, qui connaissait l'identifiant pouvait choisir le mot de passe à la place du titulaire. Voir [Utilisateurs](/fonctionnalites/utilisateurs#le-mot-de-passe) |
 
 ## La prise de place, en développement seulement
 

@@ -26,9 +26,14 @@ function etape(nom, login = '') {
     document.getElementById('connexion-titre').textContent = TITRES[nom];
     const cible = FORMULAIRES[nom];
     cible.querySelectorAll('.connexion-message').forEach(zone => dire(zone, ''));
+    // Revenir à la connexion, c'est revenir à l'identifiant seul.
+    if (nom === 'connexion') montrerMotDePasse(false);
     if (nom === 'creation') {
+        // Le code d'accès d'abord : l'administrateur l'a donné, sans lui on ne choisit rien
+        // (auth/creer_mot_de_passe.php).
         cible.elements.login.value = login;
         cible.querySelector('[data-creation-compte]').textContent = login;
+        cible.elements.code.value = '';
         cible.elements.password.value = '';
         cible.elements.confirmation.value = '';
     }
@@ -46,13 +51,88 @@ document.addEventListener('click', event => {
     etape(lien.dataset.etape, (form.elements.login.value || '').trim());
 });
 
+// ---------------------------------------------------------------- l'identifiant d'abord
+//
+// L'écran ne demande d'abord que l'identifiant. Le champ « Mot de passe » était toujours là,
+// et à la première connexion — un compte neuf, ou réinitialisé, n'en a pas — la personne
+// restait devant, bloquée, sans savoir qu'il fallait le laisser vide.
+//
+// « Continuer » demande au serveur si ce compte attend son premier mot de passe : oui, on
+// passe à « Votre mot de passe » pour le choisir ; non — ou compte inconnu, la réponse est la
+// même —, le champ du mot de passe paraît, et le bouton devient « Se connecter ».
+const blocMotDePasse = form.querySelector('.connexion-mdp');
+const boutonConnexion = form.querySelector('button[type="submit"]');
+
+function montrerMotDePasse(oui) {
+    form.dataset.etape = oui ? 'mot-de-passe' : 'identifiant';
+    blocMotDePasse.hidden = !oui;
+    boutonConnexion.textContent = oui ? 'Se connecter' : 'Continuer';
+    if (oui) {
+        form.elements.password.focus();
+    } else {
+        form.elements.password.value = '';
+    }
+}
+
+/** Le compte attend-il son premier mot de passe ? null si le serveur ne répond pas. */
+async function compteACreer(login) {
+    const donnees = new FormData();
+    donnees.set('csrf', creation?.elements.csrf?.value || '');
+    donnees.set('login', login);
+    try {
+        const reponse = await axios.post('auth/compte_a_creer.php', donnees, { timeout: 8000 });
+        return Boolean(reponse.data?.creer);
+    } catch (erreur) {
+        return null;
+    }
+}
+
+// Corriger l'identifiant, une fois le mot de passe affiché, ramène à la première étape : le
+// compte n'est peut-être plus le même. Le refus d'avant part avec : il restait affiché sous
+// un identifiant seul, sans champ de mot de passe, et l'on ne savait plus ce qui était faux.
+form.elements.login.addEventListener('input', () => {
+    if (form.dataset.etape !== 'mot-de-passe') return;
+    montrerMotDePasse(false);
+    dire(message, '');
+});
+
+/** Un refus : le message, et le mot de passe sélectionné pour être retapé. */
+function refuser(texte) {
+    dire(message, texte);
+    if (form.dataset.etape !== 'mot-de-passe') montrerMotDePasse(true);
+    form.elements.password.select();
+}
+
 form.addEventListener('submit', async (event) => {
     event.preventDefault();
 
     const submitButton = form.querySelector('button[type="submit"]');
     if (submitButton.disabled) return;
-    submitButton.disabled = true;
     dire(message, '');
+
+    // Première étape : l'identifiant seul, toujours. Un mot de passe que le navigateur a glissé
+    // dans le champ caché ne part pas : on ne l'a pas vu. Il partait — « un gestionnaire qui a
+    // tout rempli passe directement à la connexion » —, et c'était souvent celui d'un autre
+    // compte, ou d'avant une remise à zéro : on tapait son identifiant, « Continuer », et
+    // « Identifiant ou mot de passe incorrect » tombait avant d'avoir rien tapé d'autre
+    // (6 novembre 2026). Le champ paraît vide ; le navigateur y propose encore les siens.
+    if (form.dataset.etape !== 'mot-de-passe') {
+        const login = (form.elements.login.value || '').trim();
+        if (!login) return;
+        submitButton.disabled = true;
+        const creer = await compteACreer(login);
+        submitButton.disabled = false;
+        if (creer) {
+            etape('creation', login);
+        } else {
+            // Non, ou pas de réponse : le mot de passe. « Se connecter » refera la vérification.
+            form.elements.password.value = '';
+            montrerMotDePasse(true);
+        }
+        return;
+    }
+
+    submitButton.disabled = true;
 
     const formData = new FormData(form);
 
@@ -64,16 +144,21 @@ form.addEventListener('submit', async (event) => {
         );
 
         if (response.data.success) {
-            window.location.href = 'dashboard/dashboard.php';
+            // replace et non href : l'écran de connexion ne reste pas dans l'historique.
+            // Précédent y ramenait depuis le premier écran du tableau de bord, et l'écran de
+            // connexion renvoyait aussitôt au tableau de bord — on tournait en rond.
+            window.location.replace('dashboard/dashboard.php');
         } else if (response.data.creer) {
             // Le compte n'a pas encore de mot de passe : la personne choisit le sien.
             etape('creation', (formData.get('login') || '').trim());
         } else {
-            dire(message, response.data.message || "La connexion a échoué. Veuillez réessayer.");
+            refuser(response.data.message || "La connexion a échoué. Veuillez réessayer.");
         }
 
     } catch (error) {
-        if (error.response) {
+        if (error.response?.status === 401) {
+            refuser(error.response.data?.message || 'Identifiant ou mot de passe incorrect.');
+        } else if (error.response) {
             dire(message, error.response.data?.message || "Le serveur est indisponible. Veuillez réessayer.");
         } else {
             dire(message, "Le serveur ne répond pas. Veuillez réessayer dans quelques instants.");
@@ -108,7 +193,7 @@ creation?.addEventListener('submit', async event => {
         return;
     }
     const { ok, corps } = await envoyer(creation, 'auth/creer_mot_de_passe.php');
-    if (ok && corps.success) window.location.href = 'dashboard/dashboard.php';
+    if (ok && corps.success) window.location.replace('dashboard/dashboard.php');
 });
 
 oubli?.addEventListener('submit', async event => {
@@ -142,7 +227,7 @@ if (comptesDev) {
         try {
             const reponse = await axios.post('auth/dev_connexion.php', donnees, { timeout: 15000 });
             if (reponse.data.success) {
-                window.location.href = 'dashboard/dashboard.php';
+                window.location.replace('dashboard/dashboard.php');
                 return;
             }
             message.style.display = 'flex';

@@ -6,7 +6,13 @@
 //
 // It used to hold one fixed account — name, email and password written here in clear —
 // which made every installation share the same administrator password. Now it takes what
-// it needs, and makes up a password when none is given, printing it once.
+// it needs. Without a password, the account waits for its owner to choose one at first
+// login, with a one-time access code printed here — as when the account is created from
+// « Utilisateurs ».
+//
+// It used to make up a random password instead (6 November 2026): base64, with 0 and O, l
+// and 1 side by side. Copied by hand, it failed with « Identifiants incorrects », and nothing
+// said why. The access code has no look-alike characters, and the password is the owner's.
 //
 // Account creation itself goes through User::register(): the identifier format, the
 // duplicate check, the email check and the hashing are the application's business, not
@@ -66,18 +72,15 @@ if ($role === null) {
         . '  run admin "El Manssouri" Rayan "chargé de production"');
 }
 
-// Un mot de passe qu'on ne donne pas est tiré au sort et montré une fois. Mieux qu'un mot
-// de passe par défaut, que personne ne change, et mieux qu'un mot de passe tapé dans le
-// terminal, qui reste dans l'historique du shell.
-$tireAuSort = $motDePasse === '';
-if ($tireAuSort) {
-    $motDePasse = substr(strtr(base64_encode(random_bytes(18)), '+/', '23'), 0, 16);
-}
-
+// Un mot de passe qu'on ne donne pas, la personne le choisit à sa première connexion, avec
+// le code d'accès montré ici une fois (User::register()). Mieux qu'un mot de passe par
+// défaut, que personne ne change ; mieux qu'un mot de passe tapé dans le terminal, qui reste
+// dans l'historique du shell ; et mieux qu'un mot de passe tiré au sort, qu'on recopiait de
+// travers.
 try {
     $db = new MyPDO();
     $user = new User($db);
-    $user->register($nom, $prenom, $role->value, $motDePasse, $courriel !== '' ? $courriel : null);
+    $code = $user->register($nom, $prenom, $role->value, $motDePasse, $courriel !== '' ? $courriel : null);
 } catch (DomainException $erreur) {
     fin($erreur->getMessage());
 } catch (Throwable $erreur) {
@@ -88,7 +91,8 @@ try {
 // décalé y atterrissait sans que rien ne le montre.
 echo 'Compte créé : ', User::buildIdentifiant($nom, $prenom), ' (', $role->metier(), ')',
     $courriel !== '' ? ', courriel ' . $courriel : ', sans courriel', PHP_EOL;
-if ($tireAuSort) {
-    echo 'Mot de passe : ', $motDePasse, PHP_EOL;
+if ($code) {
+    echo 'Code d\'accès : ', $code['code'], ' — une seule fois, jusqu\'au ', gmdate('d/m/Y', $code['jusqua']), PHP_EOL;
+    echo 'À l\'écran de connexion : l\'identifiant, « Continuer », ce code, puis le mot de passe de son choix.', PHP_EOL;
     echo 'Notez-le maintenant : il n\'est écrit nulle part, et il ne se relit pas.', PHP_EOL;
 }

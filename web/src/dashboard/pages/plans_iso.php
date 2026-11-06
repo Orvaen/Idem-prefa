@@ -127,8 +127,8 @@ $enRetardIso = count(array_filter(
     <div class="prefa-shell">
         <header class="prefa-heading prefa-list-heading">
             <div>
-                <h1 id="plans-iso-title">Plans / ISO & Affectations</h1>
-                <p>Préparez les plans et ISO, rattachez les documents techniques et organisez les affectations.</p>
+                <h1 id="plans-iso-title">Plans & équipes</h1>
+                <p>Ajoutez les plans des demandes validées, puis dites qui travaille dessus.</p>
             </div>
 
             <?php // Les mêmes outils de vue que la liste des demandes, au même endroit. ?>
@@ -137,9 +137,9 @@ $enRetardIso = count(array_filter(
 
                 <button type="button" id="refresh-plans-iso">
                     <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-2l2 3M4 16l2 3a7 7 0 0 1 12-2" />
+                        <path d="M21 12a9 9 0 1 1-2.64-6.36L21 8" /><path d="M21 3v5h-5" />
                     </svg>
-                    Actualiser
+                    <span class="outil-libelle">Actualiser</span>
                 </button>
             </div>
         </header>
@@ -194,7 +194,7 @@ $enRetardIso = count(array_filter(
                         <th scope="col">Demande n°</th>
                         <th scope="col" class="prefa-affaire">Affaire</th>
                         <th scope="col">Livraison prévue</th>
-                        <th scope="col" class="prefa-nombre">Plans / ISO</th>
+                        <th scope="col" class="prefa-nombre">Plans</th>
                         <th scope="col">Demandeur</th>
                         <th scope="col">Actions</th>
                     </tr></thead>
@@ -265,7 +265,7 @@ $enRetardIso = count(array_filter(
                                     <?php else: ?>
                                         <button type="button" class="prefa-ligne-contour plans-iso-toggle"
                                                 aria-expanded="false" aria-controls="plans-iso-detail-<?= $requestId ?>">
-                                            Plans &amp; affectations
+                                            Plans &amp; équipes
                                         </button>
                                     <?php endif; ?>
                                 </span>
@@ -278,7 +278,7 @@ $enRetardIso = count(array_filter(
                                 <div class="prefa-actions-menu" role="menu" hidden>
                                     <button type="button" role="menuitem" class="prefa-toggle" aria-expanded="false" aria-controls="prefa-detail-<?= $requestId ?>">Détails</button>
                                     <?php if ($nbPlans === 0): ?>
-                                        <button type="button" role="menuitem" class="prefa-toggle plans-iso-toggle" aria-expanded="false" aria-controls="plans-iso-detail-<?= $requestId ?>">Plans &amp; affectations</button>
+                                        <button type="button" role="menuitem" class="prefa-toggle plans-iso-toggle" aria-expanded="false" aria-controls="plans-iso-detail-<?= $requestId ?>">Plans &amp; équipes</button>
                                     <?php else: ?>
                                         <button type="button" role="menuitem" class="atelier-open-plan-create" data-dialog="atelier-create-dialog-<?= $requestId ?>">Ajouter un plan</button>
                                     <?php endif; ?>
@@ -295,12 +295,24 @@ $enRetardIso = count(array_filter(
                                 <header class="pv-volet-tete plans-iso-entete">
                                     <div>
                                         <h2><?= prefaEscape(prefaReference($requestId)) ?></h2>
-                                        <p><?= prefaEscape($row['nom_affaire'] ?: 'Demande sans nom') ?> · Plans &amp; affectations</p>
+                                        <p><?= prefaEscape($row['nom_affaire'] ?: 'Demande sans nom') ?> · Plans &amp; équipes</p>
                                     </div>
-                                    <div class="pv-volet-outils">
-                                        <button type="button" class="prefa-detail-close" data-close-target="plans-iso-detail-<?= $requestId ?>" aria-label="Fermer le volet" title="Fermer">
-                                            <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg>
-                                        </button>
+                                    <div class="plans-iso-entete-actions">
+                                        <?php // Une demande porte autant de plans qu'il en faut. Le bouton n'était
+                                              // que sur la ligne, tant qu'elle n'en avait aucun ; ensuite, il
+                                              // se cachait dans le menu « ⋯ », et l'on croyait qu'une demande
+                                              // n'avait droit qu'à un plan. Il est ici, au-dessus des plans. ?>
+                                        <?php if ($canManageWorkshop): ?>
+                                            <button type="button" class="plans-iso-ajouter atelier-open-plan-create" data-dialog="atelier-create-dialog-<?= $requestId ?>">
+                                                <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
+                                                Ajouter un plan
+                                            </button>
+                                        <?php endif; ?>
+                                        <div class="pv-volet-outils">
+                                            <button type="button" class="prefa-detail-close" data-close-target="plans-iso-detail-<?= $requestId ?>" aria-label="Fermer le volet" title="Fermer">
+                                                <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg>
+                                            </button>
+                                        </div>
                                     </div>
                                 </header>
 

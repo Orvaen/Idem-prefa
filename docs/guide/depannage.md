@@ -47,11 +47,13 @@ une erreur de chargement de `htmx.js` le confirme.
 Oublié, il clique « Mot de passe oublié ? » sur l'écran de connexion ; à changer, « Demander »
 dans Paramètres → Compte. Le chargé de production le voit sur « Utilisateurs » — pastille, et
 « Nouveau mot de passe demandé » sur la ligne — et choisit « Réinitialiser le mot de passe » dans
-le menu de la ligne. La personne se reconnecte avec son seul identifiant, et choisit un nouveau
-mot de passe.
+le menu de la ligne. Un code d'accès s'affiche : il le donne à la personne, qui se reconnecte avec
+son identifiant et ce code, et choisit un nouveau mot de passe. Code perdu ou passé : « Nouveau
+code d'accès », dans le même menu.
 
-Le chargé de production qui veut changer le sien le réinitialise dans Paramètres → Compte : il
-est déconnecté, et choisit le nouveau en se reconnectant.
+Le chargé de production qui veut changer le sien le réinitialise dans Paramètres → Compte : son
+code s'affiche — à noter —, il est déconnecté, et choisit le nouveau en se reconnectant avec ce
+code.
 
 ### On revient sans cesse à l'écran de connexion
 

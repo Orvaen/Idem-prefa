@@ -9,6 +9,7 @@
  */
 
 require_once __DIR__ . '/user_display.php';
+require_once __DIR__ . '/../../../api/User.php';
 require_once __DIR__ . '/../atelier/signature.php';
 
 /** Les deux lettres du monogramme, comme sur la liste des demandes. */
@@ -27,16 +28,29 @@ function userCreationCourte(array $user): string
 
 /**
  * Où en est le mot de passe d'un compte, quand il y a quelque chose à en dire : à choisir —
- * compte neuf, ou réinitialisé —, ou un nouveau demandé — oublié, ou à changer —, en attente
- * que l'administrateur réinitialise.
+ * compte neuf, ou réinitialisé —, avec un code valable, passé, ou sans code ; ou un nouveau
+ * demandé — oublié, ou à changer —, en attente que l'administrateur réinitialise.
+ *
+ * Un compte qui attend se prend avec son code d'accès (api/User.php) : la pastille dit s'il
+ * faut en donner un nouveau.
  *
  * @return array{cle:string, libelle:string, detail:string}|null
  */
 function userEtatMotDePasse(array $user): ?array
 {
-    if (($user['password'] ?? null) === '') {
-        return ['cle' => 'a-choisir', 'libelle' => 'Mot de passe à choisir (première connexion)',
-            'detail' => 'La personne choisira son mot de passe à sa prochaine connexion.'];
+    $attente = User::etatAttente((string) ($user['password'] ?? ''));
+    if ($attente !== null) {
+        // Les libellés courts : « (première connexion) » doublait la longueur de la pastille,
+        // et le nom passait à la ligne pour lui faire place. L'infobulle dit le reste.
+        return match ($attente['etat']) {
+            'code' => ['cle' => 'a-choisir', 'libelle' => 'Mot de passe à choisir',
+                'detail' => 'La personne choisira son mot de passe avec le code que vous lui avez donné, valable jusqu’au '
+                    . prefaFormatDate(gmdate('Y-m-d H:i:s', (int) $attente['jusqua'])) . '.'],
+            'expire' => ['cle' => 'code-expire', 'libelle' => 'Code expiré',
+                'detail' => 'Son code a expiré : donnez-lui-en un nouveau (« Nouveau code d’accès », dans le menu de la ligne).'],
+            default => ['cle' => 'code-a-donner', 'libelle' => 'Code à donner',
+                'detail' => 'Pour choisir son mot de passe, il lui faut un code : « Nouveau code d’accès », dans le menu de la ligne.'],
+        };
     }
     if (!empty($user['reinitialisation_demandee_le'])) {
         return ['cle' => 'demande', 'libelle' => 'Nouveau mot de passe demandé',
@@ -91,22 +105,29 @@ function userRow(array $user, int $moi): void
                 <button type="button" role="menuitem"
                         hx-get="/api/users/edit.php?id=<?= $id ?>"
                         hx-target="closest tr" hx-swap="outerHTML">Modifier</button>
-                <?php // Réinitialiser : le mot de passe se vide, la personne en choisit un
-                      // nouveau à sa prochaine connexion. Pas sur son propre compte — le sien
-                      // se réinitialise dans Paramètres → Compte, qui ferme aussitôt la
-                      // session —, ni sur un compte qui attend déjà. ?>
+                <?php // Réinitialiser : le mot de passe cède la place à un code d'accès, que
+                      // l'administrateur donne ; avec lui, la personne en choisit un nouveau à sa
+                      // prochaine connexion. Sur un compte qui attend déjà, c'est un nouveau
+                      // code — perdu, passé, ou d'avant les codes. Pas sur son propre compte : le
+                      // sien se réinitialise dans Paramètres → Compte, qui ferme aussitôt la
+                      // session. ?>
                 <?php if ($cestMoi): ?>
                     <button type="button" role="menuitem" disabled
                             title="Le vôtre se réinitialise dans Paramètres → Compte.">Réinitialiser le mot de passe</button>
-                <?php elseif (($motDePasse['cle'] ?? '') === 'a-choisir'): ?>
-                    <button type="button" role="menuitem" disabled
-                            title="La personne choisira son mot de passe à sa prochaine connexion.">Réinitialiser le mot de passe</button>
+                <?php elseif (in_array($motDePasse['cle'] ?? '', ['a-choisir', 'code-expire', 'code-a-donner'], true)): ?>
+                    <button type="button" role="menuitem"
+                            hx-post="/dashboard/actions/reinitialiser_mot_de_passe.php"
+                            hx-vals='<?= prefaEscape(json_encode(['id' => $id, 'csrf' => Session::jeton()])) ?>'
+                            hx-confirm="Nouveau code d’accès pour <?= prefaEscape($nom) ?> ?"
+                            data-confirmer-texte="L’ancien code ne marchera plus. Le nouveau s’affichera une fois : donnez-le à la personne."
+                            data-confirmer-action="Nouveau code"
+                            hx-target="closest tr" hx-swap="outerHTML">Nouveau code d’accès</button>
                 <?php else: ?>
                     <button type="button" role="menuitem"
                             hx-post="/dashboard/actions/reinitialiser_mot_de_passe.php"
                             hx-vals='<?= prefaEscape(json_encode(['id' => $id, 'csrf' => Session::jeton()])) ?>'
                             hx-confirm="Réinitialiser le mot de passe de <?= prefaEscape($nom) ?> ?"
-                            data-confirmer-texte="Son mot de passe actuel ne marchera plus : il en choisira un nouveau à sa prochaine connexion."
+                            data-confirmer-texte="Son mot de passe actuel ne marchera plus. Un code s’affichera, une fois : donnez-le à la personne, elle le tapera pour choisir le nouveau."
                             data-confirmer-action="Réinitialiser"
                             hx-target="closest tr" hx-swap="outerHTML">Réinitialiser le mot de passe</button>
                 <?php endif; ?>

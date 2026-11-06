@@ -102,9 +102,10 @@ Le premier compte est **chargé de production** : c'est lui qui ouvre les affair
 demandes et crée les autres comptes. Son identifiant se fabrique comme dans l'application —
 première lettre du nom, un point, le prénom : `d.jean`.
 
-::: warning Le mot de passe ne s'affiche qu'une fois
-Sans `--mdp`, le script tire un mot de passe au sort et le montre **une seule fois**. Il n'est
-écrit nulle part ailleurs : le noter avant de fermer le terminal.
+::: warning Le code d'accès ne s'affiche qu'une fois
+Sans `--mdp`, le compte n'a pas encore de mot de passe : le script affiche un **code d'accès**,
+**une seule fois** — huit caractères, ni 0 ni O, ni 1 ni I. Il n'est écrit nulle part ailleurs :
+le noter avant de fermer le terminal. Il vaut sept jours, et ne sert qu'une fois.
 :::
 
 Les autres options — rôle, courriel, mot de passe choisi — sont dans
@@ -144,7 +145,8 @@ comptes, section « Développement ».
 ## 7. Se connecter
 
 Ouvrir **http://localhost:8080** : l'écran de connexion est à la racine du site. Saisir
-l'identifiant et le mot de passe du compte créé à l'étape 5.
+l'identifiant du compte créé à l'étape 5, « Continuer », puis le code d'accès et le mot de passe
+de son choix, deux fois : on entre, et ce mot de passe sert aux connexions suivantes.
 
 Sous Windows, `scripts/start-app.cmd` ouvre l'application dans une fenêtre à elle, sans barre
 d'adresse, avec Edge ou Chrome. Il ne monte pas la stack : `run up` d'abord.

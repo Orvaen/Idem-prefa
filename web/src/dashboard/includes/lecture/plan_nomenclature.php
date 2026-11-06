@@ -25,8 +25,11 @@ require_once __DIR__ . '/plan_reperes.php';
  * soudeur la corrige au besoin. Rien ne part sans lui.
  */
 
-/** À incrémenter dès que la lecture rend autre chose : le cache de l'ancienne serait resservi. */
-const PLAN_NOMENCLATURE_VERSION = 1;
+/**
+ * À incrémenter dès que la lecture rend autre chose : le cache de l'ancienne serait resservi.
+ * 2 : la lecture rend aussi les bords de la colonne « N° COULÉE » (6 novembre 2026).
+ */
+const PLAN_NOMENCLATURE_VERSION = 2;
 
 /** La résolution de la lecture : assez pour des capitales de deux millimètres. */
 const PLAN_NOMENCLATURE_DPI = 400;
@@ -34,7 +37,11 @@ const PLAN_NOMENCLATURE_DPI = 400;
 /** Le blanc posé entre deux colonnes recomposées, en pixels de lecture. */
 const PLAN_NOMENCLATURE_ECART = 60;
 
-/** Les colonnes lues, dans l'ordre du tableau. « N° COULÉE », la dernière, est au chef. */
+/**
+ * Les colonnes lues, dans l'ordre du tableau. « N° COULÉE », la dernière, ne se lit pas : on
+ * y écrit — l'encadrement dans sa visionneuse, le soudeur en touchant la case (ses bords
+ * sont rendus dans « coulee »).
+ */
 const PLAN_NOMENCLATURE_COLONNES = ['repere', 'quantite', 'dn', 'ep', 'description'];
 
 /**
@@ -58,7 +65,8 @@ function planNomenclatureCache(int $requestId, string $cle, int $page): string
 /**
  * La nomenclature d'une page, lue une fois puis gardée. Refaite si le plan a changé.
  *
- * @return array{gauche:float, droite:float, lignes: list<array{y:float, h:float, repere:string,
+ * @return array{gauche:float, droite:float, coulee: ?array{gauche:float, droite:float},
+ *               lignes: list<array{y:float, h:float, repere:string,
  *               quantite:string, dn:string, ep:string, description:string}>}|null
  *         en fractions de l'image, comme les cases de plan_table.php ; null si la page n'a
  *         pas de nomenclature reconnue
@@ -91,7 +99,9 @@ function planNomenclatureGardee(string $source, string $cache): ?array
 {
     if (!is_file($cache) || !is_file($source) || filemtime($cache) < filemtime($source)) return null;
     $garde = json_decode((string) file_get_contents($cache), true);
-    return is_array($garde) && ($garde['version'] ?? 0) === PLAN_NOMENCLATURE_VERSION
+    // Une lecture d'une version précédente vaut encore ici : ses lignes sont les mêmes, seuls
+    // les bords de la colonne des coulées lui manquent, et ce résumé ne s'en sert pas.
+    return is_array($garde) && ($garde['version'] ?? 0) >= 1
         ? ['nomenclature' => $garde['nomenclature'] ?? null] : null;
 }
 
@@ -135,9 +145,20 @@ function planNomenclatureLire(string $pdf, int $page, ?bool &$complete = null): 
             'description' => $cellules['description'] ?? '',
         ];
     }
+    // « N° COULÉE », la dernière colonne : entre l'avant-dernier séparateur et le bord droit,
+    // là même où se posent les cases de coulée (plan_table.php). Le soudeur la touche pour
+    // choisir la coulée de la ligne ; le reste de la ligne signale un manque. Trop étroite
+    // pour être une vraie colonne, elle n'est pas rendue : la ligne entière signale.
+    $colonnes = $grille['colonnes'];
+    $xCoulee = $colonnes[count($colonnes) - 2] ?? null;
+    $coulee = $xCoulee !== null && $grille['droite'] - $xCoulee >= $image['l'] * 0.02
+        ? ['gauche' => $xCoulee / $image['l'], 'droite' => $grille['droite'] / $image['l']]
+        : null;
+
     return [
         'gauche' => $grille['gauche'] / $image['l'],
         'droite' => $grille['droite'] / $image['l'],
+        'coulee' => $coulee,
         'lignes' => $lignes,
     ];
 }

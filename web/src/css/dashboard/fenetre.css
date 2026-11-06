@@ -346,12 +346,122 @@ dialog.fenetre .fenetre-pied .fenetre-valider:disabled {
     cursor: progress;
 }
 
-/* Sur une tablette d'atelier, la cible fait 44 px. */
+/* ---------- Sur une tablette d'atelier ----------
+
+   Demandé le 6 novembre 2026 : « Ajouter un plan » était « horrible sur tablette ». La
+   fenêtre gardait les mesures du bureau — un titre en 16, des champs en 15, des cases à
+   cocher de 16 px sur des lignes de 32, des boutons serrés —, lue à bout de bras et touchée
+   au doigt. Tout grandit d'un cran, pour toutes les fenêtres : plus large, des champs de
+   54 px en 17, l'intitulé au-dessus lisible, chaque document à associer sur une ligne de
+   52 px qu'on touche en entier, et des boutons de 50 px. */
 @media (pointer: coarse) {
 
-    dialog.fenetre .fenetre-champ,
-    dialog.fenetre .fenetre-pied button {
+    dialog.fenetre {
+        width: min(720px, calc(100vw - 32px));
+        font-size: 15px;
+    }
+
+    dialog.fenetre .fenetre-entete {
+        padding: 26px 28px 0;
+    }
+
+    dialog.fenetre .fenetre-entete h2 {
+        font-size: 20px;
+    }
+
+    dialog.fenetre .fenetre-entete .modal-close {
+        width: 44px;
         height: 44px;
+        margin: -8px -10px -8px 0;
+    }
+
+    dialog.fenetre .fenetre-entete .modal-close .icon {
+        width: 20px;
+        height: 20px;
+    }
+
+    /* La phrase sous le titre suit la marge de l'en-tête : elle restait à 24 px, sous un titre
+       à 28. */
+    dialog.fenetre .fenetre-sous-titre {
+        margin: 6px 28px 0;
+        font-size: 15px;
+    }
+
+    dialog.fenetre .fenetre-corps {
+        gap: 18px;
+        padding: 22px 28px 28px;
+    }
+
+    dialog.fenetre .fenetre-bloc {
+        gap: 8px;
+    }
+
+    dialog.fenetre .fenetre-etiquette,
+    dialog.fenetre .fenetre-bloc > legend {
+        color: var(--text);
+        font-size: 14px;
+    }
+
+    dialog.fenetre .fenetre-aide {
+        font-size: 13px;
+    }
+
+    dialog.fenetre .fenetre-champ,
+    dialog.fenetre .liste-filtrable-champ {
+        height: 54px;
+        padding: 0 16px;
+        font-size: 17px;
+    }
+
+    dialog.fenetre textarea.fenetre-champ {
+        height: auto;
+        min-height: 110px;
+        padding: 14px 16px;
+        font-size: 17px;
+    }
+
+    /* Les documents : une liste encadrée, une ligne par document, toute la ligne se touche. */
+    dialog.fenetre .fenetre-cases {
+        margin: 0;
+        border: 1px solid var(--border);
+        border-radius: var(--r-md);
+    }
+
+    dialog.fenetre .fenetre-case {
+        gap: 14px;
+        min-height: 52px;
+        padding: 8px 16px;
+        border-radius: 0;
+        font-size: 16px;
+    }
+
+    dialog.fenetre .fenetre-case + .fenetre-case {
+        border-top: 1px solid var(--border);
+    }
+
+    dialog.fenetre .fenetre-case input[type="checkbox"] {
+        width: 22px;
+        height: 22px;
+    }
+
+    dialog.fenetre .fenetre-pied {
+        gap: 12px;
+        padding: 18px 28px;
+    }
+
+    dialog.fenetre .fenetre-pied button {
+        height: 50px;
+        padding: 0 24px;
+        font-size: 16px;
+    }
+}
+
+/* Une tablette en portrait : les deux boutons du pied se partagent la largeur. */
+@media (pointer: coarse) and (max-width: 860px) {
+
+    dialog.fenetre .fenetre-pied button {
+        flex: 1;
+        justify-content: center;
     }
 }
 
@@ -550,6 +660,51 @@ dialog.fenetre.alerte .alerte-intro p {
     font-size: 13px;
     line-height: 1.5;
     overflow-wrap: anywhere;
+}
+
+/* Un code d'accès (window.montrerCodeAcces) : en grand, dans un cadre à pointillés, en chasse
+   fixe — on le lit à voix haute, caractère par caractère. Un clic le sélectionne en entier. */
+dialog.fenetre.alerte .alerte-code {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 12px;
+    margin: 6px 0 4px;
+}
+
+dialog.fenetre.alerte .alerte-code-valeur {
+    padding: 8px 16px;
+    border: 1.5px dashed var(--border-fort);
+    border-radius: var(--r-md);
+    background: var(--carte);
+    color: var(--text);
+    font-family: ui-monospace, "Cascadia Mono", Consolas, "Courier New", monospace;
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    user-select: all;
+}
+
+dialog.fenetre.alerte .alerte-code-copier {
+    height: var(--h-lg);
+    margin: 0;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+dialog.fenetre.alerte .alerte-code-copier:hover {
+    background: var(--hover);
+}
+
+dialog.fenetre.alerte .alerte-code-copier:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
 }
 
 /* Les choix : des lignes de menu, comme les cases d'une fenêtre — pas des cartes. */

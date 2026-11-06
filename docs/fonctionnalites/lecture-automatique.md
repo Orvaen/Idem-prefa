@@ -140,7 +140,7 @@ le projet ne tourne pas (« service "php" is not running »).
 ## Les numéros des soudures, sur le dessin
 
 **Quoi :** où chaque numéro de soudure est dessiné sur l'isométrique — c'est là que le soudeur
-clique pour renseigner sa soudure ([Mes soudures](/fonctionnalites/soudures)).
+clique pour renseigner sa soudure ([les soudures de « Mes plans »](/fonctionnalites/soudures)).
 
 **Comment :** AutoCAD Plant 3D trace tout son texte en courbes, et `pdftotext` ne voit sur une
 feuille que les valeurs du cartouche. Le numéro se cherche donc sur l'image, en deux temps :
@@ -169,7 +169,7 @@ blanc : sa trame est fixe.
 **Quoi :** chaque ligne de la NOMENCLATURE DE MATÉRIEL — où elle est, et ce qu'elle dit :
 repère, quantité, DN, épaisseur, désignation. Le soudeur clique la ligne du matériel qui lui
 manque, et la fenêtre « Signaler un manque » arrive remplie
-([Mes soudures](/fonctionnalites/soudures#signaler-un-manque)).
+([Signaler un manque](/fonctionnalites/soudures#signaler-un-manque)).
 
 **Comment :** la grille est celle que la détection des tableaux trouve déjà pour poser les
 coulées. Le texte, lui, est en courbes : il se lit à l'**OCR, en local** (Tesseract), sur le

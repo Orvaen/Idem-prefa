@@ -153,6 +153,9 @@ function materielPayload(array $document): array
         'fige' => materielEstFige($document),
         'etat_libelle' => materielEtats()[$etat],
         'resume' => materielResume($document),
+        // Qui a validé la commande, et quand : les étapes du volet le disent.
+        'valide_le' => !empty($document['date_verification']) ? prefaFormatDate($document['date_verification']) : '',
+        'valide_par' => (string) ($document['verificateur'] ?? ''),
         'numero' => $document['numero_commande'],
         'date' => $document['date_commande'] ? prefaFormatDate($document['date_commande']) : '',
         'articles' => count($document['lignes'] ?? []),
@@ -334,8 +337,10 @@ function materielEcheancesTexte(array $document): string
 function materielEtat(array $document): string
 {
     if (empty($document['date_lecture'])) return 'a_lire';
-    if ($document['lecture'] === 'echec') return 'echec';
+    // Validée, une commande l'est d'où que viennent ses articles : une lecture ratée dont on
+    // a saisi les articles à la main se vérifie et se valide comme une autre.
     if (!empty($document['date_verification'])) return 'verifie';
+    if ($document['lecture'] === 'echec' && empty($document['lignes'])) return 'echec';
     return 'a_verifier';
 }
 
@@ -579,6 +584,44 @@ function materielPointerReception(PDO $db, int $idDocument, array $pointages, in
         throw $exception;
     }
     return $touchees;
+}
+
+/**
+ * Les coches de réception que l'écran envoie : { identifiant de ligne : reçu ou non }.
+ * Les identifiants sont vérifiés ensuite par les requêtes elles-mêmes, qui exigent que la
+ * ligne appartienne au bon.
+ *
+ * @return array<int, bool>|null null si l'envoi est illisible
+ */
+function materielPointagesPostes(mixed $brut): ?array
+{
+    $recu = json_decode((string) $brut, true);
+    if (!is_array($recu)) return null;
+    $pointages = [];
+    foreach ($recu as $idLigne => $estRecu) {
+        $idLigne = filter_var($idLigne, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        if (!$idLigne) return null;
+        $pointages[$idLigne] = (bool) $estRecu;
+    }
+    return $pointages;
+}
+
+/**
+ * Valide une commande telle qu'elle est en base : elle est figée, et se reçoit.
+ *
+ * Ses articles ne sont pas réécrits — on vient de les vérifier dans la liste, et les
+ * corrections s'enregistrent à part (materielEnregistrer()). Une commande déjà validée le
+ * reste : sa première validation garde qui en répond et quand.
+ *
+ * @return bool vrai si elle vient d'être validée
+ */
+function materielValider(PDO $db, int $idDocument, int $idActeur): bool
+{
+    $stmt = $db->prepare('UPDATE demande_materiel_documents
+        SET verifie_par = ?, date_verification = NOW()
+        WHERE id = ? AND date_verification IS NULL');
+    $stmt->execute([$idActeur, $idDocument]);
+    return $stmt->rowCount() > 0;
 }
 
 /**

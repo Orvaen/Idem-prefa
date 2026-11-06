@@ -151,8 +151,8 @@ Les codes de sortie : `echo $?` sous bash, `$LASTEXITCODE` sous PowerShell.
 - Reste à faire / à décider : (ce qui attend un humain)
 ```
 
-Ne jamais y recopier un mot de passe, même tiré au sort pour un nouveau compte : il se remet
-de vive voix ou par le canal que l'humain choisit.
+Ne jamais y recopier un mot de passe, ni le code d'accès d'un nouveau compte : il se remet de
+vive voix ou par le canal que l'humain choisit.
 
 ## Les pages de cette section
 

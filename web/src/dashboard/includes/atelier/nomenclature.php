@@ -50,18 +50,43 @@ function nomenclatureLignes(PDO $db, int $elementId, int $documentId, int $page 
 }
 
 /**
- * Les coulées proposées pour une demande : celles relevées sur ses certificats.
+ * Les coulées proposées pour une demande : celles relevées sur ses certificats, avec ce que
+ * le certificat dit du matériau — son numéro, ses dimensions, sa nuance — pour les ranger
+ * sous lui (nomenclatureCertificatLibelle()).
  *
- * @return list<array{id:int, numero:string, certificat:?string, confiance:int, confirmee:int}>
+ * @return list<array{id:int, numero:string, certificat:?string, confiance:int, confirmee:int,
+ *                    id_document:int, nom:string, dimensions:?string, nuances:?string}>
  */
 function nomenclatureCouleesDisponibles(PDO $db, int $requestId): array
 {
-    $stmt = $db->prepare('SELECT c.id, c.numero, d.certificat, c.confiance, c.confirmee
+    $stmt = $db->prepare('SELECT c.id, c.numero, d.certificat, c.confiance, c.confirmee,
+            d.id AS id_document, d.nom, d.dimensions, d.nuances
         FROM demande_ccpu_coulees c
         JOIN demande_ccpu_documents d ON d.id = c.id_document
         WHERE d.id_demande = ? ORDER BY c.numero');
     $stmt->execute([$requestId]);
     return $stmt->fetchAll();
+}
+
+/**
+ * Le titre sous lequel se rangent les coulées d'un certificat, dans le choix du soudeur :
+ * « Certificat C-1234 · 60.3 x 2.77, 88.9 x 3.05 · 316L ». Une demande compte vite trente
+ * coulées ; rangées sous leur certificat, on retrouve la bonne en comparant ses dimensions
+ * et sa nuance à la désignation de la ligne. Un certificat dont le numéro n'a pas été lu se
+ * nomme par son fichier.
+ *
+ * @param array{certificat:?string, nom:string, dimensions:?string, nuances:?string} $coulee
+ *        une ligne de nomenclatureCouleesDisponibles()
+ */
+function nomenclatureCertificatLibelle(array $coulee): string
+{
+    $numero = trim((string) ($coulee['certificat'] ?? ''));
+    $titre = $numero !== '' ? 'Certificat ' . $numero
+        : (preg_replace('/\.pdf$/i', '', trim((string) ($coulee['nom'] ?? ''))) ?: 'Certificat');
+    // Les dimensions s'enregistrent séparées par « ; » (CCPU_SEPARATEUR_DIMENSIONS) : on les
+    // découpe sur le point-virgule seul, quelle que soit l'espace autour.
+    $dimensions = implode(', ', array_filter(array_map('trim', explode(';', (string) ($coulee['dimensions'] ?? ''))), 'strlen'));
+    return implode(' · ', array_filter([$titre, $dimensions, trim((string) ($coulee['nuances'] ?? ''))], 'strlen'));
 }
 
 /**
@@ -143,6 +168,89 @@ function nomenclatureEnregistrer(PDO $db, int $elementId, int $documentId, int $
         }
         $db->commit();
         return $renseignees;
+    } catch (Throwable $erreur) {
+        $db->rollBack();
+        throw $erreur;
+    }
+}
+
+/**
+ * Le numéro de coulée d'UNE ligne de la nomenclature, posé par le soudeur depuis « Mes
+ * soudures » : il touche la case « N° COULÉE » de la ligne, sur le dessin, et choisit parmi
+ * les coulées lues sur les certificats — ou tape le numéro.
+ *
+ * Pas de réécriture de la page, comme celle de l'encadrement (nomenclatureEnregistrer()) :
+ * la case qui couvre déjà cette ligne prend le numéro ; s'il n'y en a pas, elle est posée,
+ * dans la cellule, à la suite des autres. L'empreinte de la page change : un chef qui
+ * l'aurait ouverte entre-temps se voit refuser son enregistrement, au lieu d'effacer celui-ci.
+ *
+ * Sur une page qui n'a encore aucune case, une case est posée pour CHAQUE ligne ($toutes), et
+ * pas seulement pour celle-ci : la visionneuse de l'encadrement ne pose les siennes d'office
+ * que sur une page vide, et le chef se serait retrouvé avec une case et quatre à refaire.
+ *
+ * @param array{x:float, y:float, w:float, h:float} $cellule la case « N° COULÉE » de la ligne,
+ *        en fractions de l'image
+ * @param list<array{y:float, h:float}> $toutes les lignes de la page, dans la même colonne
+ */
+function nomenclatureCouleeDeLigne(PDO $db, int $elementId, int $documentId, int $page, array $cellule,
+    string $coulee, string $description, int $auteur, array $toutes = []): void
+{
+    // Dans la cellule, pas sur ses traits : les retraits de la pose d'office (plan_table.php).
+    $dans = static function (float $x, float $y, float $w, float $h): array {
+        $margeX = $w * 0.07;
+        $margeY = $h * 0.18;
+        return [$x + $margeX, $y + $margeY, $w - 2 * $margeX, $h - 2 * $margeY];
+    };
+    $coulee = trim(mb_substr($coulee, 0, 20));
+    $connue = $db->prepare('SELECT c.id FROM demande_ccpu_coulees c
+        JOIN demande_ccpu_documents d ON d.id = c.id_document
+        JOIN element_atelier e ON e.id_demande = d.id_demande
+        WHERE e.id = ? AND c.numero = ? LIMIT 1');
+    $connue->execute([$elementId, $coulee]);
+    $idCoulee = $coulee !== '' ? ($connue->fetchColumn() ?: null) : null;
+
+    $db->beginTransaction();
+    try {
+        // La case de la ligne : celle dont le milieu tombe dans la bande de la ligne. Une
+        // case posée à la main par le chef, un peu décalée, reste reconnue.
+        $existante = $db->prepare('SELECT id FROM plan_nomenclature
+            WHERE id_element = ? AND id_document = ? AND page = ? AND pos_y IS NOT NULL
+              AND pos_y + pos_h / 2 BETWEEN ? AND ?
+            ORDER BY rang LIMIT 1 FOR UPDATE');
+        $existante->execute([$elementId, $documentId, $page, $cellule['y'], $cellule['y'] + $cellule['h']]);
+        $id = $existante->fetchColumn();
+
+        $compte = $db->prepare('SELECT COUNT(*) FROM plan_nomenclature WHERE id_element = ? AND id_document = ? AND page = ?');
+        $compte->execute([$elementId, $documentId, $page]);
+        $pageVide = (int) $compte->fetchColumn() === 0;
+
+        $inserer = $db->prepare('INSERT INTO plan_nomenclature
+            (id_element, id_document, page, rang, pos_x, pos_y, pos_w, pos_h, description, numero_coulee, id_coulee, saisie_par)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+
+        if ($id) {
+            $db->prepare('UPDATE plan_nomenclature SET numero_coulee = ?, id_coulee = ?, saisie_par = ?, date_saisie = NOW()
+                WHERE id = ?')->execute([$coulee, $idCoulee, $auteur, $id]);
+        } elseif ($pageVide && $toutes) {
+            // Une case par ligne, dans l'ordre du tableau ; seule la ligne touchée a sa coulée.
+            usort($toutes, static fn (array $a, array $b): int => $a['y'] <=> $b['y']);
+            $rang = 0;
+            foreach ($toutes as $ligne) {
+                $touchee = abs($ligne['y'] - $cellule['y']) < 1e-6;
+                [$x, $y, $w, $h] = $dans($cellule['x'], $ligne['y'], $cellule['w'], $ligne['h']);
+                $inserer->execute([$elementId, $documentId, $page, ++$rang, $x, $y, $w, $h,
+                    $touchee ? trim(mb_substr($description, 0, 180)) : '',
+                    $touchee ? $coulee : '', $touchee ? $idCoulee : null, $auteur]);
+            }
+        } else {
+            $rang = $db->prepare('SELECT COALESCE(MAX(rang), 0) + 1 FROM plan_nomenclature
+                WHERE id_element = ? AND id_document = ? AND page = ?');
+            $rang->execute([$elementId, $documentId, $page]);
+            [$x, $y, $w, $h] = $dans($cellule['x'], $cellule['y'], $cellule['w'], $cellule['h']);
+            $inserer->execute([$elementId, $documentId, $page, (int) $rang->fetchColumn(), $x, $y, $w, $h,
+                trim(mb_substr($description, 0, 180)), $coulee, $idCoulee, $auteur]);
+        }
+        $db->commit();
     } catch (Throwable $erreur) {
         $db->rollBack();
         throw $erreur;

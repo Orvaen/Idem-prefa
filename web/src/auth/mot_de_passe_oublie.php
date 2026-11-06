@@ -34,7 +34,7 @@ try {
     (new User($db))->demanderReinitialisation($login, 'oubli');
     echo json_encode([
         'success' => true,
-        'message' => 'C’est noté : l’administrateur est prévenu. Une fois votre mot de passe réinitialisé, vous en choisirez un nouveau en vous connectant.',
+        'message' => 'C’est noté : l’administrateur est prévenu. Il vous donnera un code : avec lui, vous choisirez un nouveau mot de passe en vous connectant.',
     ]);
 } catch (PDOException $erreur) {
     Journal::erreur('Mot de passe oublié', $erreur);

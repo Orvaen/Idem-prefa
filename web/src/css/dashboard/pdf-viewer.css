@@ -1,9 +1,16 @@
 /* Le visualiseur PDF de l'application (prefa-interactions.js).
 
-   Plein écran, une barre fine en tête — le nom du document, son nombre de pages, puis
-   Télécharger et une croix — et sous elle le document à gauche, son sommaire à droite :
-   une vignette par page, la page vue cernée d'accent. Même grammaire que le sommaire du
-   lecteur de plans, pour qu'on n'ait pas deux façons de feuilleter un PDF. */
+   Plein écran, une barre fine en tête — le nom du document, son nombre de pages, le zoom,
+   puis « Pages », « Télécharger » et une croix — et sous elle les pages, rendues en images
+   par le serveur. Le sommaire, une vignette par page, la page vue cernée d'accent : même
+   grammaire que le sommaire du lecteur de plans, pour qu'on n'ait pas deux façons de
+   feuilleter un PDF.
+
+   Un seul lecteur : celui du navigateur, posé dans une iframe, est banni depuis le
+   6 novembre 2026 — d'autres outils que les nôtres, et rien du tout dans l'appli Android.
+
+   Sur tablette, l'écran se simplifie (plus bas) : des commandes au doigt, la page à la
+   largeur de l'écran, le sommaire en volet posé sur les pages, et une pastille « 3 / 15 ». */
 
 body.prefa-viewer-open {
     overflow: hidden;
@@ -81,6 +88,7 @@ body.prefa-viewer-open {
     flex: none;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     height: 30px;
     padding: 0 12px;
@@ -93,6 +101,10 @@ body.prefa-viewer-open {
     text-decoration: none;
     white-space: nowrap;
     cursor: pointer;
+}
+
+.prefa-pdf-bouton[hidden] {
+    display: none;
 }
 
 .prefa-pdf-bouton:hover,
@@ -109,11 +121,10 @@ body.prefa-viewer-open {
 .prefa-pdf-close {
     width: 30px;
     padding: 0;
-    justify-content: center;
     border-color: transparent;
 }
 
-/* ---------- Le zoom, dans le lecteur de l'application ---------- */
+/* ---------- Le zoom ---------- */
 
 .prefa-pdf-zoom {
     flex: none;
@@ -123,11 +134,13 @@ body.prefa-viewer-open {
     margin-right: 4px;
 }
 
+.prefa-pdf-zoom[hidden] {
+    display: none;
+}
+
 .prefa-pdf-bouton-carre {
     width: 30px;
     padding: 0;
-    justify-content: center;
-    font-size: 15px;
 }
 
 .prefa-pdf-zoom-valeur {
@@ -147,18 +160,10 @@ body.prefa-viewer-open {
 /* ---------- Le document et son sommaire ---------- */
 
 .prefa-pdf-corps {
+    position: relative;
     flex: 1;
     min-height: 0;
     display: flex;
-}
-
-.prefa-pdf-viewer iframe {
-    display: block;
-    flex: 1;
-    min-width: 0;
-    height: 100%;
-    border: 0;
-    background: var(--frame);
 }
 
 /* Les pages, rendues par le serveur, l'une sous l'autre. La largeur vient du zoom
@@ -198,6 +203,58 @@ body.prefa-viewer-open {
     box-shadow: 0 1px 3px rgb(0 0 0 / 25%);
 }
 
+/* L'attente, ou l'aperçu impossible : au milieu, à la place des pages. */
+.prefa-pdf-etat {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 24px;
+    text-align: center;
+    pointer-events: none;
+}
+
+.prefa-pdf-etat[hidden] {
+    display: none;
+}
+
+.prefa-pdf-etat-texte {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 15px;
+}
+
+.prefa-pdf-etat .prefa-pdf-bouton {
+    pointer-events: auto;
+    height: 40px;
+    padding: 0 18px;
+    font-size: 14px;
+}
+
+/* « 3 / 15 », en bas, au milieu des pages : où l'on en est, sans regarder le sommaire. */
+.prefa-pdf-position {
+    position: absolute;
+    left: 50%;
+    bottom: 16px;
+    z-index: 1;
+    transform: translateX(-50%);
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgb(15 15 16 / 72%);
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+}
+
+.prefa-pdf-position[hidden] {
+    display: none;
+}
+
 .prefa-pdf-sommaire {
     flex: none;
     display: flex;
@@ -205,6 +262,10 @@ body.prefa-viewer-open {
     width: 200px;
     background: var(--surface);
     border-left: 1px solid var(--border);
+}
+
+.prefa-pdf-sommaire[hidden] {
+    display: none;
 }
 
 .prefa-pdf-sommaire-titre {
@@ -269,20 +330,113 @@ body.prefa-viewer-open {
     font-variant-numeric: tabular-nums;
 }
 
-.prefa-pdf-sommaire-vide {
-    margin: 0;
-    padding: 0 14px;
-    font-size: 12px;
-    color: var(--text-muted);
-}
+/* ---------- Sur une tablette ----------
+   Moins de choses, plus grandes. La barre passe à 60 px et ses commandes à 48 : on les
+   touche du doigt. Le zoom garde « − », « + » et « Ajuster » ; le pourcentage se retire. Le
+   sommaire n'est plus une colonne qui mange la largeur des pages, mais un volet posé dessus,
+   à droite, replié au départ — « Pages » l'ouvre, une vignette touchée le referme. */
+@media (pointer: coarse) {
+    .prefa-pdf-toolbar {
+        gap: 10px;
+        height: 60px;
+        padding: 0 10px 0 18px;
+    }
 
-@media (max-width: 760px) {
-    .prefa-pdf-sommaire {
+    .prefa-pdf-icone {
         display: none;
     }
 
-    .prefa-pdf-bouton-sommaire,
+    .prefa-pdf-titre {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+    }
+
+    .prefa-pdf-titre h2 {
+        max-width: 100%;
+        font-size: 16px;
+    }
+
     .prefa-pdf-pages {
+        font-size: 13px;
+    }
+
+    .prefa-pdf-bouton {
+        height: 48px;
+        padding: 0 16px;
+        border-radius: 8px;
+        font-size: 15px;
+    }
+
+    .prefa-pdf-bouton .icon {
+        width: 20px;
+        height: 20px;
+    }
+
+    .prefa-pdf-bouton-carre,
+    .prefa-pdf-close {
+        width: 48px;
+        padding: 0;
+    }
+
+    .prefa-pdf-zoom {
+        gap: 6px;
+    }
+
+    .prefa-pdf-zoom-valeur {
         display: none;
+    }
+
+    .prefa-pdf-feuilles {
+        padding: 12px;
+    }
+
+    .prefa-pdf-feuille {
+        margin-bottom: 12px;
+    }
+
+    .prefa-pdf-sommaire {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 2;
+        width: 240px;
+        box-shadow: -8px 0 28px rgb(0 0 0 / 22%);
+    }
+
+    .prefa-pdf-page span {
+        font-size: 13px;
+    }
+
+    .prefa-pdf-position {
+        bottom: 20px;
+        padding: 8px 16px;
+        font-size: 15px;
+    }
+}
+
+/* Une tablette en portrait, un téléphone : les libellés se retirent, les icônes restent
+   — « Ajuster », « Pages » et « Télécharger » tiennent alors sur la barre avec le titre. */
+@media (pointer: coarse) and (max-width: 900px), (max-width: 760px) {
+    .prefa-pdf-ajuster span,
+    .prefa-pdf-bouton-sommaire span,
+    .prefa-pdf-download span {
+        display: none;
+    }
+
+    .prefa-pdf-ajuster,
+    .prefa-pdf-bouton-sommaire,
+    .prefa-pdf-download {
+        width: 48px;
+        padding: 0;
+    }
+}
+
+@media (max-width: 760px) and (pointer: fine) {
+    .prefa-pdf-ajuster,
+    .prefa-pdf-bouton-sommaire,
+    .prefa-pdf-download {
+        width: 30px;
     }
 }

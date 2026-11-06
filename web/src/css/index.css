@@ -345,30 +345,129 @@ body {
     background: #16213f url("../assets/login-fond.jpg") center / cover no-repeat;
 }
 
-/* ===== ÉCRANS ÉTROITS ===== */
+/* ===== SUR TABLETTE : L'ÉCRAN MINIMAL =====
 
-@media (max-width: 860px) {
+   Demandé le 6 novembre 2026 : sur tablette, l'écran était « horrible, tout petit », et le
+   client le veut minimal. Plus de photo ni de colonnes : un fond uni, le logo, le titre et
+   le formulaire, centrés, en grand — 480 px de large, champs et bouton de 58 px, texte en
+   17 et 18. C'est ce qu'on lit à bout de bras sur une tablette d'atelier.
+
+   Au doigt, ou sous 1101 px de large : un téléphone prend la même forme. Les champs
+   flottants posent leurs tailles en !important (floating-fields.css) : on reprend leur
+   sélecteur, la classe du formulaire en plus. */
+@media (pointer: coarse), (max-width: 1100px) {
     body {
         grid-template-columns: 1fr;
+        background: var(--surface);
     }
 
-    .connexion-panneau {
-        padding: 28px 24px;
-    }
-
-    /* Le visuel passe derrière le haut du formulaire : sur un téléphone, une colonne
-       d'image à côté n'a plus de place, mais la page resterait nue sans elle. */
     .connexion-visuel {
         display: none;
     }
 
-    /* Sur une seule colonne, le formulaire est centré dans ses 360 px : le bloc de
-       développement et le pied partaient du bord gauche et n'étaient alignés sur rien. */
-    .connexion-dev,
+    /* Tout se centre, dans la largeur comme dans la hauteur. */
+    .connexion-panneau {
+        align-items: center;
+        justify-content: center;
+        padding: 40px 32px;
+    }
+
+    .connexion-marque img {
+        height: 56px;
+        margin: 0 auto;
+    }
+
+    .connexion-corps {
+        max-width: 480px;
+        margin: 32px 0 0;
+        padding: 0;
+    }
+
+    /* Le titre suffit : le surtitre et le pied redisaient ce qu'on sait déjà. */
+    .connexion-surtitre,
     .connexion-pied {
+        display: none;
+    }
+
+    .connexion-corps h1 {
+        margin-bottom: 28px;
+        font-size: 34px;
+        text-align: center;
+    }
+
+    .connexion-explication {
+        font-size: 16px;
+    }
+
+    body .connexion-formulaire .floating-field {
+        margin: 10px 0 6px;
+    }
+
+    body .connexion-formulaire .floating-field input.floating-control {
+        height: 58px !important;
+        min-height: 58px !important;
+        padding: 0 16px !important;
+        font-size: 18px !important;
+    }
+
+    body .connexion-formulaire .floating-field > label {
+        top: 29px;
+        left: 12px;
+        font-size: 17px !important;
+    }
+
+    body .connexion-formulaire .floating-field:focus-within > label,
+    body .connexion-formulaire .floating-field:has(.floating-control:not(:placeholder-shown)) > label,
+    body .connexion-formulaire .floating-field:has(.floating-control:autofill) > label {
+        top: 0;
+        font-size: 13px !important;
+    }
+
+    .connexion-formulaire .mdp-voir {
+        right: 6px;
+        width: 46px;
+        height: 46px;
+    }
+
+    .connexion-formulaire .mdp-voir .icon {
+        width: 22px;
+        height: 22px;
+    }
+
+    body .connexion-formulaire .a-mdp-voir input.floating-control {
+        padding-right: 56px !important;
+    }
+
+    .connexion-formulaire button[type="submit"] {
+        height: 58px;
+        margin-top: 22px;
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    .connexion-formulaire .connexion-lien {
+        min-height: 48px;
+        font-size: 16px;
+    }
+
+    .connexion-message {
+        font-size: 15px;
+    }
+
+    /* Le bloc de développement — en développement seulement — se cale sur le formulaire. */
+    .connexion-dev {
         width: 100%;
-        max-width: 360px;
-        margin-inline: auto;
+        max-width: 480px;
+    }
+}
+
+@media (max-width: 560px) {
+    .connexion-panneau {
+        padding: 32px 20px;
+    }
+
+    .connexion-corps h1 {
+        font-size: 30px;
     }
 }
 
@@ -406,12 +505,7 @@ body {
    La règle des autres écrans : sous le doigt, une cible fait 44 px. Le bouton en faisait 42,
    le lien « Mot de passe oublié ? » à peine 22, et chaque compte de développement 36. */
 @media (max-width: 1100px), (pointer: coarse) {
-    .connexion-formulaire button[type="submit"] {
-        height: 44px;
-    }
-
     .connexion-formulaire .connexion-lien {
-        min-height: 44px;
         margin-top: 4px;
         padding: 0 12px;
     }
@@ -430,4 +524,34 @@ body {
 :root[data-theme="light"] ::selection {
     background: #bfdbfe;
     color: #1e3a8a;
+}
+
+/* ===== LE CLAVIER D'UNE TABLETTE =====
+   Ouvert, il prend la moitié de l'écran (js/composants/clavier.js pose « clavier-ouvert »).
+   Le logo se retire et le formulaire monte en haut : les deux champs et le bouton restent
+   au-dessus du clavier, au lieu d'être centrés dans une hauteur qui n'existe plus. */
+html.clavier-ouvert .connexion-marque {
+    display: none;
+}
+
+html.clavier-ouvert .connexion-panneau {
+    justify-content: flex-start;
+    padding-top: 16px;
+    padding-bottom: 16px;
+}
+
+html.clavier-ouvert .connexion-corps {
+    margin-top: 0;
+}
+
+html.clavier-ouvert .connexion-corps h1 {
+    margin-bottom: 8px;
+    font-size: 24px;
+}
+
+/* Le code d'accès : en majuscules et un peu espacé, comme l'administrateur l'a lu — on le
+   recopie caractère par caractère. Le serveur ne tient compte ni de la casse ni du tiret. */
+.connexion-formulaire input.connexion-code {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
 }

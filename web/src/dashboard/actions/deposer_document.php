@@ -40,11 +40,14 @@ try {
             throw new RuntimeException('Impossible de créer le dossier des plans.');
         }
         foreach ($documents as $document) {
-            $cle = bin2hex(random_bytes(16)) . '-' . $document['name'];
+            // Le nom rangé est le nom permis, comme aux autres dépôts : gardé tel quel, avec
+            // ses espaces, le fichier ne se rattachait à aucun plan (prefaNomDeFichier()).
+            $nom = prefaNomDeFichier($document['name']);
+            $cle = bin2hex(random_bytes(16)) . '-' . $nom;
             if (@file_put_contents($dossier . '/' . $cle, $document['content']) === false) {
                 throw new RuntimeException('Impossible de déposer le plan.');
             }
-            $ajoutes[] = ['key' => $cle, 'name' => $document['name']];
+            $ajoutes[] = ['key' => $cle, 'name' => $nom];
         }
     } else {
         $db->beginTransaction();
