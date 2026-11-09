@@ -92,7 +92,14 @@ function parametresRendu(PDO $db, Utilisateur $utilisateur): void
     <dialog id="parametres" class="fenetre parametres" aria-labelledby="parametres-titre" data-static-fields>
         <div class="parametres-cadre">
             <div class="fenetre-entete">
-                <h2 id="parametres-titre">Paramètres</h2>
+                <?php // Sur un téléphone, la liste des rubriques et la rubrique sont deux écrans
+                      // (settings.css) : dans la rubrique, la flèche ramène à la liste et le
+                      // titre prend le nom de la rubrique. Sur un écran plus large, ils ne
+                      // paraissent pas : la colonne reste à côté du contenu. ?>
+                <button type="button" class="parametres-retour" data-parametres-retour aria-label="Retour aux rubriques">
+                    <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+                </button>
+                <h2 id="parametres-titre"><span class="parametres-titre-racine">Paramètres</span><span class="parametres-titre-rubrique"></span></h2>
                 <button type="button" class="modal-close" data-fermer-parametres aria-label="Fermer">
                     <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg>
                 </button>

@@ -64,9 +64,9 @@ coulée** : voir [Soudures](/fonctionnalites/soudures#la-visionneuse).
 ### Le résumé du plan
 
 **« Résumé du plan »**, en tête du volet, dit ce qui manque encore au plan, feuille ISO par
-feuille ISO — ce que le plan final écrit. Quatre chiffres d'abord : les soudures à renseigner,
-celles qui attendent la validation, les lignes de nomenclature sans coulée, et les coulées hors
-CCPU. Puis deux tableaux, où ne paraissent que les feuilles où il manque quelque chose :
+feuille ISO — ce que le plan final écrit. Deux chiffres d'abord : les soudures à renseigner, et
+celles qui attendent la validation. Puis deux tableaux, où ne paraissent que les feuilles où il
+manque quelque chose :
 
 | Tableau | Ce qu'il dit |
 | --- | --- |

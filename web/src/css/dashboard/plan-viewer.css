@@ -1185,14 +1185,16 @@
         max-width: 12rem;
     }
 
+    /* La barre à la hauteur des commandes au doigt (--h-doigt, dashboard-base.css) : à 44 px,
+       « Signaler un manque » et ses voisins étaient « trop gros ». */
     .plan-dialog-groupe {
-        height: 44px;
+        height: var(--h-doigt);
         border-radius: 8px;
     }
 
     .plan-dialog-groupe button {
-        min-width: 44px;
-        font-size: 20px;
+        min-width: var(--h-doigt);
+        font-size: 18px;
     }
 
     .plan-dialog-groupe > span {
@@ -1207,16 +1209,16 @@
     .plan-dialog-sommaire-ouvrir,
     html .plan-dialog-outils .soudures-dessin-manque,
     .plan-viewer-enregistrer {
-        height: 44px;
-        padding: 0 16px;
+        height: var(--h-doigt);
+        padding: 0 14px;
         border-radius: 8px;
-        font-size: 15px;
+        font-size: 14px;
     }
 
     .plan-dialog-fermer {
-        width: 44px;
-        height: 44px;
-        font-size: 20px;
+        width: var(--h-doigt);
+        height: var(--h-doigt);
+        font-size: 18px;
     }
 
     /* Le sommaire : un volet sur le bord gauche du dessin, en paysage comme en portrait.
@@ -1244,13 +1246,13 @@
     }
 
     .plan-dialog-sommaire-replier {
-        height: 40px;
+        height: var(--h-doigt);
         padding: 0 14px;
         font-size: 14px;
     }
 
     .plan-sommaire-recherche {
-        height: 44px;
+        height: var(--h-doigt);
         font-size: 16px;
     }
 
@@ -1316,7 +1318,7 @@
     .plan-dialog-sommaire-ouvrir,
     html .plan-dialog-outils .soudures-dessin-manque {
         justify-content: center;
-        width: 44px;
+        width: var(--h-doigt);
         padding: 0;
         font-size: 0;
     }

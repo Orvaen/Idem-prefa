@@ -156,7 +156,8 @@
 
    Demandé le 6 novembre 2026 : « les boutons et champs ne sont pas harmonisés ». La recherche,
    les filtres et « Actualiser » faisaient 44 px ; la densité 34, « Nouvelle demande » 32. Tout
-   passe à 44, la hauteur du doigt.
+   passe à la même hauteur, celle du doigt (--h-doigt) : 44 px, puis 36 depuis le 9 novembre —
+   « Signaler un manque » et « Actualiser » étaient « trop gros ».
 
    « Actualiser » n'y garde que sa flèche : le mot reste aux lecteurs d'écran (.outil-libelle,
    caché aux yeux seulement), et l'en-tête gagne sa largeur. Au bureau, à la souris, il garde
@@ -165,19 +166,19 @@
 
     .prefa-vue-outils .prefa-densite {
         box-sizing: border-box;
-        height: 44px;
+        height: var(--h-doigt);
         padding: 3px;
     }
 
     .prefa-vue-outils .prefa-densite-choix {
-        width: 40px;
-        height: 36px;
+        width: 36px;
+        height: calc(var(--h-doigt) - 6px);
     }
 
     .prefa-vue-outils .prefa-nouvelle-demande {
-        height: 44px;
-        padding: 0 16px;
-        font-size: 15px;
+        height: var(--h-doigt);
+        padding: 0 14px;
+        font-size: 14px;
     }
 
     .prefa-vue-outils .prefa-nouvelle-demande .icon {
@@ -192,16 +193,16 @@
         box-sizing: border-box;
         justify-content: center;
         gap: 0;
-        width: 44px;
-        min-width: 44px;
-        height: 44px;
-        min-height: 44px;
+        width: var(--h-doigt);
+        min-width: var(--h-doigt);
+        height: var(--h-doigt);
+        min-height: var(--h-doigt);
         padding: 0;
     }
 
     .prefa-vue-outils button:has(> .outil-libelle) .icon {
-        width: 20px;
-        height: 20px;
+        width: 18px;
+        height: 18px;
     }
 
     .prefa-vue-outils .outil-libelle {
@@ -2290,11 +2291,16 @@ summary {
 
     .nav-btn,
     #create-user-form button,
-    .prefa-form button:not(.modal-close):not(.bouton-discret),
+    .prefa-form button:not(.modal-close):not(.bouton-discret) {
+        min-height: 44px;
+    }
+
+    /* Les boutons d'une ligne — « Étapes », « Modifier » — ont la hauteur des commandes de
+       l'en-tête : à 44, ils dépassaient de la ligne qu'ils servent. */
     #refresh-prefa,
     .prefa-toggle,
     .edit-prefa {
-        min-height: 44px;
+        min-height: var(--h-doigt);
     }
 
     /* Les commandes de la barre du haut : 32 px à la souris, 40 au doigt. */
@@ -2882,9 +2888,13 @@ summary {
 
 @media (pointer: coarse) {
 
-    /* Au doigt, la cible doit faire quarante-quatre pixels. */
+    /* La recherche et les filtres, à la hauteur des boutons de l'en-tête (--h-doigt). Une
+       entrée du menu d'un filtre est une ligne de liste : elle garde ses 44 px. */
     .filtres-recherche input,
-    .filtre,
+    .filtre {
+        min-height: var(--h-doigt);
+    }
+
     .filtre-option {
         min-height: 44px;
     }
@@ -3300,12 +3310,16 @@ summary {
     cursor: progress;
 }
 
-/* Sur une tablette d'atelier, les cibles passent à 44 px comme le reste de l'écran. */
+/* Sur une tablette d'atelier : un onglet est une rangée qu'on touche, 44 px ; un bouton de
+   décision a la hauteur des autres commandes de l'écran (--h-doigt). */
 @media (max-width: 1100px), (pointer: coarse) {
 
-    .prefa-onglet,
-    .prefa-decision button {
+    .prefa-onglet {
         min-height: 44px;
+    }
+
+    .prefa-decision button {
+        min-height: var(--h-doigt);
     }
 }
 
@@ -3356,6 +3370,16 @@ summary {
 .utilisateurs-nouveau .icon {
     width: 14px;
     height: 14px;
+}
+
+/* Au doigt, à la hauteur de la densité et de la recherche d'à côté (--h-doigt). */
+@media (max-width: 1100px), (pointer: coarse) {
+
+    .utilisateurs-nouveau {
+        height: var(--h-doigt);
+        padding: 0 14px;
+        font-size: 14px;
+    }
 }
 
 /* Un compte, une ligne. Chaque ligne portait deux étages — le nom sur l'identifiant, le rôle

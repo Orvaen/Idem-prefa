@@ -744,7 +744,10 @@
     font-variant-numeric: tabular-nums;
 }
 
-/* ---------- Sur une tablette d'atelier ---------- */
+/* ---------- Sur une tablette d'atelier ----------
+
+   La hauteur des commandes au doigt (--h-doigt, dashboard-base.css), comme l'en-tête de
+   l'écran. */
 
 @media (max-width: 1100px), (pointer: coarse) {
 
@@ -753,7 +756,7 @@
     .pv-ajout-bouton,
     .pv-enregistrer,
     .pv-document .prefa-document-link {
-        min-height: 44px;
+        min-height: var(--h-doigt);
     }
 
     .pv-volet-outils button {

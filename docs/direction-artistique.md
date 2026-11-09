@@ -358,7 +358,17 @@ L'en-tête porte un filet ; dessous, une colonne de 220 px — une recherche, pu
 rubriques groupées (« Préférences » pour tous, « Administration » pour le seul chargé de
 production) — et le contenu, en sections. Chaque ligne dit ce que c'est à gauche (titre
 13 px/500, aide 12 px sourde) et porte la commande à droite ; un filet `--border-faint`
-sépare deux lignes visibles. Sous 720 px, plein écran, la colonne en rangée défilante.
+sépare deux lignes visibles.
+
+**Sur un téléphone** (sous 720 px), plein écran, et deux écrans comme dans les réglages du
+téléphone : la recherche et la liste des rubriques, en lignes de 52 px marquées d'un
+chevron ; puis la rubrique touchée, son nom en titre derrière une flèche qui ramène à la
+liste — le retour d'Android et Échap aussi. Une rubrique nommée à l'ouverture
+(`?vue=settings#hours`) s'ouvre directement. Pendant une recherche, le champ reste et les
+réponses remplacent la liste. Les outils de la signature, toujours visibles au doigt, ont
+leur bande au-dessus du tracé. Décidé le 9 novembre 2026 : la colonne passait jusque-là en
+une rangée défilante, où la recherche prenait 150 px et où « Passivation » et « Matériel »
+restaient hors de l'écran, sans rien pour dire qu'ils existaient.
 
 **Les règles.**
 

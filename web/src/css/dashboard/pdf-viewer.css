@@ -331,14 +331,15 @@ body.prefa-viewer-open {
 }
 
 /* ---------- Sur une tablette ----------
-   Moins de choses, plus grandes. La barre passe à 60 px et ses commandes à 48 : on les
-   touche du doigt. Le zoom garde « − », « + » et « Ajuster » ; le pourcentage se retire. Le
+   Moins de choses, plus grandes. La barre passe à 52 px et ses commandes à la hauteur du doigt
+   (--h-doigt, dashboard-base.css) — 48 px jusqu'au 9 novembre 2026, « trop gros ». Le zoom
+   garde « − », « + » et « Ajuster » ; le pourcentage se retire. Le
    sommaire n'est plus une colonne qui mange la largeur des pages, mais un volet posé dessus,
    à droite, replié au départ — « Pages » l'ouvre, une vignette touchée le referme. */
 @media (pointer: coarse) {
     .prefa-pdf-toolbar {
         gap: 10px;
-        height: 60px;
+        height: 52px;
         padding: 0 10px 0 18px;
     }
 
@@ -362,20 +363,20 @@ body.prefa-viewer-open {
     }
 
     .prefa-pdf-bouton {
-        height: 48px;
-        padding: 0 16px;
+        height: var(--h-doigt);
+        padding: 0 14px;
         border-radius: 8px;
-        font-size: 15px;
+        font-size: 14px;
     }
 
     .prefa-pdf-bouton .icon {
-        width: 20px;
-        height: 20px;
+        width: 18px;
+        height: 18px;
     }
 
     .prefa-pdf-bouton-carre,
     .prefa-pdf-close {
-        width: 48px;
+        width: var(--h-doigt);
         padding: 0;
     }
 
@@ -428,7 +429,7 @@ body.prefa-viewer-open {
     .prefa-pdf-ajuster,
     .prefa-pdf-bouton-sommaire,
     .prefa-pdf-download {
-        width: 48px;
+        width: var(--h-doigt);
         padding: 0;
     }
 }

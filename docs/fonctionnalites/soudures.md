@@ -223,7 +223,7 @@ tête de colonne** cochent la colonne entière ; décocher une soudure décoche 
 Les soudures se rangent sous leur **ligne ISO** — le numéro de ligne que le cahier porte pour la
 page (« YU-PRE-101 »), sinon le nom de la feuille —, avec la page quand la feuille en a
 plusieurs : les numéros 1, 2, 3 reviennent d'une page à l'autre, l'en-tête dit de laquelle on
-parle. Sur tablette, les cases sont à la taille du doigt (44 px).
+parle. Sur tablette, les cases sont à la hauteur des commandes au doigt (36 px).
 
 | Règle | Détail |
 | --- | --- |

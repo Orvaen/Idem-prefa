@@ -547,8 +547,8 @@ html .validation-vide strong {
     }
 
     .validation-croix > span {
-        min-width: 44px;
-        height: 44px;
+        min-width: 40px;
+        height: var(--h-doigt);
         font-size: 14px;
     }
 
@@ -567,8 +567,8 @@ html .validation-vide strong {
     }
 
     html .validation-retour {
-        height: 44px;
-        font-size: 15px;
+        height: var(--h-doigt);
+        font-size: 14px;
     }
 }
 

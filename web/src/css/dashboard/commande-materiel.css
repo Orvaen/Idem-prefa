@@ -387,17 +387,17 @@ html .materiel-volet-rang .materiel-message.est-a-valider {
     cursor: default;
 }
 
-/* Sur une tablette : les boutons discrets du pied à la hauteur des pleins (pv.css, 44 px),
-   l'export à celle du cadre de la croix. */
+/* Sur une tablette : les boutons discrets du pied et l'export à la hauteur des pleins
+   (pv.css) — celle des commandes au doigt, --h-doigt. */
 @media (max-width: 1100px), (pointer: coarse) {
     html .materiel-volet-rang .materiel-volet-pied .materiel-quitter-correction,
     html .materiel-volet-rang .materiel-volet-pied .materiel-annuler-reception {
-        height: 44px;
-        padding: 0 16px;
+        height: var(--h-doigt);
+        padding: 0 14px;
     }
 
     .materiel-exporter:not([hidden]) {
-        height: 42px;
+        height: var(--h-doigt);
         padding: 0 14px;
     }
 }

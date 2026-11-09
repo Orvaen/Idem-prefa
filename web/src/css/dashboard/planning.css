@@ -195,6 +195,21 @@
     pointer-events: none;
 }
 
+/* Au doigt, la barre à la hauteur des commandes des autres listes (--h-doigt) : la
+   recherche y était déjà, les boutons de période restaient à 32. */
+@media (max-width: 1100px), (pointer: coarse) {
+
+    .planning-page .planning-button:not(.planning-button-discret),
+    .planning-page .planning-controle {
+        height: var(--h-doigt);
+        font-size: 14px;
+    }
+
+    .planning-page .planning-icon-button {
+        width: var(--h-doigt);
+    }
+}
+
 .planning-feedback {
     margin: 0 0 8px;
     font-size: 12px;

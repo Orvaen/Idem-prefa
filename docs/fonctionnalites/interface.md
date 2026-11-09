@@ -109,6 +109,10 @@ pour la signature, qu'on trace en grand dans sa fenêtre à elle et qu'on valide
 quitte le champ ; un refus du serveur s'écrit sous la ligne. La recherche, en haut de la colonne,
 traverse toutes les rubriques.
 
+Sur un téléphone, la fenêtre prend tout l'écran et se lit comme les réglages du téléphone : la
+liste des rubriques d'abord, puis la rubrique touchée, avec une flèche en haut à gauche — ou le
+bouton retour d'Android — pour revenir à la liste.
+
 ## Les fenêtres
 
 Toutes les boîtes de dialogue suivent une seule recette (`dialog.fenetre`) : un en-tête avec son
@@ -130,7 +134,7 @@ télécharger.
 - le sommaire, une vignette par page — une colonne au poste ; sur tablette, un volet posé sur
   les pages, replié au départ, que « Pages » ouvre et qu'une vignette touchée referme ;
 - sur tablette, la page à la largeur de l'écran, une pastille « 3 / 15 » en bas, et des
-  commandes de 48 px — sans libellés en portrait.
+  commandes de 36 px, comme celles des écrans — sans libellés en portrait.
 
 ## Les questions et les alertes
 
@@ -183,9 +187,15 @@ du haut ; il est **retenu par le navigateur** : chacun choisit le sien, sur chaq
 
 ## Sur une tablette d'atelier
 
-L'interface s'adapte au doigt (`pointer: coarse`) : les cibles passent à 44 px, les commandes
-qui n'apparaissent qu'au survol sur un poste restent visibles, et la barre latérale passe
-par-dessus le contenu.
+L'interface s'adapte au doigt (`pointer: coarse`) : les commandes qui n'apparaissent qu'au survol
+sur un poste restent visibles, et la barre latérale passe par-dessus le contenu.
+
+Les commandes d'un écran ont toutes la même hauteur, **36 px** (`--h-doigt`,
+`dashboard-base.css`) : les boutons de l'en-tête (« Actualiser », « Signaler un manque »…), la
+recherche et les filtres, les boutons d'une ligne (« Étapes »), la barre du lecteur de plan et
+celle du lecteur PDF. Elles faisaient 44 px, jugés « trop gros » le 9 novembre 2026. Ce qu'on
+touche comme une rangée — un onglet, une entrée de menu, une entrée de la barre latérale — garde
+44 px ; les fenêtres gardent leurs propres mesures, plus grandes ([les fenêtres](#les-fenetres)).
 
 Le haut des listes tient sur une ligne en paysage — le titre, la recherche, les outils — et sur
 deux en portrait : le titre à gauche et les outils à droite, puis la recherche. La phrase sous

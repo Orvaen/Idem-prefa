@@ -38,6 +38,13 @@ dialog.fenetre.parametres .fenetre-entete {
     border-bottom: 1px solid var(--border);
 }
 
+/* La flèche du retour et le nom de la rubrique ne servent que sur un téléphone, où la liste
+   et la rubrique sont deux écrans (en bas de ce fichier). */
+dialog.fenetre.parametres .parametres-retour,
+dialog.fenetre.parametres .parametres-titre-rubrique {
+    display: none;
+}
+
 dialog.fenetre.parametres .parametres-corps {
     flex: 1;
     min-height: 0;
@@ -946,6 +953,11 @@ dialog.fenetre.signature-fenetre .signature-fenetre-sortir:hover {
         border-radius: 0;
     }
 
+    /* La bordure de toute fenêtre, en !important dans light-theme.css : rien à border ici. */
+    [data-theme="light"] dialog.fenetre.signature-fenetre {
+        border: 0 !important;
+    }
+
     dialog.fenetre.signature-fenetre .fenetre-corps {
         padding: 16px 28px 20px;
     }
@@ -1007,71 +1019,6 @@ dialog.fenetre.signature-fenetre .signature-fenetre-sortir:hover {
     color: var(--alerte-texte) !important;
 }
 
-/* ---------- Sur un écran étroit ----------
-
-   La fenêtre prend tout l'écran, et la colonne passe en tête, en une rangée qu'on fait
-   défiler : deux colonnes ne tiennent pas dans la largeur d'un téléphone. */
-
-@media (max-width: 719px) {
-
-    dialog.fenetre.parametres {
-        width: 100vw;
-        max-width: none;
-        height: 100dvh;
-        margin: 0;
-        border: 0;
-        border-radius: 0;
-    }
-
-    dialog.fenetre.parametres .parametres-corps {
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: auto minmax(0, 1fr);
-    }
-
-    /* La rangée défile au doigt : sa barre de défilement ne ferait que doubler le filet. */
-    dialog.fenetre.parametres .parametres-nav {
-        flex-direction: row;
-        align-items: center;
-        overflow-x: auto;
-        overflow-y: hidden;
-        padding: 8px 12px;
-        border-right: 0;
-        border-bottom: 1px solid var(--border);
-        scrollbar-width: none;
-    }
-
-    dialog.fenetre.parametres .parametres-nav::-webkit-scrollbar {
-        display: none;
-    }
-
-    dialog.fenetre.parametres .parametres-recherche {
-        flex: 0 0 150px;
-        margin: 0 6px 0 0;
-    }
-
-    dialog.fenetre.parametres .parametres-groupe {
-        display: none;
-    }
-
-    dialog.fenetre.parametres .parametres-onglet {
-        width: auto;
-    }
-
-    dialog.fenetre.parametres .parametres-contenu {
-        padding: 4px 16px 24px;
-    }
-
-    dialog.fenetre.parametres .parametre {
-        flex-wrap: wrap;
-        gap: 8px 16px;
-    }
-
-    dialog.fenetre.parametres .signature-cadre {
-        height: 148px;
-        padding: 14px 16px 10px;
-    }
-}
-
 /* Sur une tablette d'atelier, la cible fait 44 px. */
 @media (pointer: coarse) {
 
@@ -1086,5 +1033,231 @@ dialog.fenetre.signature-fenetre .signature-fenetre-sortir:hover {
     dialog.fenetre.parametres .signature-outil {
         width: 40px;
         height: 40px;
+    }
+}
+
+/* Sans survol, les outils de la signature restent affichés (plus haut) : ils ont leur bande,
+   au-dessus du tracé, au lieu de se poser dessus. */
+@media (hover: none) {
+
+    dialog.fenetre.parametres figure.signature-cadre:has(.signature-outils) {
+        height: 208px;
+        padding-top: 52px;
+    }
+}
+
+/* ---------- Sur un téléphone ----------
+
+   Demandé le 9 novembre 2026. La colonne passait en tête, en une rangée qu'on faisait
+   défiler : la recherche en prenait 150 px, et sur 390 px « Passivation » et « Matériel »
+   restaient hors de l'écran, sans rien pour dire qu'ils existaient.
+
+   La fenêtre prend tout l'écran et se lit comme les réglages d'un téléphone : la recherche
+   et la liste des rubriques, puis la rubrique touchée, sous une flèche qui ramène à la liste
+   (« est-dans-rubrique », parametres.js — qui reprend ce seuil). Pendant une recherche, le
+   champ reste et les réponses prennent la place de la liste.
+
+   Après le bloc de la tablette : ses 44 px ne doivent pas écraser les lignes de 52. */
+
+@media (max-width: 719px) {
+
+    dialog.fenetre.parametres {
+        width: 100vw;
+        max-width: none;
+        height: 100dvh;
+        margin: 0;
+        border: 0;
+        border-radius: 0;
+    }
+
+    /* light-theme.css borde toute fenêtre, en !important : sur tout l'écran, il restait un
+       filet gris le long des bords. */
+    [data-theme="light"] dialog.fenetre.parametres {
+        border: 0 !important;
+    }
+
+    dialog.fenetre.parametres .fenetre-entete {
+        box-sizing: border-box;
+        min-height: 60px;
+        padding: 8px 12px 8px 20px;
+    }
+
+    dialog.fenetre.parametres .fenetre-entete h2 {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Dans une rubrique : la flèche du retour, puis le nom de la rubrique en titre. */
+    dialog.fenetre.parametres.est-dans-rubrique:not(.est-en-recherche) .fenetre-entete {
+        padding-left: 8px;
+    }
+
+    dialog.fenetre.parametres.est-dans-rubrique:not(.est-en-recherche) .parametres-retour {
+        display: grid;
+        flex: none;
+        place-items: center;
+        width: 44px;
+        height: 44px;
+        margin: 0 -6px 0 0;
+        padding: 0;
+        border: 0;
+        border-radius: var(--r-md);
+        background: transparent;
+        color: var(--text);
+        cursor: pointer;
+    }
+
+    dialog.fenetre.parametres .parametres-retour .icon {
+        width: 22px;
+        height: 22px;
+    }
+
+    dialog.fenetre.parametres .parametres-retour:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: -2px;
+    }
+
+    dialog.fenetre.parametres.est-dans-rubrique:not(.est-en-recherche) .parametres-titre-racine {
+        display: none;
+    }
+
+    dialog.fenetre.parametres.est-dans-rubrique:not(.est-en-recherche) .parametres-titre-rubrique {
+        display: inline;
+    }
+
+    /* La liste et la rubrique, l'une sous l'autre : une seule paraît à la fois. */
+    dialog.fenetre.parametres .parametres-corps {
+        display: flex;
+        flex-direction: column;
+    }
+
+    dialog.fenetre.parametres .parametres-nav {
+        flex: 1 1 auto;
+        gap: 0;
+        padding: 12px 12px calc(24px + env(safe-area-inset-bottom));
+        border-right: 0;
+    }
+
+    dialog.fenetre.parametres .parametres-contenu {
+        flex: 1 1 auto;
+        padding: 4px 20px calc(24px + env(safe-area-inset-bottom));
+    }
+
+    dialog.fenetre.parametres:not(.est-dans-rubrique, .est-en-recherche) .parametres-contenu,
+    dialog.fenetre.parametres.est-dans-rubrique:not(.est-en-recherche) .parametres-nav {
+        display: none;
+    }
+
+    /* Pendant une recherche : le champ reste, les rubriques s'effacent devant les réponses. */
+    dialog.fenetre.parametres.est-en-recherche .parametres-nav {
+        flex: none;
+        padding-bottom: 0;
+    }
+
+    dialog.fenetre.parametres.est-en-recherche .parametres-groupe,
+    dialog.fenetre.parametres.est-en-recherche .parametres-onglet {
+        display: none;
+    }
+
+    dialog.fenetre.parametres .parametres-recherche {
+        margin: 0 0 4px;
+    }
+
+    dialog.fenetre.parametres .parametres-recherche .icon {
+        left: 12px;
+        width: 16px;
+        height: 16px;
+    }
+
+    /* 16 px : en dessous, Safari agrandit la page dès que le champ prend le focus. */
+    dialog.fenetre.parametres .parametres-recherche input {
+        height: 44px;
+        padding-left: 36px;
+        font-size: 16px;
+    }
+
+    dialog.fenetre.parametres .parametres-champ {
+        font-size: 16px;
+    }
+
+    dialog.fenetre.parametres .parametres-groupe {
+        margin: 18px 12px 6px;
+        font-size: 13px;
+    }
+
+    /* Une rubrique, une ligne qu'on touche en entier ; le chevron dit qu'on y entre. */
+    dialog.fenetre.parametres .parametres-onglet {
+        gap: 14px;
+        height: 52px;
+        padding: 0 12px;
+        font-size: 15px;
+    }
+
+    dialog.fenetre.parametres .parametres-onglet .icon {
+        width: 20px;
+        height: 20px;
+    }
+
+    dialog.fenetre.parametres .parametres-onglet::after {
+        content: "";
+        flex: none;
+        width: 7px;
+        height: 7px;
+        margin: 0 4px 0 auto;
+        border-top: 1.5px solid var(--text-muted);
+        border-right: 1.5px solid var(--text-muted);
+        transform: rotate(45deg);
+    }
+
+    /* Dans la liste, aucune rubrique n'est « ouverte » : on la quitte en y entrant. */
+    dialog.fenetre.parametres .parametres-onglet[aria-current="true"] {
+        background: transparent;
+        font-weight: inherit;
+    }
+
+    dialog.fenetre.parametres .parametres-onglet[aria-current="true"] .icon {
+        color: var(--text-muted);
+    }
+
+    dialog.fenetre.parametres .parametres-onglet:active {
+        background: var(--active);
+    }
+
+    dialog.fenetre.parametres .parametre {
+        flex-wrap: wrap;
+        gap: 8px 16px;
+    }
+
+    /* Le champ et son bouton passent sous l'intitulé : ils prennent toute la ligne, au lieu
+       de 220 px et d'un vide à droite. */
+    dialog.fenetre.parametres .parametre-controle {
+        flex: 1 1 100%;
+    }
+
+    dialog.fenetre.parametres .parametre-controle .parametres-champ {
+        flex: 1;
+        width: auto;
+        min-width: 0;
+    }
+
+    dialog.fenetre.parametres .signature-cadre {
+        height: 148px;
+        padding: 14px 16px 10px;
+    }
+}
+
+/* Au doigt, le survol reste collé à la ligne touchée : revenu à la liste, on la croirait
+   choisie. Seul l'appui la marque. */
+@media (max-width: 719px) and (hover: none) {
+
+    dialog.fenetre.parametres .parametres-onglet:hover {
+        background: transparent;
+    }
+
+    dialog.fenetre.parametres .parametres-onglet:active {
+        background: var(--active);
     }
 }

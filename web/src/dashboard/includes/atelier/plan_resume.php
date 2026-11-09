@@ -175,9 +175,13 @@ function planResumePlages(array $numeros): string
 }
 
 /**
- * Le résumé tel que sa fenêtre le montre : quatre chiffres, puis les feuilles où il manque
- * quelque chose — les soudures, puis les coulées. Une feuille complète n'y paraît pas : la
- * fenêtre dit ce qu'il reste à faire, pas ce qui est fait.
+ * Le résumé tel que sa fenêtre le montre : deux chiffres — les soudures à renseigner, à
+ * valider —, puis les feuilles où il manque quelque chose — les soudures, puis les coulées.
+ * Une feuille complète n'y paraît pas : la fenêtre dit ce qu'il reste à faire, pas ce qui est
+ * fait.
+ *
+ * Les lignes sans coulée et les coulées hors CCPU avaient leur chiffre ; retirés le
+ * 9 novembre 2026 à la demande de l'utilisateur. Le tableau des coulées les détaille toujours.
  *
  * Le nom de chaque feuille est un bouton : il ouvre la feuille dans la fenêtre du plan, à
  * sa page (iso.js).
@@ -188,8 +192,6 @@ function planResumeRendu(array $resume): string
     $somme = static fn (string $cle): int => array_sum(array_map(static fn (array $f): int => count($f[$cle]), $feuilles));
     $aRenseigner = $somme('a_renseigner');
     $aValider = $somme('a_valider');
-    $sansCoulee = $somme('sans_coulee');
-    $horsCcpu = $somme('hors_ccpu');
     $pluriel = static fn (int $n, string $un, string $plusieurs): string => $n . ' ' . ($n > 1 ? $plusieurs : $un);
 
     $feuille = static fn (array $f): string => '<button type="button" class="plan-resume-feuille" data-document="'
@@ -201,8 +203,6 @@ function planResumeRendu(array $resume): string
     $html = '<div class="plan-resume-bilan">'
         . $chiffre($aRenseigner, $aRenseigner > 1 ? 'soudures à renseigner' : 'soudure à renseigner')
         . $chiffre($aValider, 'à valider')
-        . $chiffre($sansCoulee, $sansCoulee > 1 ? 'lignes sans coulée' : 'ligne sans coulée')
-        . $chiffre($horsCcpu, 'hors CCPU')
         . '</div>';
 
     // ----- Les soudures

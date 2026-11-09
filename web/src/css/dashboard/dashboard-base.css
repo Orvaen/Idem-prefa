@@ -127,6 +127,13 @@
     --h-xl: 36px;
     --h-2xl: 40px;
 
+    /* Une commande d'écran au doigt — tablette d'atelier, ou écran de moins de 1100 px : les
+       boutons d'en-tête et de barre d'outils, la recherche et les filtres d'une liste, les
+       boutons d'une ligne, la barre du lecteur de plan. Toutes la même, pour rester alignées.
+       44 px depuis le 6 novembre 2026 ; « trop gros » le 9 : un barreau au-dessus du bureau.
+       Les fenêtres gardent leurs propres mesures, plus grandes (fenetre.css). */
+    --h-doigt: var(--h-xl);
+
     /* Le filet le plus franc de Propel (border-strong) : le bord de la grande vue et la
        séparation de deux zones, rien d'autre. Posé sur les 240 emplois de --border, il
        aurait fait une grille de toute l'application. */

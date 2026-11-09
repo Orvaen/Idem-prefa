@@ -3432,13 +3432,13 @@ html .mes-plans-page .mes-plans-historique summary {
     margin: 24px 16px 0;
 }
 
-/* Sur une tablette d'atelier, comme les PV : 44px sous le doigt. */
+/* Sur une tablette d'atelier, comme les PV : la hauteur des commandes au doigt (--h-doigt). */
 @media (max-width: 1100px), (pointer: coarse) {
 
     .mes-plans-segments span,
     html .mes-plans-page .mes-plans-enregistrer,
     html .mes-plans-detail .mes-plans-commande-ligne {
-        min-height: 44px;
+        min-height: var(--h-doigt);
     }
 
     /* Les étapes, une ligne sous l'autre avec de l'air : à 44 px, leurs cadres se
@@ -4220,8 +4220,8 @@ html .decision-boutons > button:disabled {
    soudures comme entre les étapes. */
 @media (max-width: 1100px), (pointer: coarse) {
     html .decision .soudure-controles-boutons span {
-        min-height: 44px;
-        min-width: 56px;
+        min-height: var(--h-doigt);
+        min-width: 52px;
         font-size: 14px;
     }
 
@@ -4230,9 +4230,9 @@ html .decision-boutons > button:disabled {
     }
 
     html .decision-boutons > button {
-        min-height: 44px;
-        padding: 0 20px;
-        font-size: 15px;
+        min-height: var(--h-doigt);
+        padding: 0 16px;
+        font-size: 14px;
     }
 
     html .decision .decision-visa {
@@ -4244,14 +4244,14 @@ html .decision-boutons > button:disabled {
     }
 
     html .decision .decision-signer {
-        min-height: 44px;
-        padding: 0 18px;
-        font-size: 15px;
+        min-height: var(--h-doigt);
+        padding: 0 14px;
+        font-size: 14px;
     }
 }
 
 /* ===== LE RÉSUMÉ D'UN PLAN =====
-   Ce qui manque au plan, feuille ISO par feuille ISO (atelier/plan_resume.php) : quatre
+   Ce qui manque au plan, feuille ISO par feuille ISO (atelier/plan_resume.php) : deux
    chiffres, puis deux tableaux courts — les soudures, les coulées. Une feuille complète n'y
    paraît pas. La fenêtre est plus large que les autres : trois colonnes s'y lisent d'un
    trait. Les textes de couleur sont des « div » : le thème clair grise tout paragraphe. */
@@ -4259,16 +4259,12 @@ dialog.fenetre.plan-resume {
     width: min(760px, calc(100vw - 32px));
 }
 
+/* Deux chiffres côte à côte, à toute largeur comme sur un téléphone. Ils étaient quatre — les
+   lignes sans coulée et les coulées hors CCPU sont parties le 9 novembre 2026. */
 .plan-resume-bilan {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
-}
-
-@media (max-width: 640px) {
-    .plan-resume-bilan {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
 }
 
 .plan-resume-chiffre {
@@ -4428,9 +4424,9 @@ html .plans-iso-detail .plans-iso-ajouter .icon {
 
 @media (pointer: coarse) {
     html .plans-iso-detail .plans-iso-ajouter {
-        height: 44px;
-        padding: 0 16px;
-        font-size: 15px;
+        height: var(--h-doigt);
+        padding: 0 14px;
+        font-size: 14px;
     }
 }
 
@@ -4510,9 +4506,9 @@ html .validation-renvoi-bouton:focus-visible {
     }
 
     html .validation-renvoi-bouton {
-        min-height: 44px;
-        padding: 0 18px;
-        font-size: 15px;
+        min-height: var(--h-doigt);
+        padding: 0 14px;
+        font-size: 14px;
     }
 
 }

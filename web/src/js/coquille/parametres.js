@@ -19,6 +19,12 @@
     const contenu = fenetre.querySelector('.parametres-contenu');
     const recherche = fenetre.querySelector('.parametres-recherche input');
     const aucun = fenetre.querySelector('.parametres-aucun');
+    const titreRubrique = fenetre.querySelector('.parametres-titre-rubrique');
+    const retour = fenetre.querySelector('[data-parametres-retour]');
+    // Le seuil de settings.css : en dessous, la liste des rubriques et la rubrique sont deux
+    // écrans, comme dans les réglages d'un téléphone — cinq rubriques et une recherche ne
+    // tiennent pas en une rangée de 390 px.
+    const etroit = window.matchMedia('(max-width: 719px)');
     let courante = 'general';
 
     // Comme la palette : sans accents ni majuscules, « theme » trouve « Thème ».
@@ -32,7 +38,22 @@
             else onglet.removeAttribute('aria-current');
         });
         rubriques.forEach(r => { r.hidden = r.dataset.rubrique !== courante; });
+        titreRubrique.textContent = onglets.find(o => o.dataset.rubrique === courante)?.textContent.trim() || '';
         contenu.scrollTop = 0;
+    }
+
+    /**
+     * Sur un téléphone : entrer dans une rubrique, ou revenir à la liste. Sur un écran plus
+     * large, la classe ne change rien — la colonne et le contenu restent côte à côte.
+     */
+    function entrer(nom) {
+        montrer(nom);
+        fenetre.classList.add('est-dans-rubrique');
+    }
+
+    function revenir() {
+        fenetre.classList.remove('est-dans-rubrique');
+        fenetre.querySelector('.parametres-onglet[aria-current]')?.focus();
     }
 
     /**
@@ -85,11 +106,14 @@
         recherche.value = '';
         chercher();
         montrer(nom || courante);
+        // Sur un téléphone, une rubrique demandée s'ouvre directement ; sans demande, la liste.
+        fenetre.classList.toggle('est-dans-rubrique', Boolean(nom));
         cocherTheme();
         if (!fenetre.open) fenetre.showModal();
         // Le focus sur la rubrique ouverte : les flèches parcourent la colonne, la recherche
-        // est une tabulation plus haut.
-        fenetre.querySelector('.parametres-onglet[aria-current]')?.focus();
+        // est une tabulation plus haut. Sur un téléphone, dans une rubrique, la liste est
+        // cachée : il va à la flèche du retour.
+        (etroit.matches && nom ? retour : fenetre.querySelector('.parametres-onglet[aria-current]'))?.focus();
     }
 
     window.ouvrirParametres = ouvrir;
@@ -110,7 +134,14 @@
         if (onglet) {
             recherche.value = '';
             chercher();
-            montrer(onglet.dataset.rubrique);
+            entrer(onglet.dataset.rubrique);
+            // La liste vient de disparaître, et l'onglet touché avec elle : le focus passe à
+            // la flèche du retour, au lieu de tomber sur la page.
+            if (etroit.matches) retour.focus();
+            return;
+        }
+        if (evenement.target.closest('[data-parametres-retour]')) {
+            revenir();
             return;
         }
         if (evenement.target.closest('[data-fermer-parametres]')) {
@@ -135,7 +166,18 @@
         evenement.preventDefault();
         const cible = onglets[(vers + onglets.length) % onglets.length];
         cible.focus();
-        cible.click();
+        // Sur un téléphone, ouvrir la rubrique ferait quitter la liste qu'on parcourt :
+        // Entrée l'ouvre.
+        if (!etroit.matches) cible.click();
+    });
+
+    // Sur un téléphone, le retour du système — ou Échap — remonte d'un cran avant de fermer :
+    // de la rubrique à la liste, comme dans les réglages du téléphone.
+    fenetre.addEventListener('cancel', evenement => {
+        if (!etroit.matches || !fenetre.classList.contains('est-dans-rubrique')) return;
+        if (fenetre.classList.contains('est-en-recherche')) return;
+        evenement.preventDefault();
+        revenir();
     });
 
     recherche.addEventListener('input', chercher);

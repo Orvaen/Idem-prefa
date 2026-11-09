@@ -271,7 +271,10 @@ function planningIcone(string $nom): string
 
     <!-- La barre d'outils des listes : recherche à gauche, puis la période, puis les
          réglages de vue, tous à 32 px. -->
-    <form id="planning-filters" class="prefa-filters planning-toolbar" role="search">
+    <?php // data-static-fields : floating-fields.js laisse ces champs tels quels. Il en faisait
+          // des champs à étiquette flottante de 44 px — pour des étiquettes cachées —, avec
+          // une seconde flèche sur chaque liste, plus hauts que les boutons d'à côté. ?>
+    <form id="planning-filters" class="prefa-filters planning-toolbar" role="search" data-static-fields>
         <div class="filtres-recherche">
             <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
             <input id="planning-request-filter" type="search" name="request" value="<?= prefaEscape($requestSearch) ?>" placeholder="N° de demande" aria-label="Numéro de demande">
